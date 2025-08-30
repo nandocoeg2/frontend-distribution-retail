@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+const API_BASE_URL = 'http://localhost:5050/api/v1';
 
 class AuthService {
   constructor() {
@@ -10,6 +10,7 @@ class AuthService {
         accept: 'application/json',
         'Content-Type': 'application/json',
       },
+      withCredentials: true, // Enable credentials for CORS
     });
   }
 

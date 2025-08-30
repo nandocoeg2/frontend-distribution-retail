@@ -135,9 +135,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
               </div>
             )}
           </div>
-          {!hasChildren && menu.url !== '#' && (
-            <Link to={menu.url} className='absolute inset-0' />
-          )}
         </div>
 
         {hasChildren && isExpanded && !isCollapsed && (
