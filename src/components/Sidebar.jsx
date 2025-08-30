@@ -219,9 +219,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
                   </div>
                 )}
               </div>
-              {isActive && (
-                <div className='absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-l-full opacity-80'></div>
-              )}
             </div>
           </Link>
         )}
@@ -358,7 +355,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
         </button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
