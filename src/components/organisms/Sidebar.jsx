@@ -320,10 +320,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
               </div>
               <div className='flex-1 min-w-0'>
                 <p className='text-sm font-medium text-white truncate'>
-                  Admin User
+                  {JSON.parse(localStorage.getItem('userData') || '{}')
+                    .firstName || 'User'}{' '}
+                  {JSON.parse(localStorage.getItem('userData') || '{}')
+                    .lastName || ''}
                 </p>
                 <p className='text-xs text-slate-400 truncate'>
-                  admin@workspace.com
+                  {JSON.parse(localStorage.getItem('userData') || '{}').email ||
+                    'user@workspace.com'}
                 </p>
               </div>
             </div>

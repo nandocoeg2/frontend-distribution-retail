@@ -15,6 +15,7 @@ const RoleManagement = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
+  const [newRoleMenus, setNewRoleMenus] = useState([]);
   const [creating, setCreating] = useState(false);
   const [deletingRoleId, setDeletingRoleId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -41,7 +42,6 @@ const RoleManagement = () => {
       setRoles(data);
     } catch (error) {
       console.error('Error fetching roles:', error);
-      // Fallback data
     }
   };
 
@@ -58,7 +58,6 @@ const RoleManagement = () => {
       setAllMenus(data);
     } catch (error) {
       console.error('Error fetching menus:', error);
-      // Fallback data
     } finally {
       setLoading(false);
     }
@@ -171,6 +170,10 @@ const RoleManagement = () => {
       alert('Role name is required');
       return;
     }
+    if (newRoleMenus.length === 0) {
+      alert('At least one menu ID is required');
+      return;
+    }
     setCreating(true);
     try {
       const response = await fetch('http://localhost:5050/api/v1/roles', {
@@ -183,17 +186,22 @@ const RoleManagement = () => {
         body: JSON.stringify({
           name: newRoleName.trim(),
           description: newRoleDescription.trim(),
-          menuIds: [],
+          menuIds: newRoleMenus,
         }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create role');
+        const issue = errorData.issues && errorData.issues[0];
+        const errorMessage = issue
+          ? `${issue.path.join('.')} - ${issue.message}`
+          : errorData.message || 'Failed to create role';
+        throw new Error(errorMessage);
       }
       await fetchRoles();
       setShowCreateModal(false);
       setNewRoleName('');
       setNewRoleDescription('');
+      setNewRoleMenus([]);
     } catch (error) {
       console.error('Error creating role:', error);
       alert(error.message || 'Failed to create role');
@@ -202,7 +210,7 @@ const RoleManagement = () => {
     }
   };
 
-  const renderMenuTree = (menus, level = 0) => {
+  const renderMenuTree = (menus, selected, onSelect, level = 0) => {
     if (!Array.isArray(menus) || menus.length === 0) return null;
     return menus
       .filter((menu) => menu && menu.id)
@@ -212,15 +220,15 @@ const RoleManagement = () => {
           <label className='flex items-center space-x-2 py-1'>
             <input
               type='checkbox'
-              checked={selectedMenus.includes(menu.id)}
-              onChange={() => handleMenuSelection(menu.id)}
+              checked={selected.includes(menu.id)}
+              onChange={() => onSelect(menu.id)}
               className='rounded'
             />
             <span>{menu.name}</span>
           </label>
           {Array.isArray(menu.children) && menu.children.length > 0 && (
             <div className='ml-4'>
-              {renderMenuTree(menu.children, level + 1)}
+              {renderMenuTree(menu.children, selected, onSelect, level + 1)}
             </div>
           )}
         </div>
@@ -306,14 +314,30 @@ const RoleManagement = () => {
             <h3 className='text-lg font-semibold'>
               Manage Menus for {selectedRole?.name}
             </h3>
-            <button onClick={handleSelectAllMenus}>Select/Deselect All</button>
-            <div className='my-4 h-64 overflow-y-auto'>
-              {renderMenuTree(allMenus)}
-            </div>
-            <button onClick={saveMenuAssignments} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
+            <button
+              onClick={handleSelectAllMenus}
+              className='bg-blue-600 text-white px-4 py-2 rounded-lg'
+            >
+              Select/Deselect All
             </button>
-            <button onClick={() => setShowMenuModal(false)}>Cancel</button>
+            <div className='my-4 h-64 overflow-y-auto'>
+              {renderMenuTree(allMenus, selectedMenus, handleMenuSelection)}
+            </div>
+            <div className='flex justify-end'>
+              <button
+                onClick={saveMenuAssignments}
+                disabled={saving}
+                className='bg-blue-600 text-white px-4 py-2 rounded-lg'
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={() => setShowMenuModal(false)}
+                className='bg-gray-600 text-white px-4 py-2 rounded-lg ml-2'
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -327,29 +351,80 @@ const RoleManagement = () => {
               value={newRoleName}
               onChange={(e) => setNewRoleName(e.target.value)}
               placeholder='Role Name'
+              className='w-full mb-4'
             />
             <textarea
               value={newRoleDescription}
               onChange={(e) => setNewRoleDescription(e.target.value)}
               placeholder='Description'
+              className='w-full mb-4'
             />
-            <button onClick={handleCreateRole} disabled={creating}>
-              {creating ? 'Creating...' : 'Create'}
-            </button>
-            <button onClick={() => setShowCreateModal(false)}>Cancel</button>
+            <div className='my-4'>
+              <label className='font-semibold'>Assign Menus</label>
+              <div className='my-2'>
+                <button
+                  onClick={() => {
+                    const allMenuIds = getAllMenuIds(allMenus);
+                    if (newRoleMenus.length === allMenuIds.length) {
+                      setNewRoleMenus([]);
+                    } else {
+                      setNewRoleMenus(allMenuIds);
+                    }
+                  }}
+                  className='bg-blue-500 text-white px-3 py-1 rounded-md text-sm mb-2'
+                >
+                  Select/Deselect All
+                </button>
+              </div>
+              <div className='h-48 overflow-y-auto border rounded-md p-2'>
+                {renderMenuTree(allMenus, newRoleMenus, (menuId) => {
+                  setNewRoleMenus((prev) =>
+                    prev.includes(menuId)
+                      ? prev.filter((id) => id !== menuId)
+                      : [...prev, menuId]
+                  );
+                })}
+              </div>
+            </div>
+            <div className='flex justify-end'>
+              <button
+                onClick={handleCreateRole}
+                disabled={creating}
+                className='bg-blue-600 text-white px-4 py-2 rounded-lg'
+              >
+                {creating ? 'Creating...' : 'Create'}
+              </button>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className='bg-gray-600 text-white px-4 py-2 rounded-lg ml-2'
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {showDeleteModal && (
-        <div className='fixed inset-c0 bg-black/50 z-50 flex justify-center items-center'>
+        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center'>
           <div className='bg-white rounded-lg p-6'>
             <h3 className='text-lg font-semibold'>Confirm Deletion</h3>
             <p>Are you sure you want to delete this role?</p>
-            <button onClick={confirmDeleteRole} disabled={saving}>
-              {saving ? 'Deleting...' : 'Delete'}
-            </button>
-            <button onClick={() => setShowDeleteModal(false)}>Cancel</button>
+            <div className='flex justify-end mt-4'>
+              <button
+                onClick={confirmDeleteRole}
+                disabled={saving}
+                className='bg-red-600 text-white px-4 py-2 rounded-lg'
+              >
+                {saving ? 'Deleting...' : 'Delete'}
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className='bg-gray-600 text-white px-4 py-2 rounded-lg ml-2'
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
