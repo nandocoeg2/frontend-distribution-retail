@@ -14,6 +14,12 @@ const RoleManagement = () => {
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [selectedMenus, setSelectedMenus] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleDescription, setNewRoleDescription] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [deletingRoleId, setDeletingRoleId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -210,19 +216,24 @@ const RoleManagement = () => {
 
     setSaving(true);
     try {
-      const response = await fetch('http://localhost:5050/api/v1/roles/menus', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
-          role: selectedRole.id,
-          menu: selectedMenus,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:5050/api/v1/roles/${selectedRole.id}/menus`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+          body: JSON.stringify({
+            menuIds: selectedMenus,
+          }),
+        }
+      );
 
-      if (!response.ok) throw new Error('Failed to update menus');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update menus');
+      }
 
       await fetchRoles();
       setShowMenuModal(false);
@@ -230,7 +241,7 @@ const RoleManagement = () => {
       setSelectedMenus([]);
     } catch (error) {
       console.error('Error updating menu assignments:', error);
-      alert('Failed to update menu assignments');
+      alert(error.message || 'Failed to update menu assignments');
     } finally {
       setSaving(false);
     }
@@ -243,6 +254,80 @@ const RoleManagement = () => {
         return menu && menu.id;
       }).length || 0
     );
+  };
+
+  const handleDeleteRole = (role) => {
+    setDeletingRoleId(role.id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteRole = async () => {
+    if (!deletingRoleId) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5050/api/v1/roles/${deletingRoleId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to delete role');
+      }
+
+      await fetchRoles();
+      setShowDeleteModal(false);
+      setDeletingRoleId(null);
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      alert(error.message || 'Failed to delete role');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateRole = async () => {
+    if (!newRoleName.trim()) {
+      alert('Role name is required');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const response = await fetch('http://localhost:5050/api/v1/roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({
+          name: newRoleName.trim(),
+          menuIds: ['cmeef18710005ydcq4dsy8k12'],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create role');
+      }
+
+      await fetchRoles();
+      setShowCreateModal(false);
+      setNewRoleName('');
+      setNewRoleDescription('');
+    } catch (error) {
+      console.error('Error creating role:', error);
+      alert(error.message || 'Failed to create role');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const renderMenuTree = (menus, level = 0) => {
@@ -326,7 +411,26 @@ const RoleManagement = () => {
                 Manage roles and their menu access permissions
               </p>
             </div>
-          </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className='bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2'
+            >
+              <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M12 4v16m8-8H4'
+                />
+              </svg>
+              Create New Role
+            </button>
+          </div>{' '}
         </header>
 
         <main className='flex-1 overflow-y-auto p-6'>
@@ -405,12 +509,20 @@ const RoleManagement = () => {
                             menus
                           </p>
                         </div>
-                        <button
-                          onClick={() => openMenuModal(role)}
-                          className='bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors'
-                        >
-                          Manage Menus
-                        </button>
+                        <div className='flex gap-2'>
+                          <button
+                            onClick={() => openMenuModal(role)}
+                            className='bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors'
+                          >
+                            Manage Menus
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRole(role)}
+                            className='bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors'
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -476,6 +588,138 @@ const RoleManagement = () => {
                   className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors'
                 >
                   {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Role Modal */}
+        {showCreateModal && (
+          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
+            <div className='bg-white rounded-2xl max-w-md w-full'>
+              <div className='p-6 border-b border-gray-200'>
+                <div className='flex items-center justify-between'>
+                  <h3 className='text-lg font-semibold text-gray-900'>
+                    Create New Role
+                  </h3>
+                  <button
+                    onClick={() => setShowCreateModal(false)}
+                    className='text-gray-400 hover:text-gray-600'
+                  >
+                    <svg
+                      className='w-6 h-6'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M6 18L18 6M6 6l12 12'
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className='p-6'>
+                <div className='space-y-4'>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Role Name *
+                    </label>
+                    <input
+                      type='text'
+                      value={newRoleName}
+                      onChange={(e) => setNewRoleName(e.target.value)}
+                      placeholder='Enter role name'
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                      maxLength={50}
+                    />
+                  </div>
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Description
+                    </label>
+                    <textarea
+                      value={newRoleDescription}
+                      onChange={(e) => setNewRoleDescription(e.target.value)}
+                      placeholder='Enter role description (optional)'
+                      rows={3}
+                      className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none'
+                      maxLength={200}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className='p-6 border-t border-gray-200 flex items-center justify-end space-x-3'>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className='px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors'
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateRole}
+                  disabled={creating || !newRoleName.trim()}
+                  className='px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                >
+                  {creating ? 'Creating...' : 'Create Role'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
+            <div className='bg-white rounded-2xl max-w-md w-full'>
+              <div className='p-6 border-b border-gray-200'>
+                <h3 className='text-lg font-semibold text-gray-900'>
+                  Delete Role
+                </h3>
+              </div>
+
+              <div className='p-6'>
+                <p className='text-gray-700 mb-4'>
+                  Are you sure you want to delete this role? This action cannot
+                  be undone and will remove all menu assignments for this role.
+                </p>
+                <p className='text-sm text-gray-600'>
+                  Type <strong>DELETE</strong> to confirm deletion.
+                </p>
+                <input
+                  type='text'
+                  placeholder='Type DELETE to confirm'
+                  className='mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.target.value === 'DELETE') {
+                      confirmDeleteRole();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className='p-6 border-t border-gray-200 flex items-center justify-end space-x-3'>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeletingRoleId(null);
+                  }}
+                  className='px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors'
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteRole}
+                  disabled={saving}
+                  className='px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                >
+                  {saving ? 'Deleting...' : 'Delete Role'}
                 </button>
               </div>
             </div>
