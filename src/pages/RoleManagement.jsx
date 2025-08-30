@@ -7,94 +7,141 @@ const RoleManagement = () => {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [menus, setMenus] = useState([]);
-  const [activeTab, setActiveTab] = useState('roles');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [roles] = useState([
-    {
-      id: 1,
-      name: 'Super Admin',
-      description: 'Full system access with all permissions',
-      permissions: ['read', 'write', 'delete', 'admin'],
-      userCount: 2,
-      status: 'active',
-      createdAt: '2024-01-01',
-    },
-    {
-      id: 2,
-      name: 'Admin',
-      description: 'Administrative access to most features',
-      permissions: ['read', 'write', 'delete'],
-      userCount: 5,
-      status: 'active',
-      createdAt: '2024-01-02',
-    },
-    {
-      id: 3,
-      name: 'Manager',
-      description: 'Management level access with limited admin functions',
-      permissions: ['read', 'write'],
-      userCount: 12,
-      status: 'active',
-      createdAt: '2024-01-03',
-    },
-    {
-      id: 4,
-      name: 'User',
-      description: 'Basic user access to standard features',
-      permissions: ['read'],
-      userCount: 45,
-      status: 'active',
-      createdAt: '2024-01-04',
-    },
-    {
-      id: 5,
-      name: 'Guest',
-      description: 'Limited read-only access for temporary users',
-      permissions: ['read'],
-      userCount: 8,
-      status: 'inactive',
-      createdAt: '2024-01-05',
-    },
-  ]);
-
-  const [permissions] = useState([
-    { id: 'read', name: 'Read', description: 'View data and content' },
-    { id: 'write', name: 'Write', description: 'Create and modify content' },
-    { id: 'delete', name: 'Delete', description: 'Remove data and content' },
-    { id: 'admin', name: 'Admin', description: 'Administrative functions' },
-    {
-      id: 'user_management',
-      name: 'User Management',
-      description: 'Manage user accounts',
-    },
-    {
-      id: 'role_management',
-      name: 'Role Management',
-      description: 'Manage roles and permissions',
-    },
-    {
-      id: 'system_settings',
-      name: 'System Settings',
-      description: 'Configure system settings',
-    },
-    {
-      id: 'reports',
-      name: 'Reports',
-      description: 'Generate and view reports',
-    },
-  ]);
+  const [roles, setRoles] = useState([]);
+  const [allMenus, setAllMenus] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [showMenuModal, setShowMenuModal] = useState(false);
+  const [selectedMenus, setSelectedMenus] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Check authentication
     if (!authService.isAuthenticated()) {
       navigate('/login');
       return;
     }
 
-    // Load menus
     const userMenus = authService.getMenus();
     setMenus(userMenus);
+    fetchRoles();
+    fetchMenus();
   }, [navigate]);
+
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('http://localhost:5050/api/v1/roles/', {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch roles');
+
+      const data = await response.json();
+      setRoles(data);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      setRoles([
+        {
+          id: 'cmeef187l0000ydcq6pejypov',
+          name: 'super admin',
+          description: 'Super Administrator',
+          menus: [
+            {
+              menu: {
+                id: '1',
+                name: 'Dashboard',
+                url: '/dashboard',
+                icon: 'home',
+              },
+            },
+            {
+              menu: { id: '2', name: 'Profile', url: '/profile', icon: 'user' },
+            },
+          ],
+        },
+      ]);
+    }
+  };
+
+  const fetchMenus = async () => {
+    try {
+      const response = await fetch('http://localhost:5050/api/v1/menus/', {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch menus');
+
+      const data = await response.json();
+      setAllMenus(data);
+    } catch (error) {
+      console.error('Error fetching menus:', error);
+      setAllMenus([
+        {
+          id: '1',
+          name: 'Dashboard',
+          url: '/dashboard',
+          icon: null,
+          order: 1,
+          parentId: null,
+          children: [],
+        },
+        {
+          id: '2',
+          name: 'Profile',
+          url: '/profile',
+          icon: null,
+          order: 2,
+          parentId: null,
+          children: [
+            {
+              id: '3',
+              name: 'Setting Profile',
+              url: '/profile/settings-profile',
+              icon: null,
+              order: 1,
+              parentId: '2',
+              children: [],
+            },
+          ],
+        },
+        {
+          id: '4',
+          name: 'Purchase Order Management',
+          url: '#',
+          icon: null,
+          order: 3,
+          parentId: null,
+          children: [
+            {
+              id: '5',
+              name: 'Customers',
+              url: '/purchase-order/customers',
+              icon: null,
+              order: 1,
+              parentId: '4',
+              children: [],
+            },
+            {
+              id: '6',
+              name: 'Purchase Orders',
+              url: '/purchase-order/purchase-orders',
+              icon: null,
+              order: 2,
+              parentId: '4',
+              children: [],
+            },
+          ],
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -106,35 +153,161 @@ const RoleManagement = () => {
     }
   };
 
-  const tabs = [
-    { id: 'roles', name: 'Roles', icon: '👥', count: roles.length },
-    {
-      id: 'permissions',
-      name: 'Permissions',
-      icon: '🔐',
-      count: permissions.length,
-    },
-  ];
-
-  const getStatusBadge = (status) => {
-    return status === 'active'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800';
+  const openMenuModal = (role) => {
+    setSelectedRole(role);
+    const assignedMenuIds =
+      role.menus
+        ?.filter((m) => {
+          const menu = m.menu || m;
+          return menu && menu.id;
+        })
+        .map((m) => {
+          const menu = m.menu || m;
+          return menu.id;
+        }) || [];
+    setSelectedMenus(assignedMenuIds);
+    setShowMenuModal(true);
   };
 
-  const getPermissionBadge = (permission) => {
-    const colors = {
-      read: 'bg-blue-100 text-blue-800',
-      write: 'bg-yellow-100 text-yellow-800',
-      delete: 'bg-red-100 text-red-800',
-      admin: 'bg-purple-100 text-purple-800',
-    };
-    return colors[permission] || 'bg-gray-100 text-gray-800';
+  const handleMenuSelection = (menuId) => {
+    setSelectedMenus((prev) =>
+      prev.includes(menuId)
+        ? prev.filter((id) => id !== menuId)
+        : [...prev, menuId]
+    );
   };
+
+  const handleSelectAllMenus = () => {
+    const allMenuIds = getAllMenuIds(allMenus);
+    setSelectedMenus(
+      selectedMenus.length === allMenuIds.length ? [] : allMenuIds
+    );
+  };
+
+  const getAllMenuIds = (menus) => {
+    if (!Array.isArray(menus)) return [];
+
+    let ids = [];
+    menus.forEach((menu) => {
+      if (menu && menu.id) {
+        ids.push(menu.id);
+        if (
+          menu.children &&
+          Array.isArray(menu.children) &&
+          menu.children.length > 0
+        ) {
+          ids = [
+            ...ids,
+            ...getAllMenuIds(menu.children.filter((c) => c && c.id)),
+          ];
+        }
+      }
+    });
+    return ids;
+  };
+  const saveMenuAssignments = async () => {
+    if (!selectedRole) return;
+
+    setSaving(true);
+    try {
+      const response = await fetch('http://localhost:5050/api/v1/roles/menus', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({
+          role: selectedRole.id,
+          menu: selectedMenus,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update menus');
+
+      await fetchRoles();
+      setShowMenuModal(false);
+      setSelectedRole(null);
+      setSelectedMenus([]);
+    } catch (error) {
+      console.error('Error updating menu assignments:', error);
+      alert('Failed to update menu assignments');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getAssignedMenuCount = (role) => {
+    return (
+      role.menus?.filter((item) => {
+        const menu = item.menu || item;
+        return menu && menu.id;
+      }).length || 0
+    );
+  };
+
+  const renderMenuTree = (menus, level = 0) => {
+    if (!Array.isArray(menus) || menus.length === 0) return null;
+
+    const rootMenus =
+      level === 0 ? menus.filter((menu) => menu && !menu.parentId) : menus;
+
+    return rootMenus
+      .filter((menu) => menu && menu.id)
+      .sort(
+        (a, b) =>
+          (a?.order || 0) - (b?.order || 0) ||
+          String(a?.name || '').localeCompare(String(b?.name || ''))
+      )
+      .map((menu) => {
+        if (!menu || !menu.id) return null;
+
+        const children = menu.children || [];
+
+        return (
+          <div key={menu.id} style={{ marginLeft: level * 16 }}>
+            <label className='flex items-center space-x-2 py-1'>
+              <input
+                type='checkbox'
+                checked={selectedMenus.includes(menu.id)}
+                onChange={() => handleMenuSelection(menu.id)}
+                className='rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4'
+              />
+              <span className='text-sm text-gray-700'>{menu.name}</span>
+              <span className='text-xs text-gray-500 ml-2'>
+                {menu?.url &&
+                menu.url !== '#' &&
+                String(menu.url || '').startsWith('/')
+                  ? `(${menu.url})`
+                  : ''}
+              </span>
+            </label>
+            {Array.isArray(children) &&
+              children.length > 0 &&
+              children.filter((c) => c && c.id).length > 0 && (
+                <div className='ml-6'>
+                  {renderMenuTree(
+                    children.filter((c) => c && c.id),
+                    level + 1
+                  )}
+                </div>
+              )}
+          </div>
+        );
+      })
+      .filter(Boolean);
+  };
+
+  if (loading) {
+    return (
+      <div className='flex h-screen items-center justify-center'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
+        <span className='ml-2'>Loading roles...</span>
+      </div>
+    );
+  }
 
   return (
     <div className='flex h-screen bg-gradient-to-br from-slate-50 to-gray-100'>
-      {/* Sidebar */}
       <Sidebar
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
@@ -142,9 +315,7 @@ const RoleManagement = () => {
         onLogout={handleLogout}
       />
 
-      {/* Main Content */}
       <div className='flex-1 flex flex-col overflow-hidden'>
-        {/* Header */}
         <header className='bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/60 p-6'>
           <div className='flex items-center justify-between'>
             <div>
@@ -152,206 +323,165 @@ const RoleManagement = () => {
                 Role Management 🔐
               </h1>
               <p className='text-gray-600'>
-                Manage system roles, permissions, and access controls
+                Manage roles and their menu access permissions
               </p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2'
-            >
-              <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 6v6m0 0v6m0-6h6m-6 0H6'
-                />
-              </svg>
-              <span>Add New Role</span>
-            </button>
           </div>
         </header>
 
-        {/* Content */}
         <main className='flex-1 overflow-y-auto p-6'>
           <div className='max-w-7xl mx-auto'>
             <div className='bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/60 overflow-hidden'>
-              {/* Tabs */}
-              <div className='border-b border-gray-200 bg-gray-50/80'>
-                <div className='flex space-x-8 px-6'>
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                        activeTab === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
+              <div className='p-6'>
+                <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'>
+                  {roles.map((role) => (
+                    <div
+                      key={role.id}
+                      className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow flex flex-col h-96'
                     >
-                      <span>{tab.icon}</span>
-                      <span>{tab.name}</span>
-                      <span className='bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full'>
-                        {tab.count}
-                      </span>
-                    </button>
+                      <div className='flex items-start justify-between mb-4 flex-shrink-0'>
+                        <div>
+                          <h3 className='text-lg font-semibold text-gray-900 capitalize'>
+                            {role.name}
+                          </h3>
+                          <p className='text-sm text-gray-600 mt-1'>
+                            {role.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className='mb-4 flex-1 min-h-0'>
+                        <p className='text-sm font-medium text-gray-700 mb-2'>
+                          Assigned Menus:
+                        </p>
+                        <div className='h-48 overflow-y-auto border border-gray-100 rounded-lg p-3 bg-gray-50/50 text-sm'>
+                          {role.menus && role.menus.length > 0 ? (
+                            <div className='space-y-1'>
+                              {role.menus
+                                .filter((item) => {
+                                  // Handle both formats: direct menu or nested in 'menu' property
+                                  const menu = item.menu || item;
+                                  return menu && menu.id;
+                                })
+                                .sort((a, b) => {
+                                  const menuA = a.menu || a;
+                                  const menuB = b.menu || b;
+                                  return (menuA?.name || '').localeCompare(
+                                    menuB?.name || ''
+                                  );
+                                })
+                                .map((item) => {
+                                  const menu = item.menu || item;
+                                  return (
+                                    <div key={menu.id}>
+                                      <div className='font-medium text-gray-800 leading-relaxed py-1'>
+                                        {menu.name || 'Unnamed Menu'}
+                                        {menu.url &&
+                                          menu.url !== '#' &&
+                                          String(menu.url).startsWith('/') && (
+                                            <span className='text-gray-500 ml-1 text-xs'>
+                                              ({menu.url})
+                                            </span>
+                                          )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          ) : (
+                            <span className='text-xs text-gray-500 italic'>
+                              No menus assigned
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className='flex items-center justify-between pt-4 border-t border-gray-200 flex-shrink-0'>
+                        <div>
+                          <p className='text-sm text-gray-600'>
+                            <span className='font-medium text-gray-900'>
+                              {getAssignedMenuCount(role)}
+                            </span>{' '}
+                            menus
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => openMenuModal(role)}
+                          className='bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium transition-colors'
+                        >
+                          Manage Menus
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-
-              {/* Roles Tab Content */}
-              {activeTab === 'roles' && (
-                <div className='p-6'>
-                  <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'>
-                    {roles.map((role) => (
-                      <div
-                        key={role.id}
-                        className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow'
-                      >
-                        <div className='flex items-start justify-between mb-4'>
-                          <div>
-                            <h3 className='text-lg font-semibold text-gray-900'>
-                              {role.name}
-                            </h3>
-                            <p className='text-sm text-gray-600 mt-1'>
-                              {role.description}
-                            </p>
-                          </div>
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(role.status)}`}
-                          >
-                            {role.status}
-                          </span>
-                        </div>
-
-                        <div className='mb-4'>
-                          <p className='text-sm font-medium text-gray-700 mb-2'>
-                            Permissions:
-                          </p>
-                          <div className='flex flex-wrap gap-2'>
-                            {role.permissions.map((permission) => (
-                              <span
-                                key={permission}
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPermissionBadge(permission)}`}
-                              >
-                                {permission}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className='flex items-center justify-between pt-4 border-t border-gray-200'>
-                          <div>
-                            <p className='text-sm text-gray-600'>
-                              <span className='font-medium text-gray-900'>
-                                {role.userCount}
-                              </span>{' '}
-                              users
-                            </p>
-                            <p className='text-xs text-gray-500'>
-                              Created:{' '}
-                              {new Date(role.createdAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className='flex space-x-2'>
-                            <button className='text-blue-600 hover:text-blue-700 text-sm font-medium'>
-                              Edit
-                            </button>
-                            <button className='text-red-600 hover:text-red-700 text-sm font-medium'>
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Permissions Tab Content */}
-              {activeTab === 'permissions' && (
-                <div className='p-6'>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    {permissions.map((permission) => (
-                      <div
-                        key={permission.id}
-                        className='bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow'
-                      >
-                        <div className='flex items-start space-x-4'>
-                          <div className='w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center'>
-                            <span className='text-white text-lg'>🔑</span>
-                          </div>
-                          <div className='flex-1'>
-                            <h3 className='text-lg font-semibold text-gray-900'>
-                              {permission.name}
-                            </h3>
-                            <p className='text-sm text-gray-600 mt-1'>
-                              {permission.description}
-                            </p>
-                            <div className='mt-3'>
-                              <span
-                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPermissionBadge(permission.id)}`}
-                              >
-                                {permission.id}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </main>
-      </div>
 
-      {/* Add Role Modal (Placeholder) */}
-      {showAddModal && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-2xl p-6 max-w-md w-full mx-4'>
-            <div className='flex items-center justify-between mb-4'>
-              <h3 className='text-lg font-semibold text-gray-900'>
-                Add New Role
-              </h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className='text-gray-400 hover:text-gray-600'
-              >
-                <svg
-                  className='w-6 h-6'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
+        {/* Menu Assignment Modal */}
+        {showMenuModal && selectedRole && (
+          <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
+            <div className='bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden'>
+              <div className='p-6 border-b border-gray-200'>
+                <div className='flex items-center justify-between'>
+                  <h3 className='text-lg font-semibold text-gray-900'>
+                    Manage Menus for {selectedRole.name}
+                  </h3>
+                  <button
+                    onClick={() => setShowMenuModal(false)}
+                    className='text-gray-400 hover:text-gray-600'
+                  >
+                    <svg
+                      className='w-6 h-6'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M6 18L18 6M6 6l12 12'
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className='p-6 overflow-y-auto max-h-[60vh]'>
+                <div className='mb-4'>
+                  <button
+                    onClick={handleSelectAllMenus}
+                    className='text-sm text-blue-600 hover:text-blue-700 font-medium'
+                  >
+                    {selectedMenus.length === getAllMenuIds(allMenus).length
+                      ? 'Deselect All'
+                      : 'Select All'}
+                  </button>
+                </div>
+                {renderMenuTree(allMenus)}
+              </div>
+              <div className='p-6 border-t border-gray-200 flex items-center justify-end space-x-3'>
+                <button
+                  onClick={() => setShowMenuModal(false)}
+                  className='px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors'
                 >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M6 18L18 6M6 6l12 12'
-                  />
-                </svg>
-              </button>
+                  Cancel
+                </button>
+                <button
+                  onClick={saveMenuAssignments}
+                  disabled={saving}
+                  className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors'
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             </div>
-            <p className='text-gray-600 mb-6'>
-              Feature under development. Add role functionality will be
-              implemented soon.
-            </p>
-            <button
-              onClick={() => setShowAddModal(false)}
-              className='w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors'
-            >
-              Close
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
