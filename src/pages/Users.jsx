@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
+import toastService from '../services/toastService';
+
 const Users = () => {
-  const [users] = useState([
+  const [users, setUsers] = useState([
     {
       id: 1,
       name: 'John Doe',
@@ -29,6 +32,21 @@ const Users = () => {
     },
   ]);
 
+  const handleAddUser = () => {
+    toastService.info('User creation form would open here');
+  };
+
+  const handleEditUser = (user) => {
+    toastService.info(`Editing user: ${user.name}`);
+  };
+
+  const handleDeleteUser = (user) => {
+    if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
+      toastService.success(`User ${user.name} deleted successfully`);
+      setUsers(users.filter((u) => u.id !== user.id));
+    }
+  };
+
   return (
     <>
       <header className='bg-white/80 p-6'>
@@ -39,7 +57,10 @@ const Users = () => {
             </h1>
             <p>Manage users, roles, and permissions</p>
           </div>
-          <button className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center'>
+          <button
+            onClick={handleAddUser}
+            className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center'
+          >
             <HeroIcon name='plus' className='w-5 h-5 mr-2' />
             Add New User
           </button>
@@ -113,8 +134,18 @@ const Users = () => {
                       <td className='p-3'>{user.status}</td>
                       <td className='p-3'>{user.lastLogin}</td>
                       <td className='p-3'>
-                        <button className='text-blue-600'>Edit</button>
-                        <button className='text-red-600 ml-2'>Delete</button>
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          className='text-blue-600'
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user)}
+                          className='text-red-600 ml-2'
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

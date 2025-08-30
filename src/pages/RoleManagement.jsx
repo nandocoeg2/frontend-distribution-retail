@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
 import authService from '../services/authService';
+
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+
+import toastService from '../services/toastService';
 
 const RoleManagement = () => {
   const navigate = useNavigate();
@@ -121,9 +126,10 @@ const RoleManagement = () => {
       }
       await fetchRoles();
       setShowMenuModal(false);
+      toastService.success('Menu assignments updated successfully!');
     } catch (error) {
       console.error('Error updating menu assignments:', error);
-      alert(error.message || 'Failed to update menu assignments');
+      toastService.error(error.message || 'Failed to update menu assignments');
     } finally {
       setSaving(false);
     }
@@ -157,9 +163,10 @@ const RoleManagement = () => {
       }
       await fetchRoles();
       setShowDeleteModal(false);
+      toastService.success('Role deleted successfully!');
     } catch (error) {
       console.error('Error deleting role:', error);
-      alert(error.message || 'Failed to delete role');
+      toastService.error(error.message || 'Failed to delete role');
     } finally {
       setSaving(false);
     }
@@ -167,11 +174,11 @@ const RoleManagement = () => {
 
   const handleCreateRole = async () => {
     if (!newRoleName.trim()) {
-      alert('Role name is required');
+      toastService.error('Role name is required');
       return;
     }
     if (newRoleMenus.length === 0) {
-      alert('At least one menu ID is required');
+      toastService.error('At least one menu ID is required');
       return;
     }
     setCreating(true);
@@ -202,9 +209,10 @@ const RoleManagement = () => {
       setNewRoleName('');
       setNewRoleDescription('');
       setNewRoleMenus([]);
+      toastService.success('Role created successfully!');
     } catch (error) {
       console.error('Error creating role:', error);
-      alert(error.message || 'Failed to create role');
+      toastService.error(error.message || 'Failed to create role');
     } finally {
       setCreating(false);
     }

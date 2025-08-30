@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+
 import { Link, useNavigate } from 'react-router-dom';
+
 import authService from '../services/authService';
+
+import toastService from '../services/toastService';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -84,6 +88,7 @@ const Register = () => {
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
+      toastService.error('Passwords do not match');
       setError('Passwords do not match');
       setLoading(false);
       return;
@@ -99,16 +104,20 @@ const Register = () => {
       });
 
       if (result.success) {
-        setSuccess(
-          'Registration successful! Please login with your credentials.'
+        toastService.success(
+          'Registration successful! Redirecting to login...'
         );
         setTimeout(() => {
           navigate('/login');
-        }, 2000);
+        }, 1500);
       } else {
+        toastService.error(
+          result.error || 'Registration failed. Please try again.'
+        );
         setError(result.error);
       }
     } catch (err) {
+      toastService.error('An unexpected error occurred. Please try again.');
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+
 import { Link, useNavigate } from 'react-router-dom';
+
 import authService from '../services/authService';
+
+import toastService from '../services/toastService';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -30,12 +34,16 @@ const Login = () => {
       const result = await authService.login(formData.email, formData.password);
 
       if (result.success) {
-        // Redirect to dashboard
+        toastService.success('Login successful! Welcome back.');
         navigate('/dashboard');
       } else {
+        toastService.error(
+          result.error || 'Login failed. Please check your credentials.'
+        );
         setError(result.error);
       }
     } catch (err) {
+      toastService.error('An unexpected error occurred. Please try again.');
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
