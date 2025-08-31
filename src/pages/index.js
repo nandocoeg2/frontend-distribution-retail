@@ -9,3 +9,4 @@ export { default as Profile } from './Profile';
 export { default as SettingProfile } from './SettingProfile';
 export { default as RoleManagement } from './RoleManagement';
 export { default as PurchaseOrders } from './PurchaseOrders';
+export { default as Customers } from './Customers';

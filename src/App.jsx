@@ -30,6 +30,7 @@ import SettingProfile from './pages/SettingProfile.jsx';
 import RoleManagement from './pages/RoleManagement.jsx';
 
 import PurchaseOrders from './pages/PurchaseOrders.jsx';
+import Customers from './pages/Customers.jsx';
 
 import NotFound from './pages/NotFound.jsx';
 
@@ -138,6 +139,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <PurchaseOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/master/customers'
+            element={
+              <ProtectedRoute>
+                <Customers />
               </ProtectedRoute>
             }
           />
