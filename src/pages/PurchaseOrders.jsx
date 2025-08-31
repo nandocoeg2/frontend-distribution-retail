@@ -32,6 +32,13 @@ const PurchaseOrders = () => {
     suratPO: '',
     suratPenagihan: ''
   });
+
+  // Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('customer_name');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
+
   const navigate = useNavigate();
 
   // Handle authentication errors
@@ -66,6 +73,70 @@ const PurchaseOrders = () => {
       toastService.error('Failed to load purchase orders');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Search purchase orders with advanced criteria
+  const searchPurchaseOrders = async (query, field) => {
+    if (!query.trim()) {
+      fetchPurchaseOrders();
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      const accessToken = localStorage.getItem('token');
+      
+      let url = `${API_URL}/purchase-orders/search?`;
+      
+      switch (field) {
+        case 'tanggal_order':
+          url += `tanggal_order=${encodeURIComponent(query)}`;
+          break;
+        case 'customer_name':
+          url += `customer_name=${encodeURIComponent(query)}`;
+          break;
+        case 'customerId':
+          url += `customerId=${encodeURIComponent(query)}`;
+          break;
+        case 'suratPO':
+          url += `suratPO=${encodeURIComponent(query)}`;
+          break;
+        case 'invoicePengiriman':
+          url += `invoicePengiriman=${encodeURIComponent(query)}`;
+          break;
+        case 'po_number':
+          url += `po_number=${encodeURIComponent(query)}`;
+          break;
+        case 'supplierId':
+          url += `supplierId=${encodeURIComponent(query)}`;
+          break;
+        case 'statusId':
+          url += `statusId=${encodeURIComponent(query)}`;
+          break;
+        default:
+          url += `customer_name=${encodeURIComponent(query)}`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+      
+      if (!response.ok) throw new Error('Failed to search purchase orders');
+
+      const data = await response.json();
+      setPurchaseOrders(data);
+    } catch (err) {
+      toastService.error('Failed to search purchase orders');
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -226,37 +297,6 @@ const PurchaseOrders = () => {
     });
   };
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: type === 'number' ? parseInt(value) || 0 : value 
-    }));
-  };
-
-  // Close edit modal
-  const closeEditModal = () => {
-    setShowEditModal(false);
-    setEditingOrder(null);
-    setFormData({
-      customerId: '',
-      po_number: '',
-      total_items: 0,
-      tanggal_order: '',
-      po_type: 'Regular',
-      statusId: '',
-      suratJalan: '',
-      invoicePengiriman: '',
-      suratPO: '',
-      suratPenagihan: ''
-    });
-  };
-
-  useEffect(() => {
-    fetchPurchaseOrders();
-  }, []);
-
   // Create purchase order
   const createPurchaseOrder = async (e) => {
     e.preventDefault();
@@ -291,6 +331,71 @@ const PurchaseOrders = () => {
       toastService.error('Failed to create purchase order');
     }
   };
+
+  // Close edit modal
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingOrder(null);
+    setFormData({
+      customerId: '',
+      po_number: '',
+      total_items: 0,
+      tanggal_order: '',
+      po_type: 'Regular',
+      statusId: '',
+      suratJalan: '',
+      invoicePengiriman: '',
+      suratPO: '',
+      suratPenagihan: ''
+    });
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value, type } = e.target;
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: type === 'number' ? parseInt(value) || 0 : value 
+    }));
+  };
+
+  // Handle search input change with debouncing
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear existing timeout
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    // Set new timeout for 500ms delay
+    const timeout = setTimeout(() => {
+      searchPurchaseOrders(query, searchField);
+    }, 500);
+
+    setDebounceTimeout(timeout);
+  };
+
+  // Handle search field change
+  const handleSearchFieldChange = (e) => {
+    const field = e.target.value;
+    setSearchField(field);
+    if (searchQuery.trim()) {
+      searchPurchaseOrders(searchQuery, field);
+    }
+  };
+
+  useEffect(() => {
+    fetchPurchaseOrders();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -329,6 +434,54 @@ const PurchaseOrders = () => {
             </button>
           </div>
 
+          {/* Advanced Search Section */}
+          <div className='mb-4 grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div>
+              <select
+                value={searchField}
+                onChange={handleSearchFieldChange}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              >
+                <option value='customer_name'>Customer Name</option>
+                <option value='tanggal_order'>Order Date (YYYY-MM-DD)</option>
+                <option value='po_number'>PO Number</option>
+                <option value='customerId'>Customer ID</option>
+                <option value='supplierId'>Supplier ID</option>
+                <option value='statusId'>Status ID</option>
+                <option value='suratPO'>Surat PO</option>
+                <option value='invoicePengiriman'>Invoice Pengiriman</option>
+              </select>
+            </div>
+            <div className='relative md:col-span-2'>
+              <input
+                type='text'
+                placeholder={`Search by ${searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}...`}
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+              <div className='absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none'>
+                <svg 
+                  className='h-5 w-5 text-gray-400' 
+                  fill='none' 
+                  strokeLinecap='round' 
+                  strokeLinejoin='round' 
+                  strokeWidth='2' 
+                  viewBox='0 0 24 24' 
+                  stroke='currentColor'
+                >
+                  <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
+                </svg>
+              </div>
+              {searchLoading && (
+                <div className='flex items-center mt-2 text-sm text-gray-600'>
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+                  Searching...
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className='overflow-x-auto'>
             <table className='min-w-full divide-y divide-gray-200'>
               <thead>
@@ -337,10 +490,10 @@ const PurchaseOrders = () => {
                     PO Number
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Supplier ID
+                    Supplier
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Customer ID
+                    Customer
                   </th>
                   <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     Total Items
@@ -360,70 +513,78 @@ const PurchaseOrders = () => {
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
-                {purchaseOrders.map((order) => (
-                  <tr key={order.id} className='hover:bg-gray-50'>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm font-medium text-gray-900'>
-                        {order.po_number}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {order.supplier?.name || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {order.customer?.name || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {order.total_items}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {order.tanggal_order ? new Date(order.tanggal_order).toLocaleDateString() : '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {order.po_type}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {order.status?.status_name || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                      <div className='flex space-x-2'>
-                        <button
-                          onClick={() => openViewModal(order)}
-                          className='text-indigo-600 hover:text-indigo-900 p-1'
-                          title='View'
-                        >
-                          <EyeIcon className='h-4 w-4' />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(order)}
-                          className='text-indigo-600 hover:text-indigo-900 p-1'
-                          title='Edit'
-                        >
-                          <PencilIcon className='h-4 w-4' />
-                        </button>
-                        <button
-                          onClick={() => deletePurchaseOrder(order.id)}
-                          className='text-red-600 hover:text-red-900 p-1'
-                          title='Delete'
-                        >
-                          <TrashIcon className='h-4 w-4' />
-                        </button>
-                      </div>
+                {purchaseOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className='px-6 py-4 text-center text-gray-500'>
+                      {searchQuery ? 'No purchase orders found matching your search.' : 'No purchase orders available.'}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  purchaseOrders.map((order) => (
+                    <tr key={order.id} className='hover:bg-gray-50'>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm font-medium text-gray-900'>
+                          {order.po_number}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {order.supplier?.name || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {order.customer?.name || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {order.total_items}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {order.tanggal_order ? new Date(order.tanggal_order).toLocaleDateString() : '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {order.po_type}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {order.status?.status_name || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+                        <div className='flex space-x-2'>
+                          <button
+                            onClick={() => openViewModal(order)}
+                            className='text-indigo-600 hover:text-indigo-900 p-1'
+                            title='View'
+                          >
+                            <EyeIcon className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => openEditModal(order)}
+                            className='text-indigo-600 hover:text-indigo-900 p-1'
+                            title='Edit'
+                          >
+                            <PencilIcon className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => deletePurchaseOrder(order.id)}
+                            className='text-red-600 hover:text-red-900 p-1'
+                            title='Delete'
+                          >
+                            <TrashIcon className='h-4 w-4' />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -795,217 +956,142 @@ const PurchaseOrders = () => {
                 </h3>
                 <button
                   onClick={closeViewModal}
-                  className='text-gray-400 hover:text-gray-500 text-2xl'
+                  className='text-gray-400 hover:text-gray-500'
                 >
-                  ×
+                  <span className='sr-only'>Close</span>
+                  <svg className='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                  </svg>
                 </button>
               </div>
             </div>
-
             <div className='p-6'>
               {viewLoading ? (
                 <div className='flex justify-center items-center h-64'>
                   <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
                 </div>
               ) : viewingOrder ? (
-                <div className='grid grid-cols-2 gap-6'>
-                  {/* Left Column - Basic Information */}
-                  <div className='space-y-6'>
+                <div className='space-y-6'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div>
-                      <h4 className='text-lg font-medium text-gray-900 mb-3 border-b pb-2'>Basic Information</h4>
+                      <h4 className='text-lg font-medium text-gray-900 mb-3'>Order Information</h4>
                       <div className='space-y-3'>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>PO Number</label>
-                          <p className='mt-1 text-sm text-gray-900'>{viewingOrder.po_number}</p>
+                          <label className='text-sm font-medium text-gray-500'>PO Number</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.po_number}</p>
                         </div>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>ID</label>
-                          <p className='mt-1 text-sm text-gray-900 font-mono'>{viewingOrder.id}</p>
+                          <label className='text-sm font-medium text-gray-500'>PO Type</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.po_type}</p>
                         </div>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>Type</label>
-                          <p className='mt-1 text-sm text-gray-900'>{viewingOrder.po_type}</p>
+                          <label className='text-sm font-medium text-gray-500'>Order Date</label>
+                          <p className='text-sm text-gray-900'>{new Date(viewingOrder.tanggal_order).toLocaleDateString()}</p>
                         </div>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>Order Date</label>
-                          <p className='mt-1 text-sm text-gray-900'>
-                            {new Date(viewingOrder.tanggal_order).toLocaleDateString('id-ID', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                          <label className='text-sm font-medium text-gray-500'>Total Items</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.total_items}</p>
                         </div>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>Total Items</label>
-                          <p className='mt-1 text-sm text-gray-900'>{viewingOrder.total_items} items</p>
+                          <label className='text-sm font-medium text-gray-500'>Status</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.status?.status_name}</p>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className='text-lg font-medium text-gray-900 mb-3 border-b pb-2'>Customer Information</h4>
+                      <h4 className='text-lg font-medium text-gray-900 mb-3'>Customer Information</h4>
                       <div className='space-y-3'>
-                        {viewingOrder.customer ? (
-                          <>
-                            <div>
-                              <label className='block text-sm font-medium text-gray-500'>Customer Name</label>
-                              <p className='mt-1 text-sm text-gray-900'>{viewingOrder.customer.name}</p>
-                            </div>
-                            <div>
-                              <label className='block text-sm font-medium text-gray-500'>Email</label>
-                              <p className='mt-1 text-sm text-gray-900'>{viewingOrder.customer.email}</p>
-                            </div>
-                            <div>
-                              <label className='block text-sm font-medium text-gray-500'>Phone</label>
-                              <p className='mt-1 text-sm text-gray-900'>{viewingOrder.customer.phoneNumber}</p>
-                            </div>
-                            {viewingOrder.customer.address && (
-                              <div>
-                                <label className='block text-sm font-medium text-gray-500'>Address</label>
-                                <p className='mt-1 text-sm text-gray-900'>{viewingOrder.customer.address}</p>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <p className='text-sm text-gray-500 italic'>No customer data</p>
-                        )}
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Customer Name</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.customer?.name}</p>
+                        </div>
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Customer Email</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.customer?.email}</p>
+                        </div>
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Customer Phone</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.customer?.phoneNumber}</p>
+                        </div>
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Customer Address</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.customer?.address || '-'}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Right Column - Status & Files */}
-                  <div className='space-y-6'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div>
-                      <h4 className='text-lg font-medium text-gray-900 mb-3 border-b pb-2'>Status</h4>
+                      <h4 className='text-lg font-medium text-gray-900 mb-3'>Supplier Information</h4>
                       <div className='space-y-3'>
-                        {viewingOrder.status ? (
-                          <>
-                            <div>
-                              <label className='block text-sm font-medium text-gray-500'>Status Code</label>
-                              <p className='mt-1 text-sm text-gray-900'>
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  viewingOrder.status.status_code === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                  viewingOrder.status.status_code === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                                  viewingOrder.status.status_code === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {viewingOrder.status.status_code}
-                                </span>
-                              </p>
-                            </div>
-                            <div>
-                              <label className='block text-sm font-medium text-gray-500'>Status Name</label>
-                              <p className='mt-1 text-sm text-gray-900'>{viewingOrder.status.status_name}</p>
-                            </div>
-                            <div>
-                              <label className='block text-sm font-medium text-gray-500'>Description</label>
-                              <p className='mt-1 text-sm text-gray-900'>{viewingOrder.status.status_description}</p>
-                            </div>
-                          </>
-                        ) : (
-                          <p className='text-sm text-gray-500 italic'>No status data</p>
-                        )}
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Supplier</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.supplier?.name || 'N/A'}</p>
+                        </div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className='text-lg font-medium text-gray-900 mb-3 border-b pb-2'>System Information</h4>
+                      <h4 className='text-lg font-medium text-gray-900 mb-3'>Documents</h4>
                       <div className='space-y-3'>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>Created At</label>
-                          <p className='mt-1 text-sm text-gray-900'>
-                            {new Date(viewingOrder.createdAt).toLocaleDateString('id-ID', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                          <label className='text-sm font-medium text-gray-500'>Surat Jalan</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.suratJalan || 'N/A'}</p>
                         </div>
                         <div>
-                          <label className='block text-sm font-medium text-gray-500'>Updated At</label>
-                          <p className='mt-1 text-sm text-gray-900'>
-                            {new Date(viewingOrder.updatedAt).toLocaleDateString('id-ID', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
+                          <label className='text-sm font-medium text-gray-500'>Invoice Pengiriman</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.invoicePengiriman || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Surat PO</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.suratPO || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Surat Penagihan</label>
+                          <p className='text-sm text-gray-900'>{viewingOrder.suratPenagihan || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {viewingOrder.files && viewingOrder.files.length > 0 && (
-                      <div>
-                        <h4 className='text-lg font-medium text-gray-900 mb-3 border-b pb-2'>Files</h4>
-                        <div className='space-y-2'>
-                          {viewingOrder.files.map((file, index) => (
-                            <div key={index} className='bg-gray-50 p-3 rounded-md'>
-                              <p className='text-sm font-medium text-gray-900'>{file.name || 'File'}</p>
-                              <p className='text-xs text-gray-500'>{file.type || 'N/A'}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div>
+                    <h4 className='text-lg font-medium text-gray-900 mb-3'>Files</h4>
+                    <div className='space-y-2'>
+                      {viewingOrder.files && viewingOrder.files.length > 0 ? (
+                        viewingOrder.files.map((file, index) => (
+                          <div key={index} className='text-sm text-gray-900'>
+                            <a href={file.url} className='text-blue-600 hover:text-blue-800' target='_blank' rel='noopener noreferrer'>
+                              {file.file_name}
+                            </a>
+                          </div>
+                        ))
+                      ) : (
+                        <p className='text-sm text-gray-500'>No files attached</p>
+                      )}
+                    </div>
+                  </div>
 
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div>
-                      <h4 className='text-lg font-medium text-gray-900 mb-3 border-b pb-2'>Document Links</h4>
+                      <h4 className='text-lg font-medium text-gray-900 mb-3'>Timestamps</h4>
                       <div className='space-y-3'>
-                        {viewingOrder.suratJalan && (
-                          <div>
-                            <label className='block text-sm font-medium text-gray-500'>Surat Jalan</label>
-                            <a href={viewingOrder.suratJalan} target='_blank' rel='noopener noreferrer' className='text-blue-600 hover:text-blue-800 text-sm'>
-                              View Document
-                            </a>
-                          </div>
-                        )}
-                        {viewingOrder.invoicePengiriman && (
-                          <div>
-                            <label className='block text-sm font-medium text-gray-500'>Invoice Pengiriman</label>
-                            <a href={viewingOrder.invoicePengiriman} target='_blank' rel='noopener noreferrer' className='text-blue-600 hover:text-blue-800 text-sm'>
-                              View Document
-                            </a>
-                          </div>
-                        )}
-                        {viewingOrder.suratPO && (
-                          <div>
-                            <label className='block text-sm font-medium text-gray-500'>Surat PO</label>
-                            <a href={viewingOrder.suratPO} target='_blank' rel='noopener noreferrer' className='text-blue-600 hover:text-blue-800 text-sm'>
-                              View Document
-                            </a>
-                          </div>
-                        )}
-                        {viewingOrder.suratPenagihan && (
-                          <div>
-                            <label className='block text-sm font-medium text-gray-500'>Surat Penagihan</label>
-                            <a href={viewingOrder.suratPenagihan} target='_blank' rel='noopener noreferrer' className='text-blue-600 hover:text-blue-800 text-sm'>
-                              View Document
-                            </a>
-                          </div>
-                        )}
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Created At</label>
+                          <p className='text-sm text-gray-900'>{new Date(viewingOrder.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <label className='text-sm font-medium text-gray-500'>Updated At</label>
+                          <p className='text-sm text-gray-900'>{new Date(viewingOrder.updatedAt).toLocaleDateString()}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className='text-gray-500 text-center py-8'>No order details available</p>
+                <p className='text-center text-gray-500'>No order details available</p>
               )}
-            </div>
-
-            <div className='px-6 py-4 border-t border-gray-200 flex justify-end'>
-              <button
-                onClick={closeViewModal}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
