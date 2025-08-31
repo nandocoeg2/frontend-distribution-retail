@@ -110,11 +110,22 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       iconEmoji: '👥',
     },
     {
-      id: 'customers',
-      name: 'Customers',
-      url: '/customers',
-      icon: 'user',
-      iconEmoji: '📋',
+      id: 'master',
+      name: 'Master Data',
+      icon: 'clipboard-document-list',
+      iconEmoji: '📁',
+      children: [
+        {
+          id: 'customers-master',
+          name: 'Customers',
+          url: '/master/customers',
+        },
+        {
+          id: 'suppliers-master',
+          name: 'Suppliers',
+          url: '/master/suppliers',
+        },
+      ],
     },
     {
       id: 'settings',
@@ -269,9 +280,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
               </div>
               <div>
                 <h1 className='text-xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent'>
-                  WorkSpace
+                  PT Doven
                 </h1>
-                <p className='text-xs text-slate-400'>Admin Panel</p>
+                <p className='text-xs text-slate-400'>PT Doven</p>
               </div>
             </div>
           )}

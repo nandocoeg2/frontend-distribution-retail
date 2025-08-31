@@ -31,6 +31,7 @@ import RoleManagement from './pages/RoleManagement.jsx';
 
 import PurchaseOrders from './pages/PurchaseOrders.jsx';
 import Customers from './pages/Customers.jsx';
+import Suppliers from './pages/Suppliers.jsx';
 
 import NotFound from './pages/NotFound.jsx';
 
@@ -147,6 +148,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Customers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/master/suppliers'
+            element={
+              <ProtectedRoute>
+                <Suppliers />
               </ProtectedRoute>
             }
           />
