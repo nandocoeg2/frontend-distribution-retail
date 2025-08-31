@@ -504,35 +504,6 @@ const Register = () => {
                 )}
             </div>
 
-            {/* Terms and Conditions */}
-            <div className='flex items-start space-x-2 pt-2'>
-              <input
-                id='terms'
-                name='terms'
-                type='checkbox'
-                required
-                className='mt-1 h-4 w-4 text-purple-500 focus:ring-purple-400 border-white/20 bg-white/10 rounded'
-              />
-              <label
-                htmlFor='terms'
-                className='text-sm text-slate-300 leading-relaxed'
-              >
-                I agree to the{' '}
-                <a
-                  href='#'
-                  className='text-purple-400 hover:text-purple-300 transition-colors font-medium'
-                >
-                  Terms of Service
-                </a>{' '}
-                and{' '}
-                <a
-                  href='#'
-                  className='text-purple-400 hover:text-purple-300 transition-colors font-medium'
-                >
-                  Privacy Policy
-                </a>
-              </label>
-            </div>
 
             {/* Submit Button */}
             <div>
@@ -593,9 +564,7 @@ const Register = () => {
                 <div className='w-full border-t border-white/20'></div>
               </div>
               <div className='relative flex justify-center text-sm'>
-                <span className='px-4 bg-white/5 text-slate-400 rounded-full'>
-                  Already have an account?
-                </span>
+
               </div>
             </div>
 

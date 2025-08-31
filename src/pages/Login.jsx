@@ -208,31 +208,6 @@ const Login = () => {
               </div>
             </div>
 
-            <div className='flex items-center justify-between pt-2'>
-              <div className='flex items-center'>
-                <input
-                  id='remember-me'
-                  name='remember-me'
-                  type='checkbox'
-                  className='h-4 w-4 text-blue-500 focus:ring-blue-400 border-white/20 bg-white/10 rounded'
-                />
-                <label
-                  htmlFor='remember-me'
-                  className='ml-2 block text-sm text-slate-300'
-                >
-                  Remember me
-                </label>
-              </div>
-              <div className='text-sm'>
-                <a
-                  href='#'
-                  className='text-blue-400 hover:text-blue-300 transition-colors font-medium'
-                >
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-
             <div>
               <button
                 type='submit'
@@ -291,9 +266,6 @@ const Login = () => {
                 <div className='w-full border-t border-white/20'></div>
               </div>
               <div className='relative flex justify-center text-sm'>
-                <span className='px-4 bg-white/5 text-slate-400 rounded-full'>
-                  New to our platform?
-                </span>
               </div>
             </div>
 
@@ -302,30 +274,10 @@ const Login = () => {
                 to='/register'
                 className='inline-flex items-center justify-center w-full py-3 px-4 border border-white/20 rounded-2xl text-sm font-medium text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200'
               >
-                <span className='mr-2'>✨</span>
                 Create your account
               </Link>
             </div>
           </div>
-        </div>
-
-        <div className='mt-8 text-center'>
-          <p className='text-xs text-slate-500'>
-            By signing in, you agree to our{' '}
-            <a
-              href='#'
-              className='text-blue-400 hover:text-blue-300 transition-colors'
-            >
-              Terms of Service
-            </a>{' '}
-            and{' '}
-            <a
-              href='#'
-              className='text-blue-400 hover:text-blue-300 transition-colors'
-            >
-              Privacy Policy
-            </a>
-          </p>
         </div>
       </div>
     </div>
