@@ -1,6 +1,7 @@
 const rules = require('./webpack.rules');
 const plugins = require('./webpack.plugins');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const path = require('path');
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -36,4 +37,11 @@ module.exports = {
   plugins: [...plugins, isDev && new ReactRefreshWebpackPlugin()].filter(
     Boolean
   ),
+  resolve: {
+    extensions: ['.js', '.jsx'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
 };
+

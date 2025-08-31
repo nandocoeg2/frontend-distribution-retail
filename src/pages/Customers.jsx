@@ -1,306 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  PencilIcon,
-  TrashIcon,
   UserPlusIcon,
-  EyeIcon,
 } from '@heroicons/react/24/outline';
-import toastService from '../services/toastService';
-import { useNavigate } from 'react-router-dom';
-
-const API_URL = 'http://localhost:5050/api/v1';
+import useCustomers from '@/hooks/useCustomersPage';
+import CustomerTable from '@/components/customers/CustomerTable';
+import CustomerSearch from '@/components/customers/CustomerSearch';
+import AddCustomerModal from '@/components/customers/AddCustomerModal';
+import EditCustomerModal from '@/components/customers/EditCustomerModal';
+import ViewCustomerModal from '@/components/customers/ViewCustomerModal';
 
 const Customers = () => {
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const {
+    customers,
+    setCustomers,
+    loading,
+    error,
+    searchQuery,
+    searchLoading,
+    handleSearchChange,
+    deleteCustomer,
+    fetchCustomers,
+    handleAuthError
+  } = useCustomers();
+
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [viewingCustomer, setViewingCustomer] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    phoneNumber: '',
-    email: '',
-    description: '',
-  });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const navigate = useNavigate();
 
-  // Handle authentication errors
-  const handleAuthError = () => {
-    localStorage.clear();
-    navigate('/login');
-    toastService.error('Session expired. Please login again.');
-  };
+  const openAddModal = () => setShowAddModal(true);
+  const closeAddModal = () => setShowAddModal(false);
 
-  // Fetch all customers
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-      
-      if (!response.ok) throw new Error('Failed to fetch customers');
-
-      const data = await response.json();
-      setCustomers(data);
-    } catch (err) {
-      setError(err.message);
-      toastService.error('Failed to load customers');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Search customers
-  const searchCustomers = async (query) => {
-    if (!query.trim()) {
-      fetchCustomers();
-      return;
-    }
-
-    try {
-      setSearchLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers/search/${encodeURIComponent(query)}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-      
-      if (!response.ok) throw new Error('Failed to search customers');
-
-      const data = await response.json();
-      setCustomers(data);
-    } catch (err) {
-      toastService.error('Failed to search customers');
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  // Delete customer
-  const deleteCustomer = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this customer?'))
-      return;
-
-    try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to delete customer');
-
-      setCustomers(customers.filter((customer) => customer.id !== id));
-      toastService.success('Customer deleted successfully');
-    } catch (err) {
-      toastService.error('Failed to delete customer');
-    }
-  };
-
-  // Update customer
-  const updateCustomer = async (e) => {
-    e.preventDefault();
-
-    try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(
-        `${API_URL}/customers/${editingCustomer.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to update customer');
-
-      const updatedCustomer = await response.json();
-      setCustomers(
-        customers.map((customer) =>
-          customer.id === editingCustomer.id ? updatedCustomer : customer
-        )
-      );
-
-      setShowEditModal(false);
-      setEditingCustomer(null);
-      toastService.success('Customer updated successfully');
-    } catch (err) {
-      toastService.error('Failed to update customer');
-    }
-  };
-
-  // Create customer
-  const createCustomer = async (e) => {
-    e.preventDefault();
-
-    try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to create customer');
-
-      const newCustomer = await response.json();
-      setCustomers([...customers, newCustomer]);
-
-      setShowAddModal(false);
-      setFormData({
-        name: '',
-        address: '',
-        phoneNumber: '',
-        email: '',
-        description: '',
-      });
-      toastService.success('Customer created successfully');
-    } catch (err) {
-      toastService.error('Failed to create customer');
-    }
-  };
-
-  // Open edit modal
   const openEditModal = (customer) => {
     setEditingCustomer(customer);
-    setFormData({
-      name: customer.name || '',
-      address: customer.address || '',
-      phoneNumber: customer.phoneNumber || '',
-      email: customer.email || '',
-      description: customer.description || '',
-    });
     setShowEditModal(true);
   };
-
-  // Open add modal
-  const openAddModal = () => {
-    setFormData({
-      name: '',
-      address: '',
-      phoneNumber: '',
-      email: '',
-      description: '',
-    });
-    setShowAddModal(true);
+  const closeEditModal = () => {
+    setEditingCustomer(null);
+    setShowEditModal(false);
   };
 
-  // Open view modal
   const openViewModal = (customer) => {
     setViewingCustomer(customer);
     setShowViewModal(true);
   };
-
-  // Close view modal
   const closeViewModal = () => {
-    setShowViewModal(false);
     setViewingCustomer(null);
+    setShowViewModal(false);
   };
 
-  // Close add modal
-  const closeAddModal = () => {
-    setShowAddModal(false);
-    setFormData({
-      name: '',
-      address: '',
-      phoneNumber: '',
-      email: '',
-      description: '',
-    });
+  const handleCustomerAdded = (newCustomer) => {
+    setCustomers([...customers, newCustomer]);
+    closeAddModal();
   };
 
-  // Close edit modal
-  const closeEditModal = () => {
-    setShowEditModal(false);
-    setEditingCustomer(null);
-    setFormData({
-      name: '',
-      address: '',
-      phoneNumber: '',
-      email: '',
-      description: '',
-    });
+  const handleCustomerUpdated = (updatedCustomer) => {
+    setCustomers(
+      customers.map((customer) =>
+        customer.id === updatedCustomer.id ? updatedCustomer : customer
+      )
+    );
+    closeEditModal();
   };
-
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Handle search input change with debouncing
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    // Clear existing timeout
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    // Set new timeout for 500ms delay
-    const timeout = setTimeout(() => {
-      searchCustomers(query);
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  useEffect(() => {
-    fetchCustomers();
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
-  }, []);
 
   if (loading) {
     return (
@@ -339,393 +101,42 @@ const Customers = () => {
             </button>
           </div>
 
-          <div className='mb-4 relative'>
-            <input
-              type='text'
-              placeholder='Search customers...'
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            />
-            <div className='absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none'>
-              <svg 
-                className='h-5 w-5 text-gray-400' 
-                fill='none' 
-                strokeLinecap='round' 
-                strokeLinejoin='round' 
-                strokeWidth='2' 
-                viewBox='0 0 24 24' 
-                stroke='currentColor'
-              >
-                <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
-              </svg>
-            </div>
-            {searchLoading && (
-              <div className='flex items-center mt-2 text-sm text-gray-600'>
-                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
-                Searching...
-              </div>
-            )}
-          </div>
+          <CustomerSearch 
+            searchQuery={searchQuery} 
+            handleSearchChange={handleSearchChange} 
+            searchLoading={searchLoading} 
+          />
 
-          <div className='overflow-x-auto'>
-            <table className='min-w-full divide-y divide-gray-200'>
-              <thead>
-                <tr>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Name
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Email
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Phone
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Address
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Description
-                  </th>
-                  <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className='bg-white divide-y divide-gray-200'>
-                {customers.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
-                      {searchQuery ? 'No customers found matching your search.' : 'No customers available.'}
-                    </td>
-                  </tr>
-                ) : (
-                  customers.map((customer) => (
-                    <tr key={customer.id} className='hover:bg-gray-50'>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm font-medium text-gray-900'>
-                          {customer.name}
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>
-                          {customer.email || '-'}
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>
-                          {customer.phoneNumber || '-'}
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>
-                          {customer.address || '-'}
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap'>
-                        <div className='text-sm text-gray-900'>
-                          {customer.description || '-'}
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                        <div className='flex space-x-2'>
-                          <button
-                            onClick={() => openViewModal(customer)}
-                            className='text-indigo-600 hover:text-indigo-900 p-1'
-                            title='View'
-                          >
-                            <EyeIcon className='h-4 w-4' />
-                          </button>
-                          <button
-                            onClick={() => openEditModal(customer)}
-                            className='text-indigo-600 hover:text-indigo-900 p-1'
-                            title='Edit'
-                          >
-                            <PencilIcon className='h-4 w-4' />
-                          </button>
-                          <button
-                            onClick={() => deleteCustomer(customer.id)}
-                            className='text-red-600 hover:text-red-900 p-1'
-                            title='Delete'
-                          >
-                            <TrashIcon className='h-4 w-4' />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <CustomerTable 
+            customers={customers} 
+            onEdit={openEditModal} 
+            onDelete={deleteCustomer} 
+            onView={openViewModal}
+            searchQuery={searchQuery}
+          />
         </div>
       </div>
 
-      {/* Add Modal */}
-      {showAddModal && (
-        <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-            <h3 className='text-lg font-medium text-gray-900 mb-4'>
-              Add New Customer
-            </h3>
+      <AddCustomerModal 
+        show={showAddModal} 
+        onClose={closeAddModal} 
+        onCustomerAdded={handleCustomerAdded}
+        handleAuthError={handleAuthError}
+      />
 
-            <form onSubmit={createCustomer}>
-              <div className='space-y-4'>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Name *
-                  </label>
-                  <input
-                    type='text'
-                    name='name'
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
+      <EditCustomerModal 
+        show={showEditModal} 
+        onClose={closeEditModal} 
+        customer={editingCustomer}
+        onCustomerUpdated={handleCustomerUpdated}
+        handleAuthError={handleAuthError}
+      />
 
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Email
-                  </label>
-                  <input
-                    type='email'
-                    name='email'
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Phone Number
-                  </label>
-                  <input
-                    type='tel'
-                    name='phoneNumber'
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Address
-                  </label>
-                  <input
-                    type='text'
-                    name='address'
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Description
-                  </label>
-                  <textarea
-                    name='description'
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows='3'
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-              </div>
-
-              <div className='mt-6 flex justify-end space-x-3'>
-                <button
-                  type='button'
-                  onClick={closeAddModal}
-                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
-                >
-                  Cancel
-                </button>
-                <button
-                  type='submit'
-                  className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700'
-                >
-                  Add Customer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-            <h3 className='text-lg font-medium text-gray-900 mb-4'>
-              Edit Customer
-            </h3>
-
-            <form onSubmit={updateCustomer}>
-              <div className='space-y-4'>
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Name
-                  </label>
-                  <input
-                    type='text'
-                    name='name'
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Email
-                  </label>
-                  <input
-                    type='email'
-                    name='email'
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Phone Number
-                  </label>
-                  <input
-                    type='tel'
-                    name='phoneNumber'
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Address
-                  </label>
-                  <input
-                    type='text'
-                    name='address'
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Description
-                  </label>
-                  <textarea
-                    name='description'
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows='3'
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
-                </div>
-              </div>
-
-              <div className='mt-6 flex justify-end space-x-3'>
-                <button
-                  type='button'
-                  onClick={closeEditModal}
-                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
-                >
-                  Cancel
-                </button>
-                <button
-                  type='submit'
-                  className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700'
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* View Modal */}
-      {showViewModal && viewingCustomer && (
-        <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-            <div className='flex justify-between items-center mb-4'>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Customer Details
-              </h3>
-              <button
-                onClick={closeViewModal}
-                className='text-gray-400 hover:text-gray-500'
-              >
-                <span className='sr-only'>Close</span>
-                <svg className='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-                </svg>
-              </button>
-            </div>
-
-            <div className='space-y-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Name</label>
-                <p className='mt-1 text-sm text-gray-900'>{viewingCustomer.name}</p>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Email</label>
-                <p className='mt-1 text-sm text-gray-900'>{viewingCustomer.email || '-'}</p>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Phone Number</label>
-                <p className='mt-1 text-sm text-gray-900'>{viewingCustomer.phoneNumber || '-'}</p>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Address</label>
-                <p className='mt-1 text-sm text-gray-900'>{viewingCustomer.address || '-'}</p>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Description</label>
-                <p className='mt-1 text-sm text-gray-900'>{viewingCustomer.description || '-'}</p>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Created At</label>
-                <p className='mt-1 text-sm text-gray-900'>
-                  {new Date(viewingCustomer.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Updated At</label>
-                <p className='mt-1 text-sm text-gray-900'>
-                  {new Date(viewingCustomer.updatedAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-
-            <div className='mt-6 flex justify-end'>
-              <button
-                onClick={closeViewModal}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ViewCustomerModal 
+        show={showViewModal} 
+        onClose={closeViewModal} 
+        customer={viewingCustomer} 
+      />
     </div>
   );
 };
