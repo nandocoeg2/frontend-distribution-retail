@@ -27,13 +27,11 @@ This is a modern, cross-platform desktop application designed specifically for d
 
 ## Tech Stack
 
-### Frontend
+### Stack
 - **React 18** - Modern UI library for building user interfaces
 - **Tailwind CSS** - Utility-first CSS framework for styling
 - **Heroicons** - Beautiful hand-crafted SVG icons
 - **Webpack** - Module bundling and build optimization
-
-### Backend Integration
 - **Electron Forge** - Complete tooling for building and packaging Electron apps
 - **Node.js** - JavaScript runtime for server-side operations
 - **Electron** - Cross-platform desktop app framework
