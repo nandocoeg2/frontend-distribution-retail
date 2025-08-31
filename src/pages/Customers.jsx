@@ -26,17 +26,15 @@ const Customers = () => {
     email: '',
     description: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const navigate = useNavigate();
 
   // Handle authentication errors
   const handleAuthError = () => {
-    // Clear all localStorage data
     localStorage.clear();
-    
-    // Redirect to login page
     navigate('/login');
-    
-    // Show notification
     toastService.error('Session expired. Please login again.');
   };
 
@@ -65,6 +63,38 @@ const Customers = () => {
       toastService.error('Failed to load customers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Search customers
+  const searchCustomers = async (query) => {
+    if (!query.trim()) {
+      fetchCustomers();
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      const accessToken = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers/search/${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+      
+      if (!response.ok) throw new Error('Failed to search customers');
+
+      const data = await response.json();
+      setCustomers(data);
+    } catch (err) {
+      toastService.error('Failed to search customers');
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -136,6 +166,45 @@ const Customers = () => {
     }
   };
 
+  // Create customer
+  const createCustomer = async (e) => {
+    e.preventDefault();
+
+    try {
+      const accessToken = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (!response.ok) throw new Error('Failed to create customer');
+
+      const newCustomer = await response.json();
+      setCustomers([...customers, newCustomer]);
+
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        address: '',
+        phoneNumber: '',
+        email: '',
+        description: '',
+      });
+      toastService.success('Customer created successfully');
+    } catch (err) {
+      toastService.error('Failed to create customer');
+    }
+  };
+
   // Open edit modal
   const openEditModal = (customer) => {
     setEditingCustomer(customer);
@@ -185,12 +254,6 @@ const Customers = () => {
     });
   };
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   // Close edit modal
   const closeEditModal = () => {
     setShowEditModal(false);
@@ -204,8 +267,39 @@ const Customers = () => {
     });
   };
 
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle search input change with debouncing
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear existing timeout
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    // Set new timeout for 500ms delay
+    const timeout = setTimeout(() => {
+      searchCustomers(query);
+    }, 500);
+
+    setDebounceTimeout(timeout);
+  };
+
   useEffect(() => {
     fetchCustomers();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
   }, []);
 
   if (loading) {
@@ -245,6 +339,35 @@ const Customers = () => {
             </button>
           </div>
 
+          <div className='mb-4 relative'>
+            <input
+              type='text'
+              placeholder='Search customers...'
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
+            <div className='absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none'>
+              <svg 
+                className='h-5 w-5 text-gray-400' 
+                fill='none' 
+                strokeLinecap='round' 
+                strokeLinejoin='round' 
+                strokeWidth='2' 
+                viewBox='0 0 24 24' 
+                stroke='currentColor'
+              >
+                <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
+              </svg>
+            </div>
+            {searchLoading && (
+              <div className='flex items-center mt-2 text-sm text-gray-600'>
+                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+                Searching...
+              </div>
+            )}
+          </div>
+
           <div className='overflow-x-auto'>
             <table className='min-w-full divide-y divide-gray-200'>
               <thead>
@@ -270,60 +393,68 @@ const Customers = () => {
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
-                {customers.map((customer) => (
-                  <tr key={customer.id} className='hover:bg-gray-50'>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm font-medium text-gray-900'>
-                        {customer.name}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {customer.email || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {customer.phoneNumber || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {customer.address || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {customer.description || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                      <div className='flex space-x-2'>
-                        <button
-                          onClick={() => openViewModal(customer)}
-                          className='text-indigo-600 hover:text-indigo-900 p-1'
-                          title='View'
-                        >
-                          <EyeIcon className='h-4 w-4' />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(customer)}
-                          className='text-indigo-600 hover:text-indigo-900 p-1'
-                          title='Edit'
-                        >
-                          <PencilIcon className='h-4 w-4' />
-                        </button>
-                        <button
-                          onClick={() => deleteCustomer(customer.id)}
-                          className='text-red-600 hover:text-red-900 p-1'
-                          title='Delete'
-                        >
-                          <TrashIcon className='h-4 w-4' />
-                        </button>
-                      </div>
+                {customers.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
+                      {searchQuery ? 'No customers found matching your search.' : 'No customers available.'}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  customers.map((customer) => (
+                    <tr key={customer.id} className='hover:bg-gray-50'>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm font-medium text-gray-900'>
+                          {customer.name}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {customer.email || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {customer.phoneNumber || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {customer.address || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {customer.description || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
+                        <div className='flex space-x-2'>
+                          <button
+                            onClick={() => openViewModal(customer)}
+                            className='text-indigo-600 hover:text-indigo-900 p-1'
+                            title='View'
+                          >
+                            <EyeIcon className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => openEditModal(customer)}
+                            className='text-indigo-600 hover:text-indigo-900 p-1'
+                            title='Edit'
+                          >
+                            <PencilIcon className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => deleteCustomer(customer.id)}
+                            className='text-red-600 hover:text-red-900 p-1'
+                            title='Delete'
+                          >
+                            <TrashIcon className='h-4 w-4' />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -598,44 +729,5 @@ const Customers = () => {
     </div>
   );
 };
-
-  // Create customer
-  const createCustomer = async (e) => {
-    e.preventDefault();
-
-    try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to create customer');
-
-      const newCustomer = await response.json();
-      setCustomers([...customers, newCustomer]);
-
-      setShowAddModal(false);
-      setFormData({
-        name: '',
-        address: '',
-        phoneNumber: '',
-        email: '',
-        description: '',
-      });
-      toastService.success('Customer created successfully');
-    } catch (err) {
-      toastService.error('Failed to create customer');
-    }
-  };
 
 export default Customers;
