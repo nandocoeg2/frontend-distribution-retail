@@ -25,6 +25,9 @@ const Suppliers = () => {
     address: '',
     phoneNumber: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const navigate = useNavigate();
 
   // Handle authentication errors
@@ -59,6 +62,38 @@ const Suppliers = () => {
       toastService.error('Failed to load suppliers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Search suppliers
+  const searchSuppliers = async (query) => {
+    if (!query.trim()) {
+      fetchSuppliers();
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      const accessToken = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/suppliers/search/${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+      
+      if (!response.ok) throw new Error('Failed to search suppliers');
+
+      const data = await response.json();
+      setSuppliers(data);
+    } catch (err) {
+      toastService.error('Failed to search suppliers');
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -227,8 +262,33 @@ const Suppliers = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle search input change with debouncing
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear existing timeout
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    // Set new timeout for 500ms delay
+    const timeout = setTimeout(() => {
+      searchSuppliers(query);
+    }, 500);
+
+    setDebounceTimeout(timeout);
+  };
+
   useEffect(() => {
     fetchSuppliers();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
   }, []);
 
   if (loading) {
@@ -268,6 +328,35 @@ const Suppliers = () => {
             </button>
           </div>
 
+          <div className='mb-4 relative'>
+            <input
+              type='text'
+              placeholder='Search suppliers...'
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
+            <div className='absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none'>
+              <svg 
+                className='h-5 w-5 text-gray-400' 
+                fill='none' 
+                strokeLinecap='round' 
+                strokeLinejoin='round' 
+                strokeWidth='2' 
+                viewBox='0 0 24 24' 
+                stroke='currentColor'
+              >
+                <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
+              </svg>
+            </div>
+            {searchLoading && (
+              <div className='flex items-center mt-2 text-sm text-gray-600'>
+                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+                Searching...
+              </div>
+            )}
+          </div>
+
           <div className='overflow-x-auto'>
             <table className='min-w-full divide-y divide-gray-200'>
               <thead>
@@ -287,50 +376,58 @@ const Suppliers = () => {
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
-                {suppliers.map((supplier) => (
-                  <tr key={supplier.id} className='hover:bg-gray-50'>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm font-medium text-gray-900'>
-                        {supplier.name}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {supplier.phoneNumber || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900'>
-                        {supplier.address || '-'}
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium cursor-pointer'>
-                      <div className='flex space-x-2 justify-end'>
-                        <button
-                          onClick={() => openViewModal(supplier)}
-                          className='text-indigo-600 hover:text-indigo-900 p-1'
-                          title='View'
-                        >
-                          <EyeIcon className='h-4 w-4' />
-                        </button>
-                        <button
-                          onClick={() => openEditModal(supplier)}
-                          className='text-indigo-600 hover:text-indigo-900 p-1'
-                          title='Edit'
-                        >
-                          <PencilIcon className='h-4 w-4' />
-                        </button>
-                        <button
-                          onClick={() => deleteSupplier(supplier.id)}
-                          className='text-red-600 hover:text-red-900 p-1'
-                          title='Delete'
-                        >
-                          <TrashIcon className='h-4 w-4' />
-                        </button>
-                      </div>
+                {suppliers.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className='px-6 py-4 text-center text-gray-500'>
+                      {searchQuery ? 'No suppliers found matching your search.' : 'No suppliers available.'}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  suppliers.map((supplier) => (
+                    <tr key={supplier.id} className='hover:bg-gray-50'>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm font-medium text-gray-900'>
+                          {supplier.name}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {supplier.phoneNumber || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap'>
+                        <div className='text-sm text-gray-900'>
+                          {supplier.address || '-'}
+                        </div>
+                      </td>
+                      <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium cursor-pointer'>
+                        <div className='flex space-x-2 justify-end'>
+                          <button
+                            onClick={() => openViewModal(supplier)}
+                            className='text-indigo-600 hover:text-indigo-900 p-1'
+                            title='View'
+                          >
+                            <EyeIcon className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => openEditModal(supplier)}
+                            className='text-indigo-600 hover:text-indigo-900 p-1'
+                            title='Edit'
+                          >
+                            <PencilIcon className='h-4 w-4' />
+                          </button>
+                          <button
+                            onClick={() => deleteSupplier(supplier.id)}
+                            className='text-red-600 hover:text-red-900 p-1'
+                            title='Delete'
+                          >
+                            <TrashIcon className='h-4 w-4' />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
