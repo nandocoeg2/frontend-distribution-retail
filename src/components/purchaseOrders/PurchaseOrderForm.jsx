@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PurchaseOrderForm = ({ formData, handleInputChange, isEditMode = false }) => {
+const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGeneratePONumber, isEditMode = false }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -8,14 +8,23 @@ const PurchaseOrderForm = ({ formData, handleInputChange, isEditMode = false }) 
           <label className="block text-sm font-medium text-gray-700 mb-1">
             PO Number *
           </label>
-          <input
-            type="text"
-            name="po_number"
-            value={formData.po_number || ''}
-            onChange={handleInputChange}
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="flex">
+            <input
+              type="text"
+              name="po_number"
+              value={formData.po_number || ''}
+              onChange={handleInputChange}
+              required
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={onGeneratePONumber}
+              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-r-md hover:bg-gray-300 text-sm font-medium"
+            >
+              Generate
+            </button>
+          </div>
         </div>
 
         <div>
@@ -28,8 +37,10 @@ const PurchaseOrderForm = ({ formData, handleInputChange, isEditMode = false }) 
             value={formData.customerId || ''}
             onChange={handleInputChange}
             required
+            placeholder="Enter customer ID"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <p className="mt-1 text-xs text-gray-500">Enter the customer ID associated with this purchase order</p>
         </div>
       </div>
 
@@ -69,31 +80,34 @@ const PurchaseOrderForm = ({ formData, handleInputChange, isEditMode = false }) 
           <label className="block text-sm font-medium text-gray-700 mb-1">
             PO Type *
           </label>
-          <select
+          <input
+            type="text"
             name="po_type"
-            value={formData.po_type || 'Regular'}
+            value={formData.po_type || ''}
             onChange={handleInputChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="Regular">Regular</option>
-            <option value="Express">Express</option>
-            <option value="Urgent">Urgent</option>
-          </select>
+          />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Status ID *
+            Status *
           </label>
-          <input
-            type="text"
+          <select
             name="statusId"
             value={formData.statusId || ''}
             onChange={handleInputChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="">Select Status</option>
+            {statuses.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.status_name} - {status.status_description}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
