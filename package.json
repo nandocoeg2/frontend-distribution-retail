@@ -1,8 +1,8 @@
 {
-  "name": "my-app",
-  "productName": "my-app",
+  "name": "frontend-distribution-retail",
+  "productName": "frontend-distribution-retail",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Frontend Distribution Retail",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
@@ -11,10 +11,17 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
-  "keywords": [],
+  "keywords": [
+    "electron",
+    "distribution",
+    "retail",
+    "react",
+    "frontend",
+    "tailwindcss"
+  ],
   "author": {
     "name": "Fernando Julian",
-    "email": "nandokun69@gmail.com"
+    "email": "contact@fjulian.id"
   },
   "license": "MIT",
   "devDependencies": {
