@@ -144,6 +144,14 @@ const App = () => {
             }
           />
           <Route
+            path='/master/purchase-orders'
+            element={
+              <ProtectedRoute>
+                <PurchaseOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path='/master/customers'
             element={
               <ProtectedRoute>

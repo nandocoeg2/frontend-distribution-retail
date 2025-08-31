@@ -95,45 +95,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       icon: 'default',
       iconEmoji: '🏠',
     },
-    {
-      id: 'analytics',
-      name: 'Analytics',
-      url: '/analytics',
-      icon: 'default',
-      iconEmoji: '📊',
-    },
-    {
-      id: 'users',
-      name: 'Users',
-      url: '/users',
-      icon: 'user',
-      iconEmoji: '👥',
-    },
-    {
-      id: 'master',
-      name: 'Master Data',
-      icon: 'clipboard-document-list',
-      iconEmoji: '📁',
-      children: [
-        {
-          id: 'customers-master',
-          name: 'Customers',
-          url: '/master/customers',
-        },
-        {
-          id: 'suppliers-master',
-          name: 'Suppliers',
-          url: '/master/suppliers',
-        },
-      ],
-    },
-    {
-      id: 'settings',
-      name: 'Settings',
-      url: '/settings',
-      icon: 'cog',
-      iconEmoji: '⚙️',
-    },
   ];
 
   const allMenus = menus.length > 0 ? menus : defaultMenuItems;
