@@ -20,6 +20,7 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -45,7 +46,6 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
       if (response.data && Array.isArray(response.data)) {
         setStatuses(response.data);
         
-        // Set default status to 'PENDING' if available
         const pendingStatus = response.data.find(
           status => status.status_code === 'PENDING'
         );
@@ -67,11 +67,60 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      setError('Please select a file to upload.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const fileData = new FormData();
+      fileData.append('file', selectedFile);
+      fileData.append('prompt', 'convert to json');
+
+      const response = await axios.post('http://localhost:5050/api/v1/conversions/convert', fileData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data) {
+        console.log('File upload response:', response.data);
+        const { customer, items, ...poData } = response.data.purchase_order; // Assuming the data is nested
+        setFormData(prev => ({ 
+            ...prev, 
+            ...poData,
+            customerId: customer?.id || '', // Safely access customer id
+        }));
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      setError(
+        err.response?.data?.message || 
+        err.message || 
+        'Failed to upload file'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.preventDefault();
 
-    // Simple validation
     if (!formData.customerId || !formData.po_number || !formData.statusId) {
       setError('Please fill in all required fields.');
       return;
@@ -86,7 +135,6 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
         throw new Error('Authentication required');
       }
 
-      // Prepare the request payload
       const payload = {
         customerId: formData.customerId,
         po_number: formData.po_number,
@@ -109,12 +157,10 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
       });
 
       if (response.data) {
-        // Call the parent onSubmit handler
         if (onSubmit) {
           await onSubmit(response.data);
         }
         
-        // Reset form and close
         resetForm();
         onClose();
       }
@@ -183,6 +229,32 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
         )}
 
+        {/* By Files Upload */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Upload Files
+          </label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <button
+              type="button"
+              onClick={handleFileUpload}
+              disabled={!selectedFile || loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Uploading...' : 'Upload'}
+            </button>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <hr className="my-4" />
+
+        {/* By Manual Input */}
         <form onSubmit={handleSubmit}>
           <PurchaseOrderForm 
             formData={formData} 
