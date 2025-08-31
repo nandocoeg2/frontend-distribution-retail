@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 const toastService = {
   success: (message, options = {}) => {
     toast.success(message, {
-      position: 'top-right',
+      position: 'bottom-right',
       autoClose: 3000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -15,7 +15,7 @@ const toastService = {
 
   error: (message, options = {}) => {
     toast.error(message, {
-      position: 'top-right',
+      position: 'bottom-right',
       autoClose: 5000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -27,7 +27,7 @@ const toastService = {
 
   warning: (message, options = {}) => {
     toast.warning(message, {
-      position: 'top-right',
+      position: 'bottom-right',
       autoClose: 4000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -39,7 +39,7 @@ const toastService = {
 
   info: (message, options = {}) => {
     toast.info(message, {
-      position: 'top-right',
+      position: 'bottom-right',
       autoClose: 4000,
       hideProgressBar: false,
       closeOnClick: true,
@@ -59,7 +59,7 @@ const toastService = {
         error,
       },
       {
-        position: 'top-right',
+        position: 'bottom-right',
         autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
@@ -72,7 +72,7 @@ const toastService = {
 
   loading: (message) => {
     return toast.loading(message, {
-      position: 'top-right',
+      position: 'bottom-right',
     });
   },
 
