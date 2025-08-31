@@ -30,14 +30,40 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
           </div>
 
           <div>
-            <label className='block text-sm font-medium text-gray-700'>Phone Number</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.phoneNumber || '-'}</p>
+            <label className='block text-sm font-medium text-gray-700'>Code</label>
+            <p className='mt-1 text-sm text-gray-900'>{supplier.code || '-'}</p>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Description</label>
+            <p className='mt-1 text-sm text-gray-900'>{supplier.description || '-'}</p>
           </div>
 
           <div>
             <label className='block text-sm font-medium text-gray-700'>Address</label>
             <p className='mt-1 text-sm text-gray-900'>{supplier.address || '-'}</p>
           </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Phone Number</label>
+            <p className='mt-1 text-sm text-gray-900'>{supplier.phoneNumber || '-'}</p>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>Email</label>
+            <p className='mt-1 text-sm text-gray-900'>{supplier.email || '-'}</p>
+          </div>
+
+          {supplier.bank && (
+            <div>
+              <label className='block text-sm font-medium text-gray-700'>Bank Details</label>
+              <div className='mt-1 text-sm text-gray-900'>
+                <p><strong>Bank Name:</strong> {supplier.bank.name}</p>
+                <p><strong>Account Holder:</strong> {supplier.bank.holder}</p>
+                <p><strong>Account Number:</strong> {supplier.bank.account}</p>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className='block text-sm font-medium text-gray-700'>Created At</label>
