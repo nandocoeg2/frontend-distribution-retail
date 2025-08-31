@@ -5,6 +5,7 @@ import {
   UserPlusIcon,
 } from '@heroicons/react/24/outline';
 import toastService from '../services/toastService';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:5050/api/v1';
 
@@ -13,6 +14,7 @@ const Customers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -21,12 +23,36 @@ const Customers = () => {
     email: '',
     description: '',
   });
+  const navigate = useNavigate();
+
+  // Handle authentication errors
+  const handleAuthError = () => {
+    // Clear all localStorage data
+    localStorage.clear();
+    
+    // Redirect to login page
+    navigate('/login');
+    
+    // Show notification
+    toastService.error('Session expired. Please login again.');
+  };
 
   // Fetch all customers
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/customers`);
+      const accessToken = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+      
       if (!response.ok) throw new Error('Failed to fetch customers');
 
       const data = await response.json();
@@ -45,9 +71,18 @@ const Customers = () => {
       return;
 
     try {
+      const accessToken = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/customers/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
       });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
 
       if (!response.ok) throw new Error('Failed to delete customer');
 
@@ -63,16 +98,23 @@ const Customers = () => {
     e.preventDefault();
 
     try {
+      const accessToken = localStorage.getItem('token');
       const response = await fetch(
         `${API_URL}/customers/${editingCustomer.id}`,
         {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify(formData),
         }
       );
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
 
       if (!response.ok) throw new Error('Failed to update customer');
 
@@ -102,6 +144,30 @@ const Customers = () => {
       description: customer.description || '',
     });
     setShowEditModal(true);
+  };
+
+  // Open add modal
+  const openAddModal = () => {
+    setFormData({
+      name: '',
+      address: '',
+      phoneNumber: '',
+      email: '',
+      description: '',
+    });
+    setShowAddModal(true);
+  };
+
+  // Close add modal
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setFormData({
+      name: '',
+      address: '',
+      phoneNumber: '',
+      email: '',
+      description: '',
+    });
   };
 
   // Handle form input changes
@@ -151,20 +217,14 @@ const Customers = () => {
 
   return (
     <div className='p-6'>
-      <div className='mb-6'>
-        <h1 className='text-2xl font-bold text-gray-900'>
-          Customers Management
-        </h1>
-        <p className='text-gray-600 mt-1'>
-          Manage your customer data and information
-        </p>
-      </div>
-
       <div className='bg-white shadow rounded-lg overflow-hidden'>
         <div className='px-4 py-5 sm:p-6'>
           <div className='mb-4 flex justify-between items-center'>
             <h3 className='text-lg font-medium text-gray-900'>Customer List</h3>
-            <button className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'>
+            <button
+              onClick={openAddModal}
+              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+            >
               <UserPlusIcon className='h-5 w-5 mr-2' />
               Add Customer
             </button>
@@ -247,6 +307,103 @@ const Customers = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
+          <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
+            <h3 className='text-lg font-medium text-gray-900 mb-4'>
+              Add New Customer
+            </h3>
+
+            <form onSubmit={createCustomer}>
+              <div className='space-y-4'>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Name *
+                  </label>
+                  <input
+                    type='text'
+                    name='name'
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                </div>
+
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Email
+                  </label>
+                  <input
+                    type='email'
+                    name='email'
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                </div>
+
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Phone Number
+                  </label>
+                  <input
+                    type='tel'
+                    name='phoneNumber'
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                </div>
+
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Address
+                  </label>
+                  <input
+                    type='text'
+                    name='address'
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                </div>
+
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>
+                    Description
+                  </label>
+                  <textarea
+                    name='description'
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows='3'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                </div>
+              </div>
+
+              <div className='mt-6 flex justify-end space-x-3'>
+                <button
+                  type='button'
+                  onClick={closeAddModal}
+                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
+                >
+                  Cancel
+                </button>
+                <button
+                  type='submit'
+                  className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                >
+                  Add Customer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {showEditModal && (
@@ -347,5 +504,44 @@ const Customers = () => {
     </div>
   );
 };
+
+  // Create customer
+  const createCustomer = async (e) => {
+    e.preventDefault();
+
+    try {
+      const accessToken = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/customers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (!response.ok) throw new Error('Failed to create customer');
+
+      const newCustomer = await response.json();
+      setCustomers([...customers, newCustomer]);
+
+      setShowAddModal(false);
+      setFormData({
+        name: '',
+        address: '',
+        phoneNumber: '',
+        email: '',
+        description: '',
+      });
+      toastService.success('Customer created successfully');
+    } catch (err) {
+      toastService.error('Failed to create customer');
+    }
+  };
 
 export default Customers;
