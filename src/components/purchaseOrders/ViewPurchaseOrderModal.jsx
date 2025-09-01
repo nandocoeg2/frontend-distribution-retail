@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import fileService from '../../services/fileService';
+import HeroIcon from '../atoms/HeroIcon';
 
 const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
   if (!isOpen) return null;
@@ -6,6 +8,10 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleDownload = async (fileId, fileName) => {
+    await fileService.downloadFile(fileId, fileName);
   };
 
   return (
@@ -100,6 +106,32 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
               <p className="mt-1 text-sm text-gray-900">{order.suratPenagihan || '-'}</p>
             </div>
 
+            <div>
+              <h4 className="text-sm font-medium text-gray-500 mb-2">Attached Files</h4>
+              {order.files && order.files.length > 0 ? (
+                <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                  {order.files.map((file) => (
+                    <li key={file.id} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                      <div className="w-0 flex-1 flex items-center">
+                        <HeroIcon icon="PaperClipIcon" className="flex-shrink-0 h-5 w-5 text-gray-400" />
+                        <span className="ml-2 flex-1 w-0 truncate">{file.filename}</span>
+                      </div>
+                      <div className="ml-4 flex-shrink-0">
+                        <button
+                          onClick={() => handleDownload(file.id, file.filename)}
+                          className="font-medium text-blue-600 hover:text-blue-500"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-gray-900">No files attached.</p>
+              )}
+            </div>
+
             {order.createdAt && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -134,3 +166,4 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
 };
 
 export default ViewPurchaseOrderModal;
+
