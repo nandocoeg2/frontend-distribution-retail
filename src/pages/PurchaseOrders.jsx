@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
@@ -13,6 +13,7 @@ const PurchaseOrders = () => {
     loading,
     error,
     searchLoading,
+    fetchPurchaseOrders,
     searchPurchaseOrders,
     deletePurchaseOrder,
     createPurchaseOrder,
@@ -20,46 +21,34 @@ const PurchaseOrders = () => {
     getPurchaseOrder,
   } = usePurchaseOrders();
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [viewingOrder, setViewingOrder] = useState(null);
-  const [viewLoading, setViewLoading] = useState(false);
+  const [isAddModalOpen, setAddModalOpen] = useState(false);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isViewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const handleAddOrder = async (formData) => {
-    const result = await createPurchaseOrder(formData);
-    if (result) {
-      setShowAddModal(false);
-      return true;
-    }
-    return false;
+  // This function is now the callback for when the Add modal is finished.
+  const handleAddFinished = () => {
+    setAddModalOpen(false);
+    fetchPurchaseOrders(); // Always refresh the list when the modal closes.
   };
 
   const handleEditOrder = async (id, formData) => {
     const result = await updatePurchaseOrder(id, formData);
     if (result) {
-      setShowEditModal(false);
-      setEditingOrder(null);
-      return true;
+      setEditModalOpen(false);
+      setSelectedOrder(null);
     }
-    return false;
   };
 
   const handleViewOrder = async (order) => {
-    setViewLoading(true);
-    setShowViewModal(true);
-    
+    setViewModalOpen(true);
     const orderData = await getPurchaseOrder(order.id);
-    if (orderData) {
-      setViewingOrder(orderData);
-    }
-    setViewLoading(false);
+    setSelectedOrder(orderData);
   };
 
   const handleEditModalOpen = (order) => {
-    setEditingOrder(order);
-    setShowEditModal(true);
+    setSelectedOrder(order);
+    setEditModalOpen(true);
   };
 
   if (error) {
@@ -68,7 +57,7 @@ const PurchaseOrders = () => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800">Error: {error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => fetchPurchaseOrders()}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Retry
@@ -85,7 +74,7 @@ const PurchaseOrders = () => {
           <div className="mb-4 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Purchase Orders</h3>
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => setAddModalOpen(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -108,33 +97,40 @@ const PurchaseOrders = () => {
         </div>
       </div>
 
-      <AddPurchaseOrderModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSubmit={handleAddOrder}
-      />
+      {isAddModalOpen && (
+        <AddPurchaseOrderModal
+          isOpen={isAddModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onFinished={handleAddFinished}
+          createPurchaseOrder={createPurchaseOrder}
+        />
+      )}
 
-      <EditPurchaseOrderModal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingOrder(null);
-        }}
-        onSubmit={handleEditOrder}
-        order={editingOrder}
-      />
+      {selectedOrder && isEditModalOpen && (
+        <EditPurchaseOrderModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setEditModalOpen(false);
+            setSelectedOrder(null);
+          }}
+          onSubmit={handleEditOrder}
+          order={selectedOrder}
+        />
+      )}
 
-      <ViewPurchaseOrderModal
-        isOpen={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setViewingOrder(null);
-        }}
-        order={viewingOrder}
-        loading={viewLoading}
-      />
+      {selectedOrder && isViewModalOpen && (
+        <ViewPurchaseOrderModal
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setViewModalOpen(false);
+            setSelectedOrder(null);
+          }}
+          order={selectedOrder}
+        />
+      )}
     </div>
   );
 };
 
 export default PurchaseOrders;
+

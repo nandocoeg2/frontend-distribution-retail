@@ -28,6 +28,32 @@ const fileService = {
       return { success: false, error: 'Download failed' };
     }
   },
+
+  uploadBulkPurchaseOrders: async (files) => {
+    try {
+      const token = authService.getToken();
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+      const formData = new FormData();
+      
+      for (const file of files) {
+        formData.append('file', file);
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/purchase-orders/bulk`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('Error uploading bulk files:', error);
+      return { success: false, error: error.response?.data?.message || 'Bulk upload failed' };
+    }
+  },
 };
 
 export default fileService;

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import authService from '../../services/authService.js';
+import fileService from '../../services/fileService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
+import { toast } from 'react-toastify';
+import authService from '../../services/authService.js';
+import axios from 'axios';
 
-const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
+const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrder }) => {
   const [formData, setFormData] = useState({
     customerId: '',
     po_number: '',
     total_items: 1,
     tanggal_order: new Date().toISOString().split('T')[0],
-    po_type: '',
+    po_type: 'SINGLE',
     statusId: '',
     suratJalan: '',
     invoicePengiriman: '',
@@ -21,21 +23,19 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadMode, setUploadMode] = useState('manual');
 
   useEffect(() => {
     if (isOpen) {
       fetchStatuses();
+      resetForm();
+      setUploadMode('manual');
     }
   }, [isOpen]);
 
   const fetchStatuses = async () => {
     try {
       const token = authService.getToken();
-      if (!token) {
-        setError('Authentication required');
-        return;
-      }
-
       const response = await axios.get('http://localhost:5050/api/v1/statuses', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -45,7 +45,6 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
 
       if (response.data && Array.isArray(response.data)) {
         setStatuses(response.data);
-        
         const pendingStatus = response.data.find(
           status => status.status_code === 'PENDING'
         );
@@ -68,51 +67,33 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
+    setError(null);
+    if (uploadMode === 'bulk') {
+      setSelectedFile(e.target.files.length > 0 ? e.target.files : null);
+    } else {
+      setSelectedFile(e.target.files.length > 0 ? e.target.files[0] : null);
+    }
   };
 
-  const handleFileUpload = async () => {
-    if (!selectedFile) {
-      setError('Please select a file to upload.');
+  const handleBulkUpload = async () => {
+    if (!selectedFile || selectedFile.length === 0) {
+      setError('Please select files to upload.');
       return;
     }
-
     setLoading(true);
     setError(null);
-
     try {
-      const token = authService.getToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const fileData = new FormData();
-      fileData.append('file', selectedFile);
-      fileData.append('prompt', 'convert to json');
-
-      const response = await axios.post('http://localhost:5050/api/v1/conversions/convert', fileData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.data) {
-        console.log('File upload response:', response.data);
-        const { customer, items, ...poData } = response.data.purchase_order; // Assuming the data is nested
-        setFormData(prev => ({ 
-            ...prev, 
-            ...poData,
-            customerId: customer?.id || '', // Safely access customer id
-        }));
+      const result = await fileService.uploadBulkPurchaseOrders(selectedFile);
+      if (result.success) {
+        toast.success(result.data.message || 'Files uploaded successfully!');
+        if (onFinished) onFinished();
+      } else {
+        throw new Error(result.error);
       }
     } catch (err) {
-      console.error('Error uploading file:', err);
-      setError(
-        err.response?.data?.message || 
-        err.message || 
-        'Failed to upload file'
-      );
+      const errorMessage = err.message || 'Failed to upload bulk files';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -120,86 +101,35 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.customerId || !formData.po_number || !formData.statusId) {
       setError('Please fill in all required fields.');
       return;
     }
-
     setLoading(true);
     setError(null);
-
-    try {
-      const token = authService.getToken();
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
-      const payload = {
-        customerId: formData.customerId,
-        po_number: formData.po_number,
-        total_items: parseInt(formData.total_items),
-        tanggal_order: new Date(formData.tanggal_order).toISOString(),
-        po_type: formData.po_type,
-        statusId: formData.statusId,
-        suratJalan: formData.suratJalan,
-        invoicePengiriman: formData.invoicePengiriman,
-        suratPO: formData.suratPO,
-        suratPenagihan: formData.suratPenagihan
-      };
-
-      const response = await axios.post('http://localhost:5050/api/v1/purchase-orders/', payload, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'accept': 'application/json',
-          'content-type': 'application/json'
-        }
-      });
-
-      if (response.data) {
-        if (onSubmit) {
-          await onSubmit(response.data);
-        }
-        
-        resetForm();
-        onClose();
-      }
-    } catch (err) {
-      console.error('Error creating purchase order:', err);
-      setError(
-        err.response?.data?.message || 
-        err.message || 
-        'Failed to create purchase order'
-      );
-    } finally {
-      setLoading(false);
+    const newOrder = await createPurchaseOrder(formData, selectedFile);
+    setLoading(false);
+    if (newOrder) {
+      if (onFinished) onFinished();
+    } else {
+      setError('Failed to create purchase order. Please check the form and try again.');
     }
   };
 
   const resetForm = () => {
     setFormData({
-      customerId: '',
-      po_number: '',
-      total_items: 1,
+      customerId: '', po_number: '', total_items: 1,
       tanggal_order: new Date().toISOString().split('T')[0],
-      po_type: '',
-      statusId: statuses.find(s => s.status_code === 'PENDING')?.id || '',
-      suratJalan: '',
-      invoicePengiriman: '',
-      suratPO: '',
-      suratPenagihan: ''
+      po_type: 'SINGLE', statusId: statuses.find(s => s.status_code === 'PENDING')?.id || '',
+      suratJalan: '', invoicePengiriman: '', suratPO: '', suratPenagihan: ''
     });
     setError(null);
+    setSelectedFile(null);
   };
 
   const generatePONumber = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    
-    const poNumber = `PO-${year}-${month}-${day}-${random}`;
+    const poNumber = `PO-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
     setFormData(prev => ({ ...prev, po_number: poNumber }));
   };
 
@@ -209,81 +139,50 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onSubmit }) => {
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            Add New Purchase Order
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <h3 className="text-lg font-medium text-gray-900">Add New Purchase Order</h3>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-500">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">{error}</div>}
 
-        {/* By Files Upload */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Upload Files
-          </label>
-          <div className="flex items-center space-x-2">
-            <input
-              type="file"
-              onChange={handleFileChange}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
-            <button
-              type="button"
-              onClick={handleFileUpload}
-              disabled={!selectedFile || loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Uploading...' : 'Upload'}
-            </button>
-          </div>
+        <div className="mb-4 flex justify-center space-x-4">
+          <button onClick={() => { setUploadMode('manual'); resetForm(); }} className={`px-4 py-2 text-sm font-medium rounded-md ${uploadMode === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Manual Input</button>
+          <button onClick={() => { setUploadMode('bulk'); resetForm(); }} className={`px-4 py-2 text-sm font-medium rounded-md ${uploadMode === 'bulk' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Bulk Upload</button>
         </div>
 
-        {/* Divider */}
-        <hr className="my-4" />
-
-        {/* By Manual Input */}
-        <form onSubmit={handleSubmit}>
-          <PurchaseOrderForm 
-            formData={formData} 
-            handleInputChange={handleInputChange}
-            statuses={statuses}
-            onGeneratePONumber={generatePONumber}
-          />
-
-          <div className="mt-6 flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading ? 'Creating...' : 'Add Purchase Order'}
-            </button>
+        {uploadMode === 'manual' ? (
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Order Document (Optional)</label>
+              <div className="flex items-center space-x-2">
+                <input type="file" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+              </div>
+            </div>
+            <hr className="my-4" />
+            <PurchaseOrderForm formData={formData} handleInputChange={handleInputChange} statuses={statuses} onGeneratePONumber={generatePONumber} />
+            <div className="mt-6 flex justify-end space-x-3">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
+              <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={loading || !formData.customerId || !formData.po_number}>{loading ? 'Creating...' : 'Add Purchase Order'}</button>
+            </div>
+          </form>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Upload Bulk Purchase Orders</label>
+            <div className="flex items-center space-x-2">
+              <input type="file" multiple onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
+              <button type="button" onClick={handleBulkUpload} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={!selectedFile || loading}>{loading ? 'Uploading...' : 'Upload Files'}</button>
+            </div>
           </div>
-        </form>
+        )}
       </div>
     </div>
   );
 };
 
 export default AddPurchaseOrderModal;
+

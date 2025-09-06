@@ -20,22 +20,17 @@ const usePurchaseOrders = () => {
   }, []);
 
   const fetchPurchaseOrders = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const accessToken = getAccessToken();
       const response = await fetch(`${API_URL}/purchase-orders/`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: { 'Authorization': `Bearer ${accessToken}` },
       });
-      
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         return;
       }
-      
       if (!response.ok) throw new Error('Failed to fetch purchase orders');
-
       const data = await response.json();
       setPurchaseOrders(data);
       setError(null);
@@ -52,55 +47,19 @@ const usePurchaseOrders = () => {
       fetchPurchaseOrders();
       return;
     }
-
     try {
       setSearchLoading(true);
       const accessToken = getAccessToken();
-      
-      let url = `${API_URL}/purchase-orders/search?`;
-      
-      switch (field) {
-        case 'tanggal_order':
-          url += `tanggal_order=${encodeURIComponent(query)}`;
-          break;
-        case 'customer_name':
-          url += `customer_name=${encodeURIComponent(query)}`;
-          break;
-        case 'customerId':
-          url += `customerId=${encodeURIComponent(query)}`;
-          break;
-        case 'suratPO':
-          url += `suratPO=${encodeURIComponent(query)}`;
-          break;
-        case 'invoicePengiriman':
-          url += `invoicePengiriman=${encodeURIComponent(query)}`;
-          break;
-        case 'po_number':
-          url += `po_number=${encodeURIComponent(query)}`;
-          break;
-        case 'supplierId':
-          url += `supplierId=${encodeURIComponent(query)}`;
-          break;
-        case 'statusId':
-          url += `statusId=${encodeURIComponent(query)}`;
-          break;
-        default:
-          url += `customer_name=${encodeURIComponent(query)}`;
-      }
-
+      const url = new URL(`${API_URL}/purchase-orders/search`);
+      url.searchParams.append(field || 'customer_name', query);
       const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: { 'Authorization': `Bearer ${accessToken}` },
       });
-      
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         return;
       }
-      
       if (!response.ok) throw new Error('Failed to search purchase orders');
-
       const data = await response.json();
       setPurchaseOrders(data);
     } catch (err) {
@@ -111,25 +70,18 @@ const usePurchaseOrders = () => {
   }, [getAccessToken, handleAuthError, fetchPurchaseOrders]);
 
   const deletePurchaseOrder = useCallback(async (id) => {
-    if (!window.confirm('Are you sure you want to delete this purchase order?'))
-      return;
-
+    if (!window.confirm('Are you sure you want to delete this purchase order?')) return;
     try {
       const accessToken = getAccessToken();
       const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
+        headers: { 'Authorization': `Bearer ${accessToken}` },
       });
-
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         return;
       }
-
       if (!response.ok) throw new Error('Failed to delete purchase order');
-
       setPurchaseOrders(prev => prev.filter((order) => order.id !== id));
       toastService.success('Purchase order deleted successfully');
     } catch (err) {
@@ -137,71 +89,76 @@ const usePurchaseOrders = () => {
     }
   }, [getAccessToken, handleAuthError]);
 
-  const createPurchaseOrder = useCallback(async (formData) => {
+  const createPurchaseOrder = useCallback(async (formData, file) => {
     try {
       const accessToken = getAccessToken();
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null && formData[key] !== undefined) {
+          data.append(key, formData[key]);
+        }
+      });
+      if (file) {
+        data.append('file', file);
+      }
+
       const response = await fetch(`${API_URL}/purchase-orders/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          tanggal_order: new Date(formData.tanggal_order).toISOString()
-        }),
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        body: data,
       });
 
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         return null;
       }
-
-      if (!response.ok) throw new Error('Failed to create purchase order');
-
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create purchase order');
+      }
       const newOrder = await response.json();
-      setPurchaseOrders(prev => [...prev, newOrder]);
       toastService.success('Purchase order created successfully');
       return newOrder;
     } catch (err) {
-      toastService.error('Failed to create purchase order');
+      console.error('Create purchase order error:', err);
+      toastService.error(err.message || 'Failed to create purchase order');
       return null;
     }
   }, [getAccessToken, handleAuthError]);
 
-  const updatePurchaseOrder = useCallback(async (id, formData) => {
+  const updatePurchaseOrder = useCallback(async (id, formData, file) => {
     try {
       const accessToken = getAccessToken();
-      const response = await fetch(
-        `${API_URL}/purchase-orders/${id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(formData),
+      const data = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null && formData[key] !== undefined) {
+          data.append(key, formData[key]);
         }
-      );
+      });
+      if (file) {
+        data.append('file', file);
+      }
+      
+      const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        body: data,
+      });
 
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         return null;
       }
-
-      if (!response.ok) throw new Error('Failed to update purchase order');
-
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update purchase order');
+      }
       const updatedOrder = await response.json();
-      setPurchaseOrders(prev =>
-        prev.map((order) =>
-          order.id === id ? updatedOrder : order
-        )
-      );
-
       toastService.success('Purchase order updated successfully');
       return updatedOrder;
     } catch (err) {
-      toastService.error('Failed to update purchase order');
+      console.error('Update purchase order error:', err);
+      toastService.error(err.message || 'Failed to update purchase order');
       return null;
     }
   }, [getAccessToken, handleAuthError]);
@@ -215,14 +172,11 @@ const usePurchaseOrders = () => {
           'accept': 'application/json',
         },
       });
-
       if (response.status === 401 || response.status === 403) {
         handleAuthError();
         return null;
       }
-
       if (!response.ok) throw new Error('Failed to fetch purchase order details');
-
       const orderData = await response.json();
       return orderData;
     } catch (err) {
@@ -250,3 +204,4 @@ const usePurchaseOrders = () => {
 };
 
 export default usePurchaseOrders;
+
