@@ -13,11 +13,14 @@ const Customers = () => {
   const {
     customers,
     setCustomers,
+    pagination,
     loading,
     error,
     searchQuery,
     searchLoading,
     handleSearchChange,
+    handlePageChange,
+    handleLimitChange,
     deleteCustomer,
     fetchCustomers,
     handleAuthError
@@ -109,6 +112,9 @@ const Customers = () => {
 
           <CustomerTable 
             customers={customers} 
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
             onDelete={deleteCustomer} 
             onView={openViewModal}

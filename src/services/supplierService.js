@@ -3,7 +3,7 @@ import authService from './authService';
 
 const API_BASE_URL = 'http://localhost:5050/api/v1';
 
-class CustomerService {
+class SupplierService {
   constructor() {
     this.api = axios.create({
       baseURL: API_BASE_URL,
@@ -24,35 +24,25 @@ class CustomerService {
     });
   }
 
-  async getAllCustomers(page = 1, limit = 10) {
+  async getAllSuppliers(page = 1, limit = 10) {
     try {
-      const response = await this.api.get(`/customers?page=${page}&limit=${limit}`);
+      const response = await this.api.get(`/suppliers?page=${page}&limit=${limit}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error('Error fetching suppliers:', error);
       throw error;
     }
   }
 
-  async searchCustomers(query, page = 1, limit = 10) {
+  async searchSuppliers(query, page = 1, limit = 10) {
     try {
-      const response = await this.api.get(`/customers/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`);
+      const response = await this.api.get(`/suppliers/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`);
       return response.data;
     } catch (error) {
-      console.error('Error searching customers:', error);
-      throw error;
-    }
-  }
-
-  async searchCustomers(query) {
-    try {
-      const response = await this.api.get(`/customers/search/${query}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error searching customers:', error);
+      console.error('Error searching suppliers:', error);
       throw error;
     }
   }
 }
 
-export default new CustomerService();
+export default new SupplierService();

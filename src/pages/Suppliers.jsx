@@ -13,11 +13,14 @@ const Suppliers = () => {
   const {
     suppliers,
     setSuppliers,
+    pagination,
     loading,
     error,
     searchQuery,
     searchLoading,
     handleSearchChange,
+    handlePageChange,
+    handleLimitChange,
     deleteSupplier,
     fetchSuppliers,
     handleAuthError
@@ -109,6 +112,9 @@ const Suppliers = () => {
 
           <SupplierTable 
             suppliers={suppliers} 
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
             onDelete={deleteSupplier} 
             onView={openViewModal}
@@ -142,4 +148,3 @@ const Suppliers = () => {
 };
 
 export default Suppliers;
-

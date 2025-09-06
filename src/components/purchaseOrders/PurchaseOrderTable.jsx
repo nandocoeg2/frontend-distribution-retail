@@ -1,7 +1,8 @@
 import React from 'react';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
+import Pagination from './Pagination';
 
-const PurchaseOrderTable = ({ orders, onView, onEdit, onDelete, loading }) => {
+const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, onView, onEdit, onDelete, loading }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -116,6 +117,11 @@ const PurchaseOrderTable = ({ orders, onView, onEdit, onDelete, loading }) => {
           )}
         </tbody>
       </table>
+      <Pagination 
+        pagination={pagination} 
+        onPageChange={onPageChange} 
+        onLimitChange={onLimitChange} 
+      />
     </div>
   );
 };

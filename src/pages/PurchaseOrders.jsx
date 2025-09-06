@@ -10,15 +10,21 @@ import ViewPurchaseOrderModal from '../components/purchaseOrders/ViewPurchaseOrd
 const PurchaseOrders = () => {
   const {
     purchaseOrders,
+    pagination,
     loading,
     error,
     searchLoading,
+    searchQuery,
+    searchField,
     fetchPurchaseOrders,
     searchPurchaseOrders,
     deletePurchaseOrder,
     createPurchaseOrder,
     updatePurchaseOrder,
     getPurchaseOrder,
+    handlePageChange,
+    handleLimitChange,
+    handleSearchQueryChange,
   } = usePurchaseOrders();
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -83,12 +89,17 @@ const PurchaseOrders = () => {
           </div>
 
           <PurchaseOrderSearch 
-            onSearch={searchPurchaseOrders} 
+            searchQuery={searchQuery}
+            searchField={searchField}
+            onSearch={handleSearchQueryChange} 
             searchLoading={searchLoading} 
           />
 
           <PurchaseOrderTable
             orders={purchaseOrders}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
             onView={handleViewOrder}
             onEdit={handleEditModalOpen}
             onDelete={deletePurchaseOrder}
@@ -133,4 +144,3 @@ const PurchaseOrders = () => {
 };
 
 export default PurchaseOrders;
-

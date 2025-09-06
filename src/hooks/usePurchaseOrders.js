@@ -5,9 +5,17 @@ const API_URL = 'http://localhost:5050/api/v1';
 
 const usePurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('customer_name');
 
   const handleAuthError = useCallback(() => {
     localStorage.clear();
@@ -19,11 +27,11 @@ const usePurchaseOrders = () => {
     return localStorage.getItem('token');
   }, []);
 
-  const fetchPurchaseOrders = useCallback(async () => {
+  const fetchPurchaseOrders = useCallback(async (page = 1, limit = 10) => {
     setLoading(true);
     try {
       const accessToken = getAccessToken();
-      const response = await fetch(`${API_URL}/purchase-orders/`, {
+      const response = await fetch(`${API_URL}/purchase-orders/?page=${page}&limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${accessToken}` },
       });
       if (response.status === 401 || response.status === 403) {
@@ -31,8 +39,9 @@ const usePurchaseOrders = () => {
         return;
       }
       if (!response.ok) throw new Error('Failed to fetch purchase orders');
-      const data = await response.json();
-      setPurchaseOrders(data);
+      const result = await response.json();
+      setPurchaseOrders(result.data);
+      setPagination(result.pagination);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -42,9 +51,9 @@ const usePurchaseOrders = () => {
     }
   }, [getAccessToken, handleAuthError]);
 
-  const searchPurchaseOrders = useCallback(async (query, field) => {
+  const searchPurchaseOrders = useCallback(async (query, field, page = 1, limit = 10) => {
     if (!query.trim()) {
-      fetchPurchaseOrders();
+      fetchPurchaseOrders(page, limit);
       return;
     }
     try {
@@ -52,6 +61,8 @@ const usePurchaseOrders = () => {
       const accessToken = getAccessToken();
       const url = new URL(`${API_URL}/purchase-orders/search`);
       url.searchParams.append(field || 'customer_name', query);
+      url.searchParams.append('page', page);
+      url.searchParams.append('limit', limit);
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${accessToken}` },
       });
@@ -60,8 +71,9 @@ const usePurchaseOrders = () => {
         return;
       }
       if (!response.ok) throw new Error('Failed to search purchase orders');
-      const data = await response.json();
-      setPurchaseOrders(data);
+      const result = await response.json();
+      setPurchaseOrders(result.data);
+      setPagination(result.pagination);
     } catch (err) {
       toastService.error('Failed to search purchase orders');
     } finally {
@@ -185,23 +197,61 @@ const usePurchaseOrders = () => {
     }
   }, [getAccessToken, handleAuthError]);
 
+  const handlePageChange = (newPage) => {
+    if (searchQuery.trim()) {
+      searchPurchaseOrders(searchQuery, searchField, newPage, pagination.itemsPerPage);
+    } else {
+      fetchPurchaseOrders(newPage, pagination.itemsPerPage);
+    }
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const newPagination = {
+      ...pagination,
+      itemsPerPage: newLimit
+    };
+    setPagination(newPagination);
+    
+    if (searchQuery.trim()) {
+      searchPurchaseOrders(searchQuery, searchField, 1, newLimit); // Reset to first page when changing limit
+    } else {
+      fetchPurchaseOrders(1, newLimit); // Reset to first page when changing limit
+    }
+  };
+
+  const handleSearchQueryChange = (query, field) => {
+    setSearchQuery(query);
+    setSearchField(field);
+    
+    if (!query.trim()) {
+      fetchPurchaseOrders(1, pagination.itemsPerPage); // Reset to first page when clearing search
+    } else {
+      searchPurchaseOrders(query, field, 1, pagination.itemsPerPage); // Reset to first page when searching
+    }
+  };
+
   useEffect(() => {
-    fetchPurchaseOrders();
+    fetchPurchaseOrders(1, pagination.itemsPerPage);
   }, [fetchPurchaseOrders]);
 
   return {
     purchaseOrders,
+    pagination,
     loading,
     error,
     searchLoading,
+    searchQuery,
+    searchField,
     fetchPurchaseOrders,
     searchPurchaseOrders,
     deletePurchaseOrder,
     createPurchaseOrder,
     updatePurchaseOrder,
     getPurchaseOrder,
+    handlePageChange,
+    handleLimitChange,
+    handleSearchQueryChange,
   };
 };
 
 export default usePurchaseOrders;
-

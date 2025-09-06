@@ -4,8 +4,9 @@ import {
   TrashIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
+import Pagination from './Pagination';
 
-const SupplierTable = ({ suppliers, onEdit, onDelete, onView, searchQuery }) => {
+const SupplierTable = ({ suppliers, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -80,9 +81,13 @@ const SupplierTable = ({ suppliers, onEdit, onDelete, onView, searchQuery }) => 
           )}
         </tbody>
       </table>
+      <Pagination 
+        pagination={pagination} 
+        onPageChange={onPageChange} 
+        onLimitChange={onLimitChange} 
+      />
     </div>
   );
 };
 
 export default SupplierTable;
-

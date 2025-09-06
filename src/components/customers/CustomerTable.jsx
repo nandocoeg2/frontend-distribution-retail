@@ -4,8 +4,9 @@ import {
   TrashIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
+import Pagination from './Pagination';
 
-const CustomerTable = ({ customers, onEdit, onDelete, onView, searchQuery }) => {
+const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -96,9 +97,9 @@ const CustomerTable = ({ customers, onEdit, onDelete, onView, searchQuery }) => 
           )}
         </tbody>
       </table>
+      <Pagination pagination={pagination} onPageChange={onPageChange} onLimitChange={onLimitChange} />
     </div>
   );
 };
 
 export default CustomerTable;
-

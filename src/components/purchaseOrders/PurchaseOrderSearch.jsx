@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const PurchaseOrderSearch = ({ onSearch, searchLoading }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchField, setSearchField] = useState('customer_name');
+const PurchaseOrderSearch = ({ searchQuery, searchField, onSearch, searchLoading }) => {
   const [debounceTimeout, setDebounceTimeout] = useState(null);
 
   // Handle search input change with debouncing
   const handleSearchChange = (e) => {
     const query = e.target.value;
-    setSearchQuery(query);
-
+    
     // Clear existing timeout
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
@@ -26,7 +23,6 @@ const PurchaseOrderSearch = ({ onSearch, searchLoading }) => {
   // Handle search field change
   const handleSearchFieldChange = (e) => {
     const field = e.target.value;
-    setSearchField(field);
     if (searchQuery.trim()) {
       onSearch(searchQuery, field);
     }

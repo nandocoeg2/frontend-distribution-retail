@@ -1,11 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '@/services/toastService';
+import supplierService from '@/services/supplierService';
 
 const API_URL = 'http://localhost:5050/api/v1';
 
 const useSuppliers = () => {
   const [suppliers, setSuppliers] = useState([]);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,63 +26,37 @@ const useSuppliers = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/suppliers`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to fetch suppliers');
-
-      const data = await response.json();
-      setSuppliers(data);
+      const result = await supplierService.getAllSuppliers(page, limit);
+      setSuppliers(result.data);
+      setPagination(result.pagination);
     } catch (err) {
       setError(err.message);
       toastService.error('Failed to load suppliers');
     } finally {
       setLoading(false);
     }
-  }, [handleAuthError]);
+  }, []);
 
-  const searchSuppliers = useCallback(async (query) => {
+  const searchSuppliers = useCallback(async (query, page = 1, limit = 10) => {
     if (!query.trim()) {
-      fetchSuppliers();
+      fetchSuppliers(page, limit);
       return;
     }
 
     try {
       setSearchLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/suppliers/search/${encodeURIComponent(query)}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to search suppliers');
-
-      const data = await response.json();
-      setSuppliers(data);
+      const result = await supplierService.searchSuppliers(query, page, limit);
+      setSuppliers(result.data);
+      setPagination(result.pagination);
     } catch (err) {
       toastService.error('Failed to search suppliers');
     } finally {
       setSearchLoading(false);
     }
-  }, [fetchSuppliers, handleAuthError]);
+  }, [fetchSuppliers]);
 
   const deleteSupplier = async (id) => {
     if (!window.confirm('Are you sure you want to delete this supplier?'))
@@ -104,6 +85,28 @@ const useSuppliers = () => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    if (searchQuery.trim()) {
+      searchSuppliers(searchQuery, newPage, pagination.itemsPerPage);
+    } else {
+      fetchSuppliers(newPage, pagination.itemsPerPage);
+    }
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const newPagination = {
+      ...pagination,
+      itemsPerPage: newLimit
+    };
+    setPagination(newPagination);
+    
+    if (searchQuery.trim()) {
+      searchSuppliers(searchQuery, 1, newLimit); // Reset to first page when changing limit
+    } else {
+      fetchSuppliers(1, newLimit); // Reset to first page when changing limit
+    }
+  };
+
     const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -113,14 +116,14 @@ const useSuppliers = () => {
     }
 
     const timeout = setTimeout(() => {
-      searchSuppliers(query);
+      searchSuppliers(query, 1, pagination.itemsPerPage); // Reset to first page when searching
     }, 500);
 
     setDebounceTimeout(timeout);
   };
 
   useEffect(() => {
-    fetchSuppliers();
+    fetchSuppliers(1, pagination.itemsPerPage);
 
     return () => {
       if (debounceTimeout) {
@@ -132,11 +135,15 @@ const useSuppliers = () => {
   return {
     suppliers,
     setSuppliers,
+    pagination,
+    setPagination,
     loading,
     error,
     searchQuery,
     searchLoading,
     handleSearchChange,
+    handlePageChange,
+    handleLimitChange,
     deleteSupplier,
     fetchSuppliers,
     handleAuthError
@@ -144,4 +151,3 @@ const useSuppliers = () => {
 };
 
 export default useSuppliers;
-
