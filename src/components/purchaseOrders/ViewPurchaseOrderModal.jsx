@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import fileService from '../../services/fileService';
 import HeroIcon from '../atoms/HeroIcon';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
+import purchaseOrderService from '../../services/purchaseOrderService';
 
-const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
+const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }) => {
+  const [processing, setProcessing] = useState(false);
+
   if (!isOpen) return null;
 
   const formatDate = (dateString) => {
@@ -13,6 +16,25 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
 
   const handleDownload = async (fileId, fileName) => {
     await fileService.downloadFile(fileId, fileName);
+  };
+
+  const handleProcess = async () => {
+    if (!order?.id) return;
+
+    setProcessing(true);
+    try {
+      await purchaseOrderService.processPurchaseOrder(order.id);
+      alert('Purchase order processed successfully.');
+      if (onProcessed) {
+        onProcessed();
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to process purchase order:', error);
+      alert(`Failed to process purchase order: ${error.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -162,7 +184,16 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
           </div>
         )}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-end gap-2">
+          {order?.status?.status_name !== 'Processed' && (
+            <button
+              onClick={handleProcess}
+              disabled={processing}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+            >
+              {processing ? 'Processing...' : 'Process'}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
@@ -176,3 +207,4 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
 };
 
 export default ViewPurchaseOrderModal;
+

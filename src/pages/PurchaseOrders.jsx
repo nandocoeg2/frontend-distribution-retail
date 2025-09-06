@@ -130,7 +130,7 @@ const PurchaseOrders = () => {
         />
       )}
 
-      {selectedOrder && isViewModalOpen && (
+      {isViewModalOpen && (
         <ViewPurchaseOrderModal
           isOpen={isViewModalOpen}
           onClose={() => {
@@ -138,6 +138,10 @@ const PurchaseOrders = () => {
             setSelectedOrder(null);
           }}
           order={selectedOrder}
+          loading={!selectedOrder} 
+          onProcessed={() => {
+            fetchPurchaseOrders();
+          }}
         />
       )}
     </div>
