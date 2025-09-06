@@ -69,9 +69,16 @@ export const deleteInventory = async (id) => {
     method: 'DELETE',
     headers: getHeaders()
   });
-  if (!response.ok) {
-    throw new Error('Failed to delete inventory');
+
+  if (response.status === 204) {
+    return null; // Successfully deleted, no content to return
   }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Failed to delete inventory' }));
+    throw new Error(errorData.message || 'Failed to delete inventory');
+  }
+
   return response.json();
 };
 

@@ -60,7 +60,11 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
                         <PencilSquareIcon className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => onDelete(inventory.id)}
+                        onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this item?')) {
+                          onDelete(inventory.id);
+                        }
+                      }}
                         className="text-red-600 hover:text-red-900"
                         title="Delete"
                       >
@@ -113,4 +117,3 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
 };
 
 export default InventoryTable;
-

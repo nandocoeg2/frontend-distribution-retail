@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
-const InventoryForm = ({ onSubmit, initialData = {} }) => {
+const InventoryForm = ({ onSubmit, onClose, initialData = {} }) => {
   const [formData, setFormData] = useState({
     kode_barang: '',
     nama_barang: '',
@@ -9,17 +9,25 @@ const InventoryForm = ({ onSubmit, initialData = {} }) => {
     min_stok: ''
   });
 
+  const memoizedInitialData = useMemo(() => initialData, [
+    initialData?.kode_barang,
+    initialData?.nama_barang,
+    initialData?.stok_barang,
+    initialData?.harga_barang,
+    initialData?.min_stok
+  ]);
+
   useEffect(() => {
-    if (initialData) {
+    if (memoizedInitialData) {
       setFormData({
-        kode_barang: initialData.kode_barang || '',
-        nama_barang: initialData.nama_barang || '',
-        stok_barang: initialData.stok_barang || '',
-        harga_barang: initialData.harga_barang || '',
-        min_stok: initialData.min_stok || ''
+        kode_barang: memoizedInitialData.kode_barang || '',
+        nama_barang: memoizedInitialData.nama_barang || '',
+        stok_barang: memoizedInitialData.stok_barang || '',
+        harga_barang: memoizedInitialData.harga_barang || '',
+        min_stok: memoizedInitialData.min_stok || ''
       });
     }
-  }, [initialData]);
+  }, [memoizedInitialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,7 +57,7 @@ const InventoryForm = ({ onSubmit, initialData = {} }) => {
           onChange={handleChange}
           className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
-          disabled={!!initialData.id} // Disable kode_barang on edit
+          disabled={!!memoizedInitialData.id} // Disable kode_barang on edit
         />
       </div>
       <div>
@@ -102,10 +110,17 @@ const InventoryForm = ({ onSubmit, initialData = {} }) => {
       </div>
       <div className="flex justify-end space-x-2">
         <button
+          type="button"
+          onClick={onClose}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+        >
+          Close
+        </button>
+        <button
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
-          {initialData.id ? 'Update' : 'Create'}
+          {memoizedInitialData.id ? 'Update' : 'Create'}
         </button>
       </div>
     </form>

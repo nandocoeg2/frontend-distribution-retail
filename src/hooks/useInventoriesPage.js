@@ -65,23 +65,27 @@ const useInventoriesPage = () => {
   }, [fetchInventories, handleAuthError]);
 
   const handleDeleteInventory = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this inventory item?')) return;
-
     try {
       await deleteInventory(id);
       toastService.success('Inventory item deleted successfully');
-      // Refresh the list after deletion
-      if (inventories.length === 1 && pagination.currentPage > 1) {
-        // If it was the last item on a page, go to the previous page
-        handlePageChange(pagination.currentPage - 1);
+      
+      // Determine the page to fetch after deletion
+      const newPage = (inventories.length === 1 && pagination.currentPage > 1)
+        ? pagination.currentPage - 1
+        : pagination.currentPage;
+
+      // Refresh the list based on whether a search is active
+      if (searchQuery.trim()) {
+        searchInventoriesCallback(searchQuery, newPage, pagination.itemsPerPage);
       } else {
-        handlePageChange(pagination.currentPage);
+        fetchInventories(newPage, pagination.itemsPerPage);
       }
     } catch (err) {
       if (err.response && (err.response.status === 401 || err.response.status === 403)) {
         handleAuthError();
       } else {
-        toastService.error('Failed to delete inventory item');
+        setError(err.message);
+        toastService.error(err.message || 'Failed to delete inventory item');
       }
     }
   };
