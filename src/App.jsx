@@ -24,6 +24,7 @@ import PurchaseOrders from './pages/PurchaseOrders.jsx';
 import PurchaseOrderHistory from './pages/PurchaseOrderHistory.jsx';
 import Customers from './pages/Customers.jsx';
 import Suppliers from './pages/Suppliers.jsx';
+import Inventories from './pages/Inventories.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import authService from './services/authService';
@@ -153,6 +154,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Suppliers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/master/inventories'
+            element={
+              <ProtectedRoute>
+                <Inventories />
               </ProtectedRoute>
             }
           />
