@@ -1,66 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import useInventoriesPage from '../hooks/useInventoriesPage';
 import InventorySearch from '../components/inventories/InventorySearch';
 import InventoryTable from '../components/inventories/InventoryTable';
 import AddInventoryModal from '../components/inventories/AddInventoryModal';
 import EditInventoryModal from '../components/inventories/EditInventoryModal';
 import ViewInventoryModal from '../components/inventories/ViewInventoryModal';
-import Pagination from '../components/inventories/Pagination';
-import { getInventories, searchInventories, deleteInventory } from '../services/inventoryService';
-import toastService from '../services/toastService';
 
 const Inventories = () => {
-  const [inventories, setInventories] = useState([]);
-  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0 });
+  const {
+    inventories,
+    pagination,
+    loading,
+    error,
+    searchQuery,
+    searchLoading,
+    handleSearchChange,
+    handlePageChange,
+    handleLimitChange,
+    deleteInventory,
+    fetchInventories
+  } = useInventoriesPage();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const fetchInventories = async (page = 1) => {
-    try {
-      const data = await getInventories(page);
-      setInventories(data.data);
-      setPagination(data.pagination);
-    } catch (error) {
-      toastService.error('Failed to fetch inventories');
-      console.error('Fetch inventories error:', error);
-    }
-  };
-
-  const handleSearch = async (query) => {
-    setSearchQuery(query);
-    if (query.trim() === '') {
-      fetchInventories(1);
-    } else {
-      try {
-        const data = await searchInventories(query);
-        setInventories(data.data);
-        setPagination(data.pagination);
-      } catch (error) {
-        toastService.error('Failed to search inventories');
-        console.error('Search inventories error:', error);
-      }
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this inventory item?')) {
-      try {
-        await deleteInventory(id);
-        toastService.success('Inventory item deleted successfully');
-        fetchInventories(pagination.currentPage);
-      } catch (error) {
-        toastService.error('Failed to delete inventory item');
-        console.error('Delete inventory error:', error);
-      }
-    }
-  };
 
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    fetchInventories(pagination.currentPage);
+    fetchInventories(pagination.currentPage, pagination.itemsPerPage);
   };
 
   const openEditModal = (inventory) => {
@@ -70,7 +40,7 @@ const Inventories = () => {
   const closeEditModal = () => {
     setSelectedInventory(null);
     setIsEditModalOpen(false);
-    fetchInventories(pagination.currentPage);
+    fetchInventories(pagination.currentPage, pagination.itemsPerPage);
   };
 
   const openViewModal = (inventory) => {
@@ -82,33 +52,62 @@ const Inventories = () => {
     setIsViewModalOpen(false);
   };
 
-  useEffect(() => {
-    fetchInventories();
-  }, []);
+  const handleSearch = (query) => {
+    const event = { target: { value: query } };
+    handleSearchChange(event);
+  };
+
+  if (loading && !searchLoading) {
+    return (
+      <div className='flex justify-center items-center h-64'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+        <p className='text-red-800'>Error: {error}</p>
+        <button
+          onClick={() => fetchInventories()}
+          className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Inventories</h1>
-        <button
-          onClick={openAddModal}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          Add Inventory
-        </button>
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Inventories</h1>
+            <button
+              onClick={openAddModal}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Add Inventory
+            </button>
+          </div>
+          <InventorySearch 
+            onSearch={handleSearch} 
+          />
+          <InventoryTable
+            inventories={inventories}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            onEdit={openEditModal}
+            onDelete={deleteInventory}
+            onView={openViewModal}
+            loading={loading || searchLoading}
+          />
+        </div>
       </div>
-      <InventorySearch onSearch={handleSearch} />
-      <InventoryTable
-        inventories={inventories}
-        onEdit={openEditModal}
-        onDelete={handleDelete}
-        onView={openViewModal}
-      />
-      <Pagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={fetchInventories}
-      />
 
       {isAddModalOpen && <AddInventoryModal onClose={closeAddModal} />}
       {isEditModalOpen && selectedInventory && (
@@ -128,3 +127,4 @@ const Inventories = () => {
 };
 
 export default Inventories;
+

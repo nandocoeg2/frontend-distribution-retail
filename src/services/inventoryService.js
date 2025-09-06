@@ -30,8 +30,8 @@ export const getInventoryById = async (id) => {
   return response.json();
 };
 
-export const searchInventories = async (query) => {
-  const response = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}`, {
+export const searchInventories = async (query, page = 1, limit = 10) => {
+  const response = await fetch(`${API_URL}/search?query=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
     headers: getHeaders()
   });
   if (!response.ok) {
@@ -74,3 +74,4 @@ export const deleteInventory = async (id) => {
   }
   return response.json();
 };
+

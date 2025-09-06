@@ -100,7 +100,13 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
                 <td className="px-6 py-4 whitespace-nowrap">
                   {order.status?.status_name ? (
                     <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status.status_name)}`}
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        order.status.status_name.toLowerCase().includes('approved')
+                          ? 'bg-green-100 text-green-800'
+                          : order.status.status_name.toLowerCase().includes('failed')
+                            ? 'bg-red-100 text-red-800'
+                            : getStatusClass(order.status.status_name)
+                      }`}
                     >
                       {order.status.status_name}
                     </span>
