@@ -43,16 +43,6 @@ class CustomerService {
       throw error;
     }
   }
-
-  async searchCustomers(query) {
-    try {
-      const response = await this.api.get(`/customers/search/${query}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error searching customers:', error);
-      throw error;
-    }
-  }
 }
 
 export default new CustomerService();

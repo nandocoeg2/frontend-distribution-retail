@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import fileService from '../../services/fileService';
 import HeroIcon from '../atoms/HeroIcon';
+import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 
 const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
   if (!isOpen) return null;
@@ -16,7 +17,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900">
             Purchase Order Details
@@ -37,8 +38,8 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : order ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500">PO Number</h4>
                 <p className="mt-1 text-sm text-gray-900">{order.po_number || '-'}</p>
@@ -50,7 +51,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Customer Name</h4>
                 <p className="mt-1 text-sm text-gray-900">{order.customer?.name || '-'}</p>
@@ -62,7 +63,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Total Items</h4>
                 <p className="mt-1 text-sm text-gray-900">{order.total_items || 0}</p>
@@ -74,7 +75,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500">PO Type</h4>
                 <p className="mt-1 text-sm text-gray-900">{order.po_type || '-'}</p>
@@ -86,24 +87,33 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
               </div>
             </div>
 
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Surat Jalan</h4>
-              <p className="mt-1 text-sm text-gray-900">{order.suratJalan || '-'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Surat Jalan</h4>
+                <p className="mt-1 text-sm text-gray-900">{order.suratJalan || '-'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Invoice Pengiriman</h4>
+                <p className="mt-1 text-sm text-gray-900">{order.invoicePengiriman || '-'}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Surat PO</h4>
+                <p className="mt-1 text-sm text-gray-900">{order.suratPO || '-'}</p>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Surat Penagihan</h4>
+                <p className="mt-1 text-sm text-gray-900">{order.suratPenagihan || '-'}</p>
+              </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-500">Invoice Pengiriman</h4>
-              <p className="mt-1 text-sm text-gray-900">{order.invoicePengiriman || '-'}</p>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Surat PO</h4>
-              <p className="mt-1 text-sm text-gray-900">{order.suratPO || '-'}</p>
-            </div>
-
-            <div>
-              <h4 className="text-sm font-medium text-gray-500">Surat Penagihan</h4>
-              <p className="mt-1 text-sm text-gray-900">{order.suratPenagihan || '-'}</p>
+              <h4 className="text-sm font-medium text-gray-500 mb-2">Purchase Order Details</h4>
+              <PurchaseOrderDetailsTable details={order.purchaseOrderDetails} />
             </div>
 
             <div>
@@ -133,7 +143,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
             </div>
 
             {order.createdAt && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Created At</h4>
                   <p className="mt-1 text-sm text-gray-900">{formatDate(order.createdAt)}</p>
@@ -166,4 +176,3 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading }) => {
 };
 
 export default ViewPurchaseOrderModal;
-

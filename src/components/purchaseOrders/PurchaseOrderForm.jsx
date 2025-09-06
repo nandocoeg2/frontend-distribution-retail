@@ -6,34 +6,64 @@ const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGener
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
-  // Fetch all customers on component mount
+  // Fetch all customers on component mount (for initial dropdown population)
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const data = await customerService.getAllCustomers();
-        setCustomers(data);
-        setFilteredCustomers(data);
+        setIsLoading(true);
+        const response = await customerService.getAllCustomers(1, 20);
+        const customersArray = Array.isArray(response.data) ? response.data : [];
+        setCustomers(customersArray);
+        setFilteredCustomers(customersArray);
       } catch (error) {
         console.error('Failed to fetch customers:', error);
+        setCustomers([]);
+        setFilteredCustomers([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchCustomers();
   }, []);
 
-  // Filter customers based on search term
+  // Search customers when search term changes
   useEffect(() => {
     if (searchTerm) {
-      const filtered = customers.filter(customer =>
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.id.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredCustomers(filtered);
+      // Clear previous timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+
+      // Set new timeout to debounce API calls
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          setIsLoading(true);
+          const response = await customerService.searchCustomers(searchTerm, 1, 20);
+          const customersArray = Array.isArray(response.data) ? response.data : [];
+          setFilteredCustomers(customersArray);
+        } catch (error) {
+          console.error('Failed to search customers:', error);
+          setFilteredCustomers([]);
+        } finally {
+          setIsLoading(false);
+        }
+      }, 300); // 300ms debounce
     } else {
+      // If search term is empty, show all customers
       setFilteredCustomers(customers);
     }
+
+    // Cleanup timeout on unmount or when searchTerm changes
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, [searchTerm, customers]);
 
   // Handle customer selection
@@ -132,20 +162,26 @@ const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGener
               value={formData.customerId || ''}
               onChange={handleInputChange}
             />
-            {isDropdownOpen && filteredCustomers.length > 0 && (
+            {isDropdownOpen && (
               <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
-                <ul className="py-1">
-                  {filteredCustomers.map((customer) => (
-                    <li
-                      key={customer.id}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleCustomerSelect(customer)}
-                    >
-                      <div className="font-medium">{customer.name}</div>
-                      <div className="text-sm text-gray-500">{customer.id}</div>
-                    </li>
-                  ))}
-                </ul>
+                {isLoading ? (
+                  <div className="px-4 py-2 text-sm text-gray-500">Searching...</div>
+                ) : filteredCustomers.length > 0 ? (
+                  <ul className="py-1">
+                    {filteredCustomers.map((customer) => (
+                      <li
+                        key={customer.id}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => handleCustomerSelect(customer)}
+                      >
+                        <div className="font-medium">{customer.name}</div>
+                        <div className="text-sm text-gray-500">{customer.id}</div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="px-4 py-2 text-sm text-gray-500">No customers found</div>
+                )}
               </div>
             )}
           </div>
