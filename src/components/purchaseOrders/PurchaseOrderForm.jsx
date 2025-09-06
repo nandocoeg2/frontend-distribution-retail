@@ -1,6 +1,90 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import customerService from '../../services/customerService';
 
-const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGeneratePONumber, isEditMode = false }) => {
+const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGeneratePONumber, isEditMode = false, customerName = '' }) => {
+  const [customers, setCustomers] = useState([]);
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+
+  // Fetch all customers on component mount
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const data = await customerService.getAllCustomers();
+        setCustomers(data);
+        setFilteredCustomers(data);
+      } catch (error) {
+        console.error('Failed to fetch customers:', error);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
+  // Filter customers based on search term
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = customers.filter(customer =>
+        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredCustomers(filtered);
+    } else {
+      setFilteredCustomers(customers);
+    }
+  }, [searchTerm, customers]);
+
+  // Handle customer selection
+  const handleCustomerSelect = (customer) => {
+    handleInputChange({
+      target: {
+        name: 'customerId',
+        value: customer.id
+      }
+    });
+    setSearchTerm(customer.name);
+    setIsDropdownOpen(false);
+  };
+
+  // Handle input change for customer search
+  const handleCustomerSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setIsDropdownOpen(true);
+    
+    // Clear the customer ID if the search term is empty
+    if (!e.target.value) {
+      handleInputChange({
+        target: {
+          name: 'customerId',
+          value: ''
+        }
+      });
+    }
+  };
+
+  // Set initial search term when in edit mode and customer ID exists
+  useEffect(() => {
+    if (isEditMode && formData.customerId && customerName) {
+      setSearchTerm(customerName);
+    }
+  }, [isEditMode, formData.customerId, customerName]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -27,20 +111,45 @@ const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGener
           </div>
         </div>
 
-        <div>
+        <div ref={dropdownRef}>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Customer ID *
+            Customer *
           </label>
-          <input
-            type="text"
-            name="customerId"
-            value={formData.customerId || ''}
-            onChange={handleInputChange}
-            required
-            placeholder="Enter customer ID"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <p className="mt-1 text-xs text-gray-500">Enter the customer ID associated with this purchase order</p>
+          <div className="relative">
+            <input
+              type="text"
+              name="customerSearch"
+              value={searchTerm}
+              onChange={handleCustomerSearchChange}
+              required
+              placeholder="Search customer by name or ID"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onFocus={() => setIsDropdownOpen(true)}
+            />
+            <input
+              type="hidden"
+              name="customerId"
+              value={formData.customerId || ''}
+              onChange={handleInputChange}
+            />
+            {isDropdownOpen && filteredCustomers.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
+                <ul className="py-1">
+                  {filteredCustomers.map((customer) => (
+                    <li
+                      key={customer.id}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleCustomerSelect(customer)}
+                    >
+                      <div className="font-medium">{customer.name}</div>
+                      <div className="text-sm text-gray-500">{customer.id}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">Select a customer for this purchase order</p>
         </div>
       </div>
 

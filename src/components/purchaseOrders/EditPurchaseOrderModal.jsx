@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
+import authService from '../../services/authService.js';
+import axios from 'axios';
 
 const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +16,12 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
     suratPO: '',
     suratPenagihan: ''
   });
+  const [statuses, setStatuses] = useState([]);
+  const [customerName, setCustomerName] = useState('');
+
+  useEffect(() => {
+    fetchStatuses();
+  }, []);
 
   useEffect(() => {
     if (order) {
@@ -29,8 +37,49 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
         suratPO: order.suratPO || '',
         suratPenagihan: order.suratPenagihan || ''
       });
+      
+      // Fetch customer name if customerId exists
+      if (order.customerId) {
+        fetchCustomerName(order.customerId);
+      }
     }
   }, [order]);
+
+  const fetchStatuses = async () => {
+    try {
+      const token = authService.getToken();
+      const response = await axios.get('http://localhost:5050/api/v1/statuses', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'accept': 'application/json'
+        }
+      });
+
+      if (response.data && Array.isArray(response.data)) {
+        setStatuses(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching statuses:', err);
+    }
+  };
+
+  const fetchCustomerName = async (customerId) => {
+    try {
+      const token = authService.getToken();
+      const response = await axios.get(`http://localhost:5050/api/v1/customers/${customerId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'accept': 'application/json'
+        }
+      });
+
+      if (response.data) {
+        setCustomerName(response.data.name || '');
+      }
+    } catch (err) {
+      console.error('Error fetching customer:', err);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -58,7 +107,9 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
           <PurchaseOrderForm 
             formData={formData} 
             handleInputChange={handleInputChange} 
+            statuses={statuses}
             isEditMode={true}
+            customerName={customerName}
           />
 
           <div className="mt-6 flex justify-end space-x-3">
