@@ -2,7 +2,7 @@ import React from 'react';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Pagination from './Pagination';
 
-const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, onView, onEdit, onDelete, loading }) => {
+const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, onView, onEdit, onDelete, loading, isHistory = false }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -96,20 +96,24 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
                     >
                       <EyeIcon className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => onEdit(order)}
-                      className="text-indigo-600 hover:text-indigo-900 p-1"
-                      title="Edit"
-                    >
-                      <PencilIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(order.id)}
-                      className="text-red-600 hover:text-red-900 p-1"
-                      title="Delete"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
+                    {!isHistory && (
+                      <>
+                        <button
+                          onClick={() => onEdit(order)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1"
+                          title="Edit"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => onDelete(order.id)}
+                          className="text-red-600 hover:text-red-900 p-1"
+                          title="Delete"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -127,3 +131,4 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
 };
 
 export default PurchaseOrderTable;
+

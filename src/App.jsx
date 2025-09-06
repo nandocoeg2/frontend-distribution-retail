@@ -12,31 +12,20 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Login from './pages/Login.jsx';
-
 import Register from './pages/Register.jsx';
-
 import Dashboard from './pages/Dashboard.jsx';
-
 import Analytics from './pages/Analytics.jsx';
-
 import Users from './pages/Users.jsx';
-
 import Settings from './pages/Settings.jsx';
-
 import Profile from './pages/Profile.jsx';
-
 import SettingProfile from './pages/SettingProfile.jsx';
-
 import RoleManagement from './pages/RoleManagement.jsx';
-
 import PurchaseOrders from './pages/PurchaseOrders.jsx';
+import PurchaseOrderHistory from './pages/PurchaseOrderHistory.jsx';
 import Customers from './pages/Customers.jsx';
 import Suppliers from './pages/Suppliers.jsx';
-
 import NotFound from './pages/NotFound.jsx';
-
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-
 import authService from './services/authService';
 
 const App = () => {
@@ -167,6 +156,14 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path='/master/purchase-orders-history'
+            element={
+              <ProtectedRoute>
+                <PurchaseOrderHistory />
+              </ProtectedRoute>
+            }
+          />
           <Route path='/' element={<Navigate to='/dashboard' replace />} />
           <Route path='*' element={<NotFound />} />
         </Routes>
@@ -176,3 +173,4 @@ const App = () => {
 };
 
 export default App;
+
