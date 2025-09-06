@@ -138,23 +138,17 @@ const usePurchaseOrders = () => {
     }
   }, [getAccessToken, handleAuthError]);
 
-  const updatePurchaseOrder = useCallback(async (id, formData, file) => {
+  const updatePurchaseOrder = useCallback(async (id, formData) => {
     try {
       const accessToken = getAccessToken();
-      const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== undefined) {
-          data.append(key, formData[key]);
-        }
-      });
-      if (file) {
-        data.append('file', file);
-      }
       
       const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-        body: data,
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
       if (response.status === 401 || response.status === 403) {

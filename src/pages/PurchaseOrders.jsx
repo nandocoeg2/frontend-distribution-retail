@@ -52,9 +52,10 @@ const PurchaseOrders = () => {
     setSelectedOrder(orderData);
   };
 
-  const handleEditModalOpen = (order) => {
-    setSelectedOrder(order);
+  const handleEditModalOpen = async (order) => {
     setEditModalOpen(true);
+    const orderData = await getPurchaseOrder(order.id);
+    setSelectedOrder(orderData);
   };
 
   if (error) {
