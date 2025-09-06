@@ -11,6 +11,21 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
     );
   }
 
+  const getStatusClass = (status) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    const lowerCaseStatus = status.toLowerCase();
+    if (lowerCaseStatus.includes('pending')) {
+      return 'bg-gray-100 text-gray-800';
+    }
+    if (lowerCaseStatus.includes('processing')) {
+      return 'bg-yellow-100 text-yellow-800';
+    }
+    if (lowerCaseStatus.includes('processed')) {
+      return 'bg-green-100 text-green-800';
+    }
+    return 'bg-gray-100 text-gray-800';
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -83,9 +98,15 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {order.status?.status_name || '-'}
-                  </div>
+                  {order.status?.status_name ? (
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status.status_name)}`}
+                    >
+                      {order.status.status_name}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-500">-</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex space-x-2">
