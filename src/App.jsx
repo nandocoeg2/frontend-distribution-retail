@@ -25,6 +25,7 @@ import PurchaseOrderHistory from './pages/PurchaseOrderHistory.jsx';
 import Customers from './pages/Customers.jsx';
 import Suppliers from './pages/Suppliers.jsx';
 import Inventories from './pages/Inventories.jsx';
+import Packings from './pages/Packings.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import authService from './services/authService';
@@ -166,6 +167,14 @@ const App = () => {
             }
           />
           <Route
+            path='/master/packings'
+            element={
+              <ProtectedRoute>
+                <Packings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path='/master/purchase-orders-history'
             element={
               <ProtectedRoute>
@@ -182,4 +191,3 @@ const App = () => {
 };
 
 export default App;
-
