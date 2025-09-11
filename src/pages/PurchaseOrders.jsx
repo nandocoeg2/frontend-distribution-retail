@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
 import PurchaseOrderSearch from '../components/purchaseOrders/PurchaseOrderSearch.jsx';
 import AddPurchaseOrderModal from '../components/purchaseOrders/AddPurchaseOrderModal.jsx';
 import EditPurchaseOrderModal from '../components/purchaseOrders/EditPurchaseOrderModal.jsx';
 import ViewPurchaseOrderModal from '../components/purchaseOrders/ViewPurchaseOrderModal.jsx';
+import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const PurchaseOrders = () => {
   const {
@@ -84,7 +84,7 @@ const PurchaseOrders = () => {
               onClick={() => setAddModalOpen(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
               Add Purchase Order
             </button>
           </div>

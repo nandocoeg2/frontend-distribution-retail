@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import {
-  UserPlusIcon,
-} from '@heroicons/react/24/outline';
 import useCustomers from '@/hooks/useCustomersPage';
 import CustomerTable from '@/components/customers/CustomerTable';
 import CustomerSearch from '@/components/customers/CustomerSearch';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
 import EditCustomerModal from '@/components/customers/EditCustomerModal';
 import ViewCustomerModal from '@/components/customers/ViewCustomerModal';
+import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Customers = () => {
   const {
@@ -99,7 +97,7 @@ const Customers = () => {
               onClick={openAddModal}
               className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
             >
-              <UserPlusIcon className='h-5 w-5 mr-2' />
+              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
               Add Customer
             </button>
           </div>

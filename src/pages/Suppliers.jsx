@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import {
-  PlusIcon,
-} from '@heroicons/react/24/outline';
 import useSuppliers from '@/hooks/useSuppliersPage';
 import SupplierTable from '@/components/suppliers/SupplierTable';
 import SupplierSearch from '@/components/suppliers/SupplierSearch';
 import AddSupplierModal from '@/components/suppliers/AddSupplierModal';
 import EditSupplierModal from '@/components/suppliers/EditSupplierModal';
 import ViewSupplierModal from '@/components/suppliers/ViewSupplierModal';
+import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Suppliers = () => {
   const {
@@ -99,7 +97,7 @@ const Suppliers = () => {
               onClick={openAddModal}
               className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
             >
-              <PlusIcon className='h-5 w-5 mr-2' />
+              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
               Add Supplier
             </button>
           </div>

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
 import useInventoriesPage from '../hooks/useInventoriesPage';
 import InventorySearch from '../components/inventories/InventorySearch';
 import InventoryTable from '../components/inventories/InventoryTable';
 import AddInventoryModal from '../components/inventories/AddInventoryModal';
 import EditInventoryModal from '../components/inventories/EditInventoryModal';
 import ViewInventoryModal from '../components/inventories/ViewInventoryModal';
+import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Inventories = () => {
   const {
@@ -89,7 +89,7 @@ const Inventories = () => {
               onClick={openAddModal}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
               Add Inventory
             </button>
           </div>
@@ -127,4 +127,3 @@ const Inventories = () => {
 };
 
 export default Inventories;
-
