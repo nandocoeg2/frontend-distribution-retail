@@ -127,15 +127,7 @@ const App = () => {
             }
           />
           <Route
-            path='/purchase-orders'
-            element={
-              <ProtectedRoute>
-                <PurchaseOrders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/purchase-orders'
+            path='/po/purchase-orders'
             element={
               <ProtectedRoute>
                 <PurchaseOrders />
@@ -167,7 +159,7 @@ const App = () => {
             }
           />
           <Route
-            path='/master/packings'
+            path='/po/packings'
             element={
               <ProtectedRoute>
                 <Packings />
@@ -175,7 +167,7 @@ const App = () => {
             }
           />
           <Route
-            path='/master/purchase-orders-history'
+            path='/po/purchase-orders-history'
             element={
               <ProtectedRoute>
                 <PurchaseOrderHistory />
