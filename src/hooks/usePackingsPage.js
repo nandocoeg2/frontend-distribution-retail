@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getPackings, searchPackingsByStatus, getPackingById } from '../services/packingService';
+import { getPackings, searchPackingsByStatus, getPackingById, searchPackings } from '../services/packingService';
 import toastService from '../services/toastService';
 
 const usePackingsPage = () => {
@@ -8,6 +8,7 @@ const usePackingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('packing_number');
   const [searchLoading, setSearchLoading] = useState(false);
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [viewingPacking, setViewingPacking] = useState(null);
@@ -34,7 +35,7 @@ const usePackingsPage = () => {
     }
   }, []);
 
-  const searchPackings = useCallback(async (query, page = 1) => {
+  const searchPackingsData = useCallback(async (query, field, page = 1) => {
     if (!query.trim()) {
       fetchPackings(page);
       return;
@@ -42,7 +43,7 @@ const usePackingsPage = () => {
 
     try {
       setSearchLoading(true);
-      const response = await searchPackingsByStatus(query, page);
+      const response = await searchPackings(query, field, page);
       if (response && response.data) {
         setPackings(response.data);
         setPagination(response.pagination);
@@ -77,15 +78,22 @@ const usePackingsPage = () => {
     }
 
     const timeout = setTimeout(() => {
-      searchPackings(query, 1); // Reset to first page when searching
+      searchPackingsData(query, searchField, 1); // Reset to first page when searching
     }, 500);
 
     setDebounceTimeout(timeout);
   };
 
+  const handleSearchFieldChange = (field) => {
+    setSearchField(field);
+    if (searchQuery.trim()) {
+      searchPackingsData(searchQuery, field, 1);
+    }
+  };
+
   const handlePageChange = (page) => {
     if (searchQuery.trim()) {
-      searchPackings(searchQuery, page);
+      searchPackingsData(searchQuery, searchField, page);
     } else {
       fetchPackings(page);
     }
@@ -109,7 +117,7 @@ const usePackingsPage = () => {
 
   const refreshPackings = () => {
     if (searchQuery.trim()) {
-      searchPackings(searchQuery, pagination.currentPage);
+      searchPackingsData(searchQuery, searchField, pagination.currentPage);
     } else {
       fetchPackings(pagination.currentPage);
     }
@@ -121,10 +129,12 @@ const usePackingsPage = () => {
     loading,
     error,
     searchQuery,
+    searchField,
     searchLoading,
     viewingPacking,
     isViewModalOpen,
     handleSearchChange,
+    handleSearchFieldChange,
     handlePageChange,
     openViewModal,
     closeViewModal,

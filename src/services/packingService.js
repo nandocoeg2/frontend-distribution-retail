@@ -14,3 +14,10 @@ export const searchPackingsByStatus = (statusId, page = 1, limit = 10) => {
   return get(`${API_URL}/search`, { page, limit, statusId });
 };
 
+// Enhanced search function that supports multiple search fields
+export const searchPackings = (query, field, page = 1, limit = 10) => {
+  const params = { page, limit };
+  params[field] = query;
+  return get(`${API_URL}/search`, params);
+};
+

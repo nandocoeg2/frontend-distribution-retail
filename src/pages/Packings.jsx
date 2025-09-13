@@ -14,10 +14,12 @@ const Packings = () => {
     loading,
     error,
     searchQuery,
+    searchField,
     searchLoading,
     viewingPacking,
     isViewModalOpen,
     handleSearchChange,
+    handleSearchFieldChange,
     handlePageChange,
     openViewModal,
     closeViewModal,
@@ -33,7 +35,9 @@ const Packings = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <PackingSearch 
             searchQuery={searchQuery}
+            searchField={searchField}
             handleSearchChange={handleSearchChange}
+            handleSearchFieldChange={handleSearchFieldChange}
             searchLoading={searchLoading}
           />
 
