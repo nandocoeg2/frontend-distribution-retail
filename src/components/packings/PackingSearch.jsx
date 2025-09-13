@@ -1,31 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const PackingSearch = ({ onSearch }) => {
-  const [query, setQuery] = useState('');
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    onSearch(query);
-  };
-
+const PackingSearch = ({ searchQuery, handleSearchChange, searchLoading }) => {
   return (
-    <form onSubmit={handleSearch} className="mb-4">
-      <div className="flex">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by status ID..."
-          className="flex-grow px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    <div className='mb-4 relative'>
+      <input
+        type='text'
+        placeholder='Search packings...'
+        value={searchQuery}
+        onChange={handleSearchChange}
+        className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+      />
+      <div className='absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none'>
+        <svg 
+          className='h-5 w-5 text-gray-400' 
+          fill='none' 
+          strokeLinecap='round' 
+          strokeLinejoin='round' 
+          strokeWidth='2' 
+          viewBox='0 0 24 24' 
+          stroke='currentColor'
         >
-          Search
-        </button>
+          <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
+        </svg>
       </div>
-    </form>
+      {searchLoading && (
+        <div className='flex items-center mt-2 text-sm text-gray-600'>
+          <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+          Searching...
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -13,9 +13,11 @@ const Packings = () => {
     pagination,
     loading,
     error,
+    searchQuery,
+    searchLoading,
     viewingPacking,
     isViewModalOpen,
-    handleSearch,
+    handleSearchChange,
     handlePageChange,
     openViewModal,
     closeViewModal,
@@ -29,7 +31,11 @@ const Packings = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <PackingSearch onSearch={handleSearch} />
+          <PackingSearch 
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+            searchLoading={searchLoading}
+          />
 
           {loading && <p className="text-center text-gray-500">Loading...</p>}
           {error && <p className="text-center text-red-500">Error: {error}</p>}

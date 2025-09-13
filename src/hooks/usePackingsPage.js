@@ -8,19 +8,16 @@ const usePackingsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [viewingPacking, setViewingPacking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const fetchPackings = useCallback(async (page = 1, query = '') => {
+  const fetchPackings = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
-      let response;
-      if (query) {
-        response = await searchPackingsByStatus(query, page);
-      } else {
-        response = await getPackings(page);
-      }
+      const response = await getPackings(page);
       if (response && response.data) {
         setPackings(response.data);
         setPagination(response.pagination);
@@ -37,17 +34,61 @@ const usePackingsPage = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchPackings(1, searchQuery);
-  }, [fetchPackings, searchQuery]);
+  const searchPackings = useCallback(async (query, page = 1) => {
+    if (!query.trim()) {
+      fetchPackings(page);
+      return;
+    }
 
-  const handleSearch = (query) => {
+    try {
+      setSearchLoading(true);
+      const response = await searchPackingsByStatus(query, page);
+      if (response && response.data) {
+        setPackings(response.data);
+        setPagination(response.pagination);
+      } else {
+        setPackings([]);
+        setPagination({ currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 10 });
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to search packings';
+      toastService.error(errorMessage);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [fetchPackings]);
+
+  useEffect(() => {
+    fetchPackings(1);
+
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
+  }, [fetchPackings]);
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
     setSearchQuery(query);
-    fetchPackings(1, query);
+
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchPackings(query, 1); // Reset to first page when searching
+    }, 500);
+
+    setDebounceTimeout(timeout);
   };
 
   const handlePageChange = (page) => {
-    fetchPackings(page, searchQuery);
+    if (searchQuery.trim()) {
+      searchPackings(searchQuery, page);
+    } else {
+      fetchPackings(page);
+    }
   };
 
   const openViewModal = async (id) => {
@@ -67,7 +108,11 @@ const usePackingsPage = () => {
   };
 
   const refreshPackings = () => {
-    fetchPackings(pagination.currentPage, searchQuery);
+    if (searchQuery.trim()) {
+      searchPackings(searchQuery, pagination.currentPage);
+    } else {
+      fetchPackings(pagination.currentPage);
+    }
   };
 
   return {
@@ -76,9 +121,10 @@ const usePackingsPage = () => {
     loading,
     error,
     searchQuery,
+    searchLoading,
     viewingPacking,
     isViewModalOpen,
-    handleSearch,
+    handleSearchChange,
     handlePageChange,
     openViewModal,
     closeViewModal,
