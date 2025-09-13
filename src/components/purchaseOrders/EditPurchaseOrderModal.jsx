@@ -20,12 +20,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
     suratPenagihan: ''
   });
   const [purchaseOrderDetails, setPurchaseOrderDetails] = useState([]);
-  const [statuses, setStatuses] = useState([]);
   const [customerName, setCustomerName] = useState('');
-
-  useEffect(() => {
-    fetchStatuses();
-  }, []);
 
   useEffect(() => {
     if (order) {
@@ -49,23 +44,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
     }
   }, [order]);
 
-  const fetchStatuses = async () => {
-    try {
-      const token = authService.getToken();
-      const response = await axios.get('http://localhost:5050/api/v1/statuses', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'accept': 'application/json'
-        }
-      });
 
-      if (response.data && Array.isArray(response.data)) {
-        setStatuses(response.data);
-      }
-    } catch (err) {
-      console.error('Error fetching statuses:', err);
-    }
-  };
 
   const fetchCustomerName = async (customerId) => {
     try {
@@ -139,7 +118,6 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
           <PurchaseOrderForm 
             formData={formData} 
             handleInputChange={handleInputChange} 
-            statuses={statuses}
             isEditMode={true}
             customerName={customerName}
           />

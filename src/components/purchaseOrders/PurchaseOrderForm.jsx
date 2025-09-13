@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import customerService from '../../services/customerService';
+import { usePurchaseOrderStatuses } from '../../hooks/useStatusTypes';
 
-const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGeneratePONumber, isEditMode = false, customerName = '' }) => {
+const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, isEditMode = false, customerName = '' }) => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -9,6 +10,9 @@ const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGener
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef(null);
   const searchTimeoutRef = useRef(null);
+  
+  // Use purchase order statuses hook
+  const { statuses, loading: statusLoading, error: statusError } = usePurchaseOrderStatuses();
 
   // Fetch all customers on component mount (for initial dropdown population)
   useEffect(() => {
@@ -244,15 +248,19 @@ const PurchaseOrderForm = ({ formData, handleInputChange, statuses = [], onGener
             value={formData.statusId || ''}
             onChange={handleInputChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={statusLoading}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option value="">Select Status</option>
+            <option value="">{statusLoading ? 'Loading statuses...' : 'Select Status'}</option>
             {statuses.map((status) => (
               <option key={status.id} value={status.id}>
                 {status.status_name} - {status.status_description}
               </option>
             ))}
           </select>
+          {statusError && (
+            <p className="mt-1 text-xs text-red-500">Failed to load statuses</p>
+          )}
         </div>
       </div>
 

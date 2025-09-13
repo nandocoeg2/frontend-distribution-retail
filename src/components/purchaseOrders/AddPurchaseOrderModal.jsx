@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import fileService from '../../services/fileService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import { toast } from 'react-toastify';
-import authService from '../../services/authService.js';
-import axios from 'axios';
+import { usePurchaseOrderStatuses } from '../../hooks/useStatusTypes';
 
 const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrder }) => {
   const [formData, setFormData] = useState({
@@ -19,44 +18,22 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
     suratPenagihan: ''
   });
 
-  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadMode, setUploadMode] = useState('manual');
+  
+  // Get purchase order statuses using hook
+  const { statuses } = usePurchaseOrderStatuses();
 
   useEffect(() => {
     if (isOpen) {
-      fetchStatuses();
       resetForm();
       setUploadMode('manual');
     }
-  }, [isOpen]);
+  }, [isOpen, statuses]);
 
-  const fetchStatuses = async () => {
-    try {
-      const token = authService.getToken();
-      const response = await axios.get('http://localhost:5050/api/v1/statuses', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'accept': 'application/json'
-        }
-      });
 
-      if (response.data && Array.isArray(response.data)) {
-        setStatuses(response.data);
-        const pendingStatus = response.data.find(
-          status => status.status_code === 'PENDING'
-        );
-        if (pendingStatus) {
-          setFormData(prev => ({ ...prev, statusId: pendingStatus.id }));
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching statuses:', err);
-      setError('Failed to load statuses');
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -117,11 +94,18 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
   };
 
   const resetForm = () => {
+    const pendingStatus = statuses.find(s => s.status_code === 'PENDING');
     setFormData({
-      customerId: '', po_number: '', total_items: 1,
+      customerId: '', 
+      po_number: '', 
+      total_items: 1,
       tanggal_order: new Date().toISOString().split('T')[0],
-      po_type: 'SINGLE', statusId: statuses.find(s => s.status_code === 'PENDING')?.id || '',
-      suratJalan: '', invoicePengiriman: '', suratPO: '', suratPenagihan: ''
+      po_type: 'SINGLE', 
+      statusId: pendingStatus?.id || '',
+      suratJalan: '', 
+      invoicePengiriman: '', 
+      suratPO: '', 
+      suratPenagihan: ''
     });
     setError(null);
     setSelectedFile(null);
@@ -161,7 +145,11 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
               </div>
             </div>
             <hr className="my-4" />
-            <PurchaseOrderForm formData={formData} handleInputChange={handleInputChange} statuses={statuses} onGeneratePONumber={generatePONumber} />
+            <PurchaseOrderForm 
+              formData={formData} 
+              handleInputChange={handleInputChange} 
+              onGeneratePONumber={generatePONumber} 
+            />
             <div className="mt-6 flex justify-end space-x-3">
               <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
               <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={loading || !formData.customerId || !formData.po_number}>{loading ? 'Creating...' : 'Add Purchase Order'}</button>

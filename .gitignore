@@ -93,3 +93,6 @@ out/
 
 # Kiro
 .kiro/*
+
+# Qoder
+.qoder/*
