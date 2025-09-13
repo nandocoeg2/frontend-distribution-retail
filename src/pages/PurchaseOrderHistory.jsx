@@ -18,6 +18,8 @@ const PurchaseOrderHistory = () => {
     getPurchaseOrder,
     handlePageChange,
     handleLimitChange,
+    handleSearchChange,
+    handleSearchFieldChange,
     handleSearchQueryChange,
   } = usePurchaseOrderHistory();
 
@@ -57,7 +59,8 @@ const PurchaseOrderHistory = () => {
           <PurchaseOrderSearch 
             searchQuery={searchQuery}
             searchField={searchField}
-            onSearch={handleSearchQueryChange} 
+            handleSearchChange={handleSearchChange}
+            handleSearchFieldChange={handleSearchFieldChange}
             searchLoading={searchLoading} 
           />
 

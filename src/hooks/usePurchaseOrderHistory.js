@@ -16,6 +16,7 @@ const usePurchaseOrderHistory = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchField, setSearchField] = useState('customer_name');
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
 
   const handleAuthError = useCallback(() => {
     localStorage.clear();
@@ -125,6 +126,32 @@ const usePurchaseOrderHistory = () => {
     }
   };
 
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      if (!query.trim()) {
+        fetchPurchaseOrders(1, pagination.itemsPerPage); // Reset to first page when clearing search
+      } else {
+        searchPurchaseOrders(query, searchField, 1, pagination.itemsPerPage); // Reset to first page when searching
+      }
+    }, 500);
+
+    setDebounceTimeout(timeout);
+  };
+
+  const handleSearchFieldChange = (field) => {
+    setSearchField(field);
+    if (searchQuery.trim()) {
+      searchPurchaseOrders(searchQuery, field, 1, pagination.itemsPerPage);
+    }
+  };
+
   const handleSearchQueryChange = (query, field) => {
     setSearchQuery(query);
     setSearchField(field);
@@ -138,6 +165,12 @@ const usePurchaseOrderHistory = () => {
 
   useEffect(() => {
     fetchPurchaseOrders(1, pagination.itemsPerPage);
+
+    return () => {
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
+    };
   }, [fetchPurchaseOrders]);
 
   return {
@@ -153,6 +186,8 @@ const usePurchaseOrderHistory = () => {
     getPurchaseOrder,
     handlePageChange,
     handleLimitChange,
+    handleSearchChange,
+    handleSearchFieldChange,
     handleSearchQueryChange,
   };
 };
