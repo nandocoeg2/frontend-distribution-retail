@@ -27,6 +27,7 @@ import Suppliers from './pages/Suppliers.jsx';
 import Inventories from './pages/Inventories.jsx';
 import Packings from './pages/Packings.jsx';
 import Invoices from './pages/Invoices.jsx';
+import SuratJalan from './pages/SuratJalan.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import authService from './services/authService';
@@ -141,6 +142,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Invoices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/po/surat-jalan'
+            element={
+              <ProtectedRoute>
+                <SuratJalan />
               </ProtectedRoute>
             }
           />

@@ -13,3 +13,4 @@ export { default as Customers } from './Customers';
 export { default as Suppliers } from './Suppliers';
 export { default as Packings } from './Packings';
 export { default as Invoices } from './Invoices';
+export { default as SuratJalan } from './SuratJalan';
