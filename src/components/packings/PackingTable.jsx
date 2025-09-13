@@ -18,6 +18,7 @@ const PackingTable = ({ packings, onViewById }) => {
       <table className="min-w-full bg-white border border-gray-200">
         <thead>
           <tr className="bg-gray-50">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing Number</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PO Number</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Packing</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -28,6 +29,9 @@ const PackingTable = ({ packings, onViewById }) => {
         <tbody className="bg-white divide-y divide-gray-200">
           {packings.map((packing) => (
             <tr key={packing.id}>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {packing.packing_number || 'N/A'}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {packing.purchaseOrder?.po_number || 'N/A'}
               </td>
