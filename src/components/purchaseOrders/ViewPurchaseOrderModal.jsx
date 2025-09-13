@@ -185,7 +185,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
         )}
 
         <div className="mt-6 flex justify-end gap-2">
-          {/* {order?.status?.status_name !== 'Processed' && (
+          {order?.status?.status_name !== 'Processed' && (
             <button
               onClick={handleProcess}
               disabled={processing}
@@ -193,7 +193,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
             >
               {processing ? 'Processing...' : 'Process'}
             </button>
-          )} */}
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"

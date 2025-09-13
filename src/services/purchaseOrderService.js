@@ -15,7 +15,7 @@ const purchaseOrderService = {
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        statusId: 'cmf7row5z000u1vkxlo5mimm2'
+        status_code: 'PROCESSING PURCHASE ORDER'
       })
     });
 
