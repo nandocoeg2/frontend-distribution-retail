@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import toastService from '../../services/toastService';
+import invoiceService from '../../services/invoiceService';
 
 const EditInvoiceModal = ({ show, onClose, invoice, onInvoiceUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
@@ -40,28 +42,33 @@ const EditInvoiceModal = ({ show, onClose, invoice, onInvoiceUpdated, handleAuth
     setLoading(true);
 
     try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5050/api/v1/invoices/${invoice.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      // Convert numeric fields to numbers
+      const submitData = {
+        ...formData,
+        sub_total: parseFloat(formData.sub_total) || 0,
+        total_discount: parseFloat(formData.total_discount) || 0,
+        total_price: parseFloat(formData.total_price) || 0,
+        ppn_percentage: parseFloat(formData.ppn_percentage) || 0,
+        ppn_rupiah: parseFloat(formData.ppn_rupiah) || 0,
+        grand_total: parseFloat(formData.grand_total) || 0,
+      };
 
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
+      const result = await invoiceService.updateInvoice(invoice.id, submitData);
+      const updatedInvoice = result.data || result;
+      if (!updatedInvoice.id) {
+        updatedInvoice.id = invoice.id;
       }
 
-      if (!response.ok) throw new Error('Failed to update invoice');
-
-      const result = await response.json();
-      onInvoiceUpdated(result.data);
+      onInvoiceUpdated(updatedInvoice);
+      toastService.success('Invoice updated successfully');
       onClose();
     } catch (err) {
       console.error('Error updating invoice:', err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to update invoice');
     } finally {
       setLoading(false);
     }

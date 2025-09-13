@@ -15,8 +15,10 @@ const Invoices = () => {
     loading,
     error,
     searchQuery,
+    searchField,
     searchLoading,
     handleSearchChange,
+    handleSearchFieldChange,
     handlePageChange,
     handleLimitChange,
     deleteInvoice,
@@ -104,7 +106,9 @@ const Invoices = () => {
 
           <InvoiceSearch
             searchQuery={searchQuery}
+            searchField={searchField}
             handleSearchChange={handleSearchChange}
+            handleSearchFieldChange={handleSearchFieldChange}
             searchLoading={searchLoading}
           />
 

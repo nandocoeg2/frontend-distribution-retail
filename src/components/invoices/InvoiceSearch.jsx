@@ -1,151 +1,76 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const InvoiceSearch = ({ searchQuery, handleSearchChange, searchLoading }) => {
-  const [localSearch, setLocalSearch] = useState(searchQuery || {
-    no_invoice: '',
-    deliver_to: '',
-    type: '',
-    statusPembayaranId: '',
-    purchaseOrderId: '',
-    tanggal_start: '',
-    tanggal_end: ''
-  });
-
-  const handleInputChange = (field, value) => {
-    const updatedSearch = { ...localSearch, [field]: value };
-    setLocalSearch(updatedSearch);
-    handleSearchChange(updatedSearch);
+const InvoiceSearch = ({ searchQuery, searchField, handleSearchChange, handleSearchFieldChange, searchLoading }) => {
+  const getInputType = () => {
+    if (searchField === 'tanggal_start' || searchField === 'tanggal_end') {
+      return 'date';
+    }
+    if (searchField === 'type') {
+      return 'select';
+    }
+    return 'text';
   };
 
-  const clearSearch = () => {
-    const emptySearch = {
-      no_invoice: '',
-      deliver_to: '',
-      type: '',
-      statusPembayaranId: '',
-      purchaseOrderId: '',
-      tanggal_start: '',
-      tanggal_end: ''
-    };
-    setLocalSearch(emptySearch);
-    handleSearchChange(emptySearch);
+  const getPlaceholder = () => {
+    return `Search by ${searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}...`;
   };
 
   return (
-    <div className='mb-4 p-4 bg-gray-50 rounded-lg'>
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-        <div>
-          <label htmlFor='no_invoice' className='block text-sm font-medium text-gray-700'>
-            Invoice No
-          </label>
-          <input
-            type='text'
-            id='no_invoice'
-            value={localSearch.no_invoice}
-            onChange={(e) => handleInputChange('no_invoice', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-            placeholder='Search by invoice number...'
-          />
-        </div>
-
-        <div>
-          <label htmlFor='deliver_to' className='block text-sm font-medium text-gray-700'>
-            Deliver To
-          </label>
-          <input
-            type='text'
-            id='deliver_to'
-            value={localSearch.deliver_to}
-            onChange={(e) => handleInputChange('deliver_to', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-            placeholder='Search by recipient...'
-          />
-        </div>
-
-        <div>
-          <label htmlFor='type' className='block text-sm font-medium text-gray-700'>
-            Type
-          </label>
-          <select
-            id='type'
-            value={localSearch.type}
-            onChange={(e) => handleInputChange('type', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-          >
-            <option value=''>All Types</option>
-            <option value='PEMBAYARAN'>PEMBAYARAN</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor='statusPembayaranId' className='block text-sm font-medium text-gray-700'>
-            Payment Status
-          </label>
-          <input
-            type='text'
-            id='statusPembayaranId'
-            value={localSearch.statusPembayaranId}
-            onChange={(e) => handleInputChange('statusPembayaranId', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-            placeholder='Payment status ID...'
-          />
-        </div>
-
-        <div>
-          <label htmlFor='purchaseOrderId' className='block text-sm font-medium text-gray-700'>
-            Purchase Order ID
-          </label>
-          <input
-            type='text'
-            id='purchaseOrderId'
-            value={localSearch.purchaseOrderId}
-            onChange={(e) => handleInputChange('purchaseOrderId', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-            placeholder='PO ID...'
-          />
-        </div>
-
-        <div>
-          <label htmlFor='tanggal_start' className='block text-sm font-medium text-gray-700'>
-            Start Date
-          </label>
-          <input
-            type='date'
-            id='tanggal_start'
-            value={localSearch.tanggal_start}
-            onChange={(e) => handleInputChange('tanggal_start', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-          />
-        </div>
-
-        <div>
-          <label htmlFor='tanggal_end' className='block text-sm font-medium text-gray-700'>
-            End Date
-          </label>
-          <input
-            type='date'
-            id='tanggal_end'
-            value={localSearch.tanggal_end}
-            onChange={(e) => handleInputChange('tanggal_end', e.target.value)}
-            className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
-          />
-        </div>
-
-        <div className='flex items-end'>
-          <button
-            onClick={clearSearch}
-            className='px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
-          >
-            Clear Search
-          </button>
-        </div>
+    <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <select
+          value={searchField}
+          onChange={(e) => handleSearchFieldChange(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="no_invoice">Invoice Number</option>
+          <option value="deliver_to">Deliver To</option>
+          <option value="type">Type</option>
+          <option value="statusPembayaranId">Payment Status ID</option>
+          <option value="purchaseOrderId">Purchase Order ID</option>
+          <option value="tanggal_start">Start Date</option>
+          <option value="tanggal_end">End Date</option>
+        </select>
       </div>
-
-      {searchLoading && (
-        <div className='mt-2 text-sm text-gray-500'>
-          Searching...
+      <div className="relative md:col-span-2">
+        {getInputType() === 'select' ? (
+          <select
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Types</option>
+            <option value="PEMBAYARAN">PEMBAYARAN</option>
+          </select>
+        ) : (
+          <input
+            type={getInputType()}
+            placeholder={getPlaceholder()}
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        )}
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+          <svg
+            className="h-5 w-5 text-gray-400"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
         </div>
-      )}
+        {searchLoading && (
+          <div className="flex items-center mt-2 text-sm text-gray-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            Searching...
+          </div>
+        )}
+      </div>
     </div>
   );
 };

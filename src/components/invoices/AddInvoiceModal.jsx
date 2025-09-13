@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import toastService from '../../services/toastService';
+import invoiceService from '../../services/invoiceService';
 
 const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => {
   const [formData, setFormData] = useState({
@@ -31,6 +33,17 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
     setLoading(true);
 
     try {
+      // Convert numeric fields to numbers
+      const submitData = {
+        ...formData,
+        sub_total: parseFloat(formData.sub_total) || 0,
+        total_discount: parseFloat(formData.total_discount) || 0,
+        total_price: parseFloat(formData.total_price) || 0,
+        ppn_percentage: parseFloat(formData.ppn_percentage) || 0,
+        ppn_rupiah: parseFloat(formData.ppn_rupiah) || 0,
+        grand_total: parseFloat(formData.grand_total) || 0,
+      };
+
       const accessToken = localStorage.getItem('token');
       const response = await fetch('http://localhost:5050/api/v1/invoices', {
         method: 'POST',
@@ -38,7 +51,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -48,8 +61,9 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
 
       if (!response.ok) throw new Error('Failed to create invoice');
 
-      const result = await response.json();
-      onInvoiceAdded(result.data);
+      const createResult = await response.json();
+      onInvoiceAdded(createResult.data || createResult);
+      toastService.success('Invoice created successfully');
       onClose();
       setFormData({
         no_invoice: '',
@@ -67,6 +81,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
       });
     } catch (err) {
       console.error('Error creating invoice:', err);
+      toastService.error('Failed to create invoice');
     } finally {
       setLoading(false);
     }

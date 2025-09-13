@@ -15,6 +15,7 @@ const useInvoices = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchField, setSearchField] = useState('no_invoice');
   const [searchLoading, setSearchLoading] = useState(false);
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const navigate = useNavigate();
@@ -53,10 +54,17 @@ const useInvoices = () => {
     }
   }, [handleAuthError]);
 
-  const searchInvoices = useCallback(async (searchParams, page = 1, limit = 10) => {
+  const searchInvoices = useCallback(async (query, field, page = 1, limit = 10) => {
+    if (!query.trim()) {
+      fetchInvoices(page, limit);
+      return;
+    }
+
     try {
       setSearchLoading(true);
       const accessToken = localStorage.getItem('token');
+      const searchParams = {};
+      searchParams[field] = query;
       const params = new URLSearchParams(searchParams);
       params.append('page', page);
       params.append('limit', limit);
@@ -81,7 +89,7 @@ const useInvoices = () => {
     } finally {
       setSearchLoading(false);
     }
-  }, [handleAuthError]);
+  }, [fetchInvoices, handleAuthError]);
 
   const deleteInvoice = async (id) => {
     if (!window.confirm('Are you sure you want to delete this invoice?'))
@@ -104,29 +112,41 @@ const useInvoices = () => {
       if (!response.ok) throw new Error('Failed to delete invoice');
 
       setInvoices(invoices.filter((invoice) => invoice.id !== id));
-      toastService.success('Invoice deleted successfully');
-    } catch (err) {
+      toastService.success('Invoice deleted successfully');    } catch (err) {
       toastService.error('Failed to delete invoice');
     }
   };
 
-  const handleSearchChange = (searchParams) => {
-    setSearchQuery(searchParams);
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
 
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
     }
 
     const timeout = setTimeout(() => {
-      searchInvoices(searchParams, 1, pagination.itemsPerPage); // Reset to first page when searching
+      searchInvoices(query, searchField, 1, pagination.itemsPerPage); // Reset to first page when searching
     }, 500);
 
     setDebounceTimeout(timeout);
   };
 
+  const handleSearchFieldChange = (field) => {
+    setSearchField(field);
+    setSearchQuery('');
+
+    // If there's a current search, perform it with the new field
+    if (searchQuery.trim()) {
+      searchInvoices(searchQuery, field, 1, pagination.itemsPerPage);
+    } else {
+      fetchInvoices(1, pagination.itemsPerPage);
+    }
+  };
+
   const handlePageChange = (newPage) => {
-    if (searchQuery && Object.keys(searchQuery).length > 0) {
-      searchInvoices(searchQuery, newPage, pagination.itemsPerPage);
+    if (searchQuery.trim()) {
+      searchInvoices(searchQuery, searchField, newPage, pagination.itemsPerPage);
     } else {
       fetchInvoices(newPage, pagination.itemsPerPage);
     }
@@ -139,13 +159,12 @@ const useInvoices = () => {
     };
     setPagination(newPagination);
 
-    if (searchQuery && Object.keys(searchQuery).length > 0) {
-      searchInvoices(searchQuery, 1, newLimit); // Reset to first page when changing limit
+    if (searchQuery.trim()) {
+      searchInvoices(searchQuery, searchField, 1, newLimit); // Reset to first page when changing limit
     } else {
       fetchInvoices(1, newLimit); // Reset to first page when changing limit
     }
   };
-
   useEffect(() => {
     fetchInvoices(1, pagination.itemsPerPage); // Start on first page
 
@@ -164,8 +183,10 @@ const useInvoices = () => {
     loading,
     error,
     searchQuery,
+    searchField,
     searchLoading,
     handleSearchChange,
+    handleSearchFieldChange,
     handlePageChange,
     handleLimitChange,
     deleteInvoice,
