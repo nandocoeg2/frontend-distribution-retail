@@ -157,7 +157,7 @@ const useCustomers = () => {
         clearTimeout(debounceTimeout);
       }
     };
-  }, [fetchCustomers, debounceTimeout]);
+  }, [fetchCustomers]);
 
   return {
     customers,

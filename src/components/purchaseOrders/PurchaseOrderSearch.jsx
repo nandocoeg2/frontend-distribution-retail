@@ -1,48 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
-const PurchaseOrderSearch = ({ searchQuery, searchField, onSearch, searchLoading }) => {
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
-
-  // Handle search input change with debouncing
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    
-    // Clear existing timeout
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    // Set new timeout for 500ms delay
-    const timeout = setTimeout(() => {
-      onSearch(query, searchField);
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  // Handle search field change
-  const handleSearchFieldChange = (e) => {
-    const field = e.target.value;
-    if (searchQuery.trim()) {
-      onSearch(searchQuery, field);
-    }
-  };
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
-  }, [debounceTimeout]);
+const PurchaseOrderSearch = ({ searchQuery, searchField, handleSearchChange, handleSearchFieldChange, searchLoading }) => {
 
   return (
     <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <select
           value={searchField}
-          onChange={handleSearchFieldChange}
+          onChange={(e) => handleSearchFieldChange(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="customer_name">Customer Name</option>

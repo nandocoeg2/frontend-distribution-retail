@@ -24,7 +24,8 @@ const PurchaseOrders = () => {
     getPurchaseOrder,
     handlePageChange,
     handleLimitChange,
-    handleSearchQueryChange,
+    handleSearchChange,
+    handleSearchFieldChange,
   } = usePurchaseOrders();
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -89,11 +90,12 @@ const PurchaseOrders = () => {
             </button>
           </div>
 
-          <PurchaseOrderSearch 
+          <PurchaseOrderSearch
             searchQuery={searchQuery}
             searchField={searchField}
-            onSearch={handleSearchQueryChange} 
-            searchLoading={searchLoading} 
+            handleSearchChange={handleSearchChange}
+            handleSearchFieldChange={handleSearchFieldChange}
+            searchLoading={searchLoading}
           />
 
           <PurchaseOrderTable

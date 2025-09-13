@@ -130,7 +130,7 @@ const useSuppliers = () => {
         clearTimeout(debounceTimeout);
       }
     };
-  }, [fetchSuppliers, debounceTimeout]);
+  }, [fetchSuppliers]);
 
   return {
     suppliers,
