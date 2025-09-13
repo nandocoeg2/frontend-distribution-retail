@@ -129,8 +129,7 @@ const useInventoriesPage = () => {
         clearTimeout(debounceTimeout);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchInventories]);
 
   return {
     inventories,
@@ -151,4 +150,3 @@ const useInventoriesPage = () => {
 };
 
 export default useInventoriesPage;
-

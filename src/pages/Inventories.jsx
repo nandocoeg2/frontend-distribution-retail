@@ -52,10 +52,7 @@ const Inventories = () => {
     setIsViewModalOpen(false);
   };
 
-  const handleSearch = (query) => {
-    const event = { target: { value: query } };
-    handleSearchChange(event);
-  };
+
 
   if (loading && !searchLoading) {
     return (
@@ -93,8 +90,10 @@ const Inventories = () => {
               Add Inventory
             </button>
           </div>
-          <InventorySearch 
-            onSearch={handleSearch} 
+          <InventorySearch
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+            searchLoading={searchLoading}
           />
           <InventoryTable
             inventories={inventories}
