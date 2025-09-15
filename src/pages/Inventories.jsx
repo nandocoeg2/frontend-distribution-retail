@@ -117,6 +117,7 @@ const Inventories = () => {
       )}
       {isViewModalOpen && selectedInventory && (
         <ViewInventoryModal
+          show={isViewModalOpen}
           inventory={selectedInventory}
           onClose={closeViewModal}
         />
