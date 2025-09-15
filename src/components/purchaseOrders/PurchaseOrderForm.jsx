@@ -263,58 +263,6 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
           )}
         </div>
       </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Surat Jalan
-        </label>
-        <input
-          type="text"
-          name="suratJalan"
-          value={formData.suratJalan || ''}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Invoice Pengiriman
-        </label>
-        <input
-          type="text"
-          name="invoicePengiriman"
-          value={formData.invoicePengiriman || ''}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Surat PO
-        </label>
-        <input
-          type="text"
-          name="suratPO"
-          value={formData.suratPO || ''}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Surat Penagihan
-        </label>
-        <input
-          type="text"
-          name="suratPenagihan"
-          value={formData.suratPenagihan || ''}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
     </div>
   );
 };
