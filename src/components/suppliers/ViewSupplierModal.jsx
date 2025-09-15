@@ -1,92 +1,137 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  AccordionItem,
+  InfoCard
+} from '../ui';
 
 const ViewSupplierModal = ({ show, onClose, supplier }) => {
+  const [expandedSections, setExpandedSections] = useState({
+    basicInfo: true,
+    contactInfo: false,
+    bankInfo: false,
+    metaInfo: false
+  });
+
   if (!show || !supplier) {
     return null;
   }
 
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',  
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   return (
-    <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-        <div className='flex justify-between items-center mb-4'>
-          <h3 className='text-lg font-medium text-gray-900'>
-            Supplier Details
-          </h3>
-          <button
-            onClick={onClose}
-            className='text-gray-400 hover:text-gray-500'
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+          <div className="flex items-center space-x-4">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <span className="text-2xl">🏢</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Supplier Details</h2>
+              <p className="text-sm text-gray-600">{supplier.name}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <span className='sr-only'>Close</span>
-            <svg className='h-6 w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className='space-y-4'>
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Name</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.name}</p>
-          </div>
-
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Code</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.code || '-'}</p>
-          </div>
-
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Description</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.description || '-'}</p>
-          </div>
-
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Address</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.address || '-'}</p>
-          </div>
-
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Phone Number</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.phoneNumber || '-'}</p>
-          </div>
-
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Email</label>
-            <p className='mt-1 text-sm text-gray-900'>{supplier.email || '-'}</p>
-          </div>
-
-          {supplier.bank && (
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>Bank Details</label>
-              <div className='mt-1 text-sm text-gray-900'>
-                <p><strong>Bank Name:</strong> {supplier.bank.name}</p>
-                <p><strong>Account Holder:</strong> {supplier.bank.holder}</p>
-                <p><strong>Account Number:</strong> {supplier.bank.account}</p>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <AccordionItem
+              title="Basic Information"
+              isExpanded={expandedSections.basicInfo}
+              onToggle={() => toggleSection('basicInfo')}
+              bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                <InfoCard label="Supplier Name" value={supplier.name} variant="primary" />
+                <InfoCard label="Supplier Code" value={supplier.code} variant="success" />
+                <InfoCard label="Supplier ID" value={supplier.id} variant="primary" copyable />
+                <InfoCard label="Description" value={supplier.description} variant="default" />
               </div>
-            </div>
-          )}
+            </AccordionItem>
 
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Created At</label>
-            <p className='mt-1 text-sm text-gray-900'>
-              {new Date(supplier.createdAt).toLocaleDateString()}
-            </p>
-          </div>
+            {/* Contact Information */}
+            <AccordionItem
+              title="Contact Information"
+              isExpanded={expandedSections.contactInfo}
+              onToggle={() => toggleSection('contactInfo')}
+              bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <InfoCard label="Email" value={supplier.email} variant="primary" />
+                <InfoCard label="Phone Number" value={supplier.phoneNumber} variant="primary" />
+                <InfoCard label="Address" value={supplier.address} variant="default" />
+              </div>
+            </AccordionItem>
 
-          <div>
-            <label className='block text-sm font-medium text-gray-700'>Updated At</label>
-            <p className='mt-1 text-sm text-gray-900'>
-              {new Date(supplier.updatedAt).toLocaleDateString()}
-            </p>
+            {/* Bank Information */}
+            {supplier.bank && (
+              <AccordionItem
+                title="Bank Information"
+                isExpanded={expandedSections.bankInfo}
+                onToggle={() => toggleSection('bankInfo')}
+                bgColor="bg-gradient-to-r from-green-50 to-green-100"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  <InfoCard label="Bank Name" value={supplier.bank.name} variant="success" />
+                  <InfoCard label="Account Holder" value={supplier.bank.holder} variant="success" />
+                  <InfoCard label="Account Number" value={supplier.bank.account} variant="success" copyable />
+                </div>
+              </AccordionItem>
+            )}
+
+            {/* System Information */}
+            <AccordionItem
+              title="System Information"
+              isExpanded={expandedSections.metaInfo}
+              onToggle={() => toggleSection('metaInfo')}
+              bgColor="bg-gradient-to-r from-gray-50 to-gray-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <InfoCard label="Created At" value={formatDate(supplier.createdAt)} />
+                <InfoCard label="Updated At" value={formatDate(supplier.updatedAt)} />
+              </div>
+            </AccordionItem>
           </div>
         </div>
 
-        <div className='mt-6 flex justify-end'>
-          <button
-            onClick={onClose}
-            className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
-          >
-            Close
-          </button>
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-6 bg-gray-50">
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

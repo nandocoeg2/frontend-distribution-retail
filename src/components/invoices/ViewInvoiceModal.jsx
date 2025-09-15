@@ -1,10 +1,25 @@
-import React from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import {
+  TabContainer,
+  Tab,
+  TabContent,
+  TabPanel,
+  AccordionItem,
+  InfoCard
+} from '../ui';
 
 const ViewInvoiceModal = ({ show, onClose, invoice }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [expandedSections, setExpandedSections] = useState({
+    basicInfo: true,
+    pricingInfo: false,
+    metaInfo: false
+  });
+
   if (!show || !invoice) return null;
 
   const formatCurrency = (amount) => {
+    if (!amount) return 'N/A';
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR'
@@ -12,6 +27,7 @@ const ViewInvoiceModal = ({ show, onClose, invoice }) => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',
       month: 'short',
@@ -19,117 +35,209 @@ const ViewInvoiceModal = ({ show, onClose, invoice }) => {
     });
   };
 
+  const formatDateTime = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',  
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'details', label: 'Invoice Details', icon: '📊', badge: invoice.invoiceDetails?.length }
+  ];
+
+
+
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Invoice Details</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50">
+          <div className="flex items-center space-x-4">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <span className="text-2xl">🧻</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Invoice Details</h2>
+              <p className="text-sm text-gray-600">{invoice.no_invoice}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Invoice Number</label>
-              <p className="mt-1 text-sm text-gray-900">{invoice.no_invoice}</p>
-            </div>
+        {/* Tabs Navigation */}
+        <div className="border-b border-gray-200 bg-gray-50">
+          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                {tab.badge && (
+                  <span className="ml-2 bg-blue-100 text-blue-600 py-1 px-2 rounded-full text-xs font-semibold">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <p className="mt-1 text-sm text-gray-900">{formatDate(invoice.tanggal)}</p>
-            </div>
+        {/* Tab Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <AccordionItem
+                title="Basic Information"
+                isExpanded={expandedSections.basicInfo}
+                onToggle={() => toggleSection('basicInfo')}
+                bgColor="bg-gradient-to-r from-indigo-50 to-indigo-100"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  <InfoCard label="Invoice Number" value={invoice.no_invoice} variant="primary" />
+                  <InfoCard label="Date" value={formatDate(invoice.tanggal)} variant="primary" />
+                  <InfoCard label="Deliver To" value={invoice.deliver_to} variant="default" />
+                  <InfoCard label="Type" value={invoice.type} variant="success" />
+                  <InfoCard label="TOP" value={invoice.TOP} variant="warning" />
+                  <InfoCard label="Invoice ID" value={invoice.id} variant="primary" copyable />
+                </div>
+              </AccordionItem>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Deliver To</label>
-              <p className="mt-1 text-sm text-gray-900">{invoice.deliver_to}</p>
-            </div>
+              {/* Pricing Information */}
+              <AccordionItem
+                title="Pricing & Financial Details"
+                isExpanded={expandedSections.pricingInfo}
+                onToggle={() => toggleSection('pricingInfo')}
+                bgColor="bg-gradient-to-r from-green-50 to-green-100"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  <InfoCard label="Sub Total" value={formatCurrency(invoice.sub_total)} variant="success" />
+                  <InfoCard label="Total Discount" value={formatCurrency(invoice.total_discount)} variant="warning" />
+                  <InfoCard label="Total Price" value={formatCurrency(invoice.total_price)} variant="success" />
+                  <InfoCard label="PPN Percentage" value={`${invoice.ppn_percentage}%`} variant="warning" />
+                  <InfoCard label="PPN Rupiah" value={formatCurrency(invoice.ppn_rupiah)} variant="warning" />
+                  <InfoCard 
+                    label="Grand Total" 
+                    value={formatCurrency(invoice.grand_total)} 
+                    variant="primary"
+                  />
+                </div>
+              </AccordionItem>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Type</label>
-              <p className="mt-1 text-sm text-gray-900">{invoice.type}</p>
+              {/* System Information */}
+              <AccordionItem
+                title="System Information"
+                isExpanded={expandedSections.metaInfo}
+                onToggle={() => toggleSection('metaInfo')}
+                bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <InfoCard label="Created At" value={formatDateTime(invoice.createdAt)} />
+                  <InfoCard label="Updated At" value={formatDateTime(invoice.updatedAt)} />
+                </div>
+              </AccordionItem>
             </div>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Sub Total</label>
-              <p className="mt-1 text-sm text-gray-900">{formatCurrency(invoice.sub_total)}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Total Discount</label>
-              <p className="mt-1 text-sm text-gray-900">{formatCurrency(invoice.total_discount)}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Total Price</label>
-              <p className="mt-1 text-sm text-gray-900">{formatCurrency(invoice.total_price)}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">PPN Percentage</label>
-              <p className="mt-1 text-sm text-gray-900">{invoice.ppn_percentage}%</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">PPN Rupiah</label>
-              <p className="mt-1 text-sm text-gray-900">{formatCurrency(invoice.ppn_rupiah)}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Grand Total</label>
-              <p className="mt-1 text-sm text-gray-900 font-bold">{formatCurrency(invoice.grand_total)}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">TOP</label>
-              <p className="mt-1 text-sm text-gray-900">{invoice.TOP}</p>
-            </div>
-          </div>
-
-          {invoice.invoiceDetails && invoice.invoiceDetails.length > 0 && (
-            <div>
-              <h4 className="text-md font-medium text-gray-900 mb-2">Invoice Details</h4>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">PLU</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {invoice.invoiceDetails.map((detail, index) => (
-                      <tr key={detail.id || index}>
-                        <td className="px-4 py-2 text-sm text-gray-900">{detail.nama_barang}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{detail.PLU}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{detail.quantity}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{detail.satuan}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(detail.harga)}</td>
-                        <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(detail.total)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {activeTab === 'details' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">Invoice Details</h3>
+                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {invoice.invoiceDetails?.length || 0} items
+                </div>
               </div>
+              
+              {invoice.invoiceDetails && invoice.invoiceDetails.length > 0 ? (
+                <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PLU</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {invoice.invoiceDetails.map((detail, index) => (
+                        <tr key={detail.id || index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {detail.nama_barang}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {detail.PLU}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {detail.quantity}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {detail.satuan}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatCurrency(detail.harga)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatCurrency(detail.total)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">📋</span>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Invoice Details</h3>
+                  <p className="text-gray-500">No detailed items found for this invoice.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex justify-end pt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-          >
-            Close
-          </button>
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-6 bg-gray-50">
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

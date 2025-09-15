@@ -1,37 +1,157 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  AccordionItem,
+  InfoCard,
+  StatusBadge
+} from '../ui';
 
-const ViewInventoryModal = ({ inventory, onClose }) => {
+const ViewInventoryModal = ({ show, inventory, onClose }) => {
+  const [expandedSections, setExpandedSections] = useState({
+    basicInfo: true,
+    stockInfo: false,
+    pricingInfo: false,
+    metaInfo: false
+  });
+
+  if (!show || !inventory) {
+    return null;
+  }
+
   const formatCurrency = (amount) => {
+    if (!amount) return 'N/A';
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('id-ID');
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',  
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const getStockStatus = (currentStock, minStock) => {
+    if (currentStock <= minStock) {
+      return { status: 'Low Stock', variant: 'danger' };
+    } else if (currentStock <= minStock * 1.5) {
+      return { status: 'Warning', variant: 'warning' };
+    }
+    return { status: 'In Stock', variant: 'success' };
+  };
+
+  const stockStatus = getStockStatus(inventory.stok_barang, inventory.min_stok);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Inventory Details</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">&times;</button>
-        </div>
-        <div className="space-y-2">
-          <p><strong>Kode Barang:</strong> {inventory.kode_barang}</p>
-          <p><strong>Nama Barang:</strong> {inventory.nama_barang}</p>
-          <p><strong>Stok Barang:</strong> {inventory.stok_barang}</p>
-          <p><strong>Harga Barang:</strong> {formatCurrency(inventory.harga_barang)}</p>
-          <p><strong>Minimal Stok:</strong> {inventory.min_stok}</p>
-          <p><strong>Created At:</strong> {formatDate(inventory.createdAt)}</p>
-          <p><strong>Updated At:</strong> {formatDate(inventory.updatedAt)}</p>
-        </div>
-        <div className="flex justify-end mt-4">
-          <button
-            onClick={onClose}
-            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-amber-50">
+          <div className="flex items-center space-x-4">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <span className="text-2xl">📦</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Inventory Details</h2>
+              <p className="text-sm text-gray-600">{inventory.nama_barang}</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            Close
+            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <AccordionItem
+              title="Basic Information"
+              isExpanded={expandedSections.basicInfo}
+              onToggle={() => toggleSection('basicInfo')}
+              bgColor="bg-gradient-to-r from-orange-50 to-orange-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                <InfoCard label="Kode Barang" value={inventory.kode_barang} variant="primary" copyable />
+                <InfoCard label="Nama Barang" value={inventory.nama_barang} variant="success" />
+                <InfoCard label="Inventory ID" value={inventory.id} variant="primary" copyable />
+              </div>
+            </AccordionItem>
+
+            {/* Stock Information */}
+            <AccordionItem
+              title="Stock Information"
+              isExpanded={expandedSections.stockInfo}
+              onToggle={() => toggleSection('stockInfo')}
+              bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <InfoCard label="Current Stock" value={`${inventory.stok_barang} pcs`} variant={stockStatus.variant} />
+                <InfoCard label="Minimum Stock" value={`${inventory.min_stok} pcs`} variant="warning" />
+                <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Stock Status</p>
+                  <StatusBadge status={stockStatus.status} variant={stockStatus.variant} />
+                </div>
+              </div>
+            </AccordionItem>
+
+            {/* Pricing Information */}
+            <AccordionItem
+              title="Pricing Information"
+              isExpanded={expandedSections.pricingInfo}
+              onToggle={() => toggleSection('pricingInfo')}
+              bgColor="bg-gradient-to-r from-green-50 to-green-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <InfoCard label="Harga Barang" value={formatCurrency(inventory.harga_barang)} variant="success" />
+                <InfoCard 
+                  label="Total Value" 
+                  value={formatCurrency(inventory.harga_barang * inventory.stok_barang)} 
+                  variant="primary" 
+                />
+              </div>
+            </AccordionItem>
+
+            {/* System Information */}
+            <AccordionItem
+              title="System Information"
+              isExpanded={expandedSections.metaInfo}
+              onToggle={() => toggleSection('metaInfo')}
+              bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <InfoCard label="Created At" value={formatDate(inventory.createdAt)} />
+                <InfoCard label="Updated At" value={formatDate(inventory.updatedAt)} />
+              </div>
+            </AccordionItem>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-6 bg-gray-50">
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
