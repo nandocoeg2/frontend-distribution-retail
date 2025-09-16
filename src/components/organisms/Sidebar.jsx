@@ -130,6 +130,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
         { id: 'master-term-of-payment', name: 'Term of Payments', url: '/master/term-of-payment' },
         { id: 'master-group-customers', name: 'Group Customers', url: '/master/group-customers' },
         { id: 'master-regions', name: 'Regions', url: '/master/regions' },
+        { id: 'master-company', name: 'Companies', url: '/master/company' },
       ],
     },
   ];

@@ -28,6 +28,9 @@ export * from './purchaseOrders';
 // Surat Jalan components
 export * from './suratJalan';
 
+// Company components
+export * from './companies';
+
 // Atom components
 export { default as HeroIcon } from './atoms/HeroIcon';
 

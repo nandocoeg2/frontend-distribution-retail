@@ -31,6 +31,7 @@ import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
 import Regions from './pages/Regions.jsx';
+import Companies from './pages/Companies.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import authService from './services/authService';
@@ -201,6 +202,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Regions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/master/company'
+            element={
+              <ProtectedRoute>
+                <Companies />
               </ProtectedRoute>
             }
           />
