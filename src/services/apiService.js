@@ -58,5 +58,13 @@ export const del = async (url) => {
   }
 };
 
-export default api;
+export const groupCustomers = {
+  getAll: (params) => get('/group-customers', params),
+  getById: (id) => get(`/group-customers/${id}`),
+  create: (data) => post('/group-customers', data),
+  update: (id, data) => put(`/group-customers/${id}`, data),
+  delete: (id) => del(`/group-customers/${id}`),
+  search: (query, params) => get(`/group-customers/search/${query}`, params),
+};
 
+export default api;

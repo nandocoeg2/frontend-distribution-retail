@@ -17,3 +17,4 @@ export { default as SuratJalan } from './SuratJalan';
 export { default as TermOfPayments } from './TermOfPayments';
 export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';
 export { default as Inventories } from './Inventories';
+export { default as GroupCustomers } from './GroupCustomers';

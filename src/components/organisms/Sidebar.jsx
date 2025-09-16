@@ -97,7 +97,41 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
     },
   ];
 
-  const allMenus = menus.length > 0 ? menus : defaultMenuItems;
+  const allMenus = menus.length > 0 ? menus : [
+    {
+      id: 'dashboard',
+      name: 'Dashboard',
+      url: '/dashboard',
+      icon: 'default',
+      iconEmoji: '🏠',
+    },
+    {
+      id: 'po',
+      name: 'Purchase Order',
+      icon: 'clipboard-document-list',
+      iconEmoji: '📝',
+      children: [
+        { id: 'po-purchase-orders', name: 'Purchase Orders', url: '/po/purchase-orders' },
+        { id: 'po-invoices', name: 'Invoices', url: '/po/invoices' },
+        { id: 'po-surat-jalan', name: 'Surat Jalan', url: '/po/surat-jalan' },
+        { id: 'po-packings', name: 'Packings', url: '/po/packings' },
+        { id: 'po-purchase-orders-history', name: 'Purchase Order History', url: '/po/purchase-orders-history' },
+      ],
+    },
+    {
+      id: 'master',
+      name: 'Master Data',
+      icon: 'cog',
+      iconEmoji: '📦',
+      children: [
+        { id: 'master-customers', name: 'Customers', url: '/master/customers' },
+        { id: 'master-suppliers', name: 'Suppliers', url: '/master/suppliers' },
+        { id: 'master-inventories', name: 'Inventories', url: '/master/inventories' },
+        { id: 'master-term-of-payment', name: 'Term of Payments', url: '/master/term-of-payment' },
+        { id: 'master-group-customers', name: 'Group Customers', url: '/master/group-customers' },
+      ],
+    },
+  ];
 
   const renderMenuItem = (menu, level = 0) => {
     const hasChildren = menu.children && menu.children.length > 0;
