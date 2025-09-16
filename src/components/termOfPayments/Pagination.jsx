@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
-  const { currentPage, totalPages, totalItems, itemsPerPage } = pagination;
+  const { page: currentPage, totalPages, total, limit: itemsPerPage } = pagination;
   
   const limitOptions = [5, 10, 20, 50];
 

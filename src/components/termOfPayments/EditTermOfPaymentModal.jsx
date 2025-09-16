@@ -21,7 +21,10 @@ const EditTermOfPaymentModal = ({ show, onClose, termOfPayment, onTermOfPaymentU
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === 'batas_hari' ? parseInt(value) : value 
+    }));
   };
 
   const updateTermOfPayment = async (e) => {

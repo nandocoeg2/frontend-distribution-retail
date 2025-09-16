@@ -6,10 +6,10 @@ import { termOfPaymentService } from '../services/termOfPaymentService';
 const useTermOfPayments = () => {
   const [termOfPayments, setTermOfPayments] = useState([]);
   const [pagination, setPagination] = useState({
-    currentPage: 1,
+    page: 1,
     totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
+    total: 0,
+    limit: 10
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +29,12 @@ const useTermOfPayments = () => {
       setLoading(true);
       const result = await termOfPaymentService.getAllTermOfPayments(page, limit);
       setTermOfPayments(result.data);
-      setPagination(result.meta);
+      setPagination(result.meta || {
+        page: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+      });
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
@@ -52,7 +57,12 @@ const useTermOfPayments = () => {
       setSearchLoading(true);
       const result = await termOfPaymentService.searchTermOfPayments(query, page, limit);
       setTermOfPayments(result.data);
-      setPagination(result.meta);
+      setPagination(result.meta || {
+        page: 1,
+        totalPages: 1,
+        total: 0,
+        limit: 10
+      });
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
@@ -90,7 +100,7 @@ const useTermOfPayments = () => {
     }
 
     const timeout = setTimeout(() => {
-      searchTermOfPayments(query, 1, pagination.itemsPerPage);
+      searchTermOfPayments(query, 1, pagination.limit);
     }, 500);
 
     setDebounceTimeout(timeout);
@@ -98,16 +108,16 @@ const useTermOfPayments = () => {
 
   const handlePageChange = (newPage) => {
     if (searchQuery.trim()) {
-      searchTermOfPayments(searchQuery, newPage, pagination.itemsPerPage);
+      searchTermOfPayments(searchQuery, newPage, pagination.limit);
     } else {
-      fetchTermOfPayments(newPage, pagination.itemsPerPage);
+      fetchTermOfPayments(newPage, pagination.limit);
     }
   };
 
   const handleLimitChange = (newLimit) => {
     const newPagination = {
       ...pagination,
-      itemsPerPage: newLimit
+      limit: newLimit
     };
     setPagination(newPagination);
     
@@ -119,7 +129,7 @@ const useTermOfPayments = () => {
   };
 
   useEffect(() => {
-    fetchTermOfPayments(1, pagination.itemsPerPage);
+    fetchTermOfPayments(1, pagination.limit);
 
     return () => {
       if (debounceTimeout) {

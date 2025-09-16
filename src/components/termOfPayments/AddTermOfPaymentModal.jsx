@@ -7,12 +7,15 @@ const API_URL = 'http://localhost:5050/api/v1/term-of-payments';
 const AddTermOfPaymentModal = ({ show, onClose, onTermOfPaymentAdded, handleAuthError }) => {
   const [formData, setFormData] = useState({
     kode_top: '',
-    batas_hari: '',
+    batas_hari: 30,
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === 'batas_hari' ? parseInt(value) : value 
+    }));
   };
 
   const createTermOfPayment = async (e) => {
