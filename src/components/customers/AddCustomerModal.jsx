@@ -1,50 +1,49 @@
 import React, { useState } from 'react';
 import CustomerForm from '@/components/customers/CustomerForm';
+import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
-
-const API_URL = 'http://localhost:5050/api/v1';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const AddCustomerModal = ({ show, onClose, onCustomerAdded, handleAuthError }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
+    namaCustomer: '',
+    kodeCustomer: '',
+    groupCustomerId: '',
+    regionId: '',
+    alamatPengiriman: '',
     phoneNumber: '',
     email: '',
+    NPWP: '',
+    alamatNPWP: '',
     description: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const createCustomer = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
+    const customerData = Object.fromEntries(
+      Object.entries(formData).filter(([_, value]) => value !== '')
+    );
 
     try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
+      await customerService.createCustomer(customerData);
+      toastService.success('Customer created successfully');
+      onCustomerAdded();
+    } catch (err) {
+      if (handleAuthError && handleAuthError(err)) {
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to create customer');
-
-      const newCustomer = await response.json();
-      onCustomerAdded(newCustomer);
-      toastService.success('Customer created successfully');
-      onClose();
-    } catch (err) {
-      toastService.error('Failed to create customer');
+      const errorMessage = err.response?.data?.message || 'Failed to create customer';
+      toastService.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -53,20 +52,36 @@ const AddCustomerModal = ({ show, onClose, onCustomerAdded, handleAuthError }) =
   }
 
   return (
-    <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-        <h3 className='text-lg font-medium text-gray-900 mb-4'>
-          Add New Customer
-        </h3>
-        <CustomerForm 
-          formData={formData} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={createCustomer} 
-          closeModal={onClose} 
-        />
+    <div className='fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4'>
+      <div className='bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col'>
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Add New Customer</h2>
+            <p className="text-sm text-gray-600">Fill in the details to create a new customer</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <XMarkIcon className="w-6 h-6 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <CustomerForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+            handleSubmit={handleSubmit} 
+            closeModal={onClose} 
+            isSubmitting={isSubmitting}
+          />
+        </div>
       </div>
     </div>
   );
 };
 
 export default AddCustomerModal;
+

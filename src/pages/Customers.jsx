@@ -10,7 +10,6 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 const Customers = () => {
   const {
     customers,
-    setCustomers,
     pagination,
     loading,
     error,
@@ -51,18 +50,14 @@ const Customers = () => {
     setShowViewModal(false);
   };
 
-  const handleCustomerAdded = (newCustomer) => {
-    setCustomers([...customers, newCustomer]);
+  const handleCustomerAdded = () => {
     closeAddModal();
+    fetchCustomers(1, pagination.itemsPerPage); // Refetch from the first page
   };
 
-  const handleCustomerUpdated = (updatedCustomer) => {
-    setCustomers(
-      customers.map((customer) =>
-        customer.id === updatedCustomer.id ? updatedCustomer : customer
-      )
-    );
+  const handleCustomerUpdated = () => {
     closeEditModal();
+    fetchCustomers(pagination.currentPage, pagination.itemsPerPage); // Refetch the current page
   };
 
   if (loading) {
@@ -78,7 +73,7 @@ const Customers = () => {
       <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
         <p className='text-red-800'>Error: {error}</p>
         <button
-          onClick={fetchCustomers}
+          onClick={() => fetchCustomers()}
           className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
         >
           Retry
@@ -146,3 +141,4 @@ const Customers = () => {
 };
 
 export default Customers;
+

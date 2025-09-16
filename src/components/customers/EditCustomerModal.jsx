@@ -1,25 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import CustomerForm from '@/components/customers/CustomerForm';
+import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
-
-const API_URL = 'http://localhost:5050/api/v1';
 
 const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
+    namaCustomer: '',
+    kodeCustomer: '',
+    groupCustomerId: '',
+    regionId: '',
+    alamatPengiriman: '',
     phoneNumber: '',
     email: '',
+    NPWP: '',
+    alamatNPWP: '',
     description: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (customer) {
       setFormData({
-        name: customer.name || '',
-        address: customer.address || '',
+        namaCustomer: customer.namaCustomer || '',
+        kodeCustomer: customer.kodeCustomer || '',
+        groupCustomerId: customer.groupCustomerId || '',
+        regionId: customer.regionId || '',
+        alamatPengiriman: customer.alamatPengiriman || '',
         phoneNumber: customer.phoneNumber || '',
         email: customer.email || '',
+        NPWP: customer.NPWP || '',
+        alamatNPWP: customer.alamatNPWP || '',
         description: customer.description || '',
       });
     }
@@ -30,36 +40,26 @@ const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleA
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const updateCustomer = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+
+    const customerData = Object.fromEntries(
+      Object.entries(formData).filter(([_, value]) => value !== '')
+    );
 
     try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(
-        `${API_URL}/customers/${customer.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
+      await customerService.updateCustomer(customer.id, customerData);
+      toastService.success('Customer updated successfully');
+      onCustomerUpdated();
+    } catch (err) {
+      if (handleAuthError && handleAuthError(err)) {
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to update customer');
-
-      const updatedCustomer = await response.json();
-      onCustomerUpdated(updatedCustomer);
-      toastService.success('Customer updated successfully');
-      onClose();
-    } catch (err) {
-      toastService.error('Failed to update customer');
+      const errorMessage = err.response?.data?.message || 'Failed to update customer';
+      toastService.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -76,9 +76,10 @@ const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleA
         <CustomerForm 
           formData={formData} 
           handleInputChange={handleInputChange} 
-          handleSubmit={updateCustomer} 
+          handleSubmit={handleSubmit} 
           closeModal={onClose} 
           isEdit
+          isSubmitting={isSubmitting}
         />
       </div>
     </div>
@@ -86,3 +87,4 @@ const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleA
 };
 
 export default EditCustomerModal;
+

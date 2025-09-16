@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import customerService from '../services/customerService';
 import toastService from '../services/toastService';
-
-const API_URL = 'http://localhost:5050/api/v1';
 
 const useCustomers = () => {
   const [customers, setCustomers] = useState([]);
@@ -19,35 +18,27 @@ const useCustomers = () => {
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const navigate = useNavigate();
 
-  const handleAuthError = useCallback(() => {
-    localStorage.clear();
-    navigate('/login');
-    toastService.error('Session expired. Please login again.');
+  const handleAuthError = useCallback((err) => {
+    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+      localStorage.clear();
+      navigate('/login');
+      toastService.error('Session expired. Please login again.');
+      return true;
+    }
+    return false;
   }, [navigate]);
 
   const fetchCustomers = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers?page=${page}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to fetch customers');
-
-      const result = await response.json();
+      const result = await customerService.getAllCustomers(page, limit);
       setCustomers(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      setError(err.message);
-      toastService.error('Failed to load customers');
+      if (!handleAuthError(err)) {
+        setError(err.message);
+        toastService.error('Failed to load customers');
+      }
     } finally {
       setLoading(false);
     }
@@ -61,25 +52,13 @@ const useCustomers = () => {
 
     try {
       setSearchLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to search customers');
-
-      const result = await response.json();
+      const result = await customerService.searchCustomers(query, page, limit);
       setCustomers(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      toastService.error('Failed to search customers');
+      if (!handleAuthError(err)) {
+        toastService.error('Failed to search customers');
+      }
     } finally {
       setSearchLoading(false);
     }
@@ -90,29 +69,19 @@ const useCustomers = () => {
       return;
 
     try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/customers/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-
-      if (!response.ok) throw new Error('Failed to delete customer');
-
+      await customerService.deleteCustomer(id);
       setCustomers(customers.filter((customer) => customer.id !== id));
       toastService.success('Customer deleted successfully');
+      // Refetch to ensure data consistency, especially with pagination
+      fetchCustomers(pagination.currentPage, pagination.itemsPerPage);
     } catch (err) {
-      toastService.error('Failed to delete customer');
+      if (!handleAuthError(err)) {
+        toastService.error('Failed to delete customer');
+      }
     }
   };
 
-    const handleSearchChange = (e) => {
+  const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
 
@@ -138,14 +107,15 @@ const useCustomers = () => {
   const handleLimitChange = (newLimit) => {
     const newPagination = {
       ...pagination,
-      itemsPerPage: newLimit
+      itemsPerPage: newLimit,
+      currentPage: 1 // Reset to first page
     };
     setPagination(newPagination);
     
     if (searchQuery.trim()) {
-      searchCustomers(searchQuery, 1, newLimit); // Reset to first page when changing limit
+      searchCustomers(searchQuery, 1, newLimit);
     } else {
-      fetchCustomers(1, newLimit); // Reset to first page when changing limit
+      fetchCustomers(1, newLimit);
     }
   };
 
@@ -178,3 +148,4 @@ const useCustomers = () => {
 };
 
 export default useCustomers;
+

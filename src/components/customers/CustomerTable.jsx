@@ -13,19 +13,19 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Name
+              Customer Name
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Email
+              Customer Code
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Group
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Region
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Phone
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Address
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Description
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Actions
@@ -44,27 +44,30 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
               <tr key={customer.id} className='hover:bg-gray-50'>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
-                    {customer.name}
+                    {customer.namaCustomer}
+                  </div>
+                  <div className='text-sm text-gray-500'>
+                    {customer.email || 'No email'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {customer.email || '-'}
+                    {customer.kodeCustomer}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
+                    {customer.groupCustomer?.nama_group || 'N/A'}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
+                    {customer.region?.nama_region || 'N/A'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {customer.phoneNumber || '-'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {customer.address || '-'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {customer.description || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
@@ -103,3 +106,4 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
 };
 
 export default CustomerTable;
+

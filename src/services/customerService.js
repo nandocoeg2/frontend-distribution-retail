@@ -36,13 +36,55 @@ class CustomerService {
 
   async searchCustomers(query, page = 1, limit = 10) {
     try {
-      const response = await this.api.get(`/customers/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`);
+      const url = query ? `/customers/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}` : `/customers/search?page=${page}&limit=${limit}`;
+      const response = await this.api.get(url);
       return response.data;
     } catch (error) {
       console.error('Error searching customers:', error);
       throw error;
     }
   }
+
+  async getCustomerById(id) {
+    try {
+      const response = await this.api.get(`/customers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching customer with id ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createCustomer(customerData) {
+    try {
+      const response = await this.api.post('/customers', customerData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw error;
+    }
+  }
+
+  async updateCustomer(id, customerData) {
+    try {
+      const response = await this.api.put(`/customers/${id}`, customerData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating customer with id ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteCustomer(id) {
+    try {
+      const response = await this.api.delete(`/customers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting customer with id ${id}:`, error);
+      throw error;
+    }
+  }
 }
 
 export default new CustomerService();
+
