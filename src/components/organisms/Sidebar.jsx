@@ -129,6 +129,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
         { id: 'master-inventories', name: 'Inventories', url: '/master/inventories' },
         { id: 'master-term-of-payment', name: 'Term of Payments', url: '/master/term-of-payment' },
         { id: 'master-group-customers', name: 'Group Customers', url: '/master/group-customers' },
+        { id: 'master-regions', name: 'Regions', url: '/master/regions' },
       ],
     },
   ];
