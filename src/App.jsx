@@ -28,6 +28,7 @@ import Inventories from './pages/Inventories.jsx';
 import Packings from './pages/Packings.jsx';
 import Invoices from './pages/Invoices.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
+import TermOfPayments from './pages/TermOfPayments.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import authService from './services/authService';
@@ -174,6 +175,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Inventories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/master/term-of-payment'
+            element={
+              <ProtectedRoute>
+                <TermOfPayments />
               </ProtectedRoute>
             }
           />

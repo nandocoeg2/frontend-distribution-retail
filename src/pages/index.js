@@ -14,3 +14,6 @@ export { default as Suppliers } from './Suppliers';
 export { default as Packings } from './Packings';
 export { default as Invoices } from './Invoices';
 export { default as SuratJalan } from './SuratJalan';
+export { default as TermOfPayments } from './TermOfPayments';
+export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';
+export { default as Inventories } from './Inventories';
