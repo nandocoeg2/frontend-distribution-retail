@@ -16,6 +16,9 @@ const SupplierTable = ({ suppliers, pagination, onPageChange, onLimitChange, onE
               Name
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Code
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Phone Number
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -29,7 +32,7 @@ const SupplierTable = ({ suppliers, pagination, onPageChange, onLimitChange, onE
         <tbody className='bg-white divide-y divide-gray-200'>
           {suppliers.length === 0 ? (
             <tr>
-              <td colSpan="4" className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan="5" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'No suppliers found matching your search.' : 'No suppliers available.'}
               </td>
             </tr>
@@ -39,6 +42,11 @@ const SupplierTable = ({ suppliers, pagination, onPageChange, onLimitChange, onE
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {supplier.name}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-600 font-mono'>
+                    {supplier.code || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

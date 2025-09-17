@@ -7,23 +7,48 @@ const API_URL = 'http://localhost:5050/api/v1';
 const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     address: '',
     phoneNumber: '',
+    bank: {
+      name: '',
+      account: '',
+      holder: ''
+    }
   });
 
   useEffect(() => {
     if (supplier) {
       setFormData({
         name: supplier.name || '',
+        code: supplier.code || '',
         address: supplier.address || '',
         phoneNumber: supplier.phoneNumber || '',
+        bank: {
+          name: supplier.bank?.name || '',
+          account: supplier.bank?.account || '',
+          holder: supplier.bank?.holder || ''
+        }
       });
     }
   }, [supplier]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Handle nested bank fields
+    if (name.startsWith('bank.')) {
+      const bankField = name.split('.')[1];
+      setFormData((prev) => ({
+        ...prev,
+        bank: {
+          ...prev.bank,
+          [bankField]: value
+        }
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const updateSupplier = async (e) => {
@@ -65,7 +90,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
 
   return (
     <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
+      <div className='bg-white rounded-lg p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto'>
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
           Edit Supplier
         </h3>
