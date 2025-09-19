@@ -16,7 +16,9 @@ const handleApiResponse = async (response) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+    // Handle different error structures
+    const errorMessage = errorData.message || errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+    throw new Error(errorMessage);
   }
 
   return await response.json();
@@ -35,12 +37,12 @@ export const companyService = {
       // Transform API response to match expected format
       return {
         success: result.success,
-        data: result.data.companies || [],
-        meta: result.data.pagination || {
-          page: 1,
-          totalPages: 1,
-          total: 0,
-          limit: 10
+        data: result.data.data || [],
+        meta: {
+          page: result.data.pagination?.currentPage || 1,
+          totalPages: result.data.pagination?.totalPages || 1,
+          total: result.data.pagination?.totalItems || 0,
+          limit: result.data.pagination?.itemsPerPage || 10
         }
       };
     } catch (error) {
@@ -137,12 +139,12 @@ export const companyService = {
       // Transform API response to match expected format
       return {
         success: result.success,
-        data: result.data.companies || [],
-        meta: result.data.pagination || {
-          page: 1,
-          totalPages: 1,
-          total: 0,
-          limit: 10
+        data: result.data.data || [],
+        meta: {
+          page: result.data.pagination?.currentPage || 1,
+          totalPages: result.data.pagination?.totalPages || 1,
+          total: result.data.pagination?.totalItems || 0,
+          limit: result.data.pagination?.itemsPerPage || 10
         }
       };
     } catch (error) {

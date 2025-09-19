@@ -31,7 +31,7 @@ const useCompaniesPage = () => {
       const result = await companyService.getAllCompanies(page, limit);
       
       if (result.success) {
-        setCompanies(result.data);
+        setCompanies(result.data || []);
         setPagination(result.meta || {
           page: 1,
           totalPages: 1,
@@ -47,7 +47,7 @@ const useCompaniesPage = () => {
         return;
       }
       setError(err.message);
-      toastService.error(`Gagal memuat data perusahaan: ${err.message}`);
+      toastService.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ const useCompaniesPage = () => {
       const result = await companyService.searchCompanies(query, page, limit);
       
       if (result.success) {
-        setCompanies(result.data);
+        setCompanies(result.data || []);
         setPagination(result.meta || {
           page: 1,
           totalPages: 1,
@@ -81,7 +81,7 @@ const useCompaniesPage = () => {
         return;
       }
       setError(err.message);
-      toastService.error(`Gagal mencari perusahaan: ${err.message}`);
+      toastService.error(err.message);
     } finally {
       setSearchLoading(false);
     }
@@ -104,7 +104,7 @@ const useCompaniesPage = () => {
         handleAuthError();
         return;
       }
-      toastService.error(`Gagal membuat perusahaan: ${err.message}`);
+      toastService.error(err.message);
       throw err;
     }
   };
@@ -128,7 +128,7 @@ const useCompaniesPage = () => {
         handleAuthError();
         return;
       }
-      toastService.error(`Gagal memperbarui perusahaan: ${err.message}`);
+      toastService.error(err.message);
       throw err;
     }
   };
@@ -161,7 +161,7 @@ const useCompaniesPage = () => {
         handleAuthError();
         return;
       }
-      toastService.error(`Gagal menghapus perusahaan: ${err.message}`);
+      toastService.error(err.message);
     }
   };
 
