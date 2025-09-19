@@ -84,8 +84,8 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
         <div className="flex items-center">
           <p className="text-sm text-gray-700 mr-4">
             Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-            <span className="font-medium">{Math.min(currentPage * itemsPerPage, total)}</span> of{' '}
-            <span className="font-medium">{total}</span> results
+            <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{' '}
+            <span className="font-medium">{totalItems}</span> results
           </p>
           <div className="flex items-center">
             <label htmlFor="items-per-page" className="mr-2 text-sm text-gray-700">
