@@ -45,7 +45,7 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               <span className="text-2xl">🏢</span>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Supplier Details</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Detail Supplier</h2>
               <p className="text-sm text-gray-600">{supplier.name}</p>
             </div>
           </div>
@@ -64,59 +64,57 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
           <div className="space-y-6">
             {/* Basic Information */}
             <AccordionItem
-              title="Basic Information"
+              title="Informasi Dasar"
               isExpanded={expandedSections.basicInfo}
               onToggle={() => toggleSection('basicInfo')}
               bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                <InfoCard label="Supplier Name" value={supplier.name} variant="primary" />
-                <InfoCard label="Supplier Code" value={supplier.code} variant="success" />
-                <InfoCard label="Supplier ID" value={supplier.id} variant="primary" copyable />
-                <InfoCard label="Description" value={supplier.description} variant="default" />
+                <InfoCard label="Nama Supplier" value={supplier.name} variant="primary" />
+                <InfoCard label="Kode Supplier" value={supplier.code} variant="success" />
+                <InfoCard label="ID Supplier" value={supplier.id} variant="primary" copyable />
+                <InfoCard label="Alamat" value={supplier.address} variant="default" />
               </div>
             </AccordionItem>
 
             {/* Contact Information */}
             <AccordionItem
-              title="Contact Information"
+              title="Informasi Kontak"
               isExpanded={expandedSections.contactInfo}
               onToggle={() => toggleSection('contactInfo')}
               bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <InfoCard label="Email" value={supplier.email} variant="primary" />
-                <InfoCard label="Phone Number" value={supplier.phoneNumber} variant="primary" />
-                <InfoCard label="Address" value={supplier.address} variant="default" />
+                <InfoCard label="Nomor Telepon" value={supplier.phoneNumber} variant="primary" />
               </div>
             </AccordionItem>
 
             {/* Bank Information */}
             {supplier.bank && (
               <AccordionItem
-                title="Bank Information"
+                title="Informasi Bank"
                 isExpanded={expandedSections.bankInfo}
                 onToggle={() => toggleSection('bankInfo')}
                 bgColor="bg-gradient-to-r from-green-50 to-green-100"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  <InfoCard label="Bank Name" value={supplier.bank.name} variant="success" />
-                  <InfoCard label="Account Holder" value={supplier.bank.holder} variant="success" />
-                  <InfoCard label="Account Number" value={supplier.bank.account} variant="success" copyable />
+                  <InfoCard label="Nama Bank" value={supplier.bank.name} variant="success" />
+                  <InfoCard label="Nama Pemegang Rekening" value={supplier.bank.holder} variant="success" />
+                  <InfoCard label="Nomor Rekening" value={supplier.bank.account} variant="success" copyable />
                 </div>
               </AccordionItem>
             )}
 
             {/* System Information */}
             <AccordionItem
-              title="System Information"
+              title="Informasi Sistem"
               isExpanded={expandedSections.metaInfo}
               onToggle={() => toggleSection('metaInfo')}
               bgColor="bg-gradient-to-r from-gray-50 to-gray-100"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <InfoCard label="Created At" value={formatDate(supplier.createdAt)} />
-                <InfoCard label="Updated At" value={formatDate(supplier.updatedAt)} />
+                <InfoCard label="Dibuat Pada" value={formatDate(supplier.createdAt)} />
+                <InfoCard label="Diperbarui Pada" value={formatDate(supplier.updatedAt)} />
               </div>
             </AccordionItem>
           </div>
@@ -129,7 +127,7 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               onClick={onClose}
               className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
             >
-              Close
+              Tutup
             </button>
           </div>
         </div>

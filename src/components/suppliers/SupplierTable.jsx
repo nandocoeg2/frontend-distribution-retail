@@ -13,27 +13,33 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Name
+              Nama Supplier
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Code
+              Kode
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Phone Number
+              Alamat
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Address
+              Telepon
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Bank
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Dibuat
             </th>
             <th className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Actions
+              Aksi
             </th>
           </tr>
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
           {!suppliers || suppliers.length === 0 ? (
             <tr>
-              <td colSpan="5" className='px-6 py-4 text-center text-gray-500'>
-                {searchQuery ? 'No suppliers found matching your search.' : 'No suppliers available.'}
+              <td colSpan="7" className='px-6 py-4 text-center text-gray-500'>
+                {searchQuery ? 'Tidak ada supplier yang ditemukan sesuai pencarian.' : 'Belum ada supplier tersedia.'}
               </td>
             </tr>
           ) : (
@@ -41,12 +47,17 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
               <tr key={supplier.id} className='hover:bg-gray-50'>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
-                    {supplier.name}
+                    {supplier.name || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-600 font-mono'>
+                  <div className='text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded'>
                     {supplier.code || '-'}
+                  </div>
+                </td>
+                <td className='px-6 py-4'>
+                  <div className='text-sm text-gray-900 max-w-xs truncate' title={supplier.address}>
+                    {supplier.address || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
@@ -55,30 +66,41 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
+                  {supplier.bank ? (
+                    <div className='text-sm text-gray-900'>
+                      <div className='font-medium'>{supplier.bank.name}</div>
+                      <div className='text-xs text-gray-500'>{supplier.bank.account}</div>
+                      <div className='text-xs text-gray-500'>{supplier.bank.holder}</div>
+                    </div>
+                  ) : (
+                    <span className='text-sm text-gray-400'>-</span>
+                  )}
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {supplier.address || '-'}
+                    {supplier.createdAt ? new Date(supplier.createdAt).toLocaleDateString('id-ID') : '-'}
                   </div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium cursor-pointer'>
+                <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                   <div className='flex space-x-2 justify-end'>
                     <button
                       onClick={() => onView(supplier)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1'
-                      title='View'
+                      className='text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50'
+                      title='Lihat Detail'
                     >
                       <EyeIcon className='h-4 w-4' />
                     </button>
                     <button
                       onClick={() => onEdit(supplier)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1'
+                      className='text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50'
                       title='Edit'
                     >
                       <PencilIcon className='h-4 w-4' />
                     </button>
                     <button
                       onClick={() => onDelete(supplier.id)}
-                      className='text-red-600 hover:text-red-900 p-1'
-                      title='Delete'
+                      className='text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50'
+                      title='Hapus'
                     >
                       <TrashIcon className='h-4 w-4' />
                     </button>

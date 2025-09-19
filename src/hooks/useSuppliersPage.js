@@ -31,12 +31,12 @@ const useSuppliers = () => {
       setLoading(true);
       const result = await supplierService.getAllSuppliers(page, limit);
       if (result.success) {
-        setSuppliers(result.data?.suppliers || []);
+        setSuppliers(result.data?.data || []);
         setPagination({
-          currentPage: result.data?.pagination?.page || 1,
+          currentPage: result.data?.pagination?.currentPage || 1,
           totalPages: result.data?.pagination?.totalPages || 1,
-          totalItems: result.data?.pagination?.total || 0,
-          itemsPerPage: result.data?.pagination?.limit || 10
+          totalItems: result.data?.pagination?.totalItems || 0,
+          itemsPerPage: result.data?.pagination?.itemsPerPage || 10
         });
       } else {
         throw new Error(result.message || 'Failed to load suppliers');
@@ -59,12 +59,12 @@ const useSuppliers = () => {
       setSearchLoading(true);
       const result = await supplierService.searchSuppliers(query, page, limit);
       if (result.success) {
-        setSuppliers(result.data?.suppliers || []);
+        setSuppliers(result.data?.data || []);
         setPagination({
-          currentPage: result.data?.pagination?.page || 1,
+          currentPage: result.data?.pagination?.currentPage || 1,
           totalPages: result.data?.pagination?.totalPages || 1,
-          totalItems: result.data?.pagination?.total || 0,
-          itemsPerPage: result.data?.pagination?.limit || 10
+          totalItems: result.data?.pagination?.totalItems || 0,
+          itemsPerPage: result.data?.pagination?.itemsPerPage || 10
         });
       } else {
         throw new Error(result.message || 'Failed to search suppliers');

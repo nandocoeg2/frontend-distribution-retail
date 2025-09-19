@@ -43,12 +43,12 @@ const useSupplierSearch = () => {
     try {
       const result = await supplierService.searchSuppliers(query, page, limit);
       if (result.success) {
-        setSearchResults(result.data.suppliers);
+        setSearchResults(result.data?.data || []);
         setPagination({
-          currentPage: result.data.pagination.page,
-          totalPages: result.data.pagination.totalPages,
-          totalItems: result.data.pagination.total,
-          itemsPerPage: result.data.pagination.limit
+          currentPage: result.data?.pagination?.currentPage || 1,
+          totalPages: result.data?.pagination?.totalPages || 1,
+          totalItems: result.data?.pagination?.totalItems || 0,
+          itemsPerPage: result.data?.pagination?.itemsPerPage || 10
         });
       } else {
         throw new Error(result.message || 'Gagal mencari supplier');
@@ -130,7 +130,7 @@ const useSupplierSearch = () => {
     try {
       const result = await supplierService.searchSuppliers(query, 1, limit);
       if (result.success) {
-        return result.data.suppliers.map(supplier => ({
+        return (result.data?.data || []).map(supplier => ({
           id: supplier.id,
           name: supplier.name,
           code: supplier.code,
