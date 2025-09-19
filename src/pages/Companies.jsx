@@ -19,6 +19,8 @@ const Companies = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
+    createCompany,
+    updateCompany,
     deleteCompany,
     fetchCompanies,
     handleAuthError
@@ -51,18 +53,22 @@ const Companies = () => {
     setShowViewModal(false);
   };
 
-  const handleCompanyAdded = (newCompany) => {
-    setCompanies([newCompany, ...companies]);
-    closeAddModal();
+  const handleCompanyAdded = async (companyData) => {
+    try {
+      await createCompany(companyData);
+      closeAddModal();
+    } catch (error) {
+      // Error handling is already done in the hook
+    }
   };
 
-  const handleCompanyUpdated = (updatedCompany) => {
-    setCompanies(
-      companies.map((company) =>
-        company.id === updatedCompany.id ? updatedCompany : company
-      )
-    );
-    closeEditModal();
+  const handleCompanyUpdated = async (id, companyData) => {
+    try {
+      await updateCompany(id, companyData);
+      closeEditModal();
+    } catch (error) {
+      // Error handling is already done in the hook
+    }
   };
 
   if (loading) {

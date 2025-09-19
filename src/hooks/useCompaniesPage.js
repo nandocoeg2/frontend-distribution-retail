@@ -21,27 +21,33 @@ const useCompaniesPage = () => {
   const handleAuthError = useCallback(() => {
     localStorage.clear();
     navigate('/login');
-    toastService.error('Session expired. Please login again.');
+    toastService.error('Sesi telah berakhir. Silakan login kembali.');
   }, [navigate]);
 
   const fetchCompanies = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
+      setError(null);
       const result = await companyService.getAllCompanies(page, limit);
-      setCompanies(result.data);
-      setPagination(result.meta || {
-        page: 1,
-        totalPages: 1,
-        total: 0,
-        limit: 10
-      });
+      
+      if (result.success) {
+        setCompanies(result.data);
+        setPagination(result.meta || {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        });
+      } else {
+        throw new Error('Failed to fetch companies');
+      }
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
       setError(err.message);
-      toastService.error('Failed to load companies');
+      toastService.error(`Gagal memuat data perusahaan: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -55,39 +61,107 @@ const useCompaniesPage = () => {
 
     try {
       setSearchLoading(true);
+      setError(null);
       const result = await companyService.searchCompanies(query, page, limit);
-      setCompanies(result.data);
-      setPagination(result.meta || {
-        page: 1,
-        totalPages: 1,
-        total: 0,
-        limit: 10
-      });
+      
+      if (result.success) {
+        setCompanies(result.data);
+        setPagination(result.meta || {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        });
+      } else {
+        throw new Error('Failed to search companies');
+      }
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to search companies');
+      setError(err.message);
+      toastService.error(`Gagal mencari perusahaan: ${err.message}`);
     } finally {
       setSearchLoading(false);
     }
   }, [fetchCompanies, handleAuthError]);
 
-  const deleteCompany = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this company?'))
-      return;
-
+  const createCompany = async (companyData) => {
     try {
-      await companyService.deleteCompany(id);
-      setCompanies(companies.filter((company) => company.id !== id));
-      toastService.success('Company deleted successfully');
+      const result = await companyService.createCompany(companyData);
+      
+      if (result.success) {
+        toastService.success('Perusahaan berhasil dibuat');
+        // Refresh the current page to show the new company
+        fetchCompanies(pagination.page, pagination.limit);
+        return result.data;
+      } else {
+        throw new Error('Failed to create company');
+      }
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to delete company');
+      toastService.error(`Gagal membuat perusahaan: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const updateCompany = async (id, companyData) => {
+    try {
+      const result = await companyService.updateCompany(id, companyData);
+      
+      if (result.success) {
+        toastService.success('Perusahaan berhasil diperbarui');
+        // Update the company in the current list
+        setCompanies(companies.map(company => 
+          company.id === id ? result.data : company
+        ));
+        return result.data;
+      } else {
+        throw new Error('Failed to update company');
+      }
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error(`Gagal memperbarui perusahaan: ${err.message}`);
+      throw err;
+    }
+  };
+
+  const deleteCompany = async (id) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus perusahaan ini?'))
+      return;
+
+    try {
+      const result = await companyService.deleteCompany(id);
+      
+      if (result.success) {
+        setCompanies(companies.filter((company) => company.id !== id));
+        toastService.success('Perusahaan berhasil dihapus');
+        
+        // Refresh current page if it becomes empty
+        const currentPage = pagination.page;
+        const remainingItems = companies.length - 1;
+        const itemsPerPage = pagination.limit;
+        const newTotalPages = Math.ceil(remainingItems / itemsPerPage);
+        
+        if (currentPage > newTotalPages && newTotalPages > 0) {
+          fetchCompanies(newTotalPages, pagination.limit);
+        }
+      } else {
+        throw new Error('Failed to delete company');
+      }
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error(`Gagal menghapus perusahaan: ${err.message}`);
     }
   };
 
@@ -150,6 +224,8 @@ const useCompaniesPage = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
+    createCompany,
+    updateCompany,
     deleteCompany,
     fetchCompanies,
     handleAuthError

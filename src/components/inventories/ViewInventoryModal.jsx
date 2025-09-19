@@ -50,7 +50,8 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     return { status: 'In Stock', variant: 'success' };
   };
 
-  const stockStatus = getStockStatus(inventory.stok_barang, inventory.min_stok);
+  const totalStock = (inventory.stok_c || 0) + (inventory.stok_q || 0);
+  const stockStatus = getStockStatus(totalStock, inventory.min_stok);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -87,7 +88,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
               bgColor="bg-gradient-to-r from-orange-50 to-orange-100"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                <InfoCard label="Kode Barang" value={inventory.kode_barang} variant="primary" copyable />
+                <InfoCard label="PLU" value={inventory.plu} variant="primary" copyable />
                 <InfoCard label="Nama Barang" value={inventory.nama_barang} variant="success" />
                 <InfoCard label="Inventory ID" value={inventory.id} variant="primary" copyable />
               </div>
@@ -100,13 +101,15 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
               onToggle={() => toggleSection('stockInfo')}
               bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <InfoCard label="Current Stock" value={`${inventory.stok_barang} pcs`} variant={stockStatus.variant} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                <InfoCard label="Stok Karton" value={`${inventory.stok_c} karton`} variant="primary" />
+                <InfoCard label="Stok Pcs" value={`${inventory.stok_q} pcs`} variant="success" />
+                <InfoCard label="Total Stok" value={`${totalStock} pcs`} variant={stockStatus.variant} />
                 <InfoCard label="Minimum Stock" value={`${inventory.min_stok} pcs`} variant="warning" />
-                <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Stock Status</p>
-                  <StatusBadge status={stockStatus.status} variant={stockStatus.variant} />
-                </div>
+              </div>
+              <div className="mt-4 p-4 rounded-lg border border-gray-200 bg-gray-50">
+                <p className="text-sm font-medium text-gray-600 mb-1">Stock Status</p>
+                <StatusBadge status={stockStatus.status} variant={stockStatus.variant} />
               </div>
             </AccordionItem>
 
@@ -121,7 +124,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                 <InfoCard label="Harga Barang" value={formatCurrency(inventory.harga_barang)} variant="success" />
                 <InfoCard 
                   label="Total Value" 
-                  value={formatCurrency(inventory.harga_barang * inventory.stok_barang)} 
+                  value={formatCurrency(inventory.harga_barang * totalStock)} 
                   variant="primary" 
                 />
               </div>

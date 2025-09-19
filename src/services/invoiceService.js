@@ -34,6 +34,16 @@ class InvoiceService {
     }
   }
 
+  async createInvoice(invoiceData) {
+    try {
+      const response = await this.api.post('/invoices', invoiceData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      throw error;
+    }
+  }
+
   async getInvoiceById(id) {
     try {
       const response = await this.api.get(`/invoices/${id}`);

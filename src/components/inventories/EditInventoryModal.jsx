@@ -1,16 +1,15 @@
 import React from 'react';
 import InventoryForm from './InventoryForm';
-import { updateInventory } from '../../services/inventoryService';
-import toastService from '../../services/toastService';
+import { useInventoryOperations } from '../../hooks/useInventory';
 
 const EditInventoryModal = ({ inventory, onClose }) => {
+  const { updateInventoryItem, loading, error } = useInventoryOperations();
+
   const handleSubmit = async (formData) => {
     try {
-      await updateInventory(inventory.id, formData);
-      toastService.success('Inventory item updated successfully');
+      await updateInventoryItem(inventory.id, formData);
       onClose();
     } catch (error) {
-      toastService.error('Failed to update inventory item');
       console.error('Update inventory error:', error);
     }
   };
@@ -22,7 +21,13 @@ const EditInventoryModal = ({ inventory, onClose }) => {
           <h2 className="text-xl font-bold">Edit Inventory Item</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">&times;</button>
         </div>
-        <InventoryForm onSubmit={handleSubmit} onClose={onClose} initialData={inventory} />
+        <InventoryForm 
+          onSubmit={handleSubmit} 
+          onClose={onClose} 
+          initialData={inventory}
+          loading={loading}
+          error={error}
+        />
       </div>
     </div>
   );

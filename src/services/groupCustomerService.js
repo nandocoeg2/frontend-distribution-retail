@@ -20,7 +20,10 @@ export const groupCustomerService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to fetch group customers');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to fetch group customers');
+      }
 
       return await response.json();
     } catch (error) {
@@ -39,7 +42,10 @@ export const groupCustomerService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to fetch group customer');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to fetch group customer');
+      }
 
       return await response.json();
     } catch (error) {
@@ -60,7 +66,10 @@ export const groupCustomerService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to create group customer');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to create group customer');
+      }
 
       return await response.json();
     } catch (error) {
@@ -81,7 +90,10 @@ export const groupCustomerService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to update group customer');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to update group customer');
+      }
 
       return await response.json();
     } catch (error) {
@@ -101,7 +113,10 @@ export const groupCustomerService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to delete group customer');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to delete group customer');
+      }
 
       return true;
     } catch (error) {
@@ -112,7 +127,7 @@ export const groupCustomerService = {
   // Search group customers
   searchGroupCustomers: async (query, page = 1, limit = 10) => {
     try {
-      const response = await fetch(`${API_URL}/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`, {
+      const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
         headers: getHeaders(),
       });
 
@@ -120,7 +135,10 @@ export const groupCustomerService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to search group customers');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to search group customers');
+      }
 
       return await response.json();
     } catch (error) {

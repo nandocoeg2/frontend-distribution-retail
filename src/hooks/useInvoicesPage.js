@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
+import invoiceService from '../services/invoiceService';
 
 const API_URL = 'http://localhost:5050/api/v1';
 
@@ -29,24 +30,19 @@ const useInvoices = () => {
   const fetchInvoices = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/invoices?page=${page}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
+      const result = await invoiceService.getAllInvoices(page, limit);
+      
+      if (result.success) {
+        setInvoices(result.data.data);
+        setPagination(result.data.pagination);
+      } else {
+        throw new Error(result.error?.message || 'Failed to fetch invoices');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to fetch invoices');
-
-      const result = await response.json();
-      setInvoices(result.data);
-      setPagination(result.pagination);
-    } catch (err) {
       setError(err.message);
       toastService.error('Failed to load invoices');
     } finally {
@@ -62,57 +58,89 @@ const useInvoices = () => {
 
     try {
       setSearchLoading(true);
-      const accessToken = localStorage.getItem('token');
       const searchParams = {};
       searchParams[field] = query;
-      const params = new URLSearchParams(searchParams);
-      params.append('page', page);
-      params.append('limit', limit);
-      const response = await fetch(`${API_URL}/invoices/search?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
+      const result = await invoiceService.searchInvoices(searchParams, page, limit);
+      
+      if (result.success) {
+        setInvoices(result.data.data);
+        setPagination(result.data.pagination);
+      } else {
+        throw new Error(result.error?.message || 'Failed to search invoices');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to search invoices');
-
-      const result = await response.json();
-      setInvoices(result.data);
-      setPagination(result.pagination);
-    } catch (err) {
       toastService.error('Failed to search invoices');
     } finally {
       setSearchLoading(false);
     }
   }, [fetchInvoices, handleAuthError]);
 
+  const createInvoice = async (invoiceData) => {
+    try {
+      const result = await invoiceService.createInvoice(invoiceData);
+      
+      if (result.success) {
+        toastService.success('Invoice created successfully');
+        // Refresh the invoices list
+        fetchInvoices(pagination.currentPage, pagination.itemsPerPage);
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to create invoice');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to create invoice');
+      throw err;
+    }
+  };
+
+  const updateInvoice = async (id, updateData) => {
+    try {
+      const result = await invoiceService.updateInvoice(id, updateData);
+      
+      if (result.success) {
+        toastService.success('Invoice updated successfully');
+        // Refresh the invoices list
+        fetchInvoices(pagination.currentPage, pagination.itemsPerPage);
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to update invoice');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to update invoice');
+      throw err;
+    }
+  };
+
   const deleteInvoice = async (id) => {
     if (!window.confirm('Are you sure you want to delete this invoice?'))
       return;
 
     try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/invoices/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
+      const result = await invoiceService.deleteInvoice(id);
+      
+      if (result.success || result === '') {
+        setInvoices(invoices.filter((invoice) => invoice.id !== id));
+        toastService.success('Invoice deleted successfully');
+      } else {
+        throw new Error(result.error?.message || 'Failed to delete invoice');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to delete invoice');
-
-      setInvoices(invoices.filter((invoice) => invoice.id !== id));
-      toastService.success('Invoice deleted successfully');    } catch (err) {
       toastService.error('Failed to delete invoice');
     }
   };
@@ -189,6 +217,8 @@ const useInvoices = () => {
     handleSearchFieldChange,
     handlePageChange,
     handleLimitChange,
+    createInvoice,
+    updateInvoice,
     deleteInvoice,
     fetchInvoices,
     handleAuthError

@@ -4,8 +4,22 @@ const getHeaders = () => {
   const accessToken = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     'Authorization': `Bearer ${accessToken}`,
   };
+};
+
+const handleApiResponse = async (response) => {
+  if (response.status === 401 || response.status === 403) {
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return await response.json();
 };
 
 export const companyService = {
@@ -16,13 +30,19 @@ export const companyService = {
         headers: getHeaders(),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Unauthorized');
-      }
-
-      if (!response.ok) throw new Error('Failed to fetch companies');
-
-      return await response.json();
+      const result = await handleApiResponse(response);
+      
+      // Transform API response to match expected format
+      return {
+        success: result.success,
+        data: result.data.companies || [],
+        meta: result.data.pagination || {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        }
+      };
     } catch (error) {
       throw error;
     }
@@ -35,13 +55,12 @@ export const companyService = {
         headers: getHeaders(),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Unauthorized');
-      }
-
-      if (!response.ok) throw new Error('Failed to fetch company');
-
-      return await response.json();
+      const result = await handleApiResponse(response);
+      
+      return {
+        success: result.success,
+        data: result.data
+      };
     } catch (error) {
       throw error;
     }
@@ -56,13 +75,12 @@ export const companyService = {
         body: JSON.stringify(companyData),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Unauthorized');
-      }
-
-      if (!response.ok) throw new Error('Failed to create company');
-
-      return await response.json();
+      const result = await handleApiResponse(response);
+      
+      return {
+        success: result.success,
+        data: result.data
+      };
     } catch (error) {
       throw error;
     }
@@ -77,13 +95,12 @@ export const companyService = {
         body: JSON.stringify(companyData),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Unauthorized');
-      }
-
-      if (!response.ok) throw new Error('Failed to update company');
-
-      return await response.json();
+      const result = await handleApiResponse(response);
+      
+      return {
+        success: result.success,
+        data: result.data
+      };
     } catch (error) {
       throw error;
     }
@@ -97,13 +114,12 @@ export const companyService = {
         headers: getHeaders(),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Unauthorized');
+      if (response.status === 204) {
+        return { success: true };
       }
 
-      if (!response.ok) throw new Error('Failed to delete company');
-
-      return true;
+      const result = await handleApiResponse(response);
+      return result;
     } catch (error) {
       throw error;
     }
@@ -116,13 +132,19 @@ export const companyService = {
         headers: getHeaders(),
       });
 
-      if (response.status === 401 || response.status === 403) {
-        throw new Error('Unauthorized');
-      }
-
-      if (!response.ok) throw new Error('Failed to search companies');
-
-      return await response.json();
+      const result = await handleApiResponse(response);
+      
+      // Transform API response to match expected format
+      return {
+        success: result.success,
+        data: result.data.companies || [],
+        meta: result.data.pagination || {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        }
+      };
     } catch (error) {
       throw error;
     }

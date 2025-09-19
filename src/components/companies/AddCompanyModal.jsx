@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import CompanyForm from '@/components/companies/CompanyForm';
-import toastService from '@/services/toastService';
-import { companyService } from '@/services/companyService';
+import useCompaniesPage from '@/hooks/useCompaniesPage';
 
 const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => {
+  const { createCompany } = useCompaniesPage();
   const [formData, setFormData] = useState({
     kode_company: '',
     nama_perusahaan: '',
@@ -27,20 +27,15 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     }));
   };
 
-  const createCompany = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const newCompany = await companyService.createCompany(formData);
-      onCompanyAdded(newCompany);
-      toastService.success('Company created successfully');
+      await createCompany(formData);
+      onCompanyAdded(formData);
       onClose();
     } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      toastService.error('Failed to create company');
+      // Error handling is already done in the hook
     }
   };
 
@@ -57,7 +52,7 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
         <CompanyForm 
           formData={formData} 
           handleInputChange={handleInputChange} 
-          handleSubmit={createCompany} 
+          handleSubmit={handleSubmit} 
           closeModal={onClose} 
         />
       </div>

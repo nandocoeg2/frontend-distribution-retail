@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import CompanyForm from '@/components/companies/CompanyForm';
-import toastService from '@/services/toastService';
-import { companyService } from '@/services/companyService';
+import useCompaniesPage from '@/hooks/useCompaniesPage';
 
 const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuthError }) => {
+  const { updateCompany } = useCompaniesPage();
   const [formData, setFormData] = useState({
     kode_company: '',
     nama_perusahaan: '',
@@ -46,20 +46,15 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     }));
   };
 
-  const updateCompany = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const updatedCompany = await companyService.updateCompany(company.id, formData);
-      onCompanyUpdated(updatedCompany);
-      toastService.success('Company updated successfully');
+      await updateCompany(company.id, formData);
+      onCompanyUpdated(company.id, formData);
       onClose();
     } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      toastService.error('Failed to update company');
+      // Error handling is already done in the hook
     }
   };
 
@@ -76,7 +71,7 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         <CompanyForm 
           formData={formData} 
           handleInputChange={handleInputChange} 
-          handleSubmit={updateCompany} 
+          handleSubmit={handleSubmit} 
           closeModal={onClose}
           isEdit={true}
         />

@@ -27,15 +27,21 @@ const useInventoriesPage = () => {
   const fetchInventories = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      const data = await getInventories(page, limit);
-      setInventories(data.data);
-      setPagination(data.pagination);
+      setError(null);
+      const response = await getInventories(page, limit);
+      
+      if (response.success) {
+        setInventories(response.data.data);
+        setPagination(response.data.pagination);
+      } else {
+        throw new Error(response.error?.message || 'Failed to load inventories');
+      }
     } catch (err) {
-      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error('Failed to load inventories');
+        toastService.error(err.message || 'Failed to load inventories');
       }
     } finally {
       setLoading(false);
@@ -50,14 +56,21 @@ const useInventoriesPage = () => {
 
     try {
       setSearchLoading(true);
-      const data = await searchInventories(query, page, limit);
-      setInventories(data.data);
-      setPagination(data.pagination);
+      setError(null);
+      const response = await searchInventories(query, page, limit);
+      
+      if (response.success) {
+        setInventories(response.data.data);
+        setPagination(response.data.pagination);
+      } else {
+        throw new Error(response.error?.message || 'Failed to search inventories');
+      }
     } catch (err) {
-      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
-        toastService.error('Failed to search inventories');
+        setError(err.message);
+        toastService.error(err.message || 'Failed to search inventories');
       }
     } finally {
       setSearchLoading(false);
@@ -81,7 +94,7 @@ const useInventoriesPage = () => {
         fetchInventories(newPage, pagination.itemsPerPage);
       }
     } catch (err) {
-      if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
