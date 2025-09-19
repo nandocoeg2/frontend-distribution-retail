@@ -6,7 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Pagination from './Pagination';
 
-const SuratJalanTable = ({ suratJalan, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',
@@ -14,6 +14,9 @@ const SuratJalanTable = ({ suratJalan, pagination, onPageChange, onLimitChange, 
       day: 'numeric'
     });
   };
+
+  // Ensure suratJalan is always an array
+  const safeSuratJalan = Array.isArray(suratJalan) ? suratJalan : [];
 
   return (
     <div className='overflow-x-auto'>
@@ -33,7 +36,7 @@ const SuratJalanTable = ({ suratJalan, pagination, onPageChange, onLimitChange, 
               Alamat Tujuan
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Printed
+              Status
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Actions
@@ -41,14 +44,14 @@ const SuratJalanTable = ({ suratJalan, pagination, onPageChange, onLimitChange, 
           </tr>
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
-          {suratJalan.length === 0 ? (
+          {safeSuratJalan.length === 0 ? (
             <tr>
               <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
-                {searchQuery ? 'No surat jalan found matching your search.' : 'No surat jalan available.'}
+                {searchQuery ? 'Tidak ada surat jalan yang sesuai dengan pencarian.' : 'Belum ada surat jalan.'}
               </td>
             </tr>
           ) : (
-            suratJalan.map((item) => (
+            safeSuratJalan.map((item) => (
               <tr key={item.id} className='hover:bg-gray-50'>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
@@ -66,14 +69,21 @@ const SuratJalanTable = ({ suratJalan, pagination, onPageChange, onLimitChange, 
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
+                  <div className='text-sm text-gray-900 max-w-xs truncate'>
                     {item.alamat_tujuan}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {item.is_printed ? 'Yes' : 'No'}
-                  </div>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    item.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
+                    item.status === 'READY_TO_SHIP' ? 'bg-blue-100 text-blue-800' :
+                    item.status === 'SHIPPED' ? 'bg-yellow-100 text-yellow-800' :
+                    item.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                    item.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {item.status || 'DRAFT'}
+                  </span>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                   <div className='flex space-x-2'>

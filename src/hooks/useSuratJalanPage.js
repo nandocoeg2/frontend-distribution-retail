@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import suratJalanService from '../services/suratJalanService';
 
-const useSuratJalan = () => {
+const useSuratJalanPage = () => {
   const [suratJalan, setSuratJalan] = useState([]);
   const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,16 +28,22 @@ const useSuratJalan = () => {
   const fetchSuratJalan = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
+      setError(null);
       const result = await suratJalanService.getAllSuratJalan(page, limit);
-      setSuratJalan(result.data);
-      setPagination(result.pagination);
+      
+      if (result.success) {
+        setSuratJalan(result.data.suratJalan);
+        setPagination(result.data.pagination);
+      } else {
+        throw new Error(result.message || 'Failed to fetch surat jalan');
+      }
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
       setError(err.message);
-      toastService.error('Failed to load surat jalan');
+      toastService.error('Gagal memuat data surat jalan');
     } finally {
       setLoading(false);
     }
@@ -51,36 +57,46 @@ const useSuratJalan = () => {
 
     try {
       setSearchLoading(true);
+      setError(null);
       const searchParams = {};
       searchParams[field] = query;
       const result = await suratJalanService.searchSuratJalan(searchParams, page, limit);
-      setSuratJalan(result.data);
-      setPagination(result.pagination);
+      
+      if (result.success) {
+        setSuratJalan(result.data.suratJalan);
+        setPagination(result.data.pagination);
+      } else {
+        throw new Error(result.message || 'Failed to search surat jalan');
+      }
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to search surat jalan');
+      toastService.error('Gagal mencari surat jalan');
     } finally {
       setSearchLoading(false);
     }
   }, [fetchSuratJalan, handleAuthError]);
 
   const deleteSuratJalan = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this surat jalan?'))
+    if (!window.confirm('Apakah Anda yakin ingin menghapus surat jalan ini?'))
       return;
 
     try {
-      await suratJalanService.deleteSuratJalan(id);
-      setSuratJalan(suratJalan.filter((item) => item.id !== id));
-      toastService.success('Surat jalan deleted successfully');
+      const result = await suratJalanService.deleteSuratJalan(id);
+      if (result.success) {
+        setSuratJalan(suratJalan.filter((item) => item.id !== id));
+        toastService.success('Surat jalan berhasil dihapus');
+      } else {
+        throw new Error(result.message || 'Failed to delete surat jalan');
+      }
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to delete surat jalan');
+      toastService.error('Gagal menghapus surat jalan');
     }
   };
 
@@ -93,7 +109,7 @@ const useSuratJalan = () => {
     }
 
     const timeout = setTimeout(() => {
-      searchSuratJalan(query, searchField, 1, pagination.itemsPerPage); // Reset to first page when searching
+      searchSuratJalan(query, searchField, 1, pagination.limit);
     }, 500);
 
     setDebounceTimeout(timeout);
@@ -103,38 +119,45 @@ const useSuratJalan = () => {
     setSearchField(field);
     setSearchQuery('');
 
-    // If there's a current search, perform it with the new field
     if (searchQuery.trim()) {
-      searchSuratJalan(searchQuery, field, 1, pagination.itemsPerPage);
+      searchSuratJalan(searchQuery, field, 1, pagination.limit);
     } else {
-      fetchSuratJalan(1, pagination.itemsPerPage);
+      fetchSuratJalan(1, pagination.limit);
     }
   };
 
   const handlePageChange = (newPage) => {
     if (searchQuery.trim()) {
-      searchSuratJalan(searchQuery, searchField, newPage, pagination.itemsPerPage);
+      searchSuratJalan(searchQuery, searchField, newPage, pagination.limit);
     } else {
-      fetchSuratJalan(newPage, pagination.itemsPerPage);
+      fetchSuratJalan(newPage, pagination.limit);
     }
   };
 
   const handleLimitChange = (newLimit) => {
     const newPagination = {
       ...pagination,
-      itemsPerPage: newLimit
+      limit: newLimit
     };
     setPagination(newPagination);
 
     if (searchQuery.trim()) {
-      searchSuratJalan(searchQuery, searchField, 1, newLimit); // Reset to first page when changing limit
+      searchSuratJalan(searchQuery, searchField, 1, newLimit);
     } else {
-      fetchSuratJalan(1, newLimit); // Reset to first page when changing limit
+      fetchSuratJalan(1, newLimit);
     }
   };
 
+  const refreshData = useCallback(() => {
+    if (searchQuery.trim()) {
+      searchSuratJalan(searchQuery, searchField, pagination.page, pagination.limit);
+    } else {
+      fetchSuratJalan(pagination.page, pagination.limit);
+    }
+  }, [searchQuery, searchField, pagination.page, pagination.limit, searchSuratJalan, fetchSuratJalan]);
+
   useEffect(() => {
-    fetchSuratJalan(1, pagination.itemsPerPage); // Start on first page
+    fetchSuratJalan(1, pagination.limit);
 
     return () => {
       if (debounceTimeout) {
@@ -159,8 +182,9 @@ const useSuratJalan = () => {
     handleLimitChange,
     deleteSuratJalan,
     fetchSuratJalan,
+    refreshData,
     handleAuthError
   };
 };
 
-export default useSuratJalan;
+export default useSuratJalanPage;

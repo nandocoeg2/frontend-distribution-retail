@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import useSuratJalan from '@/hooks/useSuratJalanPage';
-import SuratJalanTable from '@/components/suratJalan/SuratJalanTable';
-import SuratJalanSearch from '@/components/suratJalan/SuratJalanSearch';
-import AddSuratJalanModal from '@/components/suratJalan/AddSuratJalanModal';
-import EditSuratJalanModal from '@/components/suratJalan/EditSuratJalanModal';
-import ViewSuratJalanModal from '@/components/suratJalan/ViewSuratJalanModal';
+import useSuratJalanPage from '../hooks/useSuratJalanPage';
+import SuratJalanTable from '../components/suratJalan/SuratJalanTable';
+import SuratJalanSearch from '../components/suratJalan/SuratJalanSearch';
+import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
+import EditSuratJalanModal from '../components/suratJalan/EditSuratJalanModal';
+import ViewSuratJalanModal from '../components/suratJalan/ViewSuratJalanModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const SuratJalan = () => {
@@ -24,7 +24,7 @@ const SuratJalan = () => {
     deleteSuratJalan,
     fetchSuratJalan,
     handleAuthError
-  } = useSuratJalan();
+  } = useSuratJalanPage();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
