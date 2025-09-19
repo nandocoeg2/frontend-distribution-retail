@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import customerService from '../../services/customerService';
-import { usePurchaseOrderStatuses } from '../../hooks/useStatusTypes';
+import useStatuses from '../../hooks/useStatuses';
 
 const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, isEditMode = false, customerName = '' }) => {
   const [customers, setCustomers] = useState([]);
@@ -12,7 +12,18 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
   const searchTimeoutRef = useRef(null);
   
   // Use purchase order statuses hook
-  const { statuses, loading: statusLoading, error: statusError } = usePurchaseOrderStatuses();
+  const { 
+    purchaseOrderStatuses, 
+    loading, 
+    error: statusError,
+    fetchPurchaseOrderStatuses 
+  } = useStatuses();
+
+
+  // Fetch purchase order statuses on component mount
+  useEffect(() => {
+    fetchPurchaseOrderStatuses();
+  }, [fetchPurchaseOrderStatuses]);
 
   // Fetch all customers on component mount (for initial dropdown population)
   useEffect(() => {
@@ -248,11 +259,11 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
             value={formData.statusId || ''}
             onChange={handleInputChange}
             required
-            disabled={statusLoading}
+            disabled={loading.purchaseOrder}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option value="">{statusLoading ? 'Loading statuses...' : 'Select Status'}</option>
-            {statuses.map((status) => (
+            <option value="">{loading.purchaseOrder ? 'Loading statuses...' : 'Select Status'}</option>
+            {Array.isArray(purchaseOrderStatuses) && purchaseOrderStatuses.map((status) => (
               <option key={status.id} value={status.id}>
                 {status.status_name} - {status.status_description}
               </option>

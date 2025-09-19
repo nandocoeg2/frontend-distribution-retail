@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import fileService from '../../services/fileService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import { toast } from 'react-toastify';
-import { usePurchaseOrderStatuses } from '../../hooks/useStatusTypes';
+import useStatuses from '../../hooks/useStatuses';
 
 const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrder }) => {
   const [formData, setFormData] = useState({
@@ -24,14 +24,24 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
   const [uploadMode, setUploadMode] = useState('manual');
   
   // Get purchase order statuses using hook
-  const { statuses } = usePurchaseOrderStatuses();
+  const { 
+    purchaseOrderStatuses, 
+    loading: statusLoading,
+    error: statusError,
+    fetchPurchaseOrderStatuses 
+  } = useStatuses();
+
+  // Fetch purchase order statuses on component mount
+  useEffect(() => {
+    fetchPurchaseOrderStatuses();
+  }, [fetchPurchaseOrderStatuses]);
 
   useEffect(() => {
     if (isOpen) {
       resetForm();
       setUploadMode('manual');
     }
-  }, [isOpen, statuses]);
+  }, [isOpen]);
 
 
 
@@ -94,7 +104,9 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
   };
 
   const resetForm = () => {
-    const pendingStatus = statuses.find(s => s.status_code === 'PENDING');
+    const pendingStatus = Array.isArray(purchaseOrderStatuses) 
+      ? purchaseOrderStatuses.find(s => s.status_code === 'PENDING PURCHASE ORDER')
+      : null;
     setFormData({
       customerId: '', 
       po_number: '', 

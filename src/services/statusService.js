@@ -78,6 +78,19 @@ class StatusService {
       throw error;
     }
   }
+
+  /**
+   * Get all statuses for packing item
+   */
+  async getPackingItemStatuses() {
+    try {
+      const response = await get('/statuses/packing_item');
+      return response;
+    } catch (error) {
+      console.error('Error fetching packing item statuses:', error);
+      throw error;
+    }
+  }
 }
 
 export default new StatusService();
