@@ -6,6 +6,7 @@ import AddPurchaseOrderModal from '../components/purchaseOrders/AddPurchaseOrder
 import EditPurchaseOrderModal from '../components/purchaseOrders/EditPurchaseOrderModal.jsx';
 import ViewPurchaseOrderModal from '../components/purchaseOrders/ViewPurchaseOrderModal.jsx';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const PurchaseOrders = () => {
   const {
@@ -32,6 +33,7 @@ const PurchaseOrders = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const navigate = useNavigate();
 
   // This function is now the callback for when the Add modal is finished.
   const handleAddFinished = () => {
@@ -81,13 +83,22 @@ const PurchaseOrders = () => {
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Purchase Orders</h3>
-            <button
-              onClick={() => setAddModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Purchase Order
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/po/purchase-orders/bulk-history')}
+                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              >
+                <HeroIcon name='clock' className='w-5 h-5 mr-2' />
+                History Upload Bulk
+              </button>
+              <button
+                onClick={() => setAddModalOpen(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
+                Add Purchase Order
+              </button>
+            </div>
           </div>
 
           <PurchaseOrderSearch

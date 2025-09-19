@@ -22,6 +22,7 @@ import Profile from './pages/Profile.jsx';
 import SettingProfile from './pages/SettingProfile.jsx';
 import RoleManagement from './pages/RoleManagement.jsx';
 import PurchaseOrders from './pages/PurchaseOrders.jsx';
+import BulkUploadHistory from './pages/BulkUploadHistory.jsx';
 import PurchaseOrderHistory from './pages/PurchaseOrderHistory.jsx';
 import Customers from './pages/Customers.jsx';
 import Suppliers from './pages/Suppliers.jsx';
@@ -127,6 +128,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <PurchaseOrders />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/purchase-orders/bulk-history'
+        element={
+          <ProtectedRoute>
+            <BulkUploadHistory />
           </ProtectedRoute>
         }
       />
