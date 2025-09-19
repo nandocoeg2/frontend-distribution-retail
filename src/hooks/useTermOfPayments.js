@@ -27,21 +27,27 @@ const useTermOfPayments = () => {
   const fetchTermOfPayments = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
+      setError(null);
       const result = await termOfPaymentService.getAllTermOfPayments(page, limit);
-      setTermOfPayments(result.data);
-      setPagination(result.meta || {
-        page: 1,
-        totalPages: 1,
-        total: 0,
-        limit: 10
-      });
+      
+      if (result.success) {
+        setTermOfPayments(result.data.data || []);
+        setPagination({
+          page: result.data.pagination?.currentPage || 1,
+          totalPages: result.data.pagination?.totalPages || 1,
+          total: result.data.pagination?.totalItems || 0,
+          limit: result.data.pagination?.itemsPerPage || 10
+        });
+      } else {
+        throw new Error(result.message || 'Failed to fetch term of payments');
+      }
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
       setError(err.message);
-      toastService.error('Failed to load term of payments');
+      toastService.error('Gagal memuat data term of payments');
     } finally {
       setLoading(false);
     }
@@ -55,39 +61,124 @@ const useTermOfPayments = () => {
 
     try {
       setSearchLoading(true);
+      setError(null);
       const result = await termOfPaymentService.searchTermOfPayments(query, page, limit);
-      setTermOfPayments(result.data);
-      setPagination(result.meta || {
-        page: 1,
-        totalPages: 1,
-        total: 0,
-        limit: 10
-      });
+      
+      if (result.success) {
+        setTermOfPayments(result.data.data || []);
+        setPagination({
+          page: result.data.pagination?.currentPage || 1,
+          totalPages: result.data.pagination?.totalPages || 1,
+          total: result.data.pagination?.totalItems || 0,
+          limit: result.data.pagination?.itemsPerPage || 10
+        });
+      } else {
+        throw new Error(result.message || 'Failed to search term of payments');
+      }
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to search term of payments');
+      toastService.error('Gagal mencari data term of payments');
     } finally {
       setSearchLoading(false);
     }
   }, [fetchTermOfPayments, handleAuthError]);
 
-  const deleteTermOfPayment = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this term of payment?'))
-      return;
-
+  const createTermOfPayment = async (termOfPaymentData) => {
     try {
-      await termOfPaymentService.deleteTermOfPayment(id);
-      setTermOfPayments(termOfPayments.filter((top) => top.id !== id));
-      toastService.success('Term of payment deleted successfully');
+      setLoading(true);
+      const result = await termOfPaymentService.createTermOfPayment(termOfPaymentData);
+      
+      if (result.success) {
+        toastService.success('Term of payment berhasil dibuat');
+        // Refresh data setelah create
+        fetchTermOfPayments(pagination.page, pagination.limit);
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to create term of payment');
+      }
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to delete term of payment');
+      toastService.error('Gagal membuat term of payment');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTermOfPayment = async (id, termOfPaymentData) => {
+    try {
+      setLoading(true);
+      const result = await termOfPaymentService.updateTermOfPayment(id, termOfPaymentData);
+      
+      if (result.success) {
+        toastService.success('Term of payment berhasil diperbarui');
+        // Refresh data setelah update
+        fetchTermOfPayments(pagination.page, pagination.limit);
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to update term of payment');
+      }
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Gagal memperbarui term of payment');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTermOfPaymentById = async (id) => {
+    try {
+      setLoading(true);
+      const result = await termOfPaymentService.getTermOfPaymentById(id);
+      
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to fetch term of payment');
+      }
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Gagal mengambil data term of payment');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteTermOfPayment = async (id) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus term of payment ini?'))
+      return;
+
+    try {
+      const result = await termOfPaymentService.deleteTermOfPayment(id);
+      
+      if (result === true || result.success) {
+        setTermOfPayments(termOfPayments.filter((top) => top.id !== id));
+        toastService.success('Term of payment berhasil dihapus');
+        // Refresh data setelah delete
+        fetchTermOfPayments(pagination.page, pagination.limit);
+      } else {
+        throw new Error(result.message || 'Failed to delete term of payment');
+      }
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Gagal menghapus term of payment');
     }
   };
 
@@ -150,8 +241,12 @@ const useTermOfPayments = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
+    createTermOfPayment,
+    updateTermOfPayment,
+    getTermOfPaymentById,
     deleteTermOfPayment,
     fetchTermOfPayments,
+    searchTermOfPayments,
     handleAuthError
   };
 };

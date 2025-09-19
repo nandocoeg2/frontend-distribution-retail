@@ -26,7 +26,10 @@ export const termOfPaymentService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to fetch term of payments');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
       return await response.json();
     } catch (error) {
@@ -45,7 +48,10 @@ export const termOfPaymentService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to fetch term of payment');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
       return await response.json();
     } catch (error) {
@@ -66,7 +72,10 @@ export const termOfPaymentService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to create term of payment');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
       return await response.json();
     } catch (error) {
@@ -87,7 +96,10 @@ export const termOfPaymentService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to update term of payment');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
       return await response.json();
     } catch (error) {
@@ -107,9 +119,12 @@ export const termOfPaymentService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to delete term of payment');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
-      return true;
+      return await response.json();
     } catch (error) {
       throw error;
     }
@@ -126,7 +141,10 @@ export const termOfPaymentService = {
         throw new Error('Unauthorized');
       }
 
-      if (!response.ok) throw new Error('Failed to search term of payments');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
       return await response.json();
     } catch (error) {

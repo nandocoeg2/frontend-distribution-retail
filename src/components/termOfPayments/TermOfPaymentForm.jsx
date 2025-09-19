@@ -6,7 +6,7 @@ const TermOfPaymentForm = ({ formData, handleInputChange, handleSubmit, closeMod
       <div className='space-y-4'>
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Code *
+            Kode *
           </label>
           <input
             type='text'
@@ -15,13 +15,13 @@ const TermOfPaymentForm = ({ formData, handleInputChange, handleSubmit, closeMod
             onChange={handleInputChange}
             required
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='e.g., TOP001'
+            placeholder='contoh: TOP001'
           />
         </div>
 
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Days Limit *
+            Batas Hari *
           </label>
           <input
             type='number'
@@ -31,7 +31,7 @@ const TermOfPaymentForm = ({ formData, handleInputChange, handleSubmit, closeMod
             required
             min="1"
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='e.g., 30'
+            placeholder='contoh: 30'
           />
         </div>
       </div>
@@ -42,13 +42,13 @@ const TermOfPaymentForm = ({ formData, handleInputChange, handleSubmit, closeMod
           onClick={closeModal}
           className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
         >
-          Cancel
+          Batal
         </button>
         <button
           type='submit'
           className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700'
         >
-          {isEdit ? 'Save Changes' : 'Add Term of Payment'}
+          {isEdit ? 'Simpan Perubahan' : 'Tambah Syarat Pembayaran'}
         </button>
       </div>
     </form>

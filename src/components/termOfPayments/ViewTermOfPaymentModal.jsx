@@ -11,7 +11,7 @@ const ViewTermOfPaymentModal = ({ show, onClose, termOfPayment }) => {
       <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
         <div className='flex justify-between items-center mb-4'>
           <h3 className='text-lg font-medium text-gray-900'>
-            Term of Payment Details
+            Detail Syarat Pembayaran
           </h3>
           <button
             onClick={onClose}
@@ -24,40 +24,23 @@ const ViewTermOfPaymentModal = ({ show, onClose, termOfPayment }) => {
         {termOfPayment && (
           <div className='space-y-4'>
             <div>
-              <label className='block text-sm font-medium text-gray-700'>Code</label>
+              <label className='block text-sm font-medium text-gray-700'>Kode</label>
               <p className='text-sm text-gray-900'>{termOfPayment.kode_top}</p>
             </div>
             
             <div>
-              <label className='block text-sm font-medium text-gray-700'>Days Limit</label>
-              <p className='text-sm text-gray-900'>{termOfPayment.batas_hari} days</p>
+              <label className='block text-sm font-medium text-gray-700'>Batas Hari</label>
+              <p className='text-sm text-gray-900'>{termOfPayment.batas_hari} hari</p>
             </div>
             
             <div>
-              <label className='block text-sm font-medium text-gray-700'>Created By</label>
-              <p className='text-sm text-gray-900'>{termOfPayment.createdBy || 'N/A'}</p>
+              <label className='block text-sm font-medium text-gray-700'>Dibuat Pada</label>
+              <p className='text-sm text-gray-900'>{new Date(termOfPayment.createdAt).toLocaleDateString('id-ID')}</p>
             </div>
             
             <div>
-              <label className='block text-sm font-medium text-gray-700'>Created At</label>
-              <p className='text-sm text-gray-900'>{new Date(termOfPayment.createdAt).toLocaleDateString()}</p>
-            </div>
-            
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>Updated By</label>
-              <p className='text-sm text-gray-900'>{termOfPayment.updatedBy || 'N/A'}</p>
-            </div>
-            
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>Updated At</label>
-              <p className='text-sm text-gray-900'>{new Date(termOfPayment.updatedAt).toLocaleDateString()}</p>
-            </div>
-            
-            <div>
-              <label className='block text-sm font-medium text-gray-700'>Status</label>
-              <p className={`text-sm ${termOfPayment.is_deleted ? 'text-red-600' : 'text-green-600'}`}>
-                {termOfPayment.is_deleted ? 'Deleted' : 'Active'}
-              </p>
+              <label className='block text-sm font-medium text-gray-700'>Diperbarui Pada</label>
+              <p className='text-sm text-gray-900'>{new Date(termOfPayment.updatedAt).toLocaleDateString('id-ID')}</p>
             </div>
           </div>
         )}
@@ -67,7 +50,7 @@ const ViewTermOfPaymentModal = ({ show, onClose, termOfPayment }) => {
             onClick={onClose}
             className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
           >
-            Close
+            Tutup
           </button>
         </div>
       </div>
