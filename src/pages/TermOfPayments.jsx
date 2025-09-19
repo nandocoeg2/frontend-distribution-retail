@@ -88,7 +88,7 @@ const TermOfPayments = () => {
           onClick={fetchTermOfPayments}
           className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
         >
-          Coba Lagi
+          Retry
         </button>
       </div>
     );
@@ -99,13 +99,13 @@ const TermOfPayments = () => {
       <div className='bg-white shadow rounded-lg overflow-hidden'>
         <div className='px-4 py-5 sm:p-6'>
           <div className='mb-4 flex justify-between items-center'>
-            <h3 className='text-lg font-medium text-gray-900'>Daftar Syarat Pembayaran</h3>
+            <h3 className='text-lg font-medium text-gray-900'>Term of Payment List</h3>
             <button
               onClick={openAddModal}
               className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
             >
               <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Tambah Syarat Pembayaran
+              Add Term of Payment
             </button>
           </div>
 

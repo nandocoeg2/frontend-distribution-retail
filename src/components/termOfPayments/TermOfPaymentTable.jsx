@@ -13,19 +13,19 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Kode
+              Code
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Batas Hari
+              Days Limit
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Dibuat
+              Created At
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Diperbarui
+              Updated At
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Aksi
+              Actions
             </th>
           </tr>
         </thead>
@@ -33,7 +33,7 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
           {termOfPayments.length === 0 ? (
             <tr>
               <td colSpan="5" className='px-6 py-4 text-center text-gray-500'>
-                {searchQuery ? 'Tidak ada syarat pembayaran yang sesuai dengan pencarian.' : 'Tidak ada syarat pembayaran tersedia.'}
+                {searchQuery ? 'No term of payments found matching your search.' : 'No term of payments available.'}
               </td>
             </tr>
           ) : (
@@ -46,7 +46,7 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {top.batas_hari} hari
+                    {top.batas_hari} days
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

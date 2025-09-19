@@ -29,7 +29,7 @@ const AddTermOfPaymentModal = ({ show, onClose, onTermOfPaymentAdded, handleAuth
     <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
       <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
-          Tambah Syarat Pembayaran Baru
+          Add New Term of Payment
         </h3>
         <TermOfPaymentForm 
           formData={formData} 

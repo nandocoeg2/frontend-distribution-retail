@@ -77,13 +77,13 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div className="flex items-center">
           <p className="text-sm text-gray-700 mr-4">
-            Menampilkan <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> sampai{' '}
-            <span className="font-medium">{Math.min(currentPage * itemsPerPage, total)}</span> dari{' '}
-            <span className="font-medium">{total}</span> hasil
+            Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+            <span className="font-medium">{Math.min(currentPage * itemsPerPage, total)}</span> of{' '}
+            <span className="font-medium">{total}</span> results
           </p>
           <div className="flex items-center">
             <label htmlFor="items-per-page" className="mr-2 text-sm text-gray-700">
-              Item per halaman:
+              Items per page:
             </label>
             <select
               id="items-per-page"
