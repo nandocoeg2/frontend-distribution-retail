@@ -30,8 +30,17 @@ const useSuppliers = () => {
     try {
       setLoading(true);
       const result = await supplierService.getAllSuppliers(page, limit);
-      setSuppliers(result.data);
-      setPagination(result.pagination);
+      if (result.success) {
+        setSuppliers(result.data?.suppliers || []);
+        setPagination({
+          currentPage: result.data?.pagination?.page || 1,
+          totalPages: result.data?.pagination?.totalPages || 1,
+          totalItems: result.data?.pagination?.total || 0,
+          itemsPerPage: result.data?.pagination?.limit || 10
+        });
+      } else {
+        throw new Error(result.message || 'Failed to load suppliers');
+      }
     } catch (err) {
       setError(err.message);
       toastService.error('Failed to load suppliers');
@@ -49,8 +58,17 @@ const useSuppliers = () => {
     try {
       setSearchLoading(true);
       const result = await supplierService.searchSuppliers(query, page, limit);
-      setSuppliers(result.data);
-      setPagination(result.pagination);
+      if (result.success) {
+        setSuppliers(result.data?.suppliers || []);
+        setPagination({
+          currentPage: result.data?.pagination?.page || 1,
+          totalPages: result.data?.pagination?.totalPages || 1,
+          totalItems: result.data?.pagination?.total || 0,
+          itemsPerPage: result.data?.pagination?.limit || 10
+        });
+      } else {
+        throw new Error(result.message || 'Failed to search suppliers');
+      }
     } catch (err) {
       toastService.error('Failed to search suppliers');
     } finally {
@@ -63,24 +81,18 @@ const useSuppliers = () => {
       return;
 
     try {
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/suppliers/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 401 || response.status === 403) {
+      const result = await supplierService.deleteSupplier(id);
+      if (result.success) {
+        setSuppliers(suppliers.filter((supplier) => supplier.id !== id));
+        toastService.success('Supplier deleted successfully');
+      } else {
+        throw new Error(result.message || 'Failed to delete supplier');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to delete supplier');
-
-      setSuppliers(suppliers.filter((supplier) => supplier.id !== id));
-      toastService.success('Supplier deleted successfully');
-    } catch (err) {
       toastService.error('Failed to delete supplier');
     }
   };
@@ -122,6 +134,66 @@ const useSuppliers = () => {
     setDebounceTimeout(timeout);
   };
 
+  const createSupplier = async (supplierData) => {
+    try {
+      const result = await supplierService.createSupplier(supplierData);
+      if (result.success) {
+        setSuppliers([result.data, ...suppliers]);
+        toastService.success('Supplier created successfully');
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to create supplier');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to create supplier');
+      throw err;
+    }
+  };
+
+  const updateSupplier = async (id, supplierData) => {
+    try {
+      const result = await supplierService.updateSupplier(id, supplierData);
+      if (result.success) {
+        setSuppliers(suppliers.map(supplier => 
+          supplier.id === id ? result.data : supplier
+        ));
+        toastService.success('Supplier updated successfully');
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to update supplier');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to update supplier');
+      throw err;
+    }
+  };
+
+  const getSupplierById = async (id) => {
+    try {
+      const result = await supplierService.getSupplierById(id);
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to get supplier');
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to get supplier');
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchSuppliers(1, pagination.itemsPerPage);
 
@@ -145,6 +217,9 @@ const useSuppliers = () => {
     handlePageChange,
     handleLimitChange,
     deleteSupplier,
+    createSupplier,
+    updateSupplier,
+    getSupplierById,
     fetchSuppliers,
     handleAuthError
   };

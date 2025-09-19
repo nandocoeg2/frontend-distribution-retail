@@ -43,6 +43,46 @@ class SupplierService {
       throw error;
     }
   }
+
+  async getSupplierById(id) {
+    try {
+      const response = await this.api.get(`/suppliers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching supplier by ID:', error);
+      throw error;
+    }
+  }
+
+  async createSupplier(supplierData) {
+    try {
+      const response = await this.api.post('/suppliers/', supplierData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating supplier:', error);
+      throw error;
+    }
+  }
+
+  async updateSupplier(id, supplierData) {
+    try {
+      const response = await this.api.put(`/suppliers/${id}`, supplierData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+      throw error;
+    }
+  }
+
+  async deleteSupplier(id) {
+    try {
+      const response = await this.api.delete(`/suppliers/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SupplierService();

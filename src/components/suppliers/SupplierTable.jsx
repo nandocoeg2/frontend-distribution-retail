@@ -6,7 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Pagination from './Pagination';
 
-const SupplierTable = ({ suppliers, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -30,7 +30,7 @@ const SupplierTable = ({ suppliers, pagination, onPageChange, onLimitChange, onE
           </tr>
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
-          {suppliers.length === 0 ? (
+          {!suppliers || suppliers.length === 0 ? (
             <tr>
               <td colSpan="5" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'No suppliers found matching your search.' : 'No suppliers available.'}

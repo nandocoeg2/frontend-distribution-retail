@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import useSuppliers from '@/hooks/useSuppliersPage';
+import { useSuppliersPage as useSuppliers } from '@/hooks/useSuppliers';
 import SupplierTable from '@/components/suppliers/SupplierTable';
 import SupplierSearch from '@/components/suppliers/SupplierSearch';
 import AddSupplierModal from '@/components/suppliers/AddSupplierModal';
