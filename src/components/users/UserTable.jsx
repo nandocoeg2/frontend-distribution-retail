@@ -16,16 +16,13 @@ const UserTable = ({ users, pagination, onPageChange, onLimitChange, onEdit, onD
               Username
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Full Name
+              Name
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Email
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Role
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Company
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Status
@@ -38,7 +35,7 @@ const UserTable = ({ users, pagination, onPageChange, onLimitChange, onEdit, onD
         <tbody className='bg-white divide-y divide-gray-200'>
           {users.length === 0 ? (
             <tr>
-              <td colSpan="7" className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'No users found matching your search.' : 'No users available.'}
               </td>
             </tr>
@@ -52,7 +49,7 @@ const UserTable = ({ users, pagination, onPageChange, onLimitChange, onEdit, onD
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {user.fullName}
+                    {user.firstName} {user.lastName}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
@@ -63,11 +60,6 @@ const UserTable = ({ users, pagination, onPageChange, onLimitChange, onEdit, onD
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {user.role?.name || 'N/A'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {user.company?.name || 'N/A'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

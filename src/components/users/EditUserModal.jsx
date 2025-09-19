@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import UserForm from '@/components/users/UserForm';
 import userService from '@/services/userService';
 import toastService from '@/services/toastService';
+import useRoleManagement from '@/hooks/useRoleManagement';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const EditUserModal = ({ show, onClose, user, onUserUpdated, handleAuthError }) => {
+  const { roles } = useRoleManagement();
   const [formData, setFormData] = useState({
     username: '',
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     roleId: '',
-    companyId: '',
-    phoneNumber: '',
-    address: '',
-    position: '',
     isActive: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,14 +22,11 @@ const EditUserModal = ({ show, onClose, user, onUserUpdated, handleAuthError }) 
     if (user) {
       setFormData({
         username: user.username || '',
-        fullName: user.fullName || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || '',
         password: '', // Don't pre-fill password for security
-        roleId: user.role?.id || '',
-        companyId: user.company?.id || '',
-        phoneNumber: user.profile?.phoneNumber || '',
-        address: user.profile?.address || '',
-        position: user.profile?.position || '',
+        roleId: user.roleId || '',
         isActive: user.isActive !== undefined ? user.isActive : true,
       });
     }
@@ -103,6 +99,7 @@ const EditUserModal = ({ show, onClose, user, onUserUpdated, handleAuthError }) 
             handleSubmit={handleSubmit} 
             closeModal={onClose} 
             isSubmitting={isSubmitting}
+            roles={roles}
           />
         </div>
       </div>

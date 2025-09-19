@@ -1,6 +1,7 @@
 import React from 'react';
+import Autocomplete from '@/components/common/Autocomplete';
 
-const UserForm = ({ formData, handleInputChange, handleSubmit, closeModal, isSubmitting }) => {
+const UserForm = ({ formData, handleInputChange, handleSubmit, closeModal, isSubmitting, roles = [] }) => {
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -21,20 +22,37 @@ const UserForm = ({ formData, handleInputChange, handleSubmit, closeModal, isSub
           />
         </div>
 
-        {/* Full Name */}
+        {/* First Name */}
         <div>
-          <label htmlFor='fullName' className='block text-sm font-medium text-gray-700 mb-1'>
-            Full Name *
+          <label htmlFor='firstName' className='block text-sm font-medium text-gray-700 mb-1'>
+            First Name *
           </label>
           <input
             type='text'
-            id='fullName'
-            name='fullName'
-            value={formData.fullName}
+            id='firstName'
+            name='firstName'
+            value={formData.firstName}
             onChange={handleInputChange}
             required
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Enter full name'
+            placeholder='Enter first name'
+          />
+        </div>
+
+        {/* Last Name */}
+        <div>
+          <label htmlFor='lastName' className='block text-sm font-medium text-gray-700 mb-1'>
+            Last Name *
+          </label>
+          <input
+            type='text'
+            id='lastName'
+            name='lastName'
+            value={formData.lastName}
+            onChange={handleInputChange}
+            required
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Enter last name'
           />
         </div>
 
@@ -74,87 +92,19 @@ const UserForm = ({ formData, handleInputChange, handleSubmit, closeModal, isSub
 
         {/* Role ID */}
         <div>
-          <label htmlFor='roleId' className='block text-sm font-medium text-gray-700 mb-1'>
-            Role *
-          </label>
-          <select
-            id='roleId'
-            name='roleId'
+          <Autocomplete
+            options={roles}
             value={formData.roleId}
             onChange={handleInputChange}
-            required
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value=''>Select role</option>
-            {/* Role options will be populated from API */}
-          </select>
-        </div>
-
-        {/* Company ID */}
-        <div>
-          <label htmlFor='companyId' className='block text-sm font-medium text-gray-700 mb-1'>
-            Company *
-          </label>
-          <select
-            id='companyId'
-            name='companyId'
-            value={formData.companyId}
-            onChange={handleInputChange}
-            required
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value=''>Select company</option>
-            {/* Company options will be populated from API */}
-          </select>
-        </div>
-
-        {/* Phone Number */}
-        <div>
-          <label htmlFor='phoneNumber' className='block text-sm font-medium text-gray-700 mb-1'>
-            Phone Number
-          </label>
-          <input
-            type='tel'
-            id='phoneNumber'
-            name='phoneNumber'
-            value={formData.phoneNumber}
-            onChange={handleInputChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Enter phone number'
+            placeholder="Select role"
+            label="Role"
+            required={true}
+            displayKey="name"
+            valueKey="id"
+            name="roleId"
           />
         </div>
 
-        {/* Address */}
-        <div>
-          <label htmlFor='address' className='block text-sm font-medium text-gray-700 mb-1'>
-            Address
-          </label>
-          <input
-            type='text'
-            id='address'
-            name='address'
-            value={formData.address}
-            onChange={handleInputChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Enter address'
-          />
-        </div>
-
-        {/* Position */}
-        <div>
-          <label htmlFor='position' className='block text-sm font-medium text-gray-700 mb-1'>
-            Position
-          </label>
-          <input
-            type='text'
-            id='position'
-            name='position'
-            value={formData.position}
-            onChange={handleInputChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Enter position'
-          />
-        </div>
 
         {/* Is Active */}
         <div>

@@ -2,19 +2,18 @@ import React, { useState } from 'react';
 import UserForm from '@/components/users/UserForm';
 import userService from '@/services/userService';
 import toastService from '@/services/toastService';
+import useRoleManagement from '@/hooks/useRoleManagement';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const AddUserModal = ({ show, onClose, onUserAdded, handleAuthError }) => {
+  const { roles } = useRoleManagement();
   const [formData, setFormData] = useState({
     username: '',
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     roleId: '',
-    companyId: '',
-    phoneNumber: '',
-    address: '',
-    position: '',
     isActive: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +78,7 @@ const AddUserModal = ({ show, onClose, onUserAdded, handleAuthError }) => {
             handleSubmit={handleSubmit} 
             closeModal={onClose} 
             isSubmitting={isSubmitting}
+            roles={roles}
           />
         </div>
       </div>

@@ -42,12 +42,12 @@ class UserService {
 
   async searchUsers(query, page = 1, limit = 10) {
     try {
-      const url = `/users/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`;
+      const url = `/users/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`;
       const response = await this.api.get(url);
       return {
         data: response.data.data.data, // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
         pagination: response.data.data.pagination,
-        searchQuery: response.data.data.searchQuery
+        searchQuery: query
       };
     } catch (error) {
       console.error('Error searching users:', error);
