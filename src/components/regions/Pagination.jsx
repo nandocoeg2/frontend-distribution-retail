@@ -1,7 +1,13 @@
 import React from 'react';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
-  const { page, totalPages, total, limit } = pagination;
+  // Provide default values if pagination is undefined
+  const {
+    page: currentPage = 1,
+    totalPages = 1,
+    total: totalItems = 0,
+    limit: itemsPerPage = 10
+  } = pagination || {};
 
   const handlePageClick = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {

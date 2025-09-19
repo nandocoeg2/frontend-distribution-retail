@@ -12,7 +12,7 @@ const InvoiceSearch = ({ searchQuery, searchField, handleSearchChange, handleSea
   };
 
   const getPlaceholder = () => {
-    return `Search by ${searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}...`;
+    return `Search by ${searchField ? searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) : 'field'}...`;
   };
 
   return (

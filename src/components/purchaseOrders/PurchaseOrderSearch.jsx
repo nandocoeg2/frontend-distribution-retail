@@ -23,7 +23,7 @@ const PurchaseOrderSearch = ({ searchQuery, searchField, handleSearchChange, han
             className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select Status</option>
-            {purchaseOrderStatuses.map((status) => (
+            {Array.isArray(purchaseOrderStatuses) && purchaseOrderStatuses.map((status) => (
               <option key={status.id} value={status.id}>
                 {status.status_name}
               </option>
@@ -34,7 +34,7 @@ const PurchaseOrderSearch = ({ searchQuery, searchField, handleSearchChange, han
         return (
           <input
             type="text"
-            placeholder={`Search by ${searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}...`}
+            placeholder={`Search by ${searchField ? searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) : 'field'}...`}
             value={searchQuery}
             onChange={handleSearchChange}
             className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

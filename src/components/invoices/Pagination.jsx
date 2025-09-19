@@ -1,7 +1,13 @@
 import React from 'react';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
-  const { currentPage, totalPages, totalItems, itemsPerPage } = pagination;
+  // Provide default values if pagination is undefined
+  const {
+    currentPage = 1,
+    totalPages = 1,
+    totalItems = 0,
+    itemsPerPage = 10
+  } = pagination || {};
 
   const limitOptions = [5, 10, 20, 50];
 

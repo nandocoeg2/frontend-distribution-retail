@@ -1,7 +1,7 @@
 import React from 'react';
-import { EyeIcon } from '@heroicons/react/24/solid';
+import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 
-const PackingTable = ({ packings, onViewById }) => {
+const PackingTable = ({ packings, onViewById, onEdit, onDelete, isDeleting, deleteConfirmId, onConfirmDelete, onCancelDelete }) => {
   const getStatusBadge = (statusName) => {
     const statusMap = {
       'Pending Packing': 'bg-yellow-100 text-yellow-800',
@@ -27,7 +27,7 @@ const PackingTable = ({ packings, onViewById }) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {packings.map((packing) => (
+          {Array.isArray(packings) && packings.length > 0 ? packings.map((packing) => (
             <tr key={packing.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {packing.packing_number || 'N/A'}
@@ -51,15 +51,58 @@ const PackingTable = ({ packings, onViewById }) => {
                 {packing.packingItems?.length || 0}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button
-                  onClick={() => onViewById(packing.id)}
-                  className="text-indigo-600 hover:text-indigo-900"
-                >
-                  <EyeIcon className="h-5 w-5" />
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => onViewById(packing.id)}
+                    className="text-indigo-600 hover:text-indigo-900"
+                    title="View Details"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => onEdit(packing)}
+                    className="text-green-600 hover:text-green-900"
+                    title="Edit"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
+                  {deleteConfirmId === packing.id ? (
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => onDelete(packing.id)}
+                        disabled={isDeleting}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        title="Confirm Delete"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={onCancelDelete}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => onConfirmDelete(packing.id)}
+                      className="text-red-600 hover:text-red-900"
+                      title="Delete"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
               </td>
             </tr>
-          ))}
+          )) : (
+            <tr>
+              <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                {Array.isArray(packings) ? 'Tidak ada data packing' : 'Loading...'}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
