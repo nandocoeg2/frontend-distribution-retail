@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CustomerForm from '@/components/customers/CustomerForm';
 import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
+import FormModal from '@/components/common/FormModal';
 
 const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
@@ -63,28 +64,24 @@ const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleA
     }
   };
 
-  if (!show) {
-    return null;
-  }
-
   return (
-    <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-md mx-4'>
-        <h3 className='text-lg font-medium text-gray-900 mb-4'>
-          Edit Customer
-        </h3>
-        <CustomerForm 
-          formData={formData} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={handleSubmit} 
-          closeModal={onClose} 
-          isEdit
-          isSubmitting={isSubmitting}
-        />
-      </div>
-    </div>
+    <FormModal
+      show={show}
+      onClose={onClose}
+      title="Edit Customer"
+      subtitle="Edit the customer details"
+      handleSubmit={handleSubmit}
+      isSubmitting={isSubmitting}
+      isEdit
+    >
+      <CustomerForm
+        formData={formData}
+        handleInputChange={handleInputChange}
+        isSubmitting={isSubmitting}
+        isEdit
+      />
+    </FormModal>
   );
 };
 
 export default EditCustomerModal;
-
