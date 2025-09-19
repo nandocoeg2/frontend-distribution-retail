@@ -4,5 +4,3 @@ export { default as RegionSearch } from './RegionSearch';
 export { default as RegionTable } from './RegionTable';
 export { default as EditRegionModal } from './EditRegionModal';
 export { default as ViewRegionModal } from './ViewRegionModal';
-export { default as Pagination } from './Pagination';
-

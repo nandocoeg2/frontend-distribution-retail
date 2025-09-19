@@ -4,5 +4,3 @@ export { default as ViewCompanyModal } from './ViewCompanyModal';
 export { default as CompanyForm } from './CompanyForm';
 export { default as CompanyTable } from './CompanyTable';
 export { default as CompanySearch } from './CompanySearch';
-export { default as Pagination } from './Pagination';
-

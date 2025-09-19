@@ -1,6 +1,6 @@
 import React from 'react';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
-import Pagination from './Pagination';
+import Pagination from '../common/Pagination';
 
 const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, onView, onEdit, onDelete, loading, isHistory = false }) => {
   if (loading) {

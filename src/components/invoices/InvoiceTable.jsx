@@ -4,7 +4,7 @@ import {
   TrashIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
-import Pagination from './Pagination';
+import Pagination from '../common/Pagination';
 
 const InvoiceTable = ({ invoices, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
   const formatCurrency = (amount) => {
