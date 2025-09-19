@@ -28,7 +28,7 @@ const useRegionsPage = () => {
     try {
       setLoading(true);
       const result = await regionService.getAllRegions(page, limit);
-      setRegions(result.data);
+      setRegions(result.data || []);
       setPagination(result.meta || {
         page: 1,
         totalPages: 1,
@@ -56,7 +56,7 @@ const useRegionsPage = () => {
     try {
       setSearchLoading(true);
       const result = await regionService.searchRegions(query, page, limit);
-      setRegions(result.data);
+      setRegions(result.data || []);
       setPagination(result.meta || {
         page: 1,
         totalPages: 1,
@@ -73,6 +73,55 @@ const useRegionsPage = () => {
       setSearchLoading(false);
     }
   }, [fetchRegions, handleAuthError]);
+
+  const createRegion = async (regionData) => {
+    try {
+      const newRegion = await regionService.createRegion(regionData);
+      setRegions([newRegion, ...regions]);
+      toastService.success('Region created successfully');
+      fetchRegions(pagination.page, pagination.limit); // Refetch to update pagination
+      return newRegion;
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to create region');
+      throw err;
+    }
+  };
+
+  const getRegionById = async (id) => {
+    try {
+      const region = await regionService.getRegionById(id);
+      return region;
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to fetch region');
+      throw err;
+    }
+  };
+
+  const updateRegion = async (id, regionData) => {
+    try {
+      const updatedRegion = await regionService.updateRegion(id, regionData);
+      setRegions(regions.map(region => 
+        region.id === id ? updatedRegion : region
+      ));
+      toastService.success('Region updated successfully');
+      return updatedRegion;
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      toastService.error('Failed to update region');
+      throw err;
+    }
+  };
 
   const deleteRegion = async (id) => {
     if (!window.confirm('Are you sure you want to delete this region?'))
@@ -151,6 +200,9 @@ const useRegionsPage = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
+    createRegion,
+    getRegionById,
+    updateRegion,
     deleteRegion,
     fetchRegions,
     handleAuthError

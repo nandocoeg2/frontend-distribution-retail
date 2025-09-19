@@ -28,7 +28,7 @@ class CustomerService {
     try {
       const response = await this.api.get(`/customers?page=${page}&limit=${limit}`);
       return {
-        data: response.data.data.customers,
+        data: response.data.data.data, // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
         pagination: response.data.data.pagination
       };
     } catch (error) {
@@ -45,7 +45,7 @@ class CustomerService {
       const url = `/customers/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`;
       const response = await this.api.get(url);
       return {
-        data: response.data.data.customers,
+        data: response.data.data.data, // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
         pagination: response.data.data.pagination,
         searchQuery: response.data.data.searchQuery
       };

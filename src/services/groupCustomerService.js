@@ -4,6 +4,7 @@ const getHeaders = () => {
   const accessToken = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     'Authorization': `Bearer ${accessToken}`,
   };
 };
@@ -13,6 +14,7 @@ export const groupCustomerService = {
   getAllGroupCustomers: async (page = 1, limit = 10) => {
     try {
       const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+        method: 'GET',
         headers: getHeaders(),
       });
 
@@ -35,6 +37,7 @@ export const groupCustomerService = {
   getGroupCustomerById: async (id) => {
     try {
       const response = await fetch(`${API_URL}/${id}`, {
+        method: 'GET',
         headers: getHeaders(),
       });
 
@@ -118,16 +121,19 @@ export const groupCustomerService = {
         throw new Error(errorData.error?.message || 'Failed to delete group customer');
       }
 
-      return true;
+      // Return success response for 204 No Content
+      return { success: true, message: 'Group customer deleted successfully' };
     } catch (error) {
       throw error;
     }
   },
 
-  // Search group customers
+  // Search group customers - supports both path and query parameter formats
   searchGroupCustomers: async (query, page = 1, limit = 10) => {
     try {
-      const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
+      // Use path-based search as primary method
+      const response = await fetch(`${API_URL}/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`, {
+        method: 'GET',
         headers: getHeaders(),
       });
 
@@ -136,8 +142,22 @@ export const groupCustomerService = {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Failed to search group customers');
+        // Fallback to query-based search if path-based fails
+        const fallbackResponse = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
+          method: 'GET',
+          headers: getHeaders(),
+        });
+
+        if (fallbackResponse.status === 401 || fallbackResponse.status === 403) {
+          throw new Error('Unauthorized');
+        }
+
+        if (!fallbackResponse.ok) {
+          const errorData = await fallbackResponse.json().catch(() => ({}));
+          throw new Error(errorData.error?.message || 'Failed to search group customers');
+        }
+
+        return await fallbackResponse.json();
       }
 
       return await response.json();

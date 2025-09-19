@@ -4,6 +4,7 @@ const getHeaders = () => {
   const accessToken = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     'Authorization': `Bearer ${accessToken}`,
   };
 };
@@ -22,7 +23,23 @@ export const regionService = {
 
       if (!response.ok) throw new Error('Failed to fetch regions');
 
-      return await response.json();
+      const result = await response.json();
+      
+      // Return data in expected format
+      return {
+        data: result.data.data || [],
+        meta: result.data.pagination ? {
+          page: result.data.pagination.currentPage || 1,
+          totalPages: result.data.pagination.totalPages || 1,
+          total: result.data.pagination.totalItems || 0,
+          limit: result.data.pagination.itemsPerPage || 10
+        } : {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        }
+      };
     } catch (error) {
       throw error;
     }
@@ -41,7 +58,8 @@ export const regionService = {
 
       if (!response.ok) throw new Error('Failed to fetch region');
 
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       throw error;
     }
@@ -62,7 +80,8 @@ export const regionService = {
 
       if (!response.ok) throw new Error('Failed to create region');
 
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       throw error;
     }
@@ -83,7 +102,8 @@ export const regionService = {
 
       if (!response.ok) throw new Error('Failed to update region');
 
-      return await response.json();
+      const result = await response.json();
+      return result.data;
     } catch (error) {
       throw error;
     }
@@ -122,7 +142,23 @@ export const regionService = {
 
       if (!response.ok) throw new Error('Failed to search regions');
 
-      return await response.json();
+      const result = await response.json();
+      
+      // Return data in expected format
+      return {
+        data: result.data.data || [],
+        meta: result.data.pagination ? {
+          page: result.data.pagination.currentPage || 1,
+          totalPages: result.data.pagination.totalPages || 1,
+          total: result.data.pagination.totalItems || 0,
+          limit: result.data.pagination.itemsPerPage || 10
+        } : {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+          limit: 10
+        }
+      };
     } catch (error) {
       throw error;
     }

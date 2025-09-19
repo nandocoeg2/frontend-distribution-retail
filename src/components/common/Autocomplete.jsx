@@ -9,7 +9,8 @@ const Autocomplete = ({
   required = false,
   disabled = false,
   displayKey = 'name',
-  valueKey = 'id'
+  valueKey = 'id',
+  name = null
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredOptions, setFilteredOptions] = useState([]);
@@ -56,14 +57,14 @@ const Autocomplete = ({
     
     // Clear the actual value if the input is cleared
     if (query === '') {
-      onChange({ target: { name: e.target.name, value: '' } });
+      onChange({ target: { name: name || e.target.name, value: '' } });
     }
   };
 
   const handleOptionClick = (option) => {
     setInputValue(option[displayKey]);
     setShowOptions(false);
-    onChange({ target: { name: wrapperRef.current.querySelector('input').name, value: option[valueKey] } });
+    onChange({ target: { name: name || wrapperRef.current.querySelector('input').name, value: option[valueKey] } });
   };
 
   const handleFocus = () => {
@@ -86,7 +87,7 @@ const Autocomplete = ({
         placeholder={placeholder}
         required={required && !value}
         disabled={disabled}
-        name={label.toLowerCase().replace(/\s+/g, '_')} // Generate a name for the input
+        name={name || label.toLowerCase().replace(/\s+/g, '_')} // Use provided name or generate one
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
       />
       {showOptions && filteredOptions.length > 0 && (

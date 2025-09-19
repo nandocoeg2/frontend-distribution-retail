@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import groupCustomerService from '@/services/groupCustomerService';
+import { groupCustomerService } from '@/services/groupCustomerService';
 import regionService from '@/services/regionService';
 import toastService from '@/services/toastService';
 import Autocomplete from '@/components/common/Autocomplete';
@@ -17,8 +17,18 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
           groupCustomerService.getAllGroupCustomers(1, 100),
           regionService.getAllRegions(1, 100)
         ]);
-        setGroupCustomers(groupCustomersResponse.data);
-        setRegions(regionsResponse.data);
+        
+        if (groupCustomersResponse.success) {
+          // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
+          const groupCustomersData = groupCustomersResponse.data.data || [];
+          setGroupCustomers(groupCustomersData);
+        } else {
+          throw new Error(groupCustomersResponse.error?.message || 'Failed to fetch group customers');
+        }
+        
+        // RegionService returns data directly in the expected format
+        const regionsData = regionsResponse.data || [];
+        setRegions(regionsData);
       } catch (error) {
         console.error('Error fetching dropdown data:', error);
         toastService.error('Failed to load required data for the form.');
@@ -91,6 +101,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
         <div>
           <Autocomplete
             label="Group Customer"
+            name="groupCustomerId"
             options={groupCustomers}
             value={formData.groupCustomerId}
             onChange={(e) => handleAutocompleteChange('groupCustomerId', e.target.value)}
@@ -106,6 +117,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
         <div>
           <Autocomplete
             label="Region"
+            name="regionId"
             options={regions}
             value={formData.regionId}
             onChange={(e) => handleAutocompleteChange('regionId', e.target.value)}

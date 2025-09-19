@@ -1,81 +1,129 @@
 import React from 'react';
+import useGroupCustomerForm from '../../hooks/useGroupCustomerForm';
 
-const GroupCustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false }) => {
+const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = false }) => {
+  const {
+    formData,
+    loading,
+    errors,
+    handleInputChange,
+    handleSubmit,
+    resetForm
+  } = useGroupCustomerForm(initialData);
+
+  const handleFormSubmit = async (e) => {
+    try {
+      const result = await handleSubmit(e);
+      if (result && onSubmit) {
+        onSubmit(result);
+      }
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
-      <div className='space-y-4'>
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Group Code *
-          </label>
-          <input
-            type='text'
-            name='kode_group'
-            value={formData.kode_group}
-            onChange={handleInputChange}
-            required
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='e.g., GC001'
-          />
-        </div>
-
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Group Name *
-          </label>
-          <input
-            type='text'
-            name='nama_group'
-            value={formData.nama_group}
-            onChange={handleInputChange}
-            required
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='e.g., Group Customer 1'
-          />
-        </div>
-
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Address
-          </label>
-          <textarea
-            name='alamat'
-            value={formData.alamat}
-            onChange={handleInputChange}
-            rows="3"
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='e.g., Alamat Group Customer 1'
-          />
-        </div>
-
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            NPWP
-          </label>
-          <input
-            type='text'
-            name='npwp'
-            value={formData.npwp}
-            onChange={handleInputChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='e.g., 1234567890123456'
-          />
-        </div>
+    <form onSubmit={handleFormSubmit} className="space-y-4">
+      {/* Kode Group */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Kode Group Customer *
+        </label>
+        <input
+          type="text"
+          name="kode_group"
+          value={formData.kode_group}
+          onChange={handleInputChange}
+          disabled={loading}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
+            errors.kode_group ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Masukkan kode group customer"
+        />
+        {errors.kode_group && (
+          <p className="mt-1 text-sm text-red-600">{errors.kode_group}</p>
+        )}
       </div>
 
-      <div className='mt-6 flex justify-end space-x-3'>
+      {/* Nama Group */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Nama Group Customer *
+        </label>
+        <input
+          type="text"
+          name="nama_group"
+          value={formData.nama_group}
+          onChange={handleInputChange}
+          disabled={loading}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
+            errors.nama_group ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Masukkan nama group customer"
+        />
+        {errors.nama_group && (
+          <p className="mt-1 text-sm text-red-600">{errors.nama_group}</p>
+        )}
+      </div>
+
+      {/* Alamat */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Alamat
+        </label>
+        <textarea
+          name="alamat"
+          value={formData.alamat}
+          onChange={handleInputChange}
+          disabled={loading}
+          rows={3}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
+            errors.alamat ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Masukkan alamat group customer"
+        />
+        {errors.alamat && (
+          <p className="mt-1 text-sm text-red-600">{errors.alamat}</p>
+        )}
+      </div>
+
+      {/* NPWP */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          NPWP
+        </label>
+        <input
+          type="text"
+          name="npwp"
+          value={formData.npwp}
+          onChange={handleInputChange}
+          disabled={loading}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
+            errors.npwp ? 'border-red-500' : 'border-gray-300'
+          }`}
+          placeholder="Masukkan NPWP (15 digit)"
+        />
+        {errors.npwp && (
+          <p className="mt-1 text-sm text-red-600">{errors.npwp}</p>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-end space-x-3 pt-4">
         <button
-          type='button'
-          onClick={closeModal}
-          className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
+          type="button"
+          onClick={onCancel}
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         >
-          Cancel
+          Batal
         </button>
         <button
-          type='submit'
-          className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700'
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         >
-          {isEdit ? 'Save Changes' : 'Add Group Customer'}
+          {loading ? 'Menyimpan...' : (isEdit ? 'Perbarui' : 'Simpan')}
         </button>
       </div>
     </form>
@@ -83,4 +131,3 @@ const GroupCustomerForm = ({ formData, handleInputChange, handleSubmit, closeMod
 };
 
 export default GroupCustomerForm;
-

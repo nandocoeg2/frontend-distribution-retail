@@ -48,19 +48,23 @@ const useGroupCustomersPage = () => {
       const result = await groupCustomerService.getAllGroupCustomers(page, limit);
       
       if (result.success) {
+        // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
         setGroupCustomers(result.data.data || []);
         const paginationData = result.data.pagination || {
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 0,
-          itemsPerPage: 10
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 1
         };
         setPagination({
-          ...paginationData,
+          currentPage: paginationData.page,
+          totalPages: paginationData.totalPages,
+          totalItems: paginationData.total,
+          itemsPerPage: paginationData.limit,
           // Backward compatibility
-          page: paginationData.currentPage,
-          total: paginationData.totalItems,
-          limit: paginationData.itemsPerPage
+          page: paginationData.page,
+          total: paginationData.total,
+          limit: paginationData.limit
         });
       } else {
         throw new Error(result.error?.message || 'Failed to fetch group customers');
@@ -101,19 +105,23 @@ const useGroupCustomersPage = () => {
       const result = await groupCustomerService.searchGroupCustomers(query, page, limit);
       
       if (result.success) {
+        // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
         setGroupCustomers(result.data.data || []);
         const paginationData = result.data.pagination || {
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 0,
-          itemsPerPage: 10
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 1
         };
         setPagination({
-          ...paginationData,
+          currentPage: paginationData.page,
+          totalPages: paginationData.totalPages,
+          totalItems: paginationData.total,
+          itemsPerPage: paginationData.limit,
           // Backward compatibility
-          page: paginationData.currentPage,
-          total: paginationData.totalItems,
-          limit: paginationData.itemsPerPage
+          page: paginationData.page,
+          total: paginationData.total,
+          limit: paginationData.limit
         });
       } else {
         throw new Error(result.error?.message || 'Failed to search group customers');
@@ -147,9 +155,11 @@ const useGroupCustomersPage = () => {
 
     try {
       const result = await groupCustomerService.deleteGroupCustomer(id);
-      if (result) {
+      if (result.success) {
         setGroupCustomers(groupCustomers.filter((gc) => gc.id !== id));
         toastService.success('Group customer berhasil dihapus');
+        // Refresh data after deletion
+        refreshData();
       }
     } catch (err) {
       if (err.message === 'Unauthorized' || err.message.includes('401')) {
