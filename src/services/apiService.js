@@ -1,70 +1,83 @@
 import axios from 'axios';
-import authService from './authService';
+import toastService from './toastService';
+
+const API_BASE_URL = 'http://localhost:5050/api/v1';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5050/api/v1',
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  withCredentials: true,
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const token = authService.getToken();
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+api.interceptors.response.use(
+  (response) => {
+    // The individual service calls will handle the specific data structure
+    return response.data;
   },
   (error) => {
-    return Promise.reject(error);
+    let errorMessage = 'An unexpected error occurred.';
+    if (error.response) {
+      const { status, data } = error.response;
+      if (status === 401 || status === 403) {
+        localStorage.clear();
+        // Use window.location to force a full page reload to the login page
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+          toastService.error('Session expired. Please login again.');
+        }
+        return Promise.reject(new Error('Unauthorized'));
+      }
+      errorMessage = data.message || data.error?.message || `Error ${status}`;
+    } else if (error.request) {
+      errorMessage = 'Network error. Please check your connection.';
+    } else {
+      errorMessage = error.message;
+    }
+
+    // The hook or component is responsible for showing the toast
+    return Promise.reject(new Error(errorMessage));
   }
 );
 
-export const get = async (url, params) => {
-  try {
-    const response = await api.get(url, { params });
-    return response.data;
-  } catch (error) {
-    console.error('API GET Error:', error.response || error.message);
-    throw error.response?.data || error;
-  }
-};
+export const createApiService = (resource) => {
+  const resourceUrl = `/${resource}`;
 
-export const post = async (url, data) => {
-  try {
-    const response = await api.post(url, data);
-    return response.data;
-  } catch (error) {
-    console.error('API POST Error:', error.response || error.message);
-    throw error.response?.data || error;
-  }
-};
+  return {
+    getAll: (page = 1, limit = 10) =>
+      api.get(`${resourceUrl}?page=${page}&limit=${limit}`),
 
-export const put = async (url, data) => {
-  try {
-    const response = await api.put(url, data);
-    return response.data;
-  } catch (error) {
-    console.error('API PUT Error:', error.response || error.message);
-    throw error.response?.data || error;
-  }
-};
+    getById: (id) =>
+      api.get(`${resourceUrl}/${id}`),
 
-export const del = async (url) => {
-  try {
-    const response = await api.delete(url);
-    return response.data;
-  } catch (error) {
-    console.error('API DELETE Error:', error.response || error.message);
-    throw error.response?.data || error;
-  }
-};
+    create: (data) =>
+      api.post(resourceUrl, data),
 
-export const groupCustomers = {
-  getAll: (params) => get('/group-customers', params),
-  getById: (id) => get(`/group-customers/${id}`),
-  create: (data) => post('/group-customers', data),
-  update: (id, data) => put(`/group-customers/${id}`, data),
-  delete: (id) => del(`/group-customers/${id}`),
-  search: (query, params) => get(`/group-customers/search/${query}`, params),
+    update: (id, data) =>
+      api.put(`${resourceUrl}/${id}`, data),
+
+    delete: (id) =>
+      api.delete(`${resourceUrl}/${id}`),
+
+    search: (query, page = 1, limit = 10) =>
+      api.get(`${resourceUrl}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`),
+
+    addCustomMethod(name, method) {
+      this[name] = method.bind(this);
+    }
+  };
 };
 
 export default api;
