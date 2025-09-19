@@ -1,37 +1,23 @@
 import React, { useState } from 'react';
 
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-import authService from '../services/authService';
-
-import toastService from '../services/toastService';
+import useRegister from '../hooks/useRegister';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate();
+  const {
+    formData,
+    errors,
+    isLoading,
+    handleInputChange,
+    handleSubmit,
+    clearError,
+    isFormValid
+  } = useRegister();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear messages when user starts typing
-    if (error) setError('');
-    if (success) setSuccess('');
-  };
 
   const getPasswordStrength = (password) => {
     let strength = 0;
@@ -81,49 +67,6 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    // Validate passwords match
-    if (formData.password !== formData.confirmPassword) {
-      toastService.error('Passwords do not match');
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const result = await authService.register({
-        username: formData.username,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (result.success) {
-        toastService.success(
-          'Registration successful! Redirecting to login...'
-        );
-        setTimeout(() => {
-          navigate('/login');
-        }, 1500);
-      } else {
-        toastService.error(
-          result.error || 'Registration failed. Please try again.'
-        );
-        setError(result.error);
-      }
-    } catch (err) {
-      toastService.error('An unexpected error occurred. Please try again.');
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const passwordStrength = getPasswordStrength(formData.password);
 
@@ -152,20 +95,11 @@ const Register = () => {
 
         {/* Register Form */}
         <div className='bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20'>
-          {error && (
+          {errors.general && (
             <div className='mb-6 p-4 bg-red-500/20 border border-red-500/30 text-red-200 rounded-2xl backdrop-blur-sm'>
               <div className='flex items-center space-x-2'>
                 <HeroIcon name='exclamation-circle' className='w-5 h-5' />
-                <span className='font-medium'>{error}</span>
-              </div>
-            </div>
-          )}
-
-          {success && (
-            <div className='mb-6 p-4 bg-green-500/20 border border-green-500/30 text-green-200 rounded-2xl backdrop-blur-sm'>
-              <div className='flex items-center space-x-2'>
-                <HeroIcon name='check' className='w-5 h-5' />
-                <span className='font-medium'>{success}</span>
+                <span className='font-medium'>{errors.general}</span>
               </div>
             </div>
           )}
@@ -188,12 +122,17 @@ const Register = () => {
                   id='username'
                   name='username'
                   value={formData.username}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
                   required
-                  className='w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200'
+                  className={`w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 ${
+                    errors.username ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Choose a username'
                 />
               </div>
+              {errors.username && (
+                <p className='mt-2 text-sm text-red-300'>{errors.username}</p>
+              )}
             </div>
 
             {/* First Name & Last Name */}
@@ -210,11 +149,16 @@ const Register = () => {
                   id='firstName'
                   name='firstName'
                   value={formData.firstName}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
                   required
-                  className='w-full px-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200'
+                  className={`w-full px-4 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 ${
+                    errors.firstName ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='First name'
                 />
+                {errors.firstName && (
+                  <p className='mt-2 text-sm text-red-300'>{errors.firstName}</p>
+                )}
               </div>
               <div>
                 <label
@@ -228,11 +172,16 @@ const Register = () => {
                   id='lastName'
                   name='lastName'
                   value={formData.lastName}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
                   required
-                  className='w-full px-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200'
+                  className={`w-full px-4 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 ${
+                    errors.lastName ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Last name'
                 />
+                {errors.lastName && (
+                  <p className='mt-2 text-sm text-red-300'>{errors.lastName}</p>
+                )}
               </div>
             </div>
 
@@ -253,12 +202,17 @@ const Register = () => {
                   id='email'
                   name='email'
                   value={formData.email}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   required
-                  className='w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200'
+                  className={`w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 ${
+                    errors.email ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Enter your email address'
                 />
               </div>
+              {errors.email && (
+                <p className='mt-2 text-sm text-red-300'>{errors.email}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -278,9 +232,11 @@ const Register = () => {
                   id='password'
                   name='password'
                   value={formData.password}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
                   required
-                  className='w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200'
+                  className={`w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 ${
+                    errors.password ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Create a strong password'
                 />
                 <button
@@ -294,6 +250,9 @@ const Register = () => {
                       <HeroIcon name='eye' className='w-5 h-5' />
                     )}                </button>
               </div>
+              {errors.password && (
+                <p className='mt-2 text-sm text-red-300'>{errors.password}</p>
+              )}
               {formData.password && (
                 <div className='mt-2'>
                   <div className='flex justify-between items-center'>
@@ -341,9 +300,11 @@ const Register = () => {
                   id='confirmPassword'
                   name='confirmPassword'
                   value={formData.confirmPassword}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   required
-                  className='w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200'
+                  className={`w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-200 ${
+                    errors.confirmPassword ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Confirm your password'
                 />
                 <button
@@ -357,6 +318,9 @@ const Register = () => {
                       <HeroIcon name='eye' className='w-5 h-5' />
                     )}                </button>
               </div>
+              {errors.confirmPassword && (
+                <p className='mt-2 text-sm text-red-300'>{errors.confirmPassword}</p>
+              )}
               {formData.confirmPassword &&
                 formData.password !== formData.confirmPassword && (
                   <p className='mt-1 text-xs text-red-400'>
@@ -376,10 +340,10 @@ const Register = () => {
             <div>
               <button
                 type='submit'
-                disabled={loading}
+                disabled={isLoading || !isFormValid()}
                 className='group relative w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/25'
               >
-                {loading ? (
+                {isLoading ? (
                   <div className='flex items-center space-x-2'>
                     <HeroIcon name='arrow-path' className='animate-spin h-5 w-5 text-white' />
                     <span>Creating Account...</span>

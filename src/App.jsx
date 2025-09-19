@@ -11,6 +11,7 @@ import { ToastContainer } from 'react-toastify';
 
 import 'react-toastify/dist/ReactToastify.css';
 
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -34,206 +35,216 @@ import Regions from './pages/Regions.jsx';
 import Companies from './pages/Companies.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import authService from './services/authService';
 
+
+// Component untuk routes yang menggunakan useAuth
+const AppRoutes = () => {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route
+        path='/login'
+        element={
+          isAuthenticated ? (
+            <Navigate to='/dashboard' replace />
+          ) : (
+            <Login />
+          )
+        }
+      />
+      <Route
+        path='/register'
+        element={
+          isAuthenticated ? (
+            <Navigate to='/dashboard' replace />
+          ) : (
+            <Register />
+          )
+        }
+      />
+
+      {/* Protected Routes */}
+      <Route
+        path='/dashboard'
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/analytics'
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/users'
+        element={
+          <ProtectedRoute>
+            <Users />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/settings'
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/profile'
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/profile/settings-profile'
+        element={
+          <ProtectedRoute>
+            <SettingProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/role-management'
+        element={
+          <ProtectedRoute>
+            <RoleManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/purchase-orders'
+        element={
+          <ProtectedRoute>
+            <PurchaseOrders />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/invoices'
+        element={
+          <ProtectedRoute>
+            <Invoices />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/surat-jalan'
+        element={
+          <ProtectedRoute>
+            <SuratJalan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/customers'
+        element={
+          <ProtectedRoute>
+            <Customers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/suppliers'
+        element={
+          <ProtectedRoute>
+            <Suppliers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/inventories'
+        element={
+          <ProtectedRoute>
+            <Inventories />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/term-of-payment'
+        element={
+          <ProtectedRoute>
+            <TermOfPayments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/group-customer'
+        element={
+          <ProtectedRoute>
+            <GroupCustomers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/regions'
+        element={
+          <ProtectedRoute>
+            <Regions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/company'
+        element={
+          <ProtectedRoute>
+            <Companies />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/packings'
+        element={
+          <ProtectedRoute>
+            <Packings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/purchase-orders-history'
+        element={
+          <ProtectedRoute>
+            <PurchaseOrderHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route path='/' element={<Navigate to='/dashboard' replace />} />
+      <Route path='*' element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => {
   return (
-    <Router>
-      <div className='App'>
-        <ToastContainer
-          position='bottom-right'
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme='light'
-        />
-        <Routes>
-          {/* Public Routes */}
-          <Route
-            path='/login'
-            element={
-              authService.isAuthenticated() ? (
-                <Navigate to='/dashboard' replace />
-              ) : (
-                <Login />
-              )
-            }
+    <AuthProvider>
+      <Router>
+        <div className='App'>
+          <ToastContainer
+            position='bottom-right'
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme='light'
           />
-          <Route
-            path='/register'
-            element={
-              authService.isAuthenticated() ? (
-                <Navigate to='/dashboard' replace />
-              ) : (
-                <Register />
-              )
-            }
-          />
-
-          {/* Protected Routes */}
-          <Route
-            path='/dashboard'
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/analytics'
-            element={
-              <ProtectedRoute>
-                <Analytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/users'
-            element={
-              <ProtectedRoute>
-                <Users />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/settings'
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/profile'
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/profile/settings-profile'
-            element={
-              <ProtectedRoute>
-                <SettingProfile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/role-management'
-            element={
-              <ProtectedRoute>
-                <RoleManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/po/purchase-orders'
-            element={
-              <ProtectedRoute>
-                <PurchaseOrders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/po/invoices'
-            element={
-              <ProtectedRoute>
-                <Invoices />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/po/surat-jalan'
-            element={
-              <ProtectedRoute>
-                <SuratJalan />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/customers'
-            element={
-              <ProtectedRoute>
-                <Customers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/suppliers'
-            element={
-              <ProtectedRoute>
-                <Suppliers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/inventories'
-            element={
-              <ProtectedRoute>
-                <Inventories />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/term-of-payment'
-            element={
-              <ProtectedRoute>
-                <TermOfPayments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/group-customer'
-            element={
-              <ProtectedRoute>
-                <GroupCustomers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/regions'
-            element={
-              <ProtectedRoute>
-                <Regions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/master/company'
-            element={
-              <ProtectedRoute>
-                <Companies />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/po/packings'
-            element={
-              <ProtectedRoute>
-                <Packings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path='/po/purchase-orders-history'
-            element={
-              <ProtectedRoute>
-                <PurchaseOrderHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route path='/' element={<Navigate to='/dashboard' replace />} />
-          <Route path='*' element={<NotFound />} />
-        </Routes>
-      </div>
-    </Router>
+          <AppRoutes />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 };
 

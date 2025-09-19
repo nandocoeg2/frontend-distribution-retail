@@ -16,9 +16,13 @@ class AuthService {
 
   // Save user data to localStorage
   saveUserData(userData) {
+    console.log('Saving user data:', userData); // Debug log
     localStorage.setItem('userData', JSON.stringify(userData.user));
-    localStorage.setItem('token', userData.user.accessToken);
-    localStorage.setItem('menus', JSON.stringify(userData.user.menus));
+    localStorage.setItem('token', userData.accessToken);
+    // Remove menus if not provided in new API structure
+    if (userData.user && userData.user.menus) {
+      localStorage.setItem('menus', JSON.stringify(userData.user.menus));
+    }
   }
 
   // Get user data from localStorage
@@ -68,14 +72,18 @@ class AuthService {
         password,
       });
 
-      if (response.data) {
-        this.saveUserData(response.data);
-        return { success: true, data: response.data };
+      if (response.data && response.data.success) {
+        console.log('API Response:', response.data); // Debug log
+        this.saveUserData(response.data.data);
+        return { success: true, data: response.data.data };
       }
-      return { success: false, error: 'Invalid response format' };
+      return { success: false, error: response.data?.error?.message || 'Invalid response format' };
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || error.message || 'Login failed';
+        error.response?.data?.error?.message || 
+        error.response?.data?.message || 
+        error.message || 
+        'Login failed';
       return { success: false, error: errorMessage };
     }
   }
@@ -91,10 +99,16 @@ class AuthService {
         password: userData.password,
       });
 
-      return { success: true, data: response.data };
+      if (response.data && response.data.success) {
+        return { success: true, data: response.data.data };
+      }
+      return { success: false, error: response.data?.error?.message || 'Invalid response format' };
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || error.message || 'Registration failed';
+        error.response?.data?.error?.message || 
+        error.response?.data?.message || 
+        error.message || 
+        'Registration failed';
       return { success: false, error: errorMessage };
     }
   }
@@ -104,7 +118,7 @@ class AuthService {
     try {
       const token = this.getToken();
       if (token) {
-        await this.api.post(
+        const response = await this.api.post(
           '/auth/logout',
           {},
           {
@@ -113,6 +127,11 @@ class AuthService {
             },
           }
         );
+
+        if (response.data && response.data.success) {
+          this.clearUserData();
+          return { success: true, data: response.data.data };
+        }
       }
 
       this.clearUserData();

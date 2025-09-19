@@ -1,55 +1,20 @@
 import React, { useState } from 'react';
 
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
-import authService from '../services/authService';
-
-import toastService from '../services/toastService';
+import useLogin from '../hooks/useLogin';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (error) setError('');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await authService.login(formData.email, formData.password);
-
-      if (result.success) {
-        toastService.success('Login successful! Welcome back.');
-        navigate('/dashboard');
-      } else {
-        toastService.error(
-          result.error || 'Login failed. Please check your credentials.'
-        );
-        setError(result.error);
-      }
-    } catch (err) {
-      toastService.error('An unexpected error occurred. Please try again.');
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    formData,
+    errors,
+    isLoading,
+    handleInputChange,
+    handleSubmit,
+    clearError
+  } = useLogin();
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4 relative overflow-hidden'>
@@ -74,11 +39,11 @@ const Login = () => {
 
         {/* Login Form */}
         <div className='bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20'>
-          {error && (
+          {errors.general && (
             <div className='mb-6 p-4 bg-red-500/20 border border-red-500/30 text-red-200 rounded-2xl backdrop-blur-sm'>
               <div className='flex items-center space-x-2'>
                 <HeroIcon name='exclamation-circle' className='w-5 h-5' />
-                <span className='font-medium'>{error}</span>
+                <span className='font-medium'>{errors.general}</span>
               </div>
             </div>
           )}
@@ -100,12 +65,17 @@ const Login = () => {
                   id='email'
                   name='email'
                   value={formData.email}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   required
-                  className='w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200'
+                  className={`w-full pl-12 pr-4 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 ${
+                    errors.email ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Enter your email address'
                 />
               </div>
+              {errors.email && (
+                <p className='mt-2 text-sm text-red-300'>{errors.email}</p>
+              )}
             </div>
 
             <div>
@@ -124,9 +94,11 @@ const Login = () => {
                   id='password'
                   name='password'
                   value={formData.password}
-                  onChange={handleChange}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
                   required
-                  className='w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200'
+                  className={`w-full pl-12 pr-12 py-4 bg-white/10 backdrop-blur-sm border rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 ${
+                    errors.password ? 'border-red-500/50' : 'border-white/20'
+                  }`}
                   placeholder='Enter your password'
                 />
                 <button
@@ -140,15 +112,18 @@ const Login = () => {
                       <HeroIcon name='eye' className='w-5 h-5' />
                     )}                </button>
               </div>
+              {errors.password && (
+                <p className='mt-2 text-sm text-red-300'>{errors.password}</p>
+              )}
             </div>
 
             <div>
               <button
                 type='submit'
-                disabled={loading}
+                disabled={isLoading}
                 className='group relative w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/25'
               >
-                {loading ? (
+                {isLoading ? (
                   <div className='flex items-center space-x-2'>
                     <HeroIcon name='arrow-path' className='animate-spin h-5 w-5 text-white' />
                     <span>Signing In...</span>
