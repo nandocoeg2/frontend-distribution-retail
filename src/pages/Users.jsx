@@ -1,161 +1,142 @@
 import React, { useState } from 'react';
-
+import useUsers from '@/hooks/useUsersPage';
+import UserTable from '@/components/users/UserTable';
+import UserSearch from '@/components/users/UserSearch';
+import AddUserModal from '@/components/users/AddUserModal';
+import EditUserModal from '@/components/users/EditUserModal';
+import ViewUserModal from '@/components/users/ViewUserModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
-import toastService from '../services/toastService';
-
 const Users = () => {
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      role: 'Admin',
-      status: 'Active',
-      lastLogin: '2024-01-15',
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      role: 'User',
-      status: 'Active',
-      lastLogin: '2024-01-14',
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike.johnson@example.com',
-      role: 'Moderator',
-      status: 'Inactive',
-      lastLogin: '2024-01-10',
-    },
-  ]);
+  const {
+    users,
+    pagination,
+    loading,
+    error,
+    searchQuery,
+    searchLoading,
+    handleSearchChange,
+    handlePageChange,
+    handleLimitChange,
+    deleteUser,
+    fetchUsers,
+    handleAuthError
+  } = useUsers();
 
-  const handleAddUser = () => {
-    toastService.info('User creation form would open here');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [viewingUser, setViewingUser] = useState(null);
+
+  const openAddModal = () => setShowAddModal(true);
+  const closeAddModal = () => setShowAddModal(false);
+
+  const openEditModal = (user) => {
+    setEditingUser(user);
+    setShowEditModal(true);
+  };
+  const closeEditModal = () => {
+    setEditingUser(null);
+    setShowEditModal(false);
   };
 
-  const handleEditUser = (user) => {
-    toastService.info(`Editing user: ${user.name}`);
+  const openViewModal = (user) => {
+    setViewingUser(user);
+    setShowViewModal(true);
+  };
+  const closeViewModal = () => {
+    setViewingUser(null);
+    setShowViewModal(false);
   };
 
-  const handleDeleteUser = (user) => {
-    if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
-      toastService.success(`User ${user.name} deleted successfully`);
-      setUsers(users.filter((u) => u.id !== user.id));
-    }
+  const handleUserAdded = () => {
+    closeAddModal();
+    fetchUsers(1, pagination.itemsPerPage); // Refetch from the first page
   };
+
+  const handleUserUpdated = () => {
+    closeEditModal();
+    fetchUsers(pagination.currentPage, pagination.itemsPerPage); // Refetch the current page
+  };
+
+  if (loading) {
+    return (
+      <div className='flex justify-center items-center h-64'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+        <p className='text-red-800'>Error: {error}</p>
+        <button
+          onClick={() => fetchUsers()}
+          className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <header className='bg-white/80 p-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold flex items-center'>
-              User Management <HeroIcon name='users' className='w-8 h-8 ml-2' />
-            </h1>
-            <p>Manage users, roles, and permissions</p>
-          </div>
-          <button
-            onClick={handleAddUser}
-            className='bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center'
-          >
-            <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-            Add New User
-          </button>
-        </div>
-      </header>
-
-      <main className='flex-1 overflow-y-auto p-6'>
-        <div className='max-w-7xl mx-auto'>
-          <div className='grid md:grid-cols-3 gap-6 mb-8'>
-            <div className='bg-white/90 p-6 rounded-2xl shadow-sm'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p>Total Users</p>
-                  <p className='text-3xl font-bold'>1,234</p>
-                </div>
-                <div className='w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center'>
-                  <HeroIcon name='users' className='w-6 h-6 text-blue-600' />
-                </div>
-              </div>
-            </div>
-            <div className='bg-white/90 p-6 rounded-2xl shadow-sm'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p>Active Users</p>
-                  <p className='text-3xl font-bold text-green-600'>1,187</p>
-                </div>
-                <div className='w-12 h-12 bg-green-100 rounded-full flex items-center justify-center'>
-                  <HeroIcon
-                    name='check-circle'
-                    className='w-6 h-6 text-green-600'
-                  />
-                </div>
-              </div>
-            </div>
-            <div className='bg-white/90 p-6 rounded-2xl shadow-sm'>
-              <div className='flex items-center justify-between'>
-                <div>
-                  <p>New This Month</p>
-                  <p className='text-3xl font-bold text-purple-600'>47</p>
-                </div>
-                <div className='w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center'>
-                  <HeroIcon
-                    name='chart-bar'
-                    className='w-6 h-6 text-purple-600'
-                  />
-                </div>
-              </div>
-            </div>
+    <div className='p-6'>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-4 py-5 sm:p-6'>
+          <div className='mb-4 flex justify-between items-center'>
+            <h3 className='text-lg font-medium text-gray-900'>User List</h3>
+            <button
+              onClick={openAddModal}
+              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+            >
+              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
+              Add User
+            </button>
           </div>
 
-          <div className='bg-white/90 rounded-2xl shadow-sm'>
-            <div className='p-6 border-b'>
-              <h3 className='text-lg font-semibold'>All Users</h3>
-            </div>
-            <div className='overflow-x-auto'>
-              <table className='w-full'>
-                <thead className='bg-gray-50'>
-                  <tr>
-                    <th className='p-3 text-left'>User</th>
-                    <th className='p-3 text-left'>Role</th>
-                    <th className='p-3 text-left'>Status</th>
-                    <th className='p-3 text-left'>Last Login</th>
-                    <th className='p-3 text-left'>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className='hover:bg-gray-50'>
-                      <td className='p-3'>{user.name}</td>
-                      <td className='p-3'>{user.role}</td>
-                      <td className='p-3'>{user.status}</td>
-                      <td className='p-3'>{user.lastLogin}</td>
-                      <td className='p-3'>
-                        <button
-                          onClick={() => handleEditUser(user)}
-                          className='text-blue-600'
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user)}
-                          className='text-red-600 ml-2'
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <UserSearch 
+            searchQuery={searchQuery} 
+            handleSearchChange={handleSearchChange} 
+            searchLoading={searchLoading} 
+          />
+
+          <UserTable 
+            users={users} 
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            onEdit={openEditModal} 
+            onDelete={deleteUser} 
+            onView={openViewModal}
+            searchQuery={searchQuery}
+          />
         </div>
-      </main>
-    </>
+      </div>
+
+      <AddUserModal 
+        show={showAddModal} 
+        onClose={closeAddModal} 
+        onUserAdded={handleUserAdded}
+        handleAuthError={handleAuthError}
+      />
+
+      <EditUserModal 
+        show={showEditModal} 
+        onClose={closeEditModal} 
+        user={editingUser}
+        onUserUpdated={handleUserUpdated}
+        handleAuthError={handleAuthError}
+      />
+
+      <ViewUserModal 
+        show={showViewModal} 
+        onClose={closeViewModal} 
+        user={viewingUser} 
+      />
+    </div>
   );
 };
 

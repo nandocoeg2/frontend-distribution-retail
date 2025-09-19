@@ -106,6 +106,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       iconEmoji: '🏠',
     },
     {
+      id: 'users',
+      name: 'Users',
+      url: '/users',
+      icon: 'user',
+      iconEmoji: '👥',
+    },
+    {
       id: 'po',
       name: 'Purchase Order',
       icon: 'clipboard-document-list',
