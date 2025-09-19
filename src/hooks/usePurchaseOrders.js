@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toastService from '../services/toastService';
-
-const API_URL = 'http://localhost:5050/api/v1';
+import purchaseOrderService from '../services/purchaseOrderService';
 
 const usePurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -24,33 +23,29 @@ const usePurchaseOrders = () => {
     toastService.error('Session expired. Please login again.');
   }, []);
 
-  const getAccessToken = useCallback(() => {
-    return localStorage.getItem('token');
-  }, []);
-
   const fetchPurchaseOrders = useCallback(async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-      const accessToken = getAccessToken();
-      const response = await fetch(`${API_URL}/purchase-orders/?page=${page}&limit=${limit}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
+      const result = await purchaseOrderService.getAllPurchaseOrders(page, limit);
+      
+      if (result.success) {
+        setPurchaseOrders(result.data.data || []);
+        setPagination(result.data.pagination || pagination);
+        setError(null);
+      } else {
+        throw new Error(result.error?.message || 'Failed to fetch purchase orders');
       }
-      if (!response.ok) throw new Error('Failed to fetch purchase orders');
-      const result = await response.json();
-      setPurchaseOrders(result.data);
-      setPagination(result.pagination);
-      setError(null);
     } catch (err) {
       setError(err.message);
-      toastService.error('Failed to load purchase orders');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Failed to load purchase orders');
+      }
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken, handleAuthError]);
+  }, [handleAuthError]);
 
   const searchPurchaseOrders = useCallback(async (query, field, page = 1, limit = 10) => {
     if (!query.trim()) {
@@ -59,138 +54,183 @@ const usePurchaseOrders = () => {
     }
     try {
       setSearchLoading(true);
-      const accessToken = getAccessToken();
-      const url = new URL(`${API_URL}/purchase-orders/search`);
-      url.searchParams.append(field || 'customer_name', query);
-      url.searchParams.append('page', page);
-      url.searchParams.append('limit', limit);
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
+      const searchParams = {};
+      searchParams[field || 'customer_name'] = query;
+      
+      const result = await purchaseOrderService.searchPurchaseOrders(searchParams, page, limit);
+      
+      if (result.success) {
+        setPurchaseOrders(result.data.data || []);
+        setPagination(result.data.pagination || pagination);
+      } else {
+        throw new Error(result.error?.message || 'Failed to search purchase orders');
       }
-      if (!response.ok) throw new Error('Failed to search purchase orders');
-      const result = await response.json();
-      setPurchaseOrders(result.data);
-      setPagination(result.pagination);
     } catch (err) {
-      toastService.error('Failed to search purchase orders');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Failed to search purchase orders');
+      }
     } finally {
       setSearchLoading(false);
     }
-  }, [getAccessToken, handleAuthError, fetchPurchaseOrders]);
+  }, [handleAuthError, fetchPurchaseOrders]);
 
   const deletePurchaseOrder = useCallback(async (id) => {
-    if (!window.confirm('Are you sure you want to delete this purchase order?')) return;
+    if (!window.confirm('Apakah Anda yakin ingin menghapus purchase order ini?')) return;
     try {
-      const accessToken = getAccessToken();
-      const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
-      }
-      if (!response.ok) throw new Error('Failed to delete purchase order');
+      await purchaseOrderService.deletePurchaseOrder(id);
       setPurchaseOrders(prev => prev.filter((order) => order.id !== id));
-      toastService.success('Purchase order deleted successfully');
+      toastService.success('Purchase order berhasil dihapus');
     } catch (err) {
-      toastService.error('Failed to delete purchase order');
-    }
-  }, [getAccessToken, handleAuthError]);
-
-  const createPurchaseOrder = useCallback(async (formData, file) => {
-    try {
-      const accessToken = getAccessToken();
-      const data = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== undefined) {
-          data.append(key, formData[key]);
-        }
-      });
-      if (file) {
-        data.append('file', file);
-      }
-
-      const response = await fetch(`${API_URL}/purchase-orders/`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-        body: data,
-      });
-
-      if (response.status === 401 || response.status === 403) {
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
         handleAuthError();
-        return null;
+      } else {
+        toastService.error('Gagal menghapus purchase order');
       }
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create purchase order');
+    }
+  }, [handleAuthError]);
+
+  const createPurchaseOrder = useCallback(async (formData, files = []) => {
+    try {
+      const result = await purchaseOrderService.createPurchaseOrder(formData, files);
+      
+      if (result.success) {
+        toastService.success('Purchase order berhasil dibuat');
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to create purchase order');
       }
-      const newOrder = await response.json();
-      toastService.success('Purchase order created successfully');
-      return newOrder;
     } catch (err) {
       console.error('Create purchase order error:', err);
-      toastService.error(err.message || 'Failed to create purchase order');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error(err.message || 'Gagal membuat purchase order');
+      }
       return null;
     }
-  }, [getAccessToken, handleAuthError]);
+  }, [handleAuthError]);
 
-  const updatePurchaseOrder = useCallback(async (id, formData) => {
+  const updatePurchaseOrder = useCallback(async (id, updateData) => {
     try {
-      const accessToken = getAccessToken();
+      const result = await purchaseOrderService.updatePurchaseOrder(id, updateData);
       
-      const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return null;
+      if (result.success) {
+        toastService.success('Purchase order berhasil diperbarui');
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to update purchase order');
       }
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update purchase order');
-      }
-      const updatedOrder = await response.json();
-      toastService.success('Purchase order updated successfully');
-      return updatedOrder;
     } catch (err) {
       console.error('Update purchase order error:', err);
-      toastService.error(err.message || 'Failed to update purchase order');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error(err.message || 'Gagal memperbarui purchase order');
+      }
       return null;
     }
-  }, [getAccessToken, handleAuthError]);
+  }, [handleAuthError]);
 
   const getPurchaseOrder = useCallback(async (id) => {
     try {
-      const accessToken = getAccessToken();
-      const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'accept': 'application/json',
-        },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return null;
+      const result = await purchaseOrderService.getPurchaseOrderById(id);
+      
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to fetch purchase order details');
       }
-      if (!response.ok) throw new Error('Failed to fetch purchase order details');
-      const orderData = await response.json();
-      return orderData;
     } catch (err) {
-      toastService.error('Failed to load purchase order details');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Gagal memuat detail purchase order');
+      }
       return null;
     }
-  }, [getAccessToken, handleAuthError]);
+  }, [handleAuthError]);
+
+  const processPurchaseOrder = useCallback(async (id, statusCode = 'PROCESSED') => {
+    try {
+      const result = await purchaseOrderService.processPurchaseOrder(id, statusCode);
+      
+      if (result.success) {
+        toastService.success('Purchase order berhasil diproses');
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to process purchase order');
+      }
+    } catch (err) {
+      console.error('Process purchase order error:', err);
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error(err.message || 'Gagal memproses purchase order');
+      }
+      return null;
+    }
+  }, [handleAuthError]);
+
+  const bulkCreatePurchaseOrder = useCallback(async (files) => {
+    try {
+      const result = await purchaseOrderService.bulkCreatePurchaseOrder(files);
+      
+      if (result.success) {
+        toastService.success('Bulk upload purchase order berhasil dimulai');
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to bulk create purchase orders');
+      }
+    } catch (err) {
+      console.error('Bulk create purchase order error:', err);
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error(err.message || 'Gagal memulai bulk upload purchase order');
+      }
+      return null;
+    }
+  }, [handleAuthError]);
+
+  const getBulkUploadStatus = useCallback(async (fileId) => {
+    try {
+      const result = await purchaseOrderService.getBulkUploadStatus(fileId);
+      
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to get bulk upload status');
+      }
+    } catch (err) {
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Gagal mendapatkan status bulk upload');
+      }
+      return null;
+    }
+  }, [handleAuthError]);
+
+  const getAllBulkUploads = useCallback(async (status = null) => {
+    try {
+      const result = await purchaseOrderService.getAllBulkUploads(status);
+      
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to get bulk uploads');
+      }
+    } catch (err) {
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Gagal mendapatkan daftar bulk upload');
+      }
+      return null;
+    }
+  }, [handleAuthError]);
 
   const handlePageChange = (newPage) => {
     if (searchQuery.trim()) {
@@ -264,6 +304,10 @@ const usePurchaseOrders = () => {
     createPurchaseOrder,
     updatePurchaseOrder,
     getPurchaseOrder,
+    processPurchaseOrder,
+    bulkCreatePurchaseOrder,
+    getBulkUploadStatus,
+    getAllBulkUploads,
     handlePageChange,
     handleLimitChange,
     handleSearchChange,

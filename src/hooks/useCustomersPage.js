@@ -31,13 +31,19 @@ const useCustomers = () => {
   const fetchCustomers = useCallback(async (page = 1, limit = 10) => {
     try {
       setLoading(true);
+      setError(null);
       const result = await customerService.getAllCustomers(page, limit);
-      setCustomers(result.data);
-      setPagination(result.pagination);
+      setCustomers(result.data || []);
+      setPagination(result.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10
+      });
     } catch (err) {
       if (!handleAuthError(err)) {
         setError(err.message);
-        toastService.error('Failed to load customers');
+        toastService.error(`Gagal memuat data customers: ${err.message}`);
       }
     } finally {
       setLoading(false);
@@ -52,12 +58,19 @@ const useCustomers = () => {
 
     try {
       setSearchLoading(true);
+      setError(null);
       const result = await customerService.searchCustomers(query, page, limit);
-      setCustomers(result.data);
-      setPagination(result.pagination);
+      setCustomers(result.data || []);
+      setPagination(result.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: 10
+      });
     } catch (err) {
       if (!handleAuthError(err)) {
-        toastService.error('Failed to search customers');
+        setError(err.message);
+        toastService.error(`Gagal mencari customers: ${err.message}`);
       }
     } finally {
       setSearchLoading(false);
@@ -65,18 +78,18 @@ const useCustomers = () => {
   }, [fetchCustomers, handleAuthError]);
 
   const deleteCustomer = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this customer?'))
+    if (!window.confirm('Apakah Anda yakin ingin menghapus customer ini?'))
       return;
 
     try {
       await customerService.deleteCustomer(id);
       setCustomers(customers.filter((customer) => customer.id !== id));
-      toastService.success('Customer deleted successfully');
+      toastService.success('Customer berhasil dihapus');
       // Refetch to ensure data consistency, especially with pagination
       fetchCustomers(pagination.currentPage, pagination.itemsPerPage);
     } catch (err) {
       if (!handleAuthError(err)) {
-        toastService.error('Failed to delete customer');
+        toastService.error(`Gagal menghapus customer: ${err.message}`);
       }
     }
   };

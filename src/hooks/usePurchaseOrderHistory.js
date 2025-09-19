@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import toastService from '../services/toastService';
-
-const API_URL = 'http://localhost:5050/api/v1';
+import purchaseOrderService from '../services/purchaseOrderService';
 
 const usePurchaseOrderHistory = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -24,33 +23,29 @@ const usePurchaseOrderHistory = () => {
     toastService.error('Session expired. Please login again.');
   }, []);
 
-  const getAccessToken = useCallback(() => {
-    return localStorage.getItem('token');
-  }, []);
-
   const fetchPurchaseOrders = useCallback(async (page = 1, limit = 10) => {
     setLoading(true);
     try {
-      const accessToken = getAccessToken();
-      const response = await fetch(`${API_URL}/purchase-orders/history?page=${page}&limit=${limit}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
+      const result = await purchaseOrderService.getPurchaseOrderHistory(page, limit);
+      
+      if (result.success) {
+        setPurchaseOrders(result.data.data || []);
+        setPagination(result.data.pagination || pagination);
+        setError(null);
+      } else {
+        throw new Error(result.error?.message || 'Failed to fetch purchase order history');
       }
-      if (!response.ok) throw new Error('Failed to fetch purchase order history');
-      const result = await response.json();
-      setPurchaseOrders(result.data);
-      setPagination(result.pagination);
-      setError(null);
     } catch (err) {
       setError(err.message);
-      toastService.error('Failed to load purchase order history');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Failed to load purchase order history');
+      }
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken, handleAuthError]);
+  }, [handleAuthError]);
 
   const searchPurchaseOrders = useCallback(async (query, field, page = 1, limit = 10) => {
     if (!query.trim()) {
@@ -59,50 +54,46 @@ const usePurchaseOrderHistory = () => {
     }
     try {
       setSearchLoading(true);
-      const accessToken = getAccessToken();
-      const url = new URL(`${API_URL}/purchase-orders/history/search`);
-      url.searchParams.append(field || 'customer_name', query);
-      url.searchParams.append('page', page);
-      url.searchParams.append('limit', limit);
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return;
+      const searchParams = {};
+      searchParams[field || 'customer_name'] = query;
+      
+      const result = await purchaseOrderService.searchPurchaseOrders(searchParams, page, limit);
+      
+      if (result.success) {
+        setPurchaseOrders(result.data.data || []);
+        setPagination(result.data.pagination || pagination);
+      } else {
+        throw new Error(result.error?.message || 'Failed to search purchase order history');
       }
-      if (!response.ok) throw new Error('Failed to search purchase order history');
-      const result = await response.json();
-      setPurchaseOrders(result.data);
-      setPagination(result.pagination);
     } catch (err) {
-      toastService.error('Failed to search purchase order history');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Failed to search purchase order history');
+      }
     } finally {
       setSearchLoading(false);
     }
-  }, [getAccessToken, handleAuthError, fetchPurchaseOrders]);
+  }, [handleAuthError, fetchPurchaseOrders]);
 
   const getPurchaseOrder = useCallback(async (id) => {
     try {
-      const accessToken = getAccessToken();
-      const response = await fetch(`${API_URL}/purchase-orders/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'accept': 'application/json',
-        },
-      });
-      if (response.status === 401 || response.status === 403) {
-        handleAuthError();
-        return null;
+      const result = await purchaseOrderService.getPurchaseOrderById(id);
+      
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.error?.message || 'Failed to fetch purchase order details');
       }
-      if (!response.ok) throw new Error('Failed to fetch purchase order details');
-      const orderData = await response.json();
-      return orderData;
     } catch (err) {
-      toastService.error('Failed to load purchase order details');
+      if (err.message.includes('token') || err.message.includes('unauthorized')) {
+        handleAuthError();
+      } else {
+        toastService.error('Failed to load purchase order details');
+      }
       return null;
     }
-  }, [getAccessToken, handleAuthError]);
+  }, [handleAuthError]);
 
   const handlePageChange = (newPage) => {
     if (searchQuery.trim()) {
