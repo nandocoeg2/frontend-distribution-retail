@@ -1,222 +1,47 @@
-import React, { useState, useEffect } from 'react';
-
-import { useNavigate } from 'react-router-dom';
-
-import authService from '../services/authService';
-
+import React from 'react';
+import { useAuth } from '../hooks/useAuth';
+import useRoleManagement from '../hooks/useRoleManagement';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
-import toastService from '../services/toastService';
-
 const RoleManagement = () => {
-  const navigate = useNavigate();
-  const [roles, setRoles] = useState([]);
-  const [allMenus, setAllMenus] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [showMenuModal, setShowMenuModal] = useState(false);
-  const [selectedMenus, setSelectedMenus] = useState([]);
-  const [saving, setSaving] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newRoleDescription, setNewRoleDescription] = useState('');
-  const [newRoleMenus, setNewRoleMenus] = useState([]);
-  const [creating, setCreating] = useState(false);
-  const [deletingRoleId, setDeletingRoleId] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const {
+    roles,
+    allMenus,
+    loading,
+    error,
+    selectedRole,
+    selectedMenus,
+    saving,
+    creating,
+    showMenuModal,
+    showCreateModal,
+    showDeleteModal,
+    deletingRoleId,
+    newRoleName,
+    newRoleDescription,
+    newRoleMenus,
+    setNewRoleName,
+    setNewRoleDescription,
+    setNewRoleMenus,
+    setShowCreateModal,
+    setShowMenuModal,
+    setShowDeleteModal,
+    openMenuModal,
+    handleMenuSelection,
+    saveMenuAssignments,
+    handleCreateRole,
+    handleDeleteRole,
+    confirmDeleteRole,
+    getAssignedMenuCount,
+    handleAuthError
+  } = useRoleManagement();
 
-  useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      navigate('/login');
-      return;
-    }
-    fetchRoles();
-    fetchMenus();
-  }, [navigate]);
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return null; // Will be handled by ProtectedRoute or redirect
+  }
 
-  const fetchRoles = async () => {
-    try {
-      const response = await fetch('http://localhost:5050/api/v1/roles/', {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch roles');
-      const data = await response.json();
-      setRoles(data);
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-    }
-  };
-
-  const fetchMenus = async () => {
-    try {
-      const response = await fetch('http://localhost:5050/api/v1/menus/', {
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch menus');
-      const data = await response.json();
-      setAllMenus(data);
-    } catch (error) {
-      console.error('Error fetching menus:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openMenuModal = (role) => {
-    setSelectedRole(role);
-    const assignedMenuIds =
-      role.menus?.map((m) => (m.menu || m)?.id).filter(Boolean) || [];
-    setSelectedMenus(assignedMenuIds);
-    setShowMenuModal(true);
-  };
-
-  const handleMenuSelection = (menuId) => {
-    setSelectedMenus((prev) =>
-      prev.includes(menuId)
-        ? prev.filter((id) => id !== menuId)
-        : [...prev, menuId]
-    );
-  };
-
-  const getAllMenuIds = (menus) => {
-    if (!Array.isArray(menus)) return [];
-    let ids = [];
-    menus.forEach((menu) => {
-      if (menu && menu.id) {
-        ids.push(menu.id);
-        if (Array.isArray(menu.children) && menu.children.length > 0) {
-          ids = [...ids, ...getAllMenuIds(menu.children)];
-        }
-      }
-    });
-    return ids;
-  };
-
-  const handleSelectAllMenus = () => {
-    const allMenuIds = getAllMenuIds(allMenus);
-    setSelectedMenus(
-      selectedMenus.length === allMenuIds.length ? [] : allMenuIds
-    );
-  };
-
-  const saveMenuAssignments = async () => {
-    if (!selectedRole) return;
-    setSaving(true);
-    try {
-      const response = await fetch(
-        `http://localhost:5050/api/v1/roles/${selectedRole.id}/menus`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          },
-          body: JSON.stringify({ menuIds: selectedMenus }),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update menus');
-      }
-      await fetchRoles();
-      setShowMenuModal(false);
-      toastService.success('Menu assignments updated successfully!');
-    } catch (error) {
-      console.error('Error updating menu assignments:', error);
-      toastService.error(error.message || 'Failed to update menu assignments');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const getAssignedMenuCount = (role) => {
-    return role.menus?.filter((item) => (item.menu || item)?.id).length || 0;
-  };
-
-  const handleDeleteRole = (role) => {
-    setDeletingRoleId(role.id);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDeleteRole = async () => {
-    if (!deletingRoleId) return;
-    setSaving(true);
-    try {
-      const response = await fetch(
-        `http://localhost:5050/api/v1/roles/${deletingRoleId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to delete role');
-      }
-      await fetchRoles();
-      setShowDeleteModal(false);
-      toastService.success('Role deleted successfully!');
-    } catch (error) {
-      console.error('Error deleting role:', error);
-      toastService.error(error.message || 'Failed to delete role');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCreateRole = async () => {
-    if (!newRoleName.trim()) {
-      toastService.error('Role name is required');
-      return;
-    }
-    if (newRoleMenus.length === 0) {
-      toastService.error('At least one menu ID is required');
-      return;
-    }
-    setCreating(true);
-    try {
-      const response = await fetch('http://localhost:5050/api/v1/roles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
-          name: newRoleName.trim(),
-          description: newRoleDescription.trim(),
-          menuIds: newRoleMenus,
-        }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const issue = errorData.issues && errorData.issues[0];
-        const errorMessage = issue
-          ? `${issue.path.join('.')} - ${issue.message}`
-          : errorData.message || 'Failed to create role';
-        throw new Error(errorMessage);
-      }
-      await fetchRoles();
-      setShowCreateModal(false);
-      setNewRoleName('');
-      setNewRoleDescription('');
-      setNewRoleMenus([]);
-      toastService.success('Role created successfully!');
-    } catch (error) {
-      console.error('Error creating role:', error);
-      toastService.error(error.message || 'Failed to create role');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const renderMenuTree = (menus, selected, onSelect, level = 0) => {
     if (!Array.isArray(menus) || menus.length === 0) return null;
@@ -224,18 +49,18 @@ const RoleManagement = () => {
       .filter((menu) => menu && menu.id)
       .sort((a, b) => (a.order || 0) - (b.order || 0))
       .map((menu) => (
-        <div key={menu.id} style={{ marginLeft: level * 20 }}>
-          <label className='flex items-center space-x-2 py-1'>
+        <div key={menu.id} className={`${level > 0 ? 'ml-6' : ''}`}>
+          <label className='flex items-center space-x-2 py-2 hover:bg-gray-50 rounded px-2 cursor-pointer'>
             <input
               type='checkbox'
               checked={selected.includes(menu.id)}
               onChange={() => onSelect(menu.id)}
-              className='rounded'
+              className='rounded border-gray-300 text-blue-600 focus:ring-blue-500'
             />
-            <span>{menu.name}</span>
+            <span className='text-sm text-gray-700'>{menu.name}</span>
           </label>
           {Array.isArray(menu.children) && menu.children.length > 0 && (
-            <div className='ml-4'>
+            <div className='ml-2'>
               {renderMenuTree(menu.children, selected, onSelect, level + 1)}
             </div>
           )}
@@ -247,7 +72,24 @@ const RoleManagement = () => {
     return (
       <div className='flex h-full items-center justify-center'>
         <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
-        <span className='ml-2'>Loading...</span>
+        <span className='ml-2'>Loading data...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className='flex h-full items-center justify-center'>
+        <div className='text-center'>
+          <div className='text-red-600 text-lg font-semibold mb-2'>An Error Occurred</div>
+          <div className='text-gray-600 mb-4'>{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className='bg-blue-600 text-white px-4 py-2 rounded-lg'
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -261,11 +103,11 @@ const RoleManagement = () => {
               <HeroIcon name='shield' className='w-8 h-8 text-blue-600' />
               Role Management
             </h1>
-            <p className='text-gray-600'>Manage roles and permissions</p>
+            <p className='text-gray-600'>Manage user roles and permissions</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className='bg-green-600 text-white px-4 py-2 rounded-lg'
+            className='bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors'
           >
             Create New Role
           </button>
@@ -273,8 +115,21 @@ const RoleManagement = () => {
       </header>
 
       <main className='flex-1 overflow-y-auto p-6'>
-        <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'>
-          {roles.map((role) => (
+        {roles.length === 0 ? (
+          <div className='flex flex-col items-center justify-center h-64 text-center'>
+            <HeroIcon name='shield' className='w-16 h-16 text-gray-400 mb-4' />
+            <h3 className='text-lg font-semibold text-gray-600 mb-2'>No Roles Found</h3>
+            <p className='text-gray-500 mb-4'>Start by creating your first role</p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors'
+            >
+              Create First Role
+            </button>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'>
+            {roles.map((role) => (
             <div key={role.id} className='bg-white rounded-xl p-6 shadow'>
               <h3 className='text-lg font-semibold capitalize'>{role.name}</h3>
               <p className='text-sm text-gray-600'>{role.description}</p>
@@ -282,68 +137,63 @@ const RoleManagement = () => {
                 <p className='text-sm font-medium'>Assigned Menus:</p>
                 <div className='h-32 overflow-y-auto text-sm'>
                   {role.menus && role.menus.length > 0 ? (
-                    <ul>
+                    <ul className='space-y-1'>
                       {role.menus.map((item) => (
-                        <li key={(item.menu || item).id}>
-                          {(item.menu || item).name}
+                        <li key={(item.menu || item).id} className='text-gray-700'>
+                          • {(item.menu || item).name}
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p>No menus assigned</p>
+                    <p className='text-gray-500 italic'>No menus assigned</p>
                   )}
                 </div>
               </div>
               <div className='flex justify-between items-center'>
-                <span>{getAssignedMenuCount(role)} menus</span>
-                <div>
+                <span className='text-sm text-gray-600'>{getAssignedMenuCount(role)} menus</span>
+                <div className='flex gap-2'>
                   <button
                     onClick={() => openMenuModal(role)}
-                    className='bg-blue-600 text-white px-3 py-1 rounded'
+                    className='bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors'
                   >
                     Manage
                   </button>
                   <button
                     onClick={() => handleDeleteRole(role)}
-                    className='bg-red-600 text-white px-3 py-1 rounded ml-2'
+                    className='bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors'
                   >
                     Delete
                   </button>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
 
       {showMenuModal && (
-        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center'>
-          <div className='bg-white rounded-lg p-6 w-1/3'>
-            <h3 className='text-lg font-semibold'>
+        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4'>
+          <div className='bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto'>
+            <h3 className='text-lg font-semibold mb-4'>
               Manage Menus for {selectedRole?.name}
             </h3>
-            <button
-              onClick={handleSelectAllMenus}
-              className='bg-blue-600 text-white px-4 py-2 rounded-lg'
-            >
-              Select/Deselect All
-            </button>
-            <div className='my-4 h-64 overflow-y-auto'>
+            <div className='my-4 h-64 overflow-y-auto border rounded-md p-3'>
               {renderMenuTree(allMenus, selectedMenus, handleMenuSelection)}
             </div>
-            <div className='flex justify-end'>
+            <div className='flex justify-end gap-2'>
+              <button
+                onClick={() => setShowMenuModal(false)}
+                className='bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors'
+              >
+                Cancel
+              </button>
               <button
                 onClick={saveMenuAssignments}
                 disabled={saving}
-                className='bg-blue-600 text-white px-4 py-2 rounded-lg'
+                className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {saving ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => setShowMenuModal(false)}
-                className='bg-gray-600 text-white px-4 py-2 rounded-lg ml-2'
-              >
-                Cancel
               </button>
             </div>
           </div>
@@ -351,62 +201,62 @@ const RoleManagement = () => {
       )}
 
       {showCreateModal && (
-        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center'>
-          <div className='bg-white rounded-lg p-6 w-1/3'>
-            <h3 className='text-lg font-semibold'>Create New Role</h3>
-            <input
-              type='text'
-              value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)}
-              placeholder='Role Name'
-              className='w-full mb-4'
-            />
-            <textarea
-              value={newRoleDescription}
-              onChange={(e) => setNewRoleDescription(e.target.value)}
-              placeholder='Description'
-              className='w-full mb-4'
-            />
-            <div className='my-4'>
-              <label className='font-semibold'>Assign Menus</label>
-              <div className='my-2'>
-                <button
-                  onClick={() => {
-                    const allMenuIds = getAllMenuIds(allMenus);
-                    if (newRoleMenus.length === allMenuIds.length) {
-                      setNewRoleMenus([]);
-                    } else {
-                      setNewRoleMenus(allMenuIds);
-                    }
-                  }}
-                  className='bg-blue-500 text-white px-3 py-1 rounded-md text-sm mb-2'
-                >
-                  Select/Deselect All
-                </button>
+        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4'>
+          <div className='bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto'>
+            <h3 className='text-lg font-semibold mb-4'>Create New Role</h3>
+            <div className='space-y-4'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Role Name *
+                </label>
+                <input
+                  type='text'
+                  value={newRoleName}
+                  onChange={(e) => setNewRoleName(e.target.value)}
+                  placeholder='Enter role name'
+                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                />
               </div>
-              <div className='h-48 overflow-y-auto border rounded-md p-2'>
-                {renderMenuTree(allMenus, newRoleMenus, (menuId) => {
-                  setNewRoleMenus((prev) =>
-                    prev.includes(menuId)
-                      ? prev.filter((id) => id !== menuId)
-                      : [...prev, menuId]
-                  );
-                })}
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Description
+                </label>
+                <textarea
+                  value={newRoleDescription}
+                  onChange={(e) => setNewRoleDescription(e.target.value)}
+                  placeholder='Enter role description (optional)'
+                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Assign Menus *
+                </label>
+                <div className='h-48 overflow-y-auto border rounded-md p-3'>
+                  {renderMenuTree(allMenus, newRoleMenus, (menuId) => {
+                    setNewRoleMenus((prev) =>
+                      prev.includes(menuId)
+                        ? prev.filter((id) => id !== menuId)
+                        : [...prev, menuId]
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            <div className='flex justify-end'>
+            <div className='flex justify-end gap-2 mt-6'>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className='bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors'
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleCreateRole}
                 disabled={creating}
-                className='bg-blue-600 text-white px-4 py-2 rounded-lg'
+                className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                {creating ? 'Creating...' : 'Create'}
-              </button>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className='bg-gray-600 text-white px-4 py-2 rounded-lg ml-2'
-              >
-                Cancel
+                {creating ? 'Creating...' : 'Create Role'}
               </button>
             </div>
           </div>
@@ -414,23 +264,25 @@ const RoleManagement = () => {
       )}
 
       {showDeleteModal && (
-        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center'>
-          <div className='bg-white rounded-lg p-6'>
-            <h3 className='text-lg font-semibold'>Confirm Deletion</h3>
-            <p>Are you sure you want to delete this role?</p>
-            <div className='flex justify-end mt-4'>
+        <div className='fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4'>
+          <div className='bg-white rounded-lg p-6 w-full max-w-md'>
+            <h3 className='text-lg font-semibold mb-4'>Confirm Deletion</h3>
+            <p className='text-gray-600 mb-6'>
+              Are you sure you want to delete this role? This action cannot be undone.
+            </p>
+            <div className='flex justify-end gap-2'>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className='bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors'
+              >
+                Cancel
+              </button>
               <button
                 onClick={confirmDeleteRole}
                 disabled={saving}
-                className='bg-red-600 text-white px-4 py-2 rounded-lg'
+                className='bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {saving ? 'Deleting...' : 'Delete'}
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className='bg-gray-600 text-white px-4 py-2 rounded-lg ml-2'
-              >
-                Cancel
               </button>
             </div>
           </div>
