@@ -176,6 +176,7 @@ const useTermOfPayments = () => {
         handleAuthError();
         return;
       }
+      console.log(err);
       toastService.error('Gagal menghapus term of payment');
     }
   };

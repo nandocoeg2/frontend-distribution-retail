@@ -5,6 +5,7 @@ import RegionSearch from '@/components/regions/RegionSearch';
 import AddRegionModal from '@/components/regions/AddRegionModal';
 import EditRegionModal from '@/components/regions/EditRegionModal';
 import ViewRegionModal from '@/components/regions/ViewRegionModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Regions = () => {
@@ -19,7 +20,7 @@ const Regions = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteRegion,
+    deleteRegionConfirmation,
     fetchRegions,
     handleAuthError
   } = useRegionsPage();
@@ -117,7 +118,7 @@ const Regions = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteRegion} 
+            onDelete={deleteRegionConfirmation.showDeleteConfirmation} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -143,6 +144,19 @@ const Regions = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         region={viewingRegion} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteRegionConfirmation.showConfirm}
+        onClose={deleteRegionConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteRegionConfirmation.confirmDelete}
+        title={deleteRegionConfirmation.title}
+        message={deleteRegionConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteRegionConfirmation.loading}
       />
     </div>
   );

@@ -124,7 +124,14 @@ export const termOfPaymentService = {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      // Check if response has content before trying to parse JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        // For successful DELETE requests that don't return JSON (e.g., 204 No Content)
+        return { success: true, message: 'Term of payment deleted successfully' };
+      }
     } catch (error) {
       throw error;
     }

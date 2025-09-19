@@ -5,6 +5,7 @@ import CustomerSearch from '@/components/customers/CustomerSearch';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
 import EditCustomerModal from '@/components/customers/EditCustomerModal';
 import ViewCustomerModal from '@/components/customers/ViewCustomerModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Customers = () => {
@@ -18,7 +19,7 @@ const Customers = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteCustomer,
+    deleteCustomerConfirmation,
     fetchCustomers,
     handleAuthError
   } = useCustomers();
@@ -109,7 +110,7 @@ const Customers = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteCustomer} 
+            onDelete={deleteCustomerConfirmation.showDeleteConfirmation} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -135,6 +136,19 @@ const Customers = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         customer={viewingCustomer} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteCustomerConfirmation.showConfirm}
+        onClose={deleteCustomerConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteCustomerConfirmation.confirmDelete}
+        title={deleteCustomerConfirmation.title}
+        message={deleteCustomerConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteCustomerConfirmation.loading}
       />
     </div>
   );

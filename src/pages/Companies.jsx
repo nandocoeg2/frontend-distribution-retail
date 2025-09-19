@@ -5,6 +5,7 @@ import CompanySearch from '@/components/companies/CompanySearch';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
 import EditCompanyModal from '@/components/companies/EditCompanyModal';
 import ViewCompanyModal from '@/components/companies/ViewCompanyModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Companies = () => {
@@ -21,7 +22,7 @@ const Companies = () => {
     handleLimitChange,
     createCompany,
     updateCompany,
-    deleteCompany,
+    deleteCompanyConfirmation,
     fetchCompanies,
     handleAuthError
   } = useCompaniesPage();
@@ -120,7 +121,7 @@ const Companies = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteCompany} 
+            onDelete={deleteCompanyConfirmation.showDeleteConfirmation} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -146,6 +147,19 @@ const Companies = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         company={viewingCompany} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteCompanyConfirmation.showConfirm}
+        onClose={deleteCompanyConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteCompanyConfirmation.confirmDelete}
+        title={deleteCompanyConfirmation.title}
+        message={deleteCompanyConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteCompanyConfirmation.loading}
       />
     </div>
   );

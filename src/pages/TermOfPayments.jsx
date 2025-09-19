@@ -5,6 +5,7 @@ import TermOfPaymentSearch from '@/components/termOfPayments/TermOfPaymentSearch
 import AddTermOfPaymentModal from '@/components/termOfPayments/AddTermOfPaymentModal';
 import EditTermOfPaymentModal from '@/components/termOfPayments/EditTermOfPaymentModal';
 import ViewTermOfPaymentModal from '@/components/termOfPayments/ViewTermOfPaymentModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TermOfPayments = () => {
@@ -22,7 +23,7 @@ const TermOfPayments = () => {
     createTermOfPayment,
     updateTermOfPayment,
     getTermOfPaymentById,
-    deleteTermOfPayment,
+    deleteTermOfPaymentConfirmation,
     fetchTermOfPayments,
     handleAuthError
   } = useTermOfPayments();
@@ -121,7 +122,7 @@ const TermOfPayments = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteTermOfPayment} 
+            onDelete={deleteTermOfPaymentConfirmation.showDeleteConfirmation} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -147,6 +148,19 @@ const TermOfPayments = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         termOfPayment={viewingTermOfPayment} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteTermOfPaymentConfirmation.showConfirm}
+        onClose={deleteTermOfPaymentConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteTermOfPaymentConfirmation.confirmDelete}
+        title={deleteTermOfPaymentConfirmation.title}
+        message={deleteTermOfPaymentConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteTermOfPaymentConfirmation.loading}
       />
     </div>
   );

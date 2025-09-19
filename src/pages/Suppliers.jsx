@@ -5,6 +5,7 @@ import SupplierSearch from '@/components/suppliers/SupplierSearch';
 import AddSupplierModal from '@/components/suppliers/AddSupplierModal';
 import EditSupplierModal from '@/components/suppliers/EditSupplierModal';
 import ViewSupplierModal from '@/components/suppliers/ViewSupplierModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Suppliers = () => {
@@ -19,7 +20,7 @@ const Suppliers = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteSupplier,
+    deleteSupplierConfirmation,
     fetchSuppliers,
     handleAuthError
   } = useSuppliers();
@@ -114,7 +115,7 @@ const Suppliers = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteSupplier} 
+            onDelete={deleteSupplierConfirmation.showDeleteConfirmation} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -140,6 +141,19 @@ const Suppliers = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         supplier={viewingSupplier} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteSupplierConfirmation.showConfirm}
+        onClose={deleteSupplierConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteSupplierConfirmation.confirmDelete}
+        title={deleteSupplierConfirmation.title}
+        message={deleteSupplierConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteSupplierConfirmation.loading}
       />
     </div>
   );

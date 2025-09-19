@@ -80,12 +80,8 @@ const useSuppliers = () => {
   const deleteSupplierFunction = async (id) => {
     try {
       const result = await supplierService.deleteSupplier(id);
-      if (result.success) {
-        setSuppliers(suppliers.filter((supplier) => supplier.id !== id));
-        toastService.success('Supplier deleted successfully');
-      } else {
-        throw new Error(result.message || 'Failed to delete supplier');
-      }
+      setSuppliers(suppliers.filter((supplier) => supplier.id !== id));
+      toastService.success('Supplier deleted successfully');
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         handleAuthError();

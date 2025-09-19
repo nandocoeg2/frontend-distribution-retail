@@ -5,6 +5,7 @@ import GroupCustomerSearch from '@/components/groupCustomers/GroupCustomerSearch
 import AddGroupCustomerModal from '@/components/groupCustomers/AddGroupCustomerModal';
 import EditGroupCustomerModal from '@/components/groupCustomers/EditGroupCustomerModal';
 import ViewGroupCustomerModal from '@/components/groupCustomers/ViewGroupCustomerModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const GroupCustomers = () => {
@@ -19,7 +20,7 @@ const GroupCustomers = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteGroupCustomer,
+    deleteGroupCustomerConfirmation,
     fetchGroupCustomers,
     handleAuthError
   } = useGroupCustomersPage();
@@ -114,7 +115,7 @@ const GroupCustomers = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteGroupCustomer} 
+            onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -140,6 +141,19 @@ const GroupCustomers = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         groupCustomer={viewingGroupCustomer} 
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteGroupCustomerConfirmation.showConfirm}
+        onClose={deleteGroupCustomerConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteGroupCustomerConfirmation.confirmDelete}
+        title={deleteGroupCustomerConfirmation.title}
+        message={deleteGroupCustomerConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteGroupCustomerConfirmation.loading}
       />
     </div>
   );
