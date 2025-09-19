@@ -4,4 +4,3 @@ export { default as SupplierForm } from './SupplierForm';
 export { default as SupplierSearch } from './SupplierSearch';
 export { default as SupplierTable } from './SupplierTable';
 export { default as ViewSupplierModal } from './ViewSupplierModal';
-export { default as Pagination } from './Pagination';

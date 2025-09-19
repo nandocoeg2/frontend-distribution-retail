@@ -1,15 +1,21 @@
 import React from 'react';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
-  // Provide default values if pagination is undefined
+  // Normalize pagination prop
   const {
-    currentPage = 1,
+    page: currentPage = 1,
     totalPages = 1,
-    totalItems = 0,
-    itemsPerPage = 10
-  } = pagination || {};
-  
-  const limitOptions = [5, 10, 20, 50];
+    total: totalItems = 0,
+    limit: itemsPerPage = 10
+  } = {
+    page: pagination?.page || pagination?.currentPage,
+    totalPages: pagination?.totalPages,
+    total: pagination?.total || pagination?.totalItems,
+    limit: pagination?.limit || pagination?.itemsPerPage,
+    ...pagination
+  };
+
+  const limitOptions = [5, 10, 20, 50, 100];
 
   const getPageNumbers = () => {
     const pages = [];
