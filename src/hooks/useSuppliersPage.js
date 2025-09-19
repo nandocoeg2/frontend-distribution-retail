@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '@/services/toastService';
 import supplierService from '@/services/supplierService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const API_URL = 'http://localhost:5050/api/v1';
 
@@ -76,10 +77,7 @@ const useSuppliers = () => {
     }
   }, [fetchSuppliers]);
 
-  const deleteSupplier = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this supplier?'))
-      return;
-
+  const deleteSupplierFunction = async (id) => {
     try {
       const result = await supplierService.deleteSupplier(id);
       if (result.success) {
@@ -96,6 +94,14 @@ const useSuppliers = () => {
       toastService.error('Failed to delete supplier');
     }
   };
+
+  const deleteSupplierConfirmation = useDeleteConfirmation(
+    deleteSupplierFunction,
+    'Are you sure you want to delete this supplier?',
+    'Delete Supplier'
+  );
+
+  const deleteSupplier = deleteSupplierConfirmation.showDeleteConfirmation;
 
   const handlePageChange = (newPage) => {
     if (searchQuery.trim()) {
@@ -217,6 +223,7 @@ const useSuppliers = () => {
     handlePageChange,
     handleLimitChange,
     deleteSupplier,
+    deleteSupplierConfirmation,
     createSupplier,
     updateSupplier,
     getSupplierById,

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import suratJalanService from '../services/suratJalanService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useSuratJalan = () => {
   const [suratJalan, setSuratJalan] = useState([]);
@@ -197,11 +198,7 @@ const useSuratJalan = () => {
     }
   }, [handleAuthError, selectedSuratJalan]);
 
-  const deleteSuratJalan = useCallback(async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus surat jalan ini?')) {
-      return false;
-    }
-
+  const deleteSuratJalanFunction = useCallback(async (id) => {
     try {
       setLoading(true);
       setError(null);
@@ -238,6 +235,14 @@ const useSuratJalan = () => {
       setLoading(false);
     }
   }, [handleAuthError, selectedSuratJalan]);
+
+  const deleteSuratJalanConfirmation = useDeleteConfirmation(
+    deleteSuratJalanFunction,
+    'Apakah Anda yakin ingin menghapus surat jalan ini?',
+    'Hapus Surat Jalan'
+  );
+
+  const deleteSuratJalan = deleteSuratJalanConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = useCallback((e) => {
     const query = e.target.value;
@@ -344,6 +349,7 @@ const useSuratJalan = () => {
     createSuratJalan,
     updateSuratJalan,
     deleteSuratJalan,
+    deleteSuratJalanConfirmation,
     
     // Handlers
     handleSearchChange,

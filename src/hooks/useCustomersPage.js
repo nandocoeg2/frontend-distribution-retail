@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import customerService from '../services/customerService';
 import toastService from '../services/toastService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useCustomers = () => {
   const [customers, setCustomers] = useState([]);
@@ -77,10 +78,7 @@ const useCustomers = () => {
     }
   }, [fetchCustomers, handleAuthError]);
 
-  const deleteCustomer = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus customer ini?'))
-      return;
-
+  const deleteCustomerFunction = async (id) => {
     try {
       await customerService.deleteCustomer(id);
       setCustomers(customers.filter((customer) => customer.id !== id));
@@ -93,6 +91,14 @@ const useCustomers = () => {
       }
     }
   };
+
+  const deleteCustomerConfirmation = useDeleteConfirmation(
+    deleteCustomerFunction,
+    'Apakah Anda yakin ingin menghapus customer ini?',
+    'Hapus Customer'
+  );
+
+  const deleteCustomer = deleteCustomerConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -155,6 +161,7 @@ const useCustomers = () => {
     handlePageChange,
     handleLimitChange,
     deleteCustomer,
+    deleteCustomerConfirmation,
     fetchCustomers,
     handleAuthError
   };

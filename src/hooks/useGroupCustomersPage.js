@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { groupCustomerService } from '../services/groupCustomerService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useGroupCustomersPage = () => {
   const [groupCustomers, setGroupCustomers] = useState([]);
@@ -149,10 +150,7 @@ const useGroupCustomersPage = () => {
     }
   }, [fetchGroupCustomers, handleAuthError]);
 
-  const deleteGroupCustomer = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus group customer ini?'))
-      return;
-
+  const deleteGroupCustomerFunction = async (id) => {
     try {
       const result = await groupCustomerService.deleteGroupCustomer(id);
       if (result.success) {
@@ -183,6 +181,14 @@ const useGroupCustomersPage = () => {
       toastService.error(errorMessage);
     }
   };
+
+  const deleteGroupCustomerConfirmation = useDeleteConfirmation(
+    deleteGroupCustomerFunction,
+    'Apakah Anda yakin ingin menghapus group customer ini?',
+    'Hapus Group Customer'
+  );
+
+  const deleteGroupCustomer = deleteGroupCustomerConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -245,6 +251,7 @@ const useGroupCustomersPage = () => {
     handlePageChange,
     handleLimitChange,
     deleteGroupCustomer,
+    deleteGroupCustomerConfirmation,
     fetchGroupCustomers,
     handleAuthError,
     refreshData,

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import invoiceService from '../services/invoiceService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const API_URL = 'http://localhost:5050/api/v1';
 
@@ -123,10 +124,7 @@ const useInvoices = () => {
     }
   };
 
-  const deleteInvoice = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this invoice?'))
-      return;
-
+  const deleteInvoiceFunction = async (id) => {
     try {
       const result = await invoiceService.deleteInvoice(id);
       
@@ -144,6 +142,14 @@ const useInvoices = () => {
       toastService.error('Failed to delete invoice');
     }
   };
+
+  const deleteInvoiceConfirmation = useDeleteConfirmation(
+    deleteInvoiceFunction,
+    'Are you sure you want to delete this invoice?',
+    'Delete Invoice'
+  );
+
+  const deleteInvoice = deleteInvoiceConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -220,6 +226,7 @@ const useInvoices = () => {
     createInvoice,
     updateInvoice,
     deleteInvoice,
+    deleteInvoiceConfirmation,
     fetchInvoices,
     handleAuthError
   };

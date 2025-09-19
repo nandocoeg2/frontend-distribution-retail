@@ -6,6 +6,7 @@ import AddUserModal from '@/components/users/AddUserModal';
 import EditUserModal from '@/components/users/EditUserModal';
 import ViewUserModal from '@/components/users/ViewUserModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import { ConfirmationDialog } from '@/components/ui';
 
 const Users = () => {
   const {
@@ -19,6 +20,7 @@ const Users = () => {
     handlePageChange,
     handleLimitChange,
     deleteUser,
+    deleteUserConfirmation,
     fetchUsers,
     handleAuthError
   } = useUsers();
@@ -135,6 +137,19 @@ const Users = () => {
         show={showViewModal} 
         onClose={closeViewModal} 
         user={viewingUser} 
+      />
+      
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        show={deleteUserConfirmation.showConfirm}
+        onClose={deleteUserConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteUserConfirmation.confirmDelete}
+        title={deleteUserConfirmation.title}
+        message={deleteUserConfirmation.message}
+        type="danger"
+        confirmText="Hapus"
+        cancelText="Batal"
+        loading={deleteUserConfirmation.loading}
       />
     </div>
   );

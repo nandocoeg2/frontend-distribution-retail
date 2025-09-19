@@ -4,10 +4,33 @@ import {
   PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
+import { useConfirmationDialog } from '../ui';
 
 const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, loading }) => {
+  const [deleteId, setDeleteId] = React.useState(null);
+  const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
+  
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+  };
+
+  const handleDelete = (inventoryId) => {
+    setDeleteId(inventoryId);
+    showDialog({
+      title: "Hapus Item",
+      message: "Apakah Anda yakin ingin menghapus item ini?",
+      type: "danger",
+      confirmText: "Hapus",
+      cancelText: "Batal"
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteId) {
+      onDelete(deleteId);
+      setDeleteId(null);
+    }
+    hideDialog();
   };
 
   return (
@@ -62,11 +85,7 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
                         <PencilSquareIcon className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => {
-                        if (window.confirm('Are you sure you want to delete this item?')) {
-                          onDelete(inventory.id);
-                        }
-                      }}
+                        onClick={() => handleDelete(inventory.id)}
                         className="text-red-600 hover:text-red-900"
                         title="Delete"
                       >
@@ -114,6 +133,10 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
           </nav>
         </div>
       </div>
+      
+      <ConfirmationDialog 
+        onConfirm={handleConfirmDelete}
+      />
     </>
   );
 };

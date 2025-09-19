@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { regionService } from '../services/regionService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useRegionsPage = () => {
   const [regions, setRegions] = useState([]);
@@ -123,10 +124,7 @@ const useRegionsPage = () => {
     }
   };
 
-  const deleteRegion = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this region?'))
-      return;
-
+  const deleteRegionFunction = async (id) => {
     try {
       await regionService.deleteRegion(id);
       setRegions(regions.filter((region) => region.id !== id));
@@ -140,6 +138,14 @@ const useRegionsPage = () => {
       toastService.error('Failed to delete region');
     }
   };
+
+  const deleteRegionConfirmation = useDeleteConfirmation(
+    deleteRegionFunction,
+    'Are you sure you want to delete this region?',
+    'Delete Region'
+  );
+
+  const deleteRegion = deleteRegionConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -204,6 +210,7 @@ const useRegionsPage = () => {
     getRegionById,
     updateRegion,
     deleteRegion,
+    deleteRegionConfirmation,
     fetchRegions,
     handleAuthError
   };

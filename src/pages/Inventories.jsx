@@ -6,6 +6,7 @@ import AddInventoryModal from '../components/inventories/AddInventoryModal';
 import EditInventoryModal from '../components/inventories/EditInventoryModal';
 import ViewInventoryModal from '../components/inventories/ViewInventoryModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import { ConfirmationDialog } from '../components/ui';
 
 const Inventories = () => {
   const {
@@ -122,6 +123,19 @@ const Inventories = () => {
           onClose={closeViewModal}
         />
       )}
+      
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        show={false}
+        onClose={() => {}}
+        onConfirm={() => {}}
+        title="Konfirmasi"
+        message="Apakah Anda yakin?"
+        type="warning"
+        confirmText="Ya"
+        cancelText="Batal"
+        loading={false}
+      />
     </div>
   );
 };

@@ -60,3 +60,9 @@ export {
 
 // Alert Components (if created in the future)
 // export { Alert, Toast, Notification } from './Alert';
+
+// Dialog Components
+export { 
+  ConfirmationDialog, 
+  useConfirmationDialog 
+} from './ConfirmationDialog';

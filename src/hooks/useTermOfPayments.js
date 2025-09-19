@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { termOfPaymentService } from '../services/termOfPaymentService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useTermOfPayments = () => {
   const [termOfPayments, setTermOfPayments] = useState([]);
@@ -158,10 +159,7 @@ const useTermOfPayments = () => {
     }
   };
 
-  const deleteTermOfPayment = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus term of payment ini?'))
-      return;
-
+  const deleteTermOfPaymentFunction = async (id) => {
     try {
       const result = await termOfPaymentService.deleteTermOfPayment(id);
       
@@ -181,6 +179,14 @@ const useTermOfPayments = () => {
       toastService.error('Gagal menghapus term of payment');
     }
   };
+
+  const deleteTermOfPaymentConfirmation = useDeleteConfirmation(
+    deleteTermOfPaymentFunction,
+    'Apakah Anda yakin ingin menghapus term of payment ini?',
+    'Hapus Term of Payment'
+  );
+
+  const deleteTermOfPayment = deleteTermOfPaymentConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -245,6 +251,7 @@ const useTermOfPayments = () => {
     updateTermOfPayment,
     getTermOfPaymentById,
     deleteTermOfPayment,
+    deleteTermOfPaymentConfirmation,
     fetchTermOfPayments,
     searchTermOfPayments,
     handleAuthError

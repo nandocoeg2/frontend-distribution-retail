@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import userService from '../services/userService';
 import toastService from '../services/toastService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useUsers = () => {
   const [users, setUsers] = useState([]);
@@ -77,10 +78,7 @@ const useUsers = () => {
     }
   }, [fetchUsers, handleAuthError]);
 
-  const deleteUser = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus user ini?'))
-      return;
-
+  const deleteUserFunction = async (id) => {
     try {
       await userService.deleteUser(id);
       setUsers(users.filter((user) => user.id !== id));
@@ -93,6 +91,14 @@ const useUsers = () => {
       }
     }
   };
+
+  const deleteUserConfirmation = useDeleteConfirmation(
+    deleteUserFunction,
+    'Apakah Anda yakin ingin menghapus user ini?',
+    'Hapus User'
+  );
+
+  const deleteUser = deleteUserConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -155,6 +161,7 @@ const useUsers = () => {
     handlePageChange,
     handleLimitChange,
     deleteUser,
+    deleteUserConfirmation,
     fetchUsers,
     handleAuthError
   };

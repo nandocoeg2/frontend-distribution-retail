@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import suratJalanService from '../services/suratJalanService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useSuratJalanPage = () => {
   const [suratJalan, setSuratJalan] = useState([]);
@@ -79,10 +80,7 @@ const useSuratJalanPage = () => {
     }
   }, [fetchSuratJalan, handleAuthError]);
 
-  const deleteSuratJalan = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus surat jalan ini?'))
-      return;
-
+  const deleteSuratJalanFunction = async (id) => {
     try {
       const result = await suratJalanService.deleteSuratJalan(id);
       if (result.success) {
@@ -99,6 +97,14 @@ const useSuratJalanPage = () => {
       toastService.error('Gagal menghapus surat jalan');
     }
   };
+
+  const deleteSuratJalanConfirmation = useDeleteConfirmation(
+    deleteSuratJalanFunction,
+    'Apakah Anda yakin ingin menghapus surat jalan ini?',
+    'Hapus Surat Jalan'
+  );
+
+  const deleteSuratJalan = deleteSuratJalanConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -181,6 +187,7 @@ const useSuratJalanPage = () => {
     handlePageChange,
     handleLimitChange,
     deleteSuratJalan,
+    deleteSuratJalanConfirmation,
     fetchSuratJalan,
     refreshData,
     handleAuthError

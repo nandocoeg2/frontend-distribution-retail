@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { companyService } from '../services/companyService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const useCompaniesPage = () => {
   const [companies, setCompanies] = useState([]);
@@ -133,10 +134,7 @@ const useCompaniesPage = () => {
     }
   };
 
-  const deleteCompany = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus perusahaan ini?'))
-      return;
-
+  const deleteCompanyFunction = async (id) => {
     try {
       const result = await companyService.deleteCompany(id);
       
@@ -164,6 +162,14 @@ const useCompaniesPage = () => {
       toastService.error(err.message);
     }
   };
+
+  const deleteCompanyConfirmation = useDeleteConfirmation(
+    deleteCompanyFunction,
+    'Apakah Anda yakin ingin menghapus perusahaan ini?',
+    'Hapus Perusahaan'
+  );
+
+  const deleteCompany = deleteCompanyConfirmation.showDeleteConfirmation;
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
@@ -227,6 +233,7 @@ const useCompaniesPage = () => {
     createCompany,
     updateCompany,
     deleteCompany,
+    deleteCompanyConfirmation,
     fetchCompanies,
     handleAuthError
   };

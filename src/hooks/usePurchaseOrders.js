@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import toastService from '../services/toastService';
 import purchaseOrderService from '../services/purchaseOrderService';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const usePurchaseOrders = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -76,8 +77,7 @@ const usePurchaseOrders = () => {
     }
   }, [handleAuthError, fetchPurchaseOrders]);
 
-  const deletePurchaseOrder = useCallback(async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus purchase order ini?')) return;
+  const deletePurchaseOrderFunction = useCallback(async (id) => {
     try {
       await purchaseOrderService.deletePurchaseOrder(id);
       setPurchaseOrders(prev => prev.filter((order) => order.id !== id));
@@ -90,6 +90,14 @@ const usePurchaseOrders = () => {
       }
     }
   }, [handleAuthError]);
+
+  const deletePurchaseOrderConfirmation = useDeleteConfirmation(
+    deletePurchaseOrderFunction,
+    'Apakah Anda yakin ingin menghapus purchase order ini?',
+    'Hapus Purchase Order'
+  );
+
+  const deletePurchaseOrder = deletePurchaseOrderConfirmation.showDeleteConfirmation;
 
   const createPurchaseOrder = useCallback(async (formData, files = []) => {
     try {
@@ -301,6 +309,7 @@ const usePurchaseOrders = () => {
     fetchPurchaseOrders,
     searchPurchaseOrders,
     deletePurchaseOrder,
+    deletePurchaseOrderConfirmation,
     createPurchaseOrder,
     updatePurchaseOrder,
     getPurchaseOrder,
