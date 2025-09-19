@@ -22,7 +22,8 @@ const Companies = () => {
     handleLimitChange,
     createCompany,
     updateCompany,
-    deleteCompanyConfirmation,
+    deleteEntity,
+    deleteConfirmation,
     fetchCompanies,
     handleAuthError
   } = useCompaniesPage();
@@ -121,7 +122,7 @@ const Companies = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteCompanyConfirmation.showDeleteConfirmation} 
+            onDelete={deleteEntity} 
             onView={openViewModal}
             searchQuery={searchQuery}
           />
@@ -151,15 +152,15 @@ const Companies = () => {
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
-        show={deleteCompanyConfirmation.showConfirm}
-        onClose={deleteCompanyConfirmation.hideDeleteConfirmation}
-        onConfirm={deleteCompanyConfirmation.confirmDelete}
-        title={deleteCompanyConfirmation.title}
-        message={deleteCompanyConfirmation.message}
+        show={deleteConfirmation.showConfirm}
+        onClose={deleteConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteConfirmation.confirmDelete}
+        title={deleteConfirmation.title}
+        message={deleteConfirmation.message}
         type="danger"
         confirmText="Hapus"
         cancelText="Batal"
-        loading={deleteCompanyConfirmation.loading}
+        loading={deleteConfirmation.loading}
       />
     </div>
   );
