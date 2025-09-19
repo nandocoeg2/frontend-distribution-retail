@@ -4,9 +4,9 @@ import {
   PackingTable,
   PackingSearch,
   PackingModal,
-  ViewPackingModal,
-  Pagination
+  ViewPackingModal
 } from '../components/packings';
+import Pagination from '../components/common/Pagination';
 
 const Packings = () => {
   const {
