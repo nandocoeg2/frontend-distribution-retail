@@ -4,8 +4,12 @@ import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import { toast } from 'react-toastify';
 import useStatuses from '../../hooks/useStatuses';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
+import HeroIcon from '../atoms/HeroIcon.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrder }) => {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     customerId: '',
     po_number: '',
@@ -276,17 +280,27 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
 
           <TabPanel tabId="bulk">
             <div className="bulk-upload-tab">
-              <div className="mb-4 p-4 bg-green-50 rounded-lg">
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-green-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <h4 className="text-sm font-medium text-green-800">Bulk Upload Mode</h4>
-                    <p className="text-sm text-green-700 mt-1">Upload beberapa file Purchase Order sekaligus untuk pemrosesan batch.</p>
+                {/* History Upload Bulk Button */}
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <svg className="w-4 h-4 text-blue-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800">Riwayat Upload Bulk</h4>
+                        <p className="text-sm text-blue-700">Lihat history upload bulk sebelumnya</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/po/purchase-orders/bulk-history')}
+                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      <HeroIcon name='clock' className='w-4 h-4 mr-1' />
+                      Lihat History
+                    </button>
                   </div>
                 </div>
-              </div>
               
               <div className="space-y-4">
                 <div>

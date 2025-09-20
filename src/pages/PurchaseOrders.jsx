@@ -85,13 +85,6 @@ const PurchaseOrders = () => {
             <h3 className="text-lg font-medium text-gray-900">Purchase Orders</h3>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => navigate('/po/purchase-orders/bulk-history')}
-                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                <HeroIcon name='clock' className='w-5 h-5 mr-2' />
-                History Upload Bulk
-              </button>
-              <button
                 onClick={() => setAddModalOpen(true)}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
