@@ -1,17 +1,17 @@
 import React from 'react';
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
-  // Normalize pagination prop
+  // Normalize pagination prop - handle both string and number values from API
   const {
     page: currentPage = 1,
     totalPages = 1,
     total: totalItems = 0,
     limit: itemsPerPage = 10
   } = {
-    page: pagination?.page || pagination?.currentPage,
-    totalPages: pagination?.totalPages,
-    total: pagination?.total || pagination?.totalItems,
-    limit: pagination?.limit || pagination?.itemsPerPage,
+    page: parseInt(pagination?.page || pagination?.currentPage || 1),
+    totalPages: parseInt(pagination?.totalPages || 1),
+    total: parseInt(pagination?.total || pagination?.totalItems || 0),
+    limit: parseInt(pagination?.limit || pagination?.itemsPerPage || 10),
     ...pagination
   };
 
