@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import fileService from '../../services/fileService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import { toast } from 'react-toastify';
 import useStatuses from '../../hooks/useStatuses';
+import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
 
 const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrder }) => {
   const [formData, setFormData] = useState({
@@ -21,7 +22,11 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadMode, setUploadMode] = useState('manual');
+  const [activeTab, setActiveTab] = useState('manual');
+  
+  // Refs for file inputs
+  const manualFileInputRef = useRef(null);
+  const bulkFileInputRef = useRef(null);
   
   // Get purchase order statuses using hook
   const { 
@@ -38,10 +43,26 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
 
   useEffect(() => {
     if (isOpen) {
+      // Reset everything when modal opens
+      setActiveTab('manual');
       resetForm();
-      setUploadMode('manual');
+    } else {
+      // Clear everything when modal closes
+      setActiveTab('manual');
+      setError(null);
+      setSelectedFile(null);
+      setLoading(false);
     }
   }, [isOpen]);
+
+  // Additional effect to ensure state is cleared when tab changes
+  useEffect(() => {
+    if (isOpen) {
+      console.log(`Active tab changed to: ${activeTab}`);
+      // Force clear selected file when tab changes to prevent cross-tab contamination
+      setSelectedFile(null);
+    }
+  }, [activeTab, isOpen]);
 
 
 
@@ -55,7 +76,7 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
 
   const handleFileChange = (e) => {
     setError(null);
-    if (uploadMode === 'bulk') {
+    if (activeTab === 'bulk') {
       setSelectedFile(e.target.files.length > 0 ? e.target.files : null);
     } else {
       setSelectedFile(e.target.files.length > 0 ? e.target.files[0] : null);
@@ -104,9 +125,13 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
   };
 
   const resetForm = () => {
+    console.log('Resetting form and clearing all states...');
+    
     const pendingStatus = Array.isArray(purchaseOrderStatuses) 
       ? purchaseOrderStatuses.find(s => s.status_code === 'PENDING PURCHASE ORDER')
       : null;
+    
+    // Reset form data to initial values
     setFormData({
       customerId: '', 
       po_number: '', 
@@ -119,8 +144,23 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
       suratPO: '', 
       suratPenagihan: ''
     });
+    
+    // Clear all component states
     setError(null);
     setSelectedFile(null);
+    setLoading(false);
+    
+    // Clear file input elements using refs to ensure UI is also cleared
+    if (manualFileInputRef.current) {
+      manualFileInputRef.current.value = '';
+      console.log('Cleared manual file input');
+    }
+    if (bulkFileInputRef.current) {
+      bulkFileInputRef.current.value = '';
+      console.log('Cleared bulk file input');
+    }
+    
+    console.log('Form reset completed');
   };
 
   const generatePONumber = () => {
@@ -143,42 +183,168 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
 
         {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">{error}</div>}
 
-        <div className="mb-4 flex justify-center space-x-4">
-          <button onClick={() => { setUploadMode('manual'); resetForm(); }} className={`px-4 py-2 text-sm font-medium rounded-md ${uploadMode === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Manual Input</button>
-          <button onClick={() => { setUploadMode('bulk'); resetForm(); }} className={`px-4 py-2 text-sm font-medium rounded-md ${uploadMode === 'bulk' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Bulk Upload</button>
-        </div>
+        {/* Tab Navigation */}
+        <TabContainer 
+          activeTab={activeTab} 
+          onTabChange={(tabId) => { 
+            console.log(`Switching from ${activeTab} to ${tabId}`);
+            setActiveTab(tabId); 
+            resetForm(); 
+          }}
+          variant="underline"
+          className="mb-6"
+        >
+          <Tab 
+            id="manual"
+            label="Manual Input"
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            }
+          />
+          <Tab 
+            id="bulk"
+            label="Bulk Upload"
+            icon={
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+            }
+          />
+        </TabContainer>
 
-        {uploadMode === 'manual' ? (
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Order Document (Optional)</label>
-              <div className="flex items-center space-x-2">
-                <input type="file" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+        {/* Tab Content */}
+        <TabContent activeTab={activeTab}>
+          <TabPanel tabId="manual">
+            <div className="manual-input-tab">
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800">Manual Input Mode</h4>
+                    <p className="text-sm text-blue-700 mt-1">Masukkan data Purchase Order secara manual dengan form yang tersedia.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <form onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Order Document (Optional)</label>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      ref={manualFileInputRef}
+                      type="file" 
+                      onChange={handleFileChange} 
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+                    />
+                  </div>
+                  {selectedFile && (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md border">
+                      <p className="text-sm text-gray-600 mb-2">
+                        File dipilih:
+                      </p>
+                      <div className="flex items-center space-x-2 text-sm">
+                        <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-gray-700 truncate" title={selectedFile.name}>
+                          {selectedFile.name}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          ({(selectedFile.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <hr className="my-4" />
+                <PurchaseOrderForm 
+                  formData={formData} 
+                  handleInputChange={handleInputChange} 
+                  onGeneratePONumber={generatePONumber} 
+                />
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
+                  <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={loading || !formData.customerId || !formData.po_number}>{loading ? 'Creating...' : 'Add Purchase Order'}</button>
+                </div>
+              </form>
+            </div>
+          </TabPanel>
+
+          <TabPanel tabId="bulk">
+            <div className="bulk-upload-tab">
+              <div className="mb-4 p-4 bg-green-50 rounded-lg">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-green-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h4 className="text-sm font-medium text-green-800">Bulk Upload Mode</h4>
+                    <p className="text-sm text-green-700 mt-1">Upload beberapa file Purchase Order sekaligus untuk pemrosesan batch.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload Bulk Purchase Orders</label>
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      ref={bulkFileInputRef}
+                      type="file" 
+                      multiple 
+                      onChange={handleFileChange} 
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+                    />
+                  </div>
+                  {selectedFile && selectedFile.length > 0 && (
+                    <div className="mt-2 p-3 bg-gray-50 rounded-md border">
+                      <p className="text-sm text-gray-600 mb-2">
+                        <strong>{selectedFile.length}</strong> file(s) dipilih untuk upload:
+                      </p>
+                      <div className="space-y-1">
+                        {Array.from(selectedFile).map((file, index) => (
+                          <div key={index} className="flex items-center space-x-2 text-sm">
+                            <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="text-gray-700 truncate" title={file.name}>
+                              {file.name}
+                            </span>
+                            <span className="text-gray-500 text-xs">
+                              ({(file.size / 1024).toFixed(1)} KB)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="flex">
+                    <svg className="w-4 h-4 text-yellow-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-medium text-yellow-800">Format File yang Didukung</h4>
+                      <p className="text-sm text-yellow-700 mt-1">PDF, DOC, DOCX, XLS, XLSX, CSV</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
+                  <button type="button" onClick={handleBulkUpload} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={!selectedFile || loading}>{loading ? 'Uploading...' : 'Upload Files'}</button>
+                </div>
               </div>
             </div>
-            <hr className="my-4" />
-            <PurchaseOrderForm 
-              formData={formData} 
-              handleInputChange={handleInputChange} 
-              onGeneratePONumber={generatePONumber} 
-            />
-            <div className="mt-6 flex justify-end space-x-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
-              <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={loading || !formData.customerId || !formData.po_number}>{loading ? 'Creating...' : 'Add Purchase Order'}</button>
-            </div>
-          </form>
-        ) : (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Upload Bulk Purchase Orders</label>
-            <div className="flex items-center space-x-2">
-              <input type="file" multiple onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-            </div>
-            <div className="mt-6 flex justify-end space-x-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
-              <button type="button" onClick={handleBulkUpload} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={!selectedFile || loading}>{loading ? 'Uploading...' : 'Upload Files'}</button>
-            </div>
-          </div>
-        )}
+          </TabPanel>
+        </TabContent>
       </div>
     </div>
   );
