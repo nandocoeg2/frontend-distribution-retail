@@ -45,3 +45,8 @@ export const searchPackingsAdvanced = (filters = {}, page = 1, limit = 10) => {
   return get(`${API_URL}/search`, params);
 };
 
+// Process packing - change status from PENDING PACKING to PROCESSING PACKING
+export const processPackings = (ids) => {
+  return post(`${API_URL}/process`, { ids });
+};
+

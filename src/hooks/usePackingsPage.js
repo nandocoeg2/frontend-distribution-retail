@@ -5,7 +5,8 @@ import {
   getPackingById, 
   searchPackings,
   searchPackingsAdvanced,
-  deletePacking
+  deletePacking,
+  processPackings
 } from '../services/packingService';
 import toastService from '../services/toastService';
 
@@ -23,6 +24,8 @@ const usePackingsPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [searchFilters, setSearchFilters] = useState({});
+  const [selectedPackings, setSelectedPackings] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Helper function to safely set packings data
   const setPackingsDataData = (data) => {
@@ -233,7 +236,56 @@ const usePackingsPage = () => {
   const clearFilters = () => {
     setSearchFilters({});
     setSearchQuery('');
+    setSelectedPackings([]);
     fetchPackings(1);
+  };
+
+  // Handle packing selection
+  const handleSelectPacking = (packingId) => {
+    setSelectedPackings(prev => {
+      if (prev.includes(packingId)) {
+        return prev.filter(id => id !== packingId);
+      } else {
+        return [...prev, packingId];
+      }
+    });
+  };
+
+  const handleSelectAllPackings = () => {
+    if (selectedPackings.length === packings.length) {
+      setSelectedPackings([]);
+    } else {
+      setSelectedPackings(packings.map(packing => packing.id));
+    }
+  };
+
+  // Handle process packing
+  const handleProcessPackings = async () => {
+    if (selectedPackings.length === 0) {
+      toastService.error('Pilih minimal satu packing untuk diproses');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await processPackings(selectedPackings);
+      
+      if (response && response.success) {
+        const { processedCount, processedPackingItemsCount } = response.data;
+        toastService.success(
+          `Berhasil memproses ${processedCount} packing dengan ${processedPackingItemsCount} item`
+        );
+        setSelectedPackings([]);
+        refreshPackings();
+      } else {
+        toastService.error(response?.error?.message || 'Gagal memproses packing');
+      }
+    } catch (err) {
+      const errorMessage = err.message || 'Gagal memproses packing';
+      toastService.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return {
@@ -249,6 +301,9 @@ const usePackingsPage = () => {
     isDeleting,
     deleteConfirmId,
     searchFilters,
+    selectedPackings,
+    isProcessing,
+    hasSelectedPackings: selectedPackings.length > 0,
     handleSearchChange,
     handleSearchFieldChange,
     handlePageChange,
@@ -260,7 +315,10 @@ const usePackingsPage = () => {
     cancelDelete,
     handleFilterChange,
     clearFilters,
-    searchPackingsWithFilters
+    searchPackingsWithFilters,
+    handleSelectPacking,
+    handleSelectAllPackings,
+    handleProcessPackings
   };
 };
 

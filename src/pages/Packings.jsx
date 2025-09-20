@@ -7,6 +7,7 @@ import {
   ViewPackingModal
 } from '../components/packings';
 import Pagination from '../components/common/Pagination';
+import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 
 const Packings = () => {
   const {
@@ -22,6 +23,9 @@ const Packings = () => {
     isDeleting,
     deleteConfirmId,
     searchFilters,
+    selectedPackings,
+    isProcessing,
+    hasSelectedPackings,
     handleSearchChange,
     handleSearchFieldChange,
     handlePageChange,
@@ -32,11 +36,18 @@ const Packings = () => {
     cancelDelete,
     handleFilterChange,
     clearFilters,
+    handleSelectPacking,
+    handleSelectAllPackings,
+    handleProcessPackings,
+    refreshPackings
   } = usePackingsPage();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
   const [editingPacking, setEditingPacking] = React.useState(null);
+
+  // Confirmation dialog for process packing
+  const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
 
   const handleEditPacking = (packing) => {
     setEditingPacking(packing);
@@ -45,6 +56,28 @@ const Packings = () => {
 
   const handleModalSuccess = () => {
     refreshPackings();
+  };
+
+  const handleProcessSelected = () => {
+    showDialog({
+      title: "Konfirmasi Proses Packing",
+      message: `Apakah Anda yakin ingin memproses ${selectedPackings.length} packing yang dipilih? Status akan berubah dari "PENDING PACKING" menjadi "PROCESSING PACKING".`,
+      confirmText: "Ya, Proses",
+      cancelText: "Batal",
+      type: "warning"
+    });
+  };
+
+  const handleConfirmProcess = async () => {
+    setLoading(true);
+    try {
+      await handleProcessPackings();
+      hideDialog();
+    } catch (error) {
+      console.error('Error processing packings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,6 +119,12 @@ const Packings = () => {
                 deleteConfirmId={deleteConfirmId}
                 onConfirmDelete={confirmDelete}
                 onCancelDelete={cancelDelete}
+                selectedPackings={selectedPackings}
+                onSelectPacking={handleSelectPacking}
+                onSelectAllPackings={handleSelectAllPackings}
+                onProcessSelected={handleProcessSelected}
+                isProcessing={isProcessing}
+                hasSelectedPackings={hasSelectedPackings}
               />
               <Pagination 
                 pagination={pagination} 
@@ -121,6 +160,9 @@ const Packings = () => {
             onSuccess={handleModalSuccess}
           />
         )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog onConfirm={handleConfirmProcess} />
       </div>
     </div>
   );

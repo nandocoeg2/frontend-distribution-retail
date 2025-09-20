@@ -1,7 +1,22 @@
 import React from 'react';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { EyeIcon, PencilIcon, TrashIcon, PlayIcon } from '@heroicons/react/24/solid';
 
-const PackingTable = ({ packings, onViewById, onEdit, onDelete, isDeleting, deleteConfirmId, onConfirmDelete, onCancelDelete }) => {
+const PackingTable = ({ 
+  packings, 
+  onViewById, 
+  onEdit, 
+  onDelete, 
+  isDeleting, 
+  deleteConfirmId, 
+  onConfirmDelete, 
+  onCancelDelete,
+  selectedPackings = [],
+  onSelectPacking,
+  onSelectAllPackings,
+  onProcessSelected,
+  isProcessing = false,
+  hasSelectedPackings = false
+}) => {
   const getStatusBadge = (statusName) => {
     const statusMap = {
       'Pending Packing': 'bg-yellow-100 text-yellow-800',
@@ -13,11 +28,45 @@ const PackingTable = ({ packings, onViewById, onEdit, onDelete, isDeleting, dele
     return statusMap[statusName] || 'bg-gray-100 text-gray-800';
   };
 
+  const isAllSelected = packings.length > 0 && selectedPackings.length === packings.length;
+  const isIndeterminate = selectedPackings.length > 0 && selectedPackings.length < packings.length;
+
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200">
+    <div className="space-y-4">
+      {/* Process Button */}
+      {hasSelectedPackings && (
+        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedPackings.length} packing dipilih
+            </span>
+          </div>
+          <button
+            onClick={onProcessSelected}
+            disabled={isProcessing}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <PlayIcon className="h-4 w-4" />
+            <span>{isProcessing ? 'Memproses...' : 'Proses Packing'}</span>
+          </button>
+        </div>
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-200">
         <thead>
           <tr className="bg-gray-50">
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                ref={(input) => {
+                  if (input) input.indeterminate = isIndeterminate;
+                }}
+                onChange={onSelectAllPackings}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+            </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing Number</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PO Number</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Packing</th>
@@ -28,7 +77,15 @@ const PackingTable = ({ packings, onViewById, onEdit, onDelete, isDeleting, dele
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {Array.isArray(packings) && packings.length > 0 ? packings.map((packing) => (
-            <tr key={packing.id}>
+            <tr key={packing.id} className={selectedPackings.includes(packing.id) ? 'bg-blue-50' : ''}>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={selectedPackings.includes(packing.id)}
+                  onChange={() => onSelectPacking(packing.id)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {packing.packing_number || 'N/A'}
               </td>
@@ -98,13 +155,14 @@ const PackingTable = ({ packings, onViewById, onEdit, onDelete, isDeleting, dele
             </tr>
           )) : (
             <tr>
-              <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+              <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                 {Array.isArray(packings) ? 'Tidak ada data packing' : 'Loading...'}
               </td>
             </tr>
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 };
