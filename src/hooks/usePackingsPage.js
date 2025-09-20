@@ -176,7 +176,11 @@ const usePackingsPage = () => {
 
   const openViewModal = async (id) => {
     try {
-      const packing = await getPackingById(id);
+      const response = await getPackingById(id);
+      
+      // Handle API response structure: { success: true, data: {...} }
+      const packing = response?.success ? response.data : response;
+      
       setViewingPacking(packing);
       setIsViewModalOpen(true);
     } catch (err) {

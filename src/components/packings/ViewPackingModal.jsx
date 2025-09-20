@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import ActivityTimeline from '../common/ActivityTimeline';
+import PackingItemsTable from './PackingItemsTable';
+import PackingItemDetailModal from './PackingItemDetailModal';
 import {
   TabContainer,
   Tab,
@@ -12,15 +14,40 @@ import {
 
 const ViewPackingModal = ({ packing, onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [expandedItems, setExpandedItems] = useState({});
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     poInfo: false,
     statusInfo: false,
     metaInfo: false
   });
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isItemDetailOpen, setIsItemDetailOpen] = useState(false);
 
-  if (!packing) return null;
+  if (!packing) {
+    return null;
+  }
+
+  // Check if packing has the expected structure
+  if (!packing.packing_number && !packing.id) {
+    console.log('ViewPackingModal - Invalid packing data structure:', packing);
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Data Tidak Valid</h2>
+            <p className="text-gray-600 mb-4">Data packing yang diterima tidak valid atau tidak lengkap.</p>
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (date) => {
     if (!date) return 'N/A';
@@ -43,18 +70,21 @@ const ViewPackingModal = ({ packing, onClose }) => {
     });
   };
 
-  const toggleItemExpansion = (itemId) => {
-    setExpandedItems(prev => ({
-      ...prev,
-      [itemId]: !prev[itemId]
-    }));
-  };
-
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setIsItemDetailOpen(true);
+  };
+
+  const closeItemDetail = () => {
+    setIsItemDetailOpen(false);
+    setSelectedItem(null);
   };
 
 
@@ -85,7 +115,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Packing Details</h2>
-              <p className="text-sm text-gray-600">{packing.packing_number}</p>
+              <p className="text-sm text-gray-600">{packing.packing_number || 'N/A'}</p>
             </div>
           </div>
           <button 
@@ -128,16 +158,38 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                    <InfoCard label="Packing Number" value={packing.packing_number} variant="primary" />
-                    <InfoCard label="Tanggal Packing" value={formatDate(packing.tanggal_packing)} variant="primary" />
                     <InfoCard 
-                      label="Status" 
-                      value={<StatusBadge status={packing.status?.status_name} variant={getStatusVariant(packing.status?.status_code)} />} 
+                      label="Packing Number" 
+                      value={packing.packing_number || 'N/A'} 
                       variant="primary" 
                     />
-                    <InfoCard label="Created At" value={formatDate(packing.createdAt)} />
-                    <InfoCard label="Updated At" value={formatDate(packing.updatedAt)} />
-                    <InfoCard label="Total Items" value={packing.packingItems?.length || 0} variant="success" />
+                    <InfoCard 
+                      label="Tanggal Packing" 
+                      value={formatDate(packing.tanggal_packing)} 
+                      variant="primary" 
+                    />
+                    <InfoCard 
+                      label="Status" 
+                      value={
+                        packing.status?.status_name ? 
+                        <StatusBadge status={packing.status.status_name} variant={getStatusVariant(packing.status?.status_code)} /> :
+                        <span className="text-gray-500">No Status</span>
+                      } 
+                      variant="primary" 
+                    />
+                    <InfoCard 
+                      label="Created At" 
+                      value={formatDate(packing.createdAt)} 
+                    />
+                    <InfoCard 
+                      label="Updated At" 
+                      value={formatDate(packing.updatedAt)} 
+                    />
+                    <InfoCard 
+                      label="Total Items" 
+                      value={packing.packingItems?.length || 0} 
+                      variant="success" 
+                    />
                   </div>
                 </AccordionItem>
 
@@ -151,7 +203,9 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                       <InfoCard label="PO Number" value={packing.purchaseOrder.po_number} variant="success" />
-                      <InfoCard label="Order Date" value={formatDateOnly(packing.purchaseOrder.tanggal_order)} variant="success" />
+                      <InfoCard label="Tanggal Masuk PO" value={formatDateOnly(packing.purchaseOrder.tanggal_masuk_po)} variant="success" />
+                      <InfoCard label="Tanggal Batas Kirim" value={formatDateOnly(packing.purchaseOrder.tanggal_batas_kirim)} variant="warning" />
+                      <InfoCard label="Termin Bayar" value={packing.purchaseOrder.termin_bayar} variant="info" />
                       <InfoCard label="PO Type" value={packing.purchaseOrder.po_type} variant="success" />
                       <InfoCard label="Total Items" value={packing.purchaseOrder.total_items} />
                       <InfoCard label="Customer ID" value={packing.purchaseOrder.customerId} copyable />
@@ -186,6 +240,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                     <InfoCard label="Packing ID" value={packing.id} copyable />
                     <InfoCard label="Purchase Order ID" value={packing.purchaseOrderId} copyable />
+                    <InfoCard label="Created By" value={packing.createdBy} copyable />
                     <InfoCard label="Updated By" value={packing.updatedBy} copyable />
                   </div>
                 </AccordionItem>
@@ -201,25 +256,10 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   </div>
                 </div>
                 
-                {packing.packingItems?.map((item, index) => (
-                  <AccordionItem
-                    key={item.id}
-                    title={item.nama_barang}
-                    isExpanded={expandedItems[item.id]}
-                    onToggle={() => toggleItemExpansion(item.id)}
-                    icon="📦"
-                    badge={<StatusBadge status={item.status?.status_name} variant={getStatusVariant(item.status?.status_code)} />}
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                      <InfoCard label="Total Qty" value={item.total_qty} variant="primary" />
-                      <InfoCard label="Jumlah Carton" value={item.jumlah_carton} variant="success" />
-                      <InfoCard label="Isi per Carton" value={item.isi_per_carton} />
-                      <InfoCard label="No Box" value={item.no_box || 'Not assigned'} />
-                      <InfoCard label="Inventory ID" value={item.inventoryId} copyable />
-                      <InfoCard label="Item Created" value={formatDate(item.createdAt)} />
-                    </div>
-                  </AccordionItem>
-                ))}
+                <PackingItemsTable 
+                  packingItems={packing.packingItems} 
+                  onItemClick={handleItemClick}
+                />
               </div>
             </TabPanel>
 
@@ -246,6 +286,14 @@ const ViewPackingModal = ({ packing, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Packing Item Detail Modal */}
+      {isItemDetailOpen && (
+        <PackingItemDetailModal 
+          item={selectedItem} 
+          onClose={closeItemDetail} 
+        />
+      )}
     </div>
   );
 };
