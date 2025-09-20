@@ -59,12 +59,16 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
 
     setProcessing(true);
     try {
-      await purchaseOrderService.processPurchaseOrder(order.id);
-      alert('Purchase order processed successfully.');
-      if (onProcessed) {
-        onProcessed();
+      const result = await purchaseOrderService.processPurchaseOrder(order.id, 'PROCESSING PURCHASE ORDER');
+      if (result.success) {
+        alert('Purchase order processed successfully.');
+        if (onProcessed) {
+          onProcessed();
+        }
+        onClose();
+      } else {
+        throw new Error('Failed to process purchase order');
       }
-      onClose();
     } catch (error) {
       console.error('Failed to process purchase order:', error);
       alert(`Failed to process purchase order: ${error.message}`);

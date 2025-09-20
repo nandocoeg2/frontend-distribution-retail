@@ -187,14 +187,17 @@ const purchaseOrderService = {
     return response.json();
   },
 
-  // Process purchase order (ubah status)
-  processPurchaseOrder: async (id, statusCode) => {
+  // Process purchase order (single atau bulk)
+  processPurchaseOrder: async (ids, statusCode = 'PROCESSING PURCHASE ORDER') => {
     const accessToken = localStorage.getItem('token');
     if (!accessToken) {
       throw new Error('No access token found');
     }
 
-    const response = await fetch(`${API_URL}/process/${id}`, {
+    // Pastikan ids adalah array
+    const idsArray = Array.isArray(ids) ? ids : [ids];
+
+    const response = await fetch(`${API_URL}/process`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -202,6 +205,7 @@ const purchaseOrderService = {
         'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
+        ids: idsArray,
         status_code: statusCode
       }),
     });
@@ -212,6 +216,11 @@ const purchaseOrderService = {
     }
 
     return response.json();
+  },
+
+  // Bulk process purchase orders
+  bulkProcessPurchaseOrders: async (ids, statusCode = 'PROCESSING PURCHASE ORDER') => {
+    return this.processPurchaseOrder(ids, statusCode);
   },
 
   // Bulk create purchase order

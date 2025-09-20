@@ -3,7 +3,7 @@ import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 import { useConfirmationDialog } from '../ui/ConfirmationDialog';
 
-const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, onView, onEdit, onDelete, loading, isHistory = false }) => {
+const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, onView, onEdit, onDelete, loading, isHistory = false, selectedOrders = [], onSelectionChange, onSelectAll }) => {
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const [deletingOrderId, setDeletingOrderId] = React.useState(null);
 
@@ -63,6 +63,15 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
         <thead>
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <input
+                type="checkbox"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={orders.length > 0 && selectedOrders.length === orders.length}
+                onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
+                disabled={loading || isHistory}
+              />
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               PO Number
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -101,6 +110,15 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
             ) : (
               orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      checked={selectedOrders.includes(order.id)}
+                      onChange={(e) => onSelectionChange && onSelectionChange(order.id, e.target.checked)}
+                      disabled={loading || isHistory}
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {order.po_number}

@@ -222,17 +222,6 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
         <TabContent activeTab={activeTab}>
           <TabPanel tabId="manual">
             <div className="manual-input-tab">
-              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-800">Manual Input Mode</h4>
-                    <p className="text-sm text-blue-700 mt-1">Masukkan data Purchase Order secara manual dengan form yang tersedia.</p>
-                  </div>
-                </div>
-              </div>
               
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
@@ -311,7 +300,7 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
                       type="file" 
                       multiple 
                       onChange={handleFileChange} 
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+                      accept=".pdf,.edi"
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
                     />
                   </div>
@@ -346,7 +335,7 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
                     </svg>
                     <div>
                       <h4 className="text-sm font-medium text-yellow-800">Format File yang Didukung</h4>
-                      <p className="text-sm text-yellow-700 mt-1">PDF, DOC, DOCX, XLS, XLSX, CSV</p>
+                      <p className="text-sm text-yellow-700 mt-1">PDF, EDI</p>
                     </div>
                   </div>
                 </div>
