@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import customerService from '../../services/customerService';
 import useStatuses from '../../hooks/useStatuses';
+import Autocomplete from '../common/Autocomplete';
 
 const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, isEditMode = false, customerName = '' }) => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const dropdownRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   
   // Use purchase order statuses hook
@@ -46,89 +44,10 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
     fetchCustomers();
   }, []);
 
-  // Search customers when search term changes
+  // Set initial filtered customers when customers are loaded
   useEffect(() => {
-    if (searchTerm) {
-      // Clear previous timeout
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-
-      // Set new timeout to debounce API calls
-      searchTimeoutRef.current = setTimeout(async () => {
-        try {
-          setIsLoading(true);
-          const response = await customerService.searchCustomers(searchTerm, 1, 20);
-          const customersArray = Array.isArray(response.data) ? response.data : [];
-          setFilteredCustomers(customersArray);
-        } catch (error) {
-          console.error('Failed to search customers:', error);
-          setFilteredCustomers([]);
-        } finally {
-          setIsLoading(false);
-        }
-      }, 300); // 300ms debounce
-    } else {
-      // If search term is empty, show all customers
-      setFilteredCustomers(customers);
-    }
-
-    // Cleanup timeout on unmount or when searchTerm changes
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchTerm, customers]);
-
-  // Handle customer selection
-  const handleCustomerSelect = (customer) => {
-    handleInputChange({
-      target: {
-        name: 'customerId',
-        value: customer.id
-      }
-    });
-    setSearchTerm(customer.name);
-    setIsDropdownOpen(false);
-  };
-
-  // Handle input change for customer search
-  const handleCustomerSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setIsDropdownOpen(true);
-    
-    // Clear the customer ID if the search term is empty
-    if (!e.target.value) {
-      handleInputChange({
-        target: {
-          name: 'customerId',
-          value: ''
-        }
-      });
-    }
-  };
-
-  // Set initial search term when in edit mode and customer ID exists
-  useEffect(() => {
-    if (isEditMode && formData.customerId && customerName) {
-      setSearchTerm(customerName);
-    }
-  }, [isEditMode, formData.customerId, customerName]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+    setFilteredCustomers(customers);
+  }, [customers]);
 
   return (
     <div className="space-y-4">
@@ -156,50 +75,34 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
           </div>
         </div>
 
-        <div ref={dropdownRef}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Customer *
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              name="customerSearch"
-              value={searchTerm}
-              onChange={handleCustomerSearchChange}
-              required
-              placeholder="Search customer by name or ID"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onFocus={() => setIsDropdownOpen(true)}
-            />
-            <input
-              type="hidden"
-              name="customerId"
-              value={formData.customerId || ''}
-              onChange={handleInputChange}
-            />
-            {isDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto">
-                {isLoading ? (
-                  <div className="px-4 py-2 text-sm text-gray-500">Searching...</div>
-                ) : filteredCustomers.length > 0 ? (
-                  <ul className="py-1">
-                    {filteredCustomers.map((customer) => (
-                      <li
-                        key={customer.id}
-                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => handleCustomerSelect(customer)}
-                      >
-                        <div className="font-medium">{customer.name}</div>
-                        <div className="text-sm text-gray-500">{customer.id}</div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-4 py-2 text-sm text-gray-500">No customers found</div>
-                )}
-              </div>
-            )}
-          </div>
+        <div>
+          <Autocomplete
+            label="Customer *"
+            options={filteredCustomers}
+            value={formData.customerId}
+            onChange={handleInputChange}
+            placeholder="Search customer by name or ID"
+            displayKey="name"
+            valueKey="id"
+            name="customerId"
+            required
+            disabled={isLoading}
+            loading={isLoading}
+            onSearch={async (query) => {
+              try {
+                setIsLoading(true);
+                const response = await customerService.searchCustomers(query, 1, 20);
+                const customersArray = Array.isArray(response.data) ? response.data : [];
+                setFilteredCustomers(customersArray);
+              } catch (error) {
+                console.error('Failed to search customers:', error);
+                setFilteredCustomers([]);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            showId={true}
+          />
           <p className="mt-1 text-xs text-gray-500">Select a customer for this purchase order</p>
         </div>
       </div>
@@ -222,14 +125,27 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Order Date *
+            Tanggal Masuk PO *
           </label>
           <input
             type="date"
-            name="tanggal_order"
-            value={formData.tanggal_order || ''}
+            name="tanggal_masuk_po"
+            value={formData.tanggal_masuk_po || ''}
             onChange={handleInputChange}
             required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Tanggal Batas Kirim
+          </label>
+          <input
+            type="date"
+            name="tanggal_batas_kirim"
+            value={formData.tanggal_batas_kirim || ''}
+            onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -240,38 +156,57 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
           <label className="block text-sm font-medium text-gray-700 mb-1">
             PO Type *
           </label>
-          <input
-            type="text"
+          <select
             name="po_type"
             value={formData.po_type || ''}
             onChange={handleInputChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="">Select PO Type</option>
+            <option value="SINGLE">SINGLE</option>
+            <option value="BULK">BULK</option>
+          </select>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Status *
+            Status Code *
           </label>
           <select
-            name="statusId"
-            value={formData.statusId || ''}
+            name="status_code"
+            value={formData.status_code}
             onChange={handleInputChange}
             required
             disabled={loading.purchaseOrder}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            <option value="">{loading.purchaseOrder ? 'Loading statuses...' : 'Select Status'}</option>
+            <option value="">Select Status</option>
             {Array.isArray(purchaseOrderStatuses) && purchaseOrderStatuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.status_name} - {status.status_description}
+              <option key={status.id} value={status.status_code}>
+                {status.status_code} - {status.status_description || status.status_name}
               </option>
             ))}
           </select>
           {statusError && (
             <p className="mt-1 text-xs text-red-500">Failed to load statuses</p>
           )}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Termin Bayar
+          </label>
+          <input
+            type="text"
+            name="termin_bayar"
+            value={formData.termin_bayar || ''}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., 30 days, COD, etc."
+          />
         </div>
       </div>
     </div>

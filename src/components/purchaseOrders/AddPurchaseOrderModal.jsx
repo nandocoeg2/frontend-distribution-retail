@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import fileService from '../../services/fileService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
+import PurchaseOrderDetailsForm from './PurchaseOrderDetailsForm.jsx';
 import { toast } from 'react-toastify';
 import useStatuses from '../../hooks/useStatuses';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
@@ -14,14 +15,18 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
     customerId: '',
     po_number: '',
     total_items: 1,
-    tanggal_order: new Date().toISOString().split('T')[0],
+    tanggal_masuk_po: new Date().toISOString().split('T')[0],
+    tanggal_batas_kirim: '',
+    termin_bayar: '',
     po_type: 'SINGLE',
-    statusId: '',
+    status_code: 'PENDING PURCHASE ORDER',
     suratJalan: '',
     invoicePengiriman: '',
     suratPO: '',
     suratPenagihan: ''
   });
+
+  const [purchaseOrderDetails, setPurchaseOrderDetails] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -113,13 +118,36 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.customerId || !formData.po_number || !formData.statusId) {
+    if (!formData.customerId || !formData.po_number) {
       setError('Please fill in all required fields.');
       return;
     }
+    
+    // Validate purchase order details if PO type is SINGLE
+    if (formData.po_type === 'SINGLE' && purchaseOrderDetails.length === 0) {
+      setError('Please add at least one purchase order detail for SINGLE type.');
+      return;
+    }
+    
+    // Validate each detail
+    for (let i = 0; i < purchaseOrderDetails.length; i++) {
+      const detail = purchaseOrderDetails[i];
+      if (!detail.plu || !detail.nama_barang || !detail.quantity || !detail.isi || !detail.harga || !detail.harga_netto) {
+        setError(`Please fill in all required fields for detail #${i + 1}.`);
+        return;
+      }
+    }
+    
     setLoading(true);
     setError(null);
-    const newOrder = await createPurchaseOrder(formData, selectedFile);
+    
+    // Prepare data for API
+    const submitData = {
+      ...formData,
+      purchaseOrderDetails: formData.po_type === 'SINGLE' ? JSON.stringify(purchaseOrderDetails) : undefined
+    };
+    
+    const newOrder = await createPurchaseOrder(submitData, selectedFile);
     setLoading(false);
     if (newOrder) {
       if (onFinished) onFinished();
@@ -131,23 +159,24 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
   const resetForm = () => {
     console.log('Resetting form and clearing all states...');
     
-    const pendingStatus = Array.isArray(purchaseOrderStatuses) 
-      ? purchaseOrderStatuses.find(s => s.status_code === 'PENDING PURCHASE ORDER')
-      : null;
-    
     // Reset form data to initial values
     setFormData({
       customerId: '', 
       po_number: '', 
       total_items: 1,
-      tanggal_order: new Date().toISOString().split('T')[0],
+      tanggal_masuk_po: new Date().toISOString().split('T')[0],
+      tanggal_batas_kirim: '',
+      termin_bayar: '',
       po_type: 'SINGLE', 
-      statusId: pendingStatus?.id || '',
+      status_code: 'PENDING PURCHASE ORDER',
       suratJalan: '', 
       invoicePengiriman: '', 
       suratPO: '', 
       suratPenagihan: ''
     });
+    
+    // Clear purchase order details
+    setPurchaseOrderDetails([]);
     
     // Clear all component states
     setError(null);
@@ -259,9 +288,27 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
                   handleInputChange={handleInputChange} 
                   onGeneratePONumber={generatePONumber} 
                 />
+                
+                {/* Purchase Order Details - Only show for SINGLE type */}
+                {formData.po_type === 'SINGLE' && (
+                  <>
+                    <hr className="my-6" />
+                    <PurchaseOrderDetailsForm
+                      details={purchaseOrderDetails}
+                      onDetailsChange={setPurchaseOrderDetails}
+                      onRemoveDetail={(index) => {
+                        const updatedDetails = purchaseOrderDetails.filter((_, i) => i !== index);
+                        setPurchaseOrderDetails(updatedDetails);
+                      }}
+                      onAddDetail={(newDetail) => {
+                        setPurchaseOrderDetails([...purchaseOrderDetails, newDetail]);
+                      }}
+                    />
+                  </>
+                )}
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
-                  <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={loading || !formData.customerId || !formData.po_number}>{loading ? 'Creating...' : 'Add Purchase Order'}</button>
+                  <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={loading || !formData.customerId || !formData.po_number || (formData.po_type === 'SINGLE' && purchaseOrderDetails.length === 0)}>{loading ? 'Creating...' : 'Add Purchase Order'}</button>
                 </div>
               </form>
             </div>
