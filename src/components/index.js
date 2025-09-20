@@ -3,6 +3,7 @@ export { default as ProtectedRoute } from './ProtectedRoute';
 
 // Common/Reusable components
 export * from './common/ModalComponents';
+export { default as ActivityTimeline } from './common/ActivityTimeline';
 
 // UI Components Library
 export * from './ui';
