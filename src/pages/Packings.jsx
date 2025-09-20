@@ -52,12 +52,12 @@ const Packings = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Packing Management</h1>
-          <button
+          {/* <button
             onClick={() => setIsCreateModalOpen(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Tambah Packing
-          </button>
+          </button> */}
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
