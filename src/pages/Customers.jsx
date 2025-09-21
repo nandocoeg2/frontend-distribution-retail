@@ -42,9 +42,6 @@ const Customers = () => {
     openModal('view');
   };
 
-  const handleDeleteCustomer = (id) => {
-    deleteCustomer(id);
-  };
 
   const handleCustomerAdded = () => {
     closeModal('add');
@@ -87,7 +84,7 @@ const Customers = () => {
               <CustomerTable
                 customers={customers}
                 onEdit={handleEditCustomer}
-                onDelete={handleDeleteCustomer}
+                onDelete={deleteCustomer}
                 onView={handleViewCustomer}
               />
               <Pagination
@@ -100,20 +97,20 @@ const Customers = () => {
         </div>
       </div>
 
-      <AddCustomerModal
-        show={modalState.add}
-        onClose={() => closeModal('add')}
-        onCustomerAdded={handleCustomerAdded}
-        handleAuthError={handleAuthError}
-      />
+      {modalState.add && (
+        <AddCustomerModal
+          onClose={() => closeModal('add')}
+          onCustomerAdded={handleCustomerAdded}
+        />
+      )}
 
-      <EditCustomerModal
-        show={modalState.edit}
-        onClose={() => closeModal('edit')}
-        customer={selectedCustomer}
-        onCustomerUpdated={handleCustomerUpdated}
-        handleAuthError={handleAuthError}
-      />
+      {modalState.edit && selectedCustomer && (
+        <EditCustomerModal
+          onClose={() => closeModal('edit')}
+          customer={selectedCustomer}
+          onCustomerUpdated={handleCustomerUpdated}
+        />
+      )}
 
       <ViewCustomerModal
         show={modalState.view}

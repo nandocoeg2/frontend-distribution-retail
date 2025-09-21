@@ -1,53 +1,116 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { groupCustomerService } from '@/services/groupCustomerService';
 import regionService from '@/services/regionService';
 import toastService from '@/services/toastService';
 import Autocomplete from '@/components/common/Autocomplete';
 
-const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false, isSubmitting = false }) => {
+const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
+  const [formData, setFormData] = useState({
+    namaCustomer: '',
+    kodeCustomer: '',
+    groupCustomerId: '',
+    regionId: '',
+    alamatPengiriman: '',
+    phoneNumber: '',
+    email: '',
+    NPWP: '',
+    alamatNPWP: '',
+    description: '',
+  });
   const [groupCustomers, setGroupCustomers] = useState([]);
   const [regions, setRegions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [dropdownLoading, setDropdownLoading] = useState(true);
+
+  const memoizedInitialData = useMemo(() => initialData, [
+    initialData?.namaCustomer,
+    initialData?.kodeCustomer,
+    initialData?.groupCustomerId,
+    initialData?.regionId,
+    initialData?.alamatPengiriman,
+    initialData?.phoneNumber,
+    initialData?.email,
+    initialData?.NPWP,
+    initialData?.alamatNPWP,
+    initialData?.description
+  ]);
+
+  useEffect(() => {
+    if (memoizedInitialData) {
+      setFormData({
+        namaCustomer: memoizedInitialData.namaCustomer || '',
+        kodeCustomer: memoizedInitialData.kodeCustomer || '',
+        groupCustomerId: memoizedInitialData.groupCustomerId || '',
+        regionId: memoizedInitialData.regionId || '',
+        alamatPengiriman: memoizedInitialData.alamatPengiriman || '',
+        phoneNumber: memoizedInitialData.phoneNumber || '',
+        email: memoizedInitialData.email || '',
+        NPWP: memoizedInitialData.NPWP || '',
+        alamatNPWP: memoizedInitialData.alamatNPWP || '',
+        description: memoizedInitialData.description || '',
+      });
+    }
+  }, [memoizedInitialData]);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        setLoading(true);
+        setDropdownLoading(true);
         const [groupCustomersResponse, regionsResponse] = await Promise.all([
           groupCustomerService.getAllGroupCustomers(1, 100),
           regionService.getAllRegions(1, 100)
         ]);
         
         if (groupCustomersResponse.success) {
-          // API mengembalikan data dalam format: {success: true, data: {data: [...], pagination: {...}}}
           const groupCustomersData = groupCustomersResponse.data.data || [];
           setGroupCustomers(groupCustomersData);
         } else {
           throw new Error(groupCustomersResponse.error?.message || 'Failed to fetch group customers');
         }
         
-        // RegionService returns data directly in the expected format
         const regionsData = regionsResponse.data || [];
         setRegions(regionsData);
       } catch (error) {
         console.error('Error fetching dropdown data:', error);
         toastService.error('Failed to load required data for the form.');
       } finally {
-        setLoading(false);
+        setDropdownLoading(false);
       }
     };
 
     fetchDropdownData();
   }, []);
 
-  const handleAutocompleteChange = (name, value) => {
-    handleInputChange({ target: { name, value } });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const isLoading = loading || isSubmitting;
+  const handleAutocompleteChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const dataToSubmit = {
+      ...formData,
+      // Filter out empty values
+      ...Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value !== '')
+      )
+    };
+    onSubmit(dataToSubmit);
+  };
+
+  const isLoading = dropdownLoading || loading;
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+      
       <div className='grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4'>
         {/* Customer Name */}
         <div className="md:col-span-2">
@@ -58,7 +121,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             type='text'
             name='namaCustomer'
             value={formData.namaCustomer}
-            onChange={handleInputChange}
+            onChange={handleChange}
             required
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
@@ -74,7 +137,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             type='text'
             name='kodeCustomer'
             value={formData.kodeCustomer}
-            onChange={handleInputChange}
+            onChange={handleChange}
             required
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
@@ -84,14 +147,13 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
         {/* Phone Number */}
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Phone Number *
+            Phone Number
           </label>
           <input
             type='tel'
             name='phoneNumber'
             value={formData.phoneNumber}
-            onChange={handleInputChange}
-            required
+            onChange={handleChange}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
@@ -132,13 +194,12 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
         {/* Shipping Address */}
         <div className="md:col-span-2">
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Shipping Address *
+            Shipping Address
           </label>
           <textarea
             name='alamatPengiriman'
             value={formData.alamatPengiriman}
-            onChange={handleInputChange}
-            required
+            onChange={handleChange}
             disabled={isLoading}
             rows='2'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
@@ -154,7 +215,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             type='email'
             name='email'
             value={formData.email}
-            onChange={handleInputChange}
+            onChange={handleChange}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
@@ -169,7 +230,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             type='text'
             name='NPWP'
             value={formData.NPWP}
-            onChange={handleInputChange}
+            onChange={handleChange}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
@@ -183,7 +244,7 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
           <textarea
             name='alamatNPWP'
             value={formData.alamatNPWP}
-            onChange={handleInputChange}
+            onChange={handleChange}
             disabled={isLoading}
             rows='1'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
@@ -198,29 +259,29 @@ const CustomerForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
           <textarea
             name='description'
             value={formData.description}
-            onChange={handleInputChange}
+            onChange={handleChange}
             disabled={isLoading}
             rows='2'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
         </div>
       </div>
-
-      <div className='mt-6 flex justify-end space-x-3'>
+      
+      <div className="flex justify-end space-x-2">
         <button
-          type='button'
-          onClick={closeModal}
-          disabled={isSubmitting}
-          className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50'
+          type="button"
+          onClick={onClose}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+          disabled={loading}
         >
-          Cancel
+          Close
         </button>
         <button
-          type='submit'
-          className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300'
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
-          {isSubmitting ? 'Saving...' : (isEdit ? 'Save Changes' : 'Add Customer')}
+          {isLoading ? 'Loading...' : (memoizedInitialData?.id ? 'Update Customer' : 'Create Customer')}
         </button>
       </div>
     </form>

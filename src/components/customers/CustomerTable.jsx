@@ -5,8 +5,30 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
+import { useConfirmationDialog } from '../ui';
 
 const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+  const [deleteId, setDeleteId] = React.useState(null);
+  const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
+
+  const handleDelete = (customerId) => {
+    setDeleteId(customerId);
+    showDialog({
+      title: "Hapus Customer",
+      message: "Apakah Anda yakin ingin menghapus customer ini?",
+      type: "danger",
+      confirmText: "Hapus",
+      cancelText: "Batal"
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteId) {
+      onDelete(deleteId);
+      setDeleteId(null);
+    }
+    hideDialog();
+  };
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -87,7 +109,7 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
                       <PencilIcon className='h-4 w-4' />
                     </button>
                     <button
-                      onClick={() => onDelete(customer.id)}
+                      onClick={() => handleDelete(customer.id)}
                       className='text-red-600 hover:text-red-900 p-1'
                       title='Delete'
                     >
@@ -101,6 +123,10 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
         </tbody>
       </table>
       <Pagination pagination={pagination} onPageChange={onPageChange} onLimitChange={onLimitChange} />
+      
+      <ConfirmationDialog 
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

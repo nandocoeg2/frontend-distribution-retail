@@ -1,86 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import CustomerForm from '@/components/customers/CustomerForm';
-import customerService from '@/services/customerService';
-import toastService from '@/services/toastService';
-import FormModal from '@/components/common/FormModal';
+import useCustomerOperations from '../../hooks/useCustomerOperations';
 
-const EditCustomerModal = ({ show, onClose, customer, onCustomerUpdated, handleAuthError }) => {
-  const [formData, setFormData] = useState({
-    namaCustomer: '',
-    kodeCustomer: '',
-    groupCustomerId: '',
-    regionId: '',
-    alamatPengiriman: '',
-    phoneNumber: '',
-    email: '',
-    NPWP: '',
-    alamatNPWP: '',
-    description: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const EditCustomerModal = ({ onClose, customer, onCustomerUpdated }) => {
+  const { updateCustomer, loading, error } = useCustomerOperations();
 
-  useEffect(() => {
-    if (customer) {
-      setFormData({
-        namaCustomer: customer.namaCustomer || '',
-        kodeCustomer: customer.kodeCustomer || '',
-        groupCustomerId: customer.groupCustomerId || '',
-        regionId: customer.regionId || '',
-        alamatPengiriman: customer.alamatPengiriman || '',
-        phoneNumber: customer.phoneNumber || '',
-        email: customer.email || '',
-        NPWP: customer.NPWP || '',
-        alamatNPWP: customer.alamatNPWP || '',
-        description: customer.description || '',
-      });
-    }
-  }, [customer]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const customerData = Object.fromEntries(
-      Object.entries(formData).filter(([_, value]) => value !== '')
-    );
-
+  const handleSubmit = async (formData) => {
     try {
-      await customerService.updateCustomer(customer.id, customerData);
-      toastService.success('Customer updated successfully');
-      onCustomerUpdated();
-    } catch (err) {
-      if (handleAuthError && handleAuthError(err)) {
-        return;
+      await updateCustomer(customer.id, formData);
+      if (onCustomerUpdated) {
+        onCustomerUpdated();
       }
-      const errorMessage = err.response?.data?.message || 'Failed to update customer';
-      toastService.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      onClose();
+    } catch (error) {
+      console.error('Update customer error:', error);
     }
   };
+
+  if (!customer) {
+    return null;
+  }
 
   return (
-    <FormModal
-      show={show}
-      onClose={onClose}
-      title="Edit Customer"
-      subtitle="Edit the customer details"
-      handleSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      isEdit
-    >
-      <CustomerForm
-        formData={formData}
-        handleInputChange={handleInputChange}
-        isSubmitting={isSubmitting}
-        isEdit
-      />
-    </FormModal>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-9999">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Edit Customer</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <CustomerForm 
+          onSubmit={handleSubmit} 
+          onClose={onClose} 
+          loading={loading}
+          error={error}
+          initialData={customer}
+        />
+      </div>
+    </div>
   );
 };
 

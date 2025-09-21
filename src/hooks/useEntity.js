@@ -152,7 +152,9 @@ const useEntity = ({
   const deleteEntityFunction = async (id) => {
     if (!deleteService) return;
     try {
+      console.log(`Deleting ${entityName} with ID:`, id);
       const result = await deleteService(id);
+      console.log('Delete result:', result);
 
       if (result.success !== false) {
         toastService.success(`${entityName} berhasil dihapus`);
@@ -160,6 +162,7 @@ const useEntity = ({
         const newTotal = pagination.total - 1;
         const newTotalPages = Math.ceil(newTotal / pagination.limit);
 
+        console.log('Refreshing data after delete...');
         if (entities.length === 1 && pagination.page > 1) {
           // If it's the last item on a page that is not the first page, go to the previous page
           fetchEntities(pagination.page - 1, pagination.limit);
@@ -174,6 +177,7 @@ const useEntity = ({
         throw new Error(`Failed to delete ${entityName}`);
       }
     } catch (err) {
+      console.error(`Delete ${entityName} error:`, err);
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;

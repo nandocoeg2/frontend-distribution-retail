@@ -1,69 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
 import CustomerForm from '@/components/customers/CustomerForm';
-import customerService from '@/services/customerService';
-import toastService from '@/services/toastService';
-import FormModal from '@/components/common/FormModal';
+import useCustomerOperations from '../../hooks/useCustomerOperations';
 
-const AddCustomerModal = ({ show, onClose, onCustomerAdded, handleAuthError }) => {
-  const [formData, setFormData] = useState({
-    namaCustomer: '',
-    kodeCustomer: '',
-    groupCustomerId: '',
-    regionId: '',
-    alamatPengiriman: '',
-    phoneNumber: '',
-    email: '',
-    NPWP: '',
-    alamatNPWP: '',
-    description: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const AddCustomerModal = ({ onClose, onCustomerAdded }) => {
+  const { createCustomer, loading, error } = useCustomerOperations();
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const customerData = Object.fromEntries(
-      Object.entries(formData).filter(([_, value]) => value !== '')
-    );
-
+  const handleSubmit = async (formData) => {
     try {
-      await customerService.createCustomer(customerData);
-      toastService.success('Customer created successfully');
-      onCustomerAdded();
-    } catch (err) {
-      if (handleAuthError && handleAuthError(err)) {
-        return;
+      await createCustomer(formData);
+      if (onCustomerAdded) {
+        onCustomerAdded();
       }
-      const errorMessage = err.response?.data?.message || 'Failed to create customer';
-      toastService.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      onClose();
+    } catch (error) {
+      console.error('Create customer error:', error);
     }
   };
 
   return (
-    <FormModal
-      show={show}
-      onClose={onClose}
-      title="Add New Customer"
-      subtitle="Fill in the details to create a new customer"
-      handleSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      entityName="Customer"
-    >
-      <CustomerForm
-        formData={formData}
-        handleInputChange={handleInputChange}
-        isSubmitting={isSubmitting}
-        isEdit={false}
-      />
-    </FormModal>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-9999">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Add New Customer</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <CustomerForm 
+          onSubmit={handleSubmit} 
+          onClose={onClose} 
+          loading={loading}
+          error={error}
+        />
+      </div>
+    </div>
   );
 };
 
