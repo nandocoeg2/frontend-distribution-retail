@@ -5,6 +5,9 @@ import Autocomplete from '../common/Autocomplete';
 const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, onAddDetail }) => {
   const [inventories, setInventories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Ensure details is always an array
+  const safeDetails = details || [];
 
   // Fetch initial inventories for autocomplete
   useEffect(() => {
@@ -27,7 +30,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
   }, []);
 
   const handleDetailChange = (index, field, value) => {
-    const updatedDetails = [...details];
+    const updatedDetails = [...safeDetails];
     updatedDetails[index] = {
       ...updatedDetails[index],
       [field]: value
@@ -76,7 +79,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
   const handleInventorySelect = (index, inventoryId) => {
     const inventory = inventories.find(inv => inv.id === inventoryId);
     if (inventory) {
-      const updatedDetails = [...details];
+      const updatedDetails = [...safeDetails];
       updatedDetails[index] = {
         ...updatedDetails[index],
         inventoryId: inventoryId,
@@ -141,7 +144,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
         </button>
       </div>
 
-      {details.length === 0 ? (
+      {safeDetails.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -151,7 +154,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
         </div>
       ) : (
         <div className="space-y-4">
-          {details.map((detail, index) => (
+          {safeDetails.map((detail, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="text-sm font-medium text-gray-900">Detail #{index + 1}</h5>

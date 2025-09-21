@@ -147,7 +147,7 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
       purchaseOrderDetails: formData.po_type === 'SINGLE' ? JSON.stringify(purchaseOrderDetails) : undefined
     };
     
-    const newOrder = await createPurchaseOrder(submitData, selectedFile);
+    const newOrder = await createPurchaseOrder(submitData, selectedFile || []);
     setLoading(false);
     if (newOrder) {
       if (onFinished) onFinished();
@@ -286,7 +286,8 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
                 <PurchaseOrderForm 
                   formData={formData} 
                   handleInputChange={handleInputChange} 
-                  onGeneratePONumber={generatePONumber} 
+                  onGeneratePONumber={generatePONumber}
+                  purchaseOrderDetails={purchaseOrderDetails}
                 />
                 
                 {/* Purchase Order Details - Only show for SINGLE type */}

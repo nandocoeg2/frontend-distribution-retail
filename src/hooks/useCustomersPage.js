@@ -158,6 +158,7 @@ const useCustomersPage = () => {
     handleLimitChange,
     deleteCustomer: handleDeleteCustomer,
     fetchCustomers,
+    searchCustomers,
     handleAuthError
   };
 };

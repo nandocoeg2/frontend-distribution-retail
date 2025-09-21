@@ -120,6 +120,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
             handleInputChange={handleInputChange} 
             isEditMode={true}
             customerName={customerName}
+            purchaseOrderDetails={purchaseOrderDetails}
           />
 
           <div>

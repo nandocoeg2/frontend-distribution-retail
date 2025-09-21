@@ -62,9 +62,11 @@ const purchaseOrderService = {
     });
 
     // Append files
-    files.forEach(file => {
-      data.append('file', file);
-    });
+    if (files && Array.isArray(files)) {
+      files.forEach(file => {
+        data.append('file', file);
+      });
+    }
 
     const response = await fetch(`${API_URL}/`, {
       method: 'POST',
@@ -231,9 +233,11 @@ const purchaseOrderService = {
     }
 
     const data = new FormData();
-    files.forEach(file => {
-      data.append('file', file);
-    });
+    if (files && Array.isArray(files)) {
+      files.forEach(file => {
+        data.append('file', file);
+      });
+    }
 
     const response = await fetch(`${API_URL}/bulk`, {
       method: 'POST',

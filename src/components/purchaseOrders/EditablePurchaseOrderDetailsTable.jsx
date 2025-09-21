@@ -1,15 +1,18 @@
 import React from 'react';
 
 const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
+  // Ensure details is always an array
+  const safeDetails = details || [];
+  
   const handleItemChange = (index, field, value) => {
-    const newDetails = [...details];
+    const newDetails = [...safeDetails];
     newDetails[index] = { ...newDetails[index], [field]: value };
     onDetailsChange(newDetails);
   };
 
   const handleAddItem = () => {
     const newDetails = [
-      ...details,
+      ...safeDetails,
       {
         id: `new-${Date.now()}`,
         kode_barang: '',
@@ -29,7 +32,7 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
   };
 
   const handleRemoveItem = (index) => {
-    const newDetails = details.filter((_, i) => i !== index);
+    const newDetails = safeDetails.filter((_, i) => i !== index);
     onDetailsChange(newDetails);
   };
 
@@ -49,7 +52,7 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {details.map((item, index) => (
+          {safeDetails.map((item, index) => (
             <tr key={item.id || index}>
               <td className="px-6 py-4 whitespace-nowrap">
                 <input

@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import customerService from '../../services/customerService';
+import useCustomersPage from '../../hooks/useCustomersPage';
 import useStatuses from '../../hooks/useStatuses';
 import useTermOfPayments from '../../hooks/useTermOfPayments';
 import Autocomplete from '../common/Autocomplete';
 
-const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, isEditMode = false, customerName = '' }) => {
-  const [customers, setCustomers] = useState([]);
+const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, isEditMode = false, customerName = '', purchaseOrderDetails = [] }) => {
+  // Use customers hook
+  const {
+    customers,
+    loading: customersLoading,
+    error: customersError,
+    searchCustomers,
+    fetchCustomers
+  } = useCustomersPage();
+
+  
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
   
   // Use purchase order statuses hook
@@ -37,31 +45,28 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
     fetchTermOfPayments(1, 100); // Fetch all term of payments
   }, [fetchTermOfPayments]);
 
-  // Fetch all customers on component mount (for initial dropdown population)
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setIsLoading(true);
-        const response = await customerService.getAllCustomers(1, 20);
-        const customersArray = Array.isArray(response.data) ? response.data : [];
-        setCustomers(customersArray);
-        setFilteredCustomers(customersArray);
-      } catch (error) {
-        console.error('Failed to fetch customers:', error);
-        setCustomers([]);
-        setFilteredCustomers([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCustomers();
-  }, []);
-
   // Set initial filtered customers when customers are loaded
   useEffect(() => {
-    setFilteredCustomers(customers);
+    if (customers && customers.length > 0) {
+      setFilteredCustomers(customers);
+    }
   }, [customers]);
+
+  // Update total_items based on purchaseOrderDetails length
+  useEffect(() => {
+    if (purchaseOrderDetails && purchaseOrderDetails.length > 0) {
+      const newTotalItems = purchaseOrderDetails.length;
+      if (formData.total_items !== newTotalItems) {
+        handleInputChange({
+          target: {
+            name: 'total_items',
+            value: newTotalItems,
+            type: 'number'
+          }
+        });
+      }
+    }
+  }, [purchaseOrderDetails, formData.total_items, handleInputChange]);
 
   return (
     <div className="space-y-6">
@@ -108,23 +113,19 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
               value={formData.customerId}
               onChange={handleInputChange}
               placeholder="Cari nama atau ID customer"
-              displayKey="name"
+              displayKey="namaCustomer"
               valueKey="id"
               name="customerId"
               required
-              disabled={isLoading}
-              loading={isLoading}
+              disabled={customersLoading}
+              loading={customersLoading}
               onSearch={async (query) => {
                 try {
-                  setIsLoading(true);
-                  const response = await customerService.searchCustomers(query, 1, 20);
-                  const customersArray = Array.isArray(response.data) ? response.data : [];
-                  setFilteredCustomers(customersArray);
+                  await searchCustomers(query, 1, 20);
+                  // The hook will update the customers state, which will trigger the useEffect above
                 } catch (error) {
                   console.error('Failed to search customers:', error);
                   setFilteredCustomers([]);
-                } finally {
-                  setIsLoading(false);
                 }
               }}
               showId={true}
@@ -139,12 +140,13 @@ const PurchaseOrderForm = ({ formData, handleInputChange, onGeneratePONumber, is
               type="number"
               name="total_items"
               value={formData.total_items || 0}
-              onChange={handleInputChange}
+              readOnly
               required
               min="1"
               placeholder="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed text-sm"
             />
+            <p className="mt-1 text-xs text-gray-500">Otomatis terisi sesuai jumlah Purchase Order Details</p>
           </div>
         </div>
       </div>
