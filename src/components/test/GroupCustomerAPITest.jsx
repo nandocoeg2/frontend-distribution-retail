@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { groupCustomerService } from '../../services/groupCustomerService';
+import { useAlert } from '../ui/Alert';
 
 const GroupCustomerAPITest = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const { showInfo, AlertComponent } = useAlert();
 
   const testAPI = async () => {
     setLoading(true);
@@ -27,7 +29,7 @@ const GroupCustomerAPITest = () => {
   const testToken = () => {
     const token = localStorage.getItem('token');
     console.log('Current token:', token);
-    alert(`Token: ${token ? 'Present' : 'Missing'}`);
+    showInfo(`Token: ${token ? 'Present' : 'Missing'}`);
   };
 
   const testDirectFetch = async () => {
@@ -113,6 +115,9 @@ const GroupCustomerAPITest = () => {
           </div>
         )}
       </div>
+      
+      {/* Alert Component */}
+      <AlertComponent />
     </div>
   );
 };

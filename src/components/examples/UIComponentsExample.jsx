@@ -14,7 +14,8 @@ import {
   NumberBadge,
   LoadingState,
   ProgressBar,
-  Spinner
+  Spinner,
+  useAlert
 } from '../ui';
 
 /**
@@ -24,6 +25,7 @@ import {
 function UIComponentsExample() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
+  const { showInfo, AlertComponent } = useAlert();
 
   const sampleData = {
     name: 'John Doe',
@@ -195,12 +197,12 @@ function UIComponentsExample() {
                   actions={[
                     { 
                       label: "Export CSV", 
-                      onClick: () => alert('CSV Export'), 
+                      onClick: () => showInfo('CSV Export'), 
                       variant: "primary" 
                     },
                     { 
                       label: "Export PDF", 
-                      onClick: () => alert('PDF Export'), 
+                      onClick: () => showInfo('PDF Export'), 
                       variant: "secondary" 
                     }
                   ]}
@@ -213,7 +215,7 @@ function UIComponentsExample() {
                   actions={[
                     { 
                       label: "Configure", 
-                      onClick: () => alert('Configure Notifications'), 
+                      onClick: () => showInfo('Configure Notifications'), 
                       variant: "primary" 
                     }
                   ]}
@@ -295,6 +297,9 @@ function UIComponentsExample() {
           Reset
         </button>
       </div>
+      
+      {/* Alert Component */}
+      <AlertComponent />
     </div>
   );
 }

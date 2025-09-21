@@ -75,6 +75,12 @@ const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitCha
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    item.status === 'DRAFT SURAT JALAN' ? 'bg-gray-100 text-gray-800' :
+                    item.status === 'READY TO SHIP SURAT JALAN' ? 'bg-blue-100 text-blue-800' :
+                    item.status === 'SHIPPED SURAT JALAN' ? 'bg-yellow-100 text-yellow-800' :
+                    item.status === 'DELIVERED SURAT JALAN' ? 'bg-green-100 text-green-800' :
+                    item.status === 'CANCELLED SURAT JALAN' ? 'bg-red-100 text-red-800' :
+                    // Fallback untuk status lama
                     item.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
                     item.status === 'READY_TO_SHIP' ? 'bg-blue-100 text-blue-800' :
                     item.status === 'SHIPPED' ? 'bg-yellow-100 text-yellow-800' :
@@ -82,7 +88,7 @@ const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitCha
                     item.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {item.status || 'DRAFT'}
+                    {item.status || 'DRAFT SURAT JALAN'}
                   </span>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>

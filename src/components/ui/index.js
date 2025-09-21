@@ -58,8 +58,8 @@ export {
 // Modal Components (if created in the future)
 // export { Modal, Dialog, Drawer } from './Modal';
 
-// Alert Components (if created in the future)
-// export { Alert, Toast, Notification } from './Alert';
+// Alert Components
+export { default as Alert, useAlert } from './Alert';
 
 // Dialog Components
 export { 

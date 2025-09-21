@@ -7,12 +7,14 @@ import ActivityTimeline from '../common/ActivityTimeline';
 import {
   AccordionItem,
   InfoCard,
-  StatusBadge
+  StatusBadge,
+  useAlert
 } from '../ui';
 
 const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }) => {
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const { showSuccess, showError, AlertComponent } = useAlert();
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     customerSupplier: false,
@@ -63,7 +65,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
     try {
       const result = await purchaseOrderService.processPurchaseOrder(order.id, 'PROCESSING PURCHASE ORDER');
       if (result.success) {
-        alert('Purchase order processed successfully.');
+        showSuccess('Purchase order processed successfully.');
         if (onProcessed) {
           onProcessed();
         }
@@ -73,7 +75,7 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
       }
     } catch (error) {
       console.error('Failed to process purchase order:', error);
-      alert(`Failed to process purchase order: ${error.message}`);
+      showError(`Failed to process purchase order: ${error.message}`);
     } finally {
       setProcessing(false);
     }
@@ -328,6 +330,9 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
           </div>
         </div>
       </div>
+      
+      {/* Alert Component */}
+      <AlertComponent />
     </div>
   );
 };

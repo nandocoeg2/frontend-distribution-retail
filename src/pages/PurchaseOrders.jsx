@@ -7,6 +7,7 @@ import EditPurchaseOrderModal from '../components/purchaseOrders/EditPurchaseOrd
 import ViewPurchaseOrderModal from '../components/purchaseOrders/ViewPurchaseOrderModal.jsx';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,6 +39,7 @@ const PurchaseOrders = () => {
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
+  const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
   const navigate = useNavigate();
 
   // This function is now the callback for when the Add modal is finished.
@@ -87,7 +89,7 @@ const PurchaseOrders = () => {
   // Bulk process handlers
   const handleBulkProcess = () => {
     if (selectedOrders.length === 0) {
-      alert('Pilih minimal satu purchase order untuk diproses.');
+      showWarning('Pilih minimal satu purchase order untuk diproses.');
       return;
     }
 
@@ -116,7 +118,7 @@ const PurchaseOrders = () => {
           message += ` ${failedCount} purchase order gagal diproses.`;
         }
         
-        alert(message);
+        showSuccess(message);
         
         // Refresh data dan clear selection
         fetchPurchaseOrders();
@@ -127,7 +129,7 @@ const PurchaseOrders = () => {
       }
     } catch (error) {
       console.error('Error processing purchase orders:', error);
-      alert(`Gagal memproses purchase orders: ${error.message}`);
+      showError(`Gagal memproses purchase orders: ${error.message}`);
     } finally {
       setLoading(false);
       setBulkProcessing(false);
@@ -263,6 +265,9 @@ const PurchaseOrders = () => {
 
       {/* Bulk Process Confirmation Dialog */}
       <ConfirmationDialog onConfirm={handleConfirmBulkProcess} />
+      
+      {/* Alert Component */}
+      <AlertComponent />
     </div>
   );
 };
