@@ -36,8 +36,17 @@ const useSuratJalanSearch = () => {
       const result = await suratJalanService.searchSuratJalan(params, page, limit);
       
       if (result.success) {
-        setSearchResults(result.data.suratJalan);
-        setPagination(result.data.pagination);
+        // API response structure: { success: true, data: { data: [...], pagination: {...} } }
+        setSearchResults(result.data.data || result.data.suratJalan || []);
+        
+        // Map pagination structure from API to expected format
+        const apiPagination = result.data.pagination || {};
+        setPagination({
+          page: apiPagination.currentPage || apiPagination.page || 1,
+          limit: apiPagination.itemsPerPage || apiPagination.limit || 10,
+          total: apiPagination.totalItems || apiPagination.total || 0,
+          totalPages: apiPagination.totalPages || 1
+        });
         return result.data;
       } else {
         throw new Error(result.message || 'Failed to search surat jalan');

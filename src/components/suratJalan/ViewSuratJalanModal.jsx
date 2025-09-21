@@ -120,19 +120,19 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                   <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
                     <p className="text-sm font-medium text-gray-600 mb-1">Status</p>
                     <StatusBadge 
-                      status={suratJalan.status || 'DRAFT SURAT JALAN'}
+                      status={typeof suratJalan.status === 'string' ? suratJalan.status : (suratJalan.status?.status_code || suratJalan.status?.status_name || 'DRAFT SURAT JALAN')}
                       variant={
-                        suratJalan.status === 'DRAFT SURAT JALAN' ? 'warning' :
-                        suratJalan.status === 'READY TO SHIP SURAT JALAN' ? 'info' :
-                        suratJalan.status === 'SHIPPED SURAT JALAN' ? 'primary' :
-                        suratJalan.status === 'DELIVERED SURAT JALAN' ? 'success' :
-                        suratJalan.status === 'CANCELLED SURAT JALAN' ? 'danger' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT SURAT JALAN' ? 'warning' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY TO SHIP SURAT JALAN' ? 'info' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED SURAT JALAN' ? 'primary' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED SURAT JALAN' ? 'success' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED SURAT JALAN' ? 'danger' :
                         // Fallback untuk status lama
-                        suratJalan.status === 'DRAFT' ? 'warning' :
-                        suratJalan.status === 'READY_TO_SHIP' ? 'info' :
-                        suratJalan.status === 'SHIPPED' ? 'primary' :
-                        suratJalan.status === 'DELIVERED' ? 'success' :
-                        suratJalan.status === 'CANCELLED' ? 'danger' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT' ? 'warning' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY_TO_SHIP' ? 'info' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED' ? 'primary' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED' ? 'success' :
+                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED' ? 'danger' :
                         'warning'
                       }
                     />
@@ -233,7 +233,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                           <InfoCard label="Total Box" value={detail.total_box} variant="info" />
                         </div>
 
-                        {detail.items && detail.items.length > 0 && (
+                        {(detail.items || detail.suratJalanDetailItems) && (detail.items?.length > 0 || detail.suratJalanDetailItems?.length > 0) && (
                           <div>
                             <h5 className="text-lg font-medium text-gray-900 mb-4">Items</h5>
                             <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
@@ -249,7 +249,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                                   </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                  {detail.items.map((item, itemIndex) => (
+                                  {(detail.items || detail.suratJalanDetailItems || []).map((item, itemIndex) => (
                                     <tr key={item.id || itemIndex} className="hover:bg-gray-50">
                                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {item.nama_barang}
