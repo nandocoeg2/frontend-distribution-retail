@@ -5,7 +5,8 @@ import {
   TabContent,
   TabPanel,
   AccordionItem,
-  InfoCard
+  InfoCard,
+  InfoTable
 } from '../ui';
 
 const ViewInvoiceModal = ({ show, onClose, invoice }) => {
@@ -121,14 +122,16 @@ const ViewInvoiceModal = ({ show, onClose, invoice }) => {
                 onToggle={() => toggleSection('basicInfo')}
                 bgColor="bg-gradient-to-r from-indigo-50 to-indigo-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  <InfoCard label="Invoice Number" value={invoice.no_invoice} variant="primary" />
-                  <InfoCard label="Date" value={formatDate(invoice.tanggal)} variant="primary" />
-                  <InfoCard label="Deliver To" value={invoice.deliver_to} variant="default" />
-                  <InfoCard label="Type" value={invoice.type} variant="success" />
-                  <InfoCard label="TOP" value={invoice.TOP} variant="warning" />
-                  <InfoCard label="Invoice ID" value={invoice.id} variant="primary" copyable />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Invoice Number', value: invoice.no_invoice },
+                    { label: 'Date', value: formatDate(invoice.tanggal) },
+                    { label: 'Deliver To', value: invoice.deliver_to },
+                    { label: 'Type', value: invoice.type },
+                    { label: 'TOP', value: invoice.TOP },
+                    { label: 'Invoice ID', value: invoice.id, copyable: true }
+                  ]}
+                />
               </AccordionItem>
 
               {/* Pricing Information */}
@@ -138,18 +141,16 @@ const ViewInvoiceModal = ({ show, onClose, invoice }) => {
                 onToggle={() => toggleSection('pricingInfo')}
                 bgColor="bg-gradient-to-r from-green-50 to-green-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  <InfoCard label="Sub Total" value={formatCurrency(invoice.sub_total)} variant="success" />
-                  <InfoCard label="Total Discount" value={formatCurrency(invoice.total_discount)} variant="warning" />
-                  <InfoCard label="Total Price" value={formatCurrency(invoice.total_price)} variant="success" />
-                  <InfoCard label="PPN Percentage" value={`${invoice.ppn_percentage}%`} variant="warning" />
-                  <InfoCard label="PPN Rupiah" value={formatCurrency(invoice.ppn_rupiah)} variant="warning" />
-                  <InfoCard 
-                    label="Grand Total" 
-                    value={formatCurrency(invoice.grand_total)} 
-                    variant="primary"
-                  />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Sub Total', value: formatCurrency(invoice.sub_total) },
+                    { label: 'Total Discount', value: formatCurrency(invoice.total_discount) },
+                    { label: 'Total Price', value: formatCurrency(invoice.total_price) },
+                    { label: 'PPN Percentage', value: `${invoice.ppn_percentage}%` },
+                    { label: 'PPN Rupiah', value: formatCurrency(invoice.ppn_rupiah) },
+                    { label: 'Grand Total', value: formatCurrency(invoice.grand_total) }
+                  ]}
+                />
               </AccordionItem>
 
               {/* System Information */}
@@ -159,10 +160,12 @@ const ViewInvoiceModal = ({ show, onClose, invoice }) => {
                 onToggle={() => toggleSection('metaInfo')}
                 bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <InfoCard label="Created At" value={formatDateTime(invoice.createdAt)} />
-                  <InfoCard label="Updated At" value={formatDateTime(invoice.updatedAt)} />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Created At', value: formatDateTime(invoice.createdAt) },
+                    { label: 'Updated At', value: formatDateTime(invoice.updatedAt) }
+                  ]}
+                />
               </AccordionItem>
             </div>
           )}

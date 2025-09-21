@@ -8,6 +8,7 @@ import {
   AccordionItem,
   InfoCard,
   StatusBadge,
+  InfoTable,
   useAlert
 } from '../ui';
 
@@ -156,15 +157,17 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
                     onToggle={() => toggleSection('basicInfo')}
                     bgColor="bg-gradient-to-r from-emerald-50 to-emerald-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                      <InfoCard label="PO Number" value={order.po_number} variant="primary" />
-                      <InfoCard label="Tanggal Masuk PO" value={formatDate(order.tanggal_masuk_po)} variant="primary" />
-                      <InfoCard label="Tanggal Batas Kirim" value={formatDate(order.tanggal_batas_kirim)} variant="primary" />
-                      <InfoCard label="PO Type" value={order.po_type} variant="success" />
-                      <InfoCard label="Total Items" value={order.total_items} variant="warning" />
-                      <InfoCard label="Termin Bayar" value={order.termin_bayar} variant="info" />
-                      <InfoCard label="PO ID" value={order.id} variant="primary" copyable />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'PO Number', value: order.po_number },
+                        { label: 'Tanggal Masuk PO', value: formatDate(order.tanggal_masuk_po) },
+                        { label: 'Tanggal Batas Kirim', value: formatDate(order.tanggal_batas_kirim) },
+                        { label: 'PO Type', value: order.po_type },
+                        { label: 'Total Items', value: order.total_items },
+                        { label: 'Termin Bayar', value: order.termin_bayar },
+                        { label: 'PO ID', value: order.id, copyable: true }
+                      ]}
+                    />
                   </AccordionItem>
 
                   {/* Customer & Supplier Information */}
@@ -174,15 +177,17 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
                     onToggle={() => toggleSection('customerSupplier')}
                     bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <InfoCard label="Customer ID" value={order.customerId} variant="primary" copyable />
-                      <InfoCard label="Customer Name" value={order.customer?.namaCustomer} variant="primary" />
-                      <InfoCard label="Customer Code" value={order.customer?.kodeCustomer} variant="primary" />
-                      <InfoCard label="Customer Email" value={order.customer?.email} variant="primary" />
-                      <InfoCard label="Customer Phone" value={order.customer?.phoneNumber} variant="primary" />
-                      <InfoCard label="Supplier ID" value={order.supplierId || 'Not assigned'} variant="success" copyable />
-                      <InfoCard label="Supplier Name" value={order.supplier?.name || 'Not assigned'} variant="success" />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'Customer ID', value: order.customerId, copyable: true },
+                        { label: 'Customer Name', value: order.customer?.namaCustomer },
+                        { label: 'Customer Code', value: order.customer?.kodeCustomer },
+                        { label: 'Customer Email', value: order.customer?.email },
+                        { label: 'Customer Phone', value: order.customer?.phoneNumber },
+                        { label: 'Supplier ID', value: order.supplierId || 'Not assigned', copyable: order.supplierId ? true : false },
+                        { label: 'Supplier Name', value: order.supplier?.name || 'Not assigned' }
+                      ]}
+                    />
                   </AccordionItem>
 
                   {/* Status Information */}
@@ -192,13 +197,12 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
                     onToggle={() => toggleSection('statusInfo')}
                     bgColor="bg-gradient-to-r from-yellow-50 to-yellow-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-                        <p className="text-sm font-medium text-gray-600 mb-1">Status</p>
-                        <StatusBadge status={order.status?.status_name} />
-                      </div>
-                      <InfoCard label="Status Code" value={order.status?.status_code} variant="warning" />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'Status', component: <StatusBadge status={order.status?.status_name} /> },
+                        { label: 'Status Code', value: order.status?.status_code }
+                      ]}
+                    />
                   </AccordionItem>
 
                   {/* Documents Information */}
@@ -208,12 +212,14 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
                     onToggle={() => toggleSection('documentsInfo')}
                     bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <InfoCard label="Surat Jalan" value={order.suratJalan} variant="default" />
-                      <InfoCard label="Invoice Pengiriman" value={order.invoicePengiriman} variant="default" />
-                      <InfoCard label="Surat PO" value={order.suratPO} variant="default" />
-                      <InfoCard label="Surat Penagihan" value={order.suratPenagihan} variant="default" />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'Surat Jalan', value: order.suratJalan },
+                        { label: 'Invoice Pengiriman', value: order.invoicePengiriman },
+                        { label: 'Surat PO', value: order.suratPO },
+                        { label: 'Surat Penagihan', value: order.suratPenagihan }
+                      ]}
+                    />
                   </AccordionItem>
 
                   {/* System Information */}
@@ -223,10 +229,12 @@ const ViewPurchaseOrderModal = ({ isOpen, onClose, order, loading, onProcessed }
                     onToggle={() => toggleSection('metaInfo')}
                     bgColor="bg-gradient-to-r from-gray-50 to-gray-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <InfoCard label="Created At" value={formatDateTime(order.createdAt)} />
-                      <InfoCard label="Updated At" value={formatDateTime(order.updatedAt)} />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'Created At', value: formatDateTime(order.createdAt) },
+                        { label: 'Updated At', value: formatDateTime(order.updatedAt) }
+                      ]}
+                    />
                   </AccordionItem>
                 </div>
               )}

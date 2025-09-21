@@ -66,3 +66,6 @@ export {
   ConfirmationDialog, 
   useConfirmationDialog 
 } from './ConfirmationDialog';
+
+// Table Components
+export { default as InfoTable } from './InfoTable';

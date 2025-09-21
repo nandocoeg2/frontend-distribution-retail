@@ -9,7 +9,8 @@ import {
   TabPanel,
   AccordionItem,
   InfoCard,
-  StatusBadge
+  StatusBadge,
+  InfoTable
 } from '../ui';
 
 const ViewPackingModal = ({ packing, onClose }) => {
@@ -157,40 +158,21 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   onToggle={() => toggleSection('basicInfo')}
                   bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                    <InfoCard 
-                      label="Packing Number" 
-                      value={packing.packing_number || 'N/A'} 
-                      variant="primary" 
-                    />
-                    <InfoCard 
-                      label="Tanggal Packing" 
-                      value={formatDate(packing.tanggal_packing)} 
-                      variant="primary" 
-                    />
-                    <InfoCard 
-                      label="Status" 
-                      value={
-                        packing.status?.status_name ? 
-                        <StatusBadge status={packing.status.status_name} variant={getStatusVariant(packing.status?.status_code)} /> :
-                        <span className="text-gray-500">No Status</span>
-                      } 
-                      variant="primary" 
-                    />
-                    <InfoCard 
-                      label="Created At" 
-                      value={formatDate(packing.createdAt)} 
-                    />
-                    <InfoCard 
-                      label="Updated At" 
-                      value={formatDate(packing.updatedAt)} 
-                    />
-                    <InfoCard 
-                      label="Total Items" 
-                      value={packing.packingItems?.length || 0} 
-                      variant="success" 
-                    />
-                  </div>
+                  <InfoTable 
+                    data={[
+                      { label: 'Packing Number', value: packing.packing_number || 'N/A' },
+                      { label: 'Tanggal Packing', value: formatDate(packing.tanggal_packing) },
+                      { 
+                        label: 'Status', 
+                        component: packing.status?.status_name ? 
+                          <StatusBadge status={packing.status.status_name} variant={getStatusVariant(packing.status?.status_code)} /> :
+                          <span className="text-gray-500">No Status</span>
+                      },
+                      { label: 'Created At', value: formatDate(packing.createdAt) },
+                      { label: 'Updated At', value: formatDate(packing.updatedAt) },
+                      { label: 'Total Items', value: packing.packingItems?.length || 0 }
+                    ]}
+                  />
                 </AccordionItem>
 
                 {/* Purchase Order Information */}
@@ -201,16 +183,18 @@ const ViewPackingModal = ({ packing, onClose }) => {
                     onToggle={() => toggleSection('poInfo')}
                     bgColor="bg-gradient-to-r from-green-50 to-green-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                      <InfoCard label="PO Number" value={packing.purchaseOrder.po_number} variant="success" />
-                      <InfoCard label="Tanggal Masuk PO" value={formatDateOnly(packing.purchaseOrder.tanggal_masuk_po)} variant="success" />
-                      <InfoCard label="Tanggal Batas Kirim" value={formatDateOnly(packing.purchaseOrder.tanggal_batas_kirim)} variant="warning" />
-                      <InfoCard label="Termin Bayar" value={packing.purchaseOrder.termin_bayar} variant="info" />
-                      <InfoCard label="PO Type" value={packing.purchaseOrder.po_type} variant="success" />
-                      <InfoCard label="Total Items" value={packing.purchaseOrder.total_items} />
-                      <InfoCard label="Customer ID" value={packing.purchaseOrder.customerId} copyable />
-                      <InfoCard label="Supplier ID" value={packing.purchaseOrder.supplierId || 'Not assigned'} copyable />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'PO Number', value: packing.purchaseOrder.po_number },
+                        { label: 'Tanggal Masuk PO', value: formatDateOnly(packing.purchaseOrder.tanggal_masuk_po) },
+                        { label: 'Tanggal Batas Kirim', value: formatDateOnly(packing.purchaseOrder.tanggal_batas_kirim) },
+                        { label: 'Termin Bayar', value: packing.purchaseOrder.termin_bayar },
+                        { label: 'PO Type', value: packing.purchaseOrder.po_type },
+                        { label: 'Total Items', value: packing.purchaseOrder.total_items },
+                        { label: 'Customer ID', value: packing.purchaseOrder.customerId, copyable: true },
+                        { label: 'Supplier ID', value: packing.purchaseOrder.supplierId || 'Not assigned', copyable: packing.purchaseOrder.supplierId ? true : false }
+                      ]}
+                    />
                   </AccordionItem>
                 )}
 
@@ -222,11 +206,13 @@ const ViewPackingModal = ({ packing, onClose }) => {
                     onToggle={() => toggleSection('statusInfo')}
                     bgColor="bg-gradient-to-r from-yellow-50 to-yellow-100"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                      <InfoCard label="Status Code" value={packing.status.status_code} variant="warning" />
-                      <InfoCard label="Status Name" value={packing.status.status_name} variant="warning" />
-                      <InfoCard label="Description" value={packing.status.status_description} variant="warning" />
-                    </div>
+                    <InfoTable 
+                      data={[
+                        { label: 'Status Code', value: packing.status.status_code },
+                        { label: 'Status Name', value: packing.status.status_name },
+                        { label: 'Description', value: packing.status.status_description }
+                      ]}
+                    />
                   </AccordionItem>
                 )}
 
@@ -237,12 +223,14 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   onToggle={() => toggleSection('metaInfo')}
                   bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                    <InfoCard label="Packing ID" value={packing.id} copyable />
-                    <InfoCard label="Purchase Order ID" value={packing.purchaseOrderId} copyable />
-                    <InfoCard label="Created By" value={packing.createdBy} copyable />
-                    <InfoCard label="Updated By" value={packing.updatedBy} copyable />
-                  </div>
+                  <InfoTable 
+                    data={[
+                      { label: 'Packing ID', value: packing.id, copyable: true },
+                      { label: 'Purchase Order ID', value: packing.purchaseOrderId, copyable: true },
+                      { label: 'Created By', value: packing.createdBy, copyable: true },
+                      { label: 'Updated By', value: packing.updatedBy, copyable: true }
+                    ]}
+                  />
                 </AccordionItem>
               </div>
             </TabPanel>

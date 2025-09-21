@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
 import { ClipboardDocumentIcon, XMarkIcon, BuildingStorefrontIcon, MapPinIcon, DevicePhoneMobileIcon, AtSymbolIcon, IdentificationIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { InfoTable } from '../ui';
 
 const ViewCustomerModal = ({ show, onClose, customer }) => {
   const [fullCustomer, setFullCustomer] = useState(null);
@@ -12,12 +13,23 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
       const fetchCustomerDetails = async () => {
         setLoading(true);
         try {
-          const data = await customerService.getCustomerById(customer.id);
-          setFullCustomer(data);
+          const response = await customerService.getById(customer.id);
+          
+          // Handle different response structures
+          let customerData;
+          if (response?.success && response?.data) {
+            customerData = response.data;
+          } else if (response?.data) {
+            customerData = response.data;
+          } else {
+            customerData = response;
+          }
+          
+          setFullCustomer(customerData);
         } catch (error) {
           console.error('Error fetching customer details:', error);
           toastService.error('Failed to load customer details.');
-          onClose();
+          // Don't close modal on error, just show the prop data as fallback
         } finally {
           setLoading(false);
         }
@@ -49,33 +61,6 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
     toastService.success('Copied to clipboard!');
   };
 
-  const InfoCard = ({ icon: Icon, title, children }) => (
-    <div className="bg-gray-50 rounded-lg p-4">
-      <div className="flex items-center mb-2">
-        <Icon className="h-5 w-5 text-gray-500 mr-2" />
-        <h4 className="text-sm font-semibold text-gray-700">{title}</h4>
-      </div>
-      <div className="space-y-2">{children}</div>
-    </div>
-  );
-
-  const InfoItem = ({ label, value, copyable = false }) => (
-    <div>
-      <dt className="text-xs font-medium text-gray-500">{label}</dt>
-      <dd className="mt-1 text-sm text-gray-900 flex items-center">
-        <span>{value || '-'}</span>
-        {copyable && value && (
-          <button
-            onClick={() => copyToClipboard(value)}
-            className="ml-2 text-gray-400 hover:text-gray-600"
-            title="Copy to clipboard"
-          >
-            <ClipboardDocumentIcon className="h-4 w-4" />
-          </button>
-        )}
-      </dd>
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -100,39 +85,81 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          ) : fullCustomer ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-6">
-                <InfoCard icon={BuildingStorefrontIcon} title="Customer Information">
-                  <InfoItem label="Customer Name" value={fullCustomer.namaCustomer} />
-                  <InfoItem label="Customer Code" value={fullCustomer.kodeCustomer} copyable />
-                  <InfoItem label="Group Customer" value={fullCustomer.groupCustomer?.nama_group} />
-                  <InfoItem label="Region" value={fullCustomer.region?.nama_region} />
-                </InfoCard>
-
-                <InfoCard icon={MapPinIcon} title="Address Information">
-                  <InfoItem label="Shipping Address" value={fullCustomer.alamatPengiriman} />
-                  <InfoItem label="NPWP Address" value={fullCustomer.alamatNPWP} />
-                </InfoCard>
+          ) : (fullCustomer || customer) ? (
+            <div className="space-y-6">
+              {/* Debug info - remove this after fixing */}
+              {console.log('Rendering with fullCustomer:', fullCustomer)}
+              {console.log('Rendering with customer prop:', customer)}
+              {/* Customer Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center mb-4">
+                  <BuildingStorefrontIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Customer Information</h3>
+                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Customer Name', value: fullCustomer?.namaCustomer || customer?.namaCustomer },
+                    { label: 'Customer Code', value: fullCustomer?.kodeCustomer || customer?.kodeCustomer, copyable: true },
+                    { label: 'Group Customer', value: fullCustomer?.groupCustomer?.nama_group || customer?.groupCustomer?.nama_group },
+                    { label: 'Region', value: fullCustomer?.region?.nama_region || customer?.region?.nama_region }
+                  ]}
+                />
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-6">
-                <InfoCard icon={DevicePhoneMobileIcon} title="Contact Information">
-                  <InfoItem label="Phone Number" value={fullCustomer.phoneNumber} copyable />
-                  <InfoItem label="Email" value={fullCustomer.email} copyable />
-                </InfoCard>
+              {/* Address Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center mb-4">
+                  <MapPinIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Address Information</h3>
+                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Shipping Address', value: fullCustomer?.alamatPengiriman || customer?.alamatPengiriman },
+                    { label: 'NPWP Address', value: fullCustomer?.alamatNPWP || customer?.alamatNPWP }
+                  ]}
+                />
+              </div>
 
-                <InfoCard icon={IdentificationIcon} title="Tax Information">
-                  <InfoItem label="NPWP" value={fullCustomer.NPWP} copyable />
-                  <InfoItem label="Description" value={fullCustomer.description} />
-                </InfoCard>
+              {/* Contact Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center mb-4">
+                  <DevicePhoneMobileIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Phone Number', value: fullCustomer?.phoneNumber || customer?.phoneNumber, copyable: true },
+                    { label: 'Email', value: fullCustomer?.email || customer?.email, copyable: true }
+                  ]}
+                />
+              </div>
 
-                <InfoCard icon={CalendarDaysIcon} title="System Information">
-                  <InfoItem label="Created" value={formatDate(fullCustomer.createdAt)} />
-                  <InfoItem label="Last Updated" value={formatDate(fullCustomer.updatedAt)} />
-                </InfoCard>
+              {/* Tax Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center mb-4">
+                  <IdentificationIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Tax Information</h3>
+                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'NPWP', value: fullCustomer?.NPWP || customer?.NPWP, copyable: true },
+                    { label: 'Description', value: fullCustomer?.description || customer?.description }
+                  ]}
+                />
+              </div>
+
+              {/* System Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center mb-4">
+                  <CalendarDaysIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">System Information</h3>
+                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Created', value: formatDate(fullCustomer?.createdAt || customer?.createdAt) },
+                    { label: 'Last Updated', value: formatDate(fullCustomer?.updatedAt || customer?.updatedAt) }
+                  ]}
+                />
               </div>
             </div>
           ) : (

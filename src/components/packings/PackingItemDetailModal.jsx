@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { InfoCard, StatusBadge } from '../ui';
+import { InfoCard, StatusBadge, InfoTable } from '../ui';
 import { getInventoryById } from '../../services/inventoryService';
 import toastService from '../../services/toastService';
 
@@ -112,161 +112,67 @@ const PackingItemDetailModal = ({ item, onClose }) => {
             {inventory && (
               <div className="bg-blue-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Inventory</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <InfoCard 
-                    label="Nama Barang" 
-                    value={inventory.nama_barang || 'N/A'} 
-                    variant="primary" 
-                  />
-                  <InfoCard 
-                    label="PLU" 
-                    value={inventory.plu || 'N/A'} 
-                    variant="info" 
-                  />
-                  <InfoCard 
-                    label="Harga Barang" 
-                    value={inventory.harga_barang ? `Rp ${inventory.harga_barang.toLocaleString('id-ID')}` : 'N/A'} 
-                    variant="success" 
-                  />
-                  <InfoCard 
-                    label="Stok C" 
-                    value={inventory.stok_c || 0} 
-                    variant="warning" 
-                  />
-                  <InfoCard 
-                    label="Stok Q" 
-                    value={inventory.stok_q || 0} 
-                    variant="warning" 
-                  />
-                  <InfoCard 
-                    label="Min Stok" 
-                    value={inventory.min_stok || 0} 
-                    variant="danger" 
-                  />
-                  <InfoCard 
-                    label="Created At" 
-                    value={formatDate(inventory.createdAt)} 
-                  />
-                  <InfoCard 
-                    label="Updated At" 
-                    value={formatDate(inventory.updatedAt)} 
-                  />
-                  <InfoCard 
-                    label="Inventory ID" 
-                    value={inventory.id} 
-                    copyable 
-                  />
-                  <InfoCard 
-                    label="Created By" 
-                    value={inventory.createdBy || 'N/A'} 
-                    copyable 
-                  />
-                  <InfoCard 
-                    label="Updated By" 
-                    value={inventory.updatedBy || 'N/A'} 
-                    copyable 
-                  />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Nama Barang', value: inventory.nama_barang || 'N/A' },
+                    { label: 'PLU', value: inventory.plu || 'N/A' },
+                    { label: 'Harga Barang', value: inventory.harga_barang ? `Rp ${inventory.harga_barang.toLocaleString('id-ID')}` : 'N/A' },
+                    { label: 'Stok C', value: inventory.stok_c || 0 },
+                    { label: 'Stok Q', value: inventory.stok_q || 0 },
+                    { label: 'Min Stok', value: inventory.min_stok || 0 },
+                    { label: 'Created At', value: formatDate(inventory.createdAt) },
+                    { label: 'Updated At', value: formatDate(inventory.updatedAt) },
+                    { label: 'Inventory ID', value: inventory.id, copyable: true },
+                    { label: 'Created By', value: inventory.createdBy || 'N/A', copyable: true },
+                    { label: 'Updated By', value: inventory.updatedBy || 'N/A', copyable: true }
+                  ]}
+                />
               </div>
             )}
 
             {/* Packing Item Information */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Packing Item</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <InfoCard 
-                  label="Nama Barang (Packing)" 
-                  value={item.nama_barang} 
-                  variant="primary" 
-                />
-                <InfoCard 
-                  label="Total Qty" 
-                  value={item.total_qty} 
-                  variant="success" 
-                />
-                <InfoCard 
-                  label="Jumlah Carton" 
-                  value={item.jumlah_carton} 
-                  variant="info" 
-                />
-                <InfoCard 
-                  label="Isi per Carton" 
-                  value={item.isi_per_carton} 
-                />
-                <InfoCard 
-                  label="No Box" 
-                  value={item.no_box || 'Not assigned'} 
-                />
-                <InfoCard 
-                  label="Inventory ID" 
-                  value={item.inventoryId} 
-                  copyable 
-                />
-              </div>
+              <InfoTable 
+                data={[
+                  { label: 'Nama Barang (Packing)', value: item.nama_barang },
+                  { label: 'Total Qty', value: item.total_qty },
+                  { label: 'Jumlah Carton', value: item.jumlah_carton },
+                  { label: 'Isi per Carton', value: item.isi_per_carton },
+                  { label: 'No Box', value: item.no_box || 'Not assigned' },
+                  { label: 'Inventory ID', value: item.inventoryId, copyable: true }
+                ]}
+              />
             </div>
 
             {/* Status Information */}
             {item.status && (
               <div className="bg-yellow-50 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <InfoCard 
-                    label="Status Code" 
-                    value={item.status.status_code} 
-                    variant="warning" 
-                  />
-                  <InfoCard 
-                    label="Status Name" 
-                    value={item.status.status_name} 
-                    variant="warning" 
-                  />
-                  <InfoCard 
-                    label="Description" 
-                    value={item.status.status_description} 
-                    variant="warning" 
-                  />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Status Code', value: item.status.status_code },
+                    { label: 'Status Name', value: item.status.status_name },
+                    { label: 'Description', value: item.status.status_description }
+                  ]}
+                />
               </div>
             )}
 
             {/* System Information */}
             <div className="bg-purple-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <InfoCard 
-                  label="Item ID" 
-                  value={item.id} 
-                  copyable 
-                />
-                <InfoCard 
-                  label="Packing ID" 
-                  value={item.packingId} 
-                  copyable 
-                />
-                <InfoCard 
-                  label="Status ID" 
-                  value={item.statusId} 
-                  copyable 
-                />
-                <InfoCard 
-                  label="Created At" 
-                  value={formatDate(item.createdAt)} 
-                />
-                <InfoCard 
-                  label="Updated At" 
-                  value={formatDate(item.updatedAt)} 
-                />
-                <InfoCard 
-                  label="Created By" 
-                  value={item.createdBy} 
-                  copyable 
-                />
-                <InfoCard 
-                  label="Updated By" 
-                  value={item.updatedBy} 
-                  copyable 
-                />
-              </div>
+              <InfoTable 
+                data={[
+                  { label: 'Item ID', value: item.id, copyable: true },
+                  { label: 'Packing ID', value: item.packingId, copyable: true },
+                  { label: 'Status ID', value: item.statusId, copyable: true },
+                  { label: 'Created At', value: formatDate(item.createdAt) },
+                  { label: 'Updated At', value: formatDate(item.updatedAt) },
+                  { label: 'Created By', value: item.createdBy, copyable: true },
+                  { label: 'Updated By', value: item.updatedBy, copyable: true }
+                ]}
+              />
             </div>
             </div>
           )}

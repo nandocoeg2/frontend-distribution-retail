@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   AccordionItem,
-  InfoCard
+  InfoCard,
+  InfoTable
 } from '../ui';
 
 const ViewSupplierModal = ({ show, onClose, supplier }) => {
@@ -69,12 +70,14 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               onToggle={() => toggleSection('basicInfo')}
               bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                <InfoCard label="Nama Supplier" value={supplier.name} variant="primary" />
-                <InfoCard label="Kode Supplier" value={supplier.code} variant="success" />
-                <InfoCard label="ID Supplier" value={supplier.id} variant="primary" copyable />
-                <InfoCard label="Alamat" value={supplier.address} variant="default" />
-              </div>
+              <InfoTable 
+                data={[
+                  { label: 'Nama Supplier', value: supplier.name },
+                  { label: 'Kode Supplier', value: supplier.code },
+                  { label: 'ID Supplier', value: supplier.id, copyable: true },
+                  { label: 'Alamat', value: supplier.address }
+                ]}
+              />
             </AccordionItem>
 
             {/* Contact Information */}
@@ -84,9 +87,11 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               onToggle={() => toggleSection('contactInfo')}
               bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <InfoCard label="Nomor Telepon" value={supplier.phoneNumber} variant="primary" />
-              </div>
+              <InfoTable 
+                data={[
+                  { label: 'Nomor Telepon', value: supplier.phoneNumber }
+                ]}
+              />
             </AccordionItem>
 
             {/* Bank Information */}
@@ -97,11 +102,13 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
                 onToggle={() => toggleSection('bankInfo')}
                 bgColor="bg-gradient-to-r from-green-50 to-green-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  <InfoCard label="Nama Bank" value={supplier.bank.name} variant="success" />
-                  <InfoCard label="Nama Pemegang Rekening" value={supplier.bank.holder} variant="success" />
-                  <InfoCard label="Nomor Rekening" value={supplier.bank.account} variant="success" copyable />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Nama Bank', value: supplier.bank.name },
+                    { label: 'Nama Pemegang Rekening', value: supplier.bank.holder },
+                    { label: 'Nomor Rekening', value: supplier.bank.account, copyable: true }
+                  ]}
+                />
               </AccordionItem>
             )}
 
@@ -112,10 +119,12 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               onToggle={() => toggleSection('metaInfo')}
               bgColor="bg-gradient-to-r from-gray-50 to-gray-100"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <InfoCard label="Dibuat Pada" value={formatDate(supplier.createdAt)} />
-                <InfoCard label="Diperbarui Pada" value={formatDate(supplier.updatedAt)} />
-              </div>
+              <InfoTable 
+                data={[
+                  { label: 'Dibuat Pada', value: formatDate(supplier.createdAt) },
+                  { label: 'Diperbarui Pada', value: formatDate(supplier.updatedAt) }
+                ]}
+              />
             </AccordionItem>
           </div>
         </div>

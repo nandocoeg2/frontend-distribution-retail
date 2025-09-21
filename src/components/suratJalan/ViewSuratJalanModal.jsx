@@ -3,7 +3,8 @@ import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import {
   AccordionItem,
   InfoCard,
-  StatusBadge
+  StatusBadge,
+  InfoTable
 } from '../ui';
 
 const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
@@ -111,33 +112,37 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                 onToggle={() => toggleSection('basicInfo')}
                 bgColor="bg-gradient-to-r from-teal-50 to-teal-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                  <InfoCard label="No Surat Jalan" value={suratJalan.no_surat_jalan} variant="primary" />
-                  <InfoCard label="Deliver To" value={suratJalan.deliver_to} variant="default" />
-                  <InfoCard label="PIC" value={suratJalan.PIC} variant="success" />
-                  <InfoCard label="Alamat Tujuan" value={suratJalan.alamat_tujuan} variant="default" />
-                  <InfoCard label="Surat Jalan ID" value={suratJalan.id} variant="primary" copyable />
-                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Status</p>
-                    <StatusBadge 
-                      status={typeof suratJalan.status === 'string' ? suratJalan.status : (suratJalan.status?.status_code || suratJalan.status?.status_name || 'DRAFT SURAT JALAN')}
-                      variant={
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT SURAT JALAN' ? 'warning' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY TO SHIP SURAT JALAN' ? 'info' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED SURAT JALAN' ? 'primary' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED SURAT JALAN' ? 'success' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED SURAT JALAN' ? 'danger' :
-                        // Fallback untuk status lama
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT' ? 'warning' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY_TO_SHIP' ? 'info' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED' ? 'primary' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED' ? 'success' :
-                        (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED' ? 'danger' :
-                        'warning'
-                      }
-                    />
-                  </div>
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'No Surat Jalan', value: suratJalan.no_surat_jalan },
+                    { label: 'Deliver To', value: suratJalan.deliver_to },
+                    { label: 'PIC', value: suratJalan.PIC },
+                    { label: 'Alamat Tujuan', value: suratJalan.alamat_tujuan },
+                    { label: 'Surat Jalan ID', value: suratJalan.id, copyable: true },
+                    { 
+                      label: 'Status', 
+                      component: (
+                        <StatusBadge 
+                          status={typeof suratJalan.status === 'string' ? suratJalan.status : (suratJalan.status?.status_code || suratJalan.status?.status_name || 'DRAFT SURAT JALAN')}
+                          variant={
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT SURAT JALAN' ? 'warning' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY TO SHIP SURAT JALAN' ? 'info' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED SURAT JALAN' ? 'primary' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED SURAT JALAN' ? 'success' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED SURAT JALAN' ? 'danger' :
+                            // Fallback untuk status lama
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT' ? 'warning' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY_TO_SHIP' ? 'info' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED' ? 'primary' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED' ? 'success' :
+                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED' ? 'danger' :
+                            'warning'
+                          }
+                        />
+                      )
+                    }
+                  ]}
+                />
               </AccordionItem>
 
               {/* Print Information */}
@@ -147,16 +152,20 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                 onToggle={() => toggleSection('printInfo')}
                 bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Print Status</p>
-                    <StatusBadge 
-                      status={suratJalan.is_printed ? 'Printed' : 'Not Printed'} 
-                      variant={suratJalan.is_printed ? 'success' : 'warning'} 
-                    />
-                  </div>
-                  <InfoCard label="Print Counter" value={suratJalan.print_counter} variant="warning" />
-                </div>
+                <InfoTable 
+                  data={[
+                    { 
+                      label: 'Print Status', 
+                      component: (
+                        <StatusBadge 
+                          status={suratJalan.is_printed ? 'Printed' : 'Not Printed'} 
+                          variant={suratJalan.is_printed ? 'success' : 'warning'} 
+                        />
+                      )
+                    },
+                    { label: 'Print Counter', value: suratJalan.print_counter }
+                  ]}
+                />
               </AccordionItem>
 
               {/* Invoice Information */}
@@ -167,10 +176,12 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                   onToggle={() => toggleSection('invoiceInfo')}
                   bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <InfoCard label="Invoice No" value={suratJalan.invoice.no_invoice} variant="primary" />
-                    <InfoCard label="Invoice Deliver To" value={suratJalan.invoice.deliver_to} variant="default" />
-                  </div>
+                  <InfoTable 
+                    data={[
+                      { label: 'Invoice No', value: suratJalan.invoice.no_invoice },
+                      { label: 'Invoice Deliver To', value: suratJalan.invoice.deliver_to }
+                    ]}
+                  />
                 </AccordionItem>
               )}
 
@@ -181,10 +192,12 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                 onToggle={() => toggleSection('metaInfo')}
                 bgColor="bg-gradient-to-r from-gray-50 to-gray-100"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <InfoCard label="Created At" value={formatDate(suratJalan.createdAt)} />
-                  <InfoCard label="Updated At" value={formatDate(suratJalan.updatedAt)} />
-                </div>
+                <InfoTable 
+                  data={[
+                    { label: 'Created At', value: formatDate(suratJalan.createdAt) },
+                    { label: 'Updated At', value: formatDate(suratJalan.updatedAt) }
+                  ]}
+                />
               </AccordionItem>
             </div>
           )}
@@ -225,12 +238,16 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                     
                     {expandedDetails[detail.id || detailIndex] && (
                       <div className="px-6 pb-6 border-t border-gray-100">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 mb-6">
-                          <InfoCard label="No Box" value={detail.no_box} variant="primary" />
-                          <InfoCard label="Total Quantity in Box" value={detail.total_quantity_in_box} variant="success" />
-                          <InfoCard label="Isi Box" value={detail.isi_box} variant="default" />
-                          <InfoCard label="Sisa" value={detail.sisa} variant="warning" />
-                          <InfoCard label="Total Box" value={detail.total_box} variant="info" />
+                        <div className="mt-4 mb-6">
+                          <InfoTable 
+                            data={[
+                              { label: 'No Box', value: detail.no_box },
+                              { label: 'Total Quantity in Box', value: detail.total_quantity_in_box },
+                              { label: 'Isi Box', value: detail.isi_box },
+                              { label: 'Sisa', value: detail.sisa },
+                              { label: 'Total Box', value: detail.total_box }
+                            ]}
+                          />
                         </div>
 
                         {(detail.items || detail.suratJalanDetailItems) && (detail.items?.length > 0 || detail.suratJalanDetailItems?.length > 0) && (
