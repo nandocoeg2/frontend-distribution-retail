@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import CompanyForm from '@/components/companies/CompanyForm';
-import useCompaniesPage from '@/hooks/useCompaniesPage';
 
 const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => {
-  const { createCompany } = useCompaniesPage();
   const [formData, setFormData] = useState({
     kode_company: '',
     nama_perusahaan: '',
@@ -29,14 +27,7 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      await createCompany(formData);
-      onCompanyAdded(formData);
-      onClose();
-    } catch (err) {
-      // Error handling is already done in the hook
-    }
+    onCompanyAdded(formData);
   };
 
   if (!show) {

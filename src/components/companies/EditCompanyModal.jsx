@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CompanyForm from '@/components/companies/CompanyForm';
-import useCompaniesPage from '@/hooks/useCompaniesPage';
 
 const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuthError }) => {
-  const { updateCompany } = useCompaniesPage();
   const [formData, setFormData] = useState({
     kode_company: '',
     nama_perusahaan: '',
@@ -48,14 +46,7 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      await updateCompany(company.id, formData);
-      onCompanyUpdated(company.id, formData);
-      onClose();
-    } catch (err) {
-      // Error handling is already done in the hook
-    }
+    onCompanyUpdated(company.id, formData);
   };
 
   if (!show) {

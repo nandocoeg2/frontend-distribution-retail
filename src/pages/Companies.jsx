@@ -5,7 +5,8 @@ import CompanySearch from '@/components/companies/CompanySearch';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
 import EditCompanyModal from '@/components/companies/EditCompanyModal';
 import ViewCompanyModal from '@/components/companies/ViewCompanyModal';
-import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { createCompany, updateCompany } from '@/services/companyService';
+import toastService from '@/services/toastService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Companies = () => {
@@ -20,10 +21,7 @@ const Companies = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    createCompany,
-    updateCompany,
-    deleteEntity,
-    deleteConfirmation,
+    deleteCompany,
     fetchCompanies,
     handleAuthError
   } = useCompaniesPage();
@@ -57,19 +55,27 @@ const Companies = () => {
 
   const handleCompanyAdded = async (companyData) => {
     try {
-      await createCompany(companyData);
-      closeAddModal();
+      const response = await createCompany(companyData);
+      if (response.success) {
+        toastService.success('Company created successfully');
+        closeAddModal();
+        fetchCompanies(1, pagination.itemsPerPage);
+      }
     } catch (error) {
-      // Error handling is already done in the hook
+      toastService.error(error.message || 'Failed to create company');
     }
   };
 
   const handleCompanyUpdated = async (id, companyData) => {
     try {
-      await updateCompany(id, companyData);
-      closeEditModal();
+      const response = await updateCompany(id, companyData);
+      if (response.success) {
+        toastService.success('Company updated successfully');
+        closeEditModal();
+        fetchCompanies(pagination.currentPage, pagination.itemsPerPage);
+      }
     } catch (error) {
-      // Error handling is already done in the hook
+      toastService.error(error.message || 'Failed to update company');
     }
   };
 
@@ -122,9 +128,10 @@ const Companies = () => {
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal} 
-            onDelete={deleteEntity} 
+            onDelete={deleteCompany} 
             onView={openViewModal}
             searchQuery={searchQuery}
+            loading={loading}
           />
         </div>
       </div>
@@ -150,18 +157,6 @@ const Companies = () => {
         company={viewingCompany} 
       />
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmationDialog
-        show={deleteConfirmation.showConfirm}
-        onClose={deleteConfirmation.hideDeleteConfirmation}
-        onConfirm={deleteConfirmation.confirmDelete}
-        title={deleteConfirmation.title}
-        message={deleteConfirmation.message}
-        type="danger"
-        confirmText="Hapus"
-        cancelText="Batal"
-        loading={deleteConfirmation.loading}
-      />
     </div>
   );
 };

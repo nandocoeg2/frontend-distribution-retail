@@ -31,12 +31,11 @@ const CompanyForm = ({ formData, handleInputChange, handleSubmit, closeModal, is
         </div>
 
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
           <textarea
             name="alamat"
             value={formData.alamat}
             onChange={handleInputChange}
-            required
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Jl. Contoh No. 123"
@@ -44,52 +43,48 @@ const CompanyForm = ({ formData, handleInputChange, handleSubmit, closeModal, is
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Account Number *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
           <input
             type="text"
             name="no_rekening"
             value={formData.no_rekening}
             onChange={handleInputChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., 1234567890"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bank *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Bank</label>
           <input
             type="text"
             name="bank"
             value={formData.bank}
             onChange={handleInputChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., BCA"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account Name *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account Name</label>
           <input
             type="text"
             name="bank_account_name"
             value={formData.bank_account_name}
             onChange={handleInputChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., PT. Contoh Jaya"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bank Branch *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Bank Branch</label>
           <input
             type="text"
             name="bank_cabang"
             value={formData.bank_cabang}
             onChange={handleInputChange}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Jakarta Pusat"
           />

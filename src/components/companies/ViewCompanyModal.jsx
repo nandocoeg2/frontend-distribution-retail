@@ -78,7 +78,7 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
               </div>
               <div>
                 <label className='block text-sm font-medium text-gray-700'>Created At</label>
-                <p className='text-sm text-gray-900'>{new Date(company.createdAt).toLocaleDateString()}</p>
+                <p className='text-sm text-gray-900'>{company.createdAt ? new Date(company.createdAt).toLocaleDateString() : 'N/A'}</p>
               </div>
               <div>
                 <label className='block text-sm font-medium text-gray-700'>Updated By</label>
@@ -86,13 +86,7 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
               </div>
               <div>
                 <label className='block text-sm font-medium text-gray-700'>Updated At</label>
-                <p className='text-sm text-gray-900'>{new Date(company.updatedAt).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Status</label>
-                <p className={`text-sm ${company.is_deleted ? 'text-red-600' : 'text-green-600'}`}>
-                  {company.is_deleted ? 'Deleted' : 'Active'}
-                </p>
+                <p className='text-sm text-gray-900'>{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           </div>
