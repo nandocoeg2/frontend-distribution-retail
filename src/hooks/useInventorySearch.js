@@ -1,105 +1,65 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toastService from '../services/toastService';
+import { useCallback } from 'react';
+import usePaginatedSearch from './usePaginatedSearch';
 import { searchInventories } from '../services/inventoryService';
 
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10
+};
+
+const parseInventoryResponse = (response) => {
+  if (!response?.success) {
+    throw new Error(response?.error?.message || 'Failed to search inventories');
+  }
+
+  return {
+    results: response.data?.data || [],
+    pagination: response.data?.pagination || INITIAL_PAGINATION
+  };
+};
+
+const resolveInventoryError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Failed to search inventories';
+};
+
 const useInventorySearch = () => {
-  const [searchResults, setSearchResults] = useState([]);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults,
+    setSearchResults,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange,
+    handleLimitChange,
+    clearSearch,
+    handleAuthError,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialInput: '',
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => searchInventories(query, page, limit),
+    parseResponse: parseInventoryResponse,
+    resolveErrorMessage: resolveInventoryError,
+    requireInput: true
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const navigate = useNavigate();
 
-  const handleAuthError = useCallback(() => {
-    localStorage.clear();
-    navigate('/login');
-    toastService.error('Session expired. Please login again.');
-  }, [navigate]);
-
-  const performSearch = useCallback(async (query, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setPagination({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 10
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await searchInventories(query, page, limit);
-      
-      if (response.success) {
-        setSearchResults(response.data.data);
-        setPagination(response.data.pagination);
-      } else {
-        throw new Error(response.error?.message || 'Failed to search inventories');
-      }
-    } catch (err) {
-      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
-        handleAuthError();
-      } else {
-        setError(err.message);
-        toastService.error(err.message || 'Failed to search inventories');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError]);
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
+  const handleSearchChange = useCallback((event) => {
+    const query = event.target.value;
     setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit(pagination));
+  }, [debouncedSearch, pagination, resolveLimit, setSearchQuery]);
 
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      performSearch(query, 1, pagination.itemsPerPage);
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const handlePageChange = (newPage) => {
-    performSearch(searchQuery, newPage, pagination.itemsPerPage);
-  };
-
-  const handleLimitChange = (newLimit) => {
-    performSearch(searchQuery, 1, newLimit);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-    setSearchResults([]);
-    setPagination({
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-      itemsPerPage: 10
-    });
-    setError(null);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
-  }, [debounceTimeout]);
+  const clearSearchState = useCallback(() => {
+    clearSearch();
+  }, [clearSearch]);
 
   return {
     searchResults,
@@ -115,7 +75,8 @@ const useInventorySearch = () => {
     handlePageChange,
     handleLimitChange,
     performSearch,
-    clearSearch
+    clearSearch: clearSearchState,
+    handleAuthError
   };
 };
 

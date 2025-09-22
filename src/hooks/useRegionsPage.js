@@ -1,143 +1,172 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo } from 'react';
 import toastService from '../services/toastService';
 import { regionService } from '../services/regionService';
+import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
 
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  page: 1,
+  totalPages: 1,
+  totalItems: 0,
+  total: 0,
+  itemsPerPage: 10,
+  limit: 10
+};
+
+const parseRegionResponse = (response) => {
+  const data = response?.data?.data || response?.data || [];
+  const paginationData = response?.data?.pagination || response?.meta || response?.pagination || {};
+
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+  const totalPages = paginationData.totalPages || INITIAL_PAGINATION.totalPages;
+
+  return {
+    results: Array.isArray(data) ? data : [],
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage
+    }
+  };
+};
+
+const resolveRegionError = (error) => {
+  return error?.message || 'Failed to load regions';
+};
+
 const useRegionsPage = () => {
-  const [regions, setRegions] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    totalPages: 1,
-    total: 0,
-    limit: 10
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults: regions,
+    setSearchResults: setRegions,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange,
+    handleLimitChange,
+    clearSearch,
+    handleAuthError,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialInput: '',
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => {
+      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!trimmedQuery) {
+        return regionService.getAllRegions(page, limit);
+      }
+      return regionService.searchRegions(trimmedQuery, page, limit);
+    },
+    parseResponse: parseRegionResponse,
+    resolveErrorMessage: resolveRegionError,
+    requireInput: false
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const navigate = useNavigate();
 
-  const handleAuthError = useCallback(() => {
-    localStorage.clear();
-    navigate('/login');
-    toastService.error('Session expired. Please login again.');
-  }, [navigate]);
+  useEffect(() => {
+    performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
+  }, [performSearch]);
 
-  const fetchRegions = useCallback(async (page = 1, limit = 10) => {
-    try {
-      setLoading(true);
-      const result = await regionService.getAllRegions(page, limit);
-      setRegions(result.data || []);
-      setPagination(result.meta || {
-        page: 1,
-        totalPages: 1,
-        total: 0,
-        limit: 10
-      });
-    } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      setError(err.message);
-      toastService.error('Failed to load regions');
-    } finally {
-      setLoading(false);
+  const searchLoading = useMemo(() => {
+    if (typeof searchQuery !== 'string') {
+      return false;
     }
-  }, [handleAuthError]);
+    return loading && Boolean(searchQuery.trim());
+  }, [loading, searchQuery]);
 
-  const searchRegions = useCallback(async (query, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      fetchRegions(page, limit);
-      return;
-    }
+  const handleSearchChange = useCallback((event) => {
+    const query = event?.target ? event.target.value : event;
+    setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit());
+  }, [debouncedSearch, resolveLimit, setSearchQuery]);
 
-    try {
-      setSearchLoading(true);
-      const result = await regionService.searchRegions(query, page, limit);
-      setRegions(result.data || []);
-      setPagination(result.meta || {
-        page: 1,
-        totalPages: 1,
-        total: 0,
-        limit: 10
-      });
-    } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      toastService.error('Failed to search regions');
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [fetchRegions, handleAuthError]);
+  const fetchRegions = useCallback((page = 1, limit = resolveLimit()) => {
+    return performSearch('', page, limit);
+  }, [performSearch, resolveLimit]);
 
-  const createRegion = async (regionData) => {
+  const createRegion = useCallback(async (regionData) => {
     try {
       const newRegion = await regionService.createRegion(regionData);
-      setRegions([newRegion, ...regions]);
+      setRegions(prev => [newRegion, ...prev]);
       toastService.success('Region created successfully');
-      fetchRegions(pagination.page, pagination.limit); // Refetch to update pagination
+      await fetchRegions(pagination.currentPage || pagination.page || 1, resolveLimit());
       return newRegion;
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
-        return;
+        return undefined;
       }
-      toastService.error('Failed to create region');
+      const message = err.message || 'Failed to create region';
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [fetchRegions, handleAuthError, pagination, resolveLimit, setRegions]);
 
-  const getRegionById = async (id) => {
+  const getRegionById = useCallback(async (id) => {
     try {
-      const region = await regionService.getRegionById(id);
-      return region;
+      return await regionService.getRegionById(id);
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
-        return;
+        return undefined;
       }
-      toastService.error('Failed to fetch region');
+      const message = err.message || 'Failed to fetch region';
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [handleAuthError]);
 
-  const updateRegion = async (id, regionData) => {
+  const updateRegion = useCallback(async (id, regionData) => {
     try {
       const updatedRegion = await regionService.updateRegion(id, regionData);
-      setRegions(regions.map(region => 
-        region.id === id ? updatedRegion : region
-      ));
+      setRegions(prev => prev.map(region => (region.id === id ? updatedRegion : region)));
       toastService.success('Region updated successfully');
       return updatedRegion;
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
-        return;
+        return undefined;
       }
-      toastService.error('Failed to update region');
+      const message = err.message || 'Failed to update region';
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [handleAuthError, setRegions]);
 
-  const deleteRegionFunction = async (id) => {
+  const deleteRegionFunction = useCallback(async (id) => {
     try {
       await regionService.deleteRegion(id);
-      setRegions(regions.filter((region) => region.id !== id));
       toastService.success('Region deleted successfully');
-      fetchRegions(pagination.page, pagination.limit); // Refetch to update pagination
+
+      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const itemsPerPage = resolveLimit();
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      const totalItems = pagination.totalItems || pagination.total || regions.length;
+      const newTotalItems = Math.max(totalItems - 1, 0);
+      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
+      const nextPage = Math.min(currentPage, newTotalPages);
+
+      await performSearch(trimmedQuery, nextPage, itemsPerPage);
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
-      toastService.error('Failed to delete region');
+      const message = err.message || 'Failed to delete region';
+      toastService.error(message);
     }
-  };
+  }, [handleAuthError, pagination, performSearch, regions.length, resolveLimit, searchQuery]);
 
   const deleteRegionConfirmation = useDeleteConfirmation(
     deleteRegionFunction,
@@ -145,54 +174,9 @@ const useRegionsPage = () => {
     'Delete Region'
   );
 
-  const deleteRegion = deleteRegionConfirmation.showDeleteConfirmation;
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      searchRegions(query, 1, pagination.limit);
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (searchQuery.trim()) {
-      searchRegions(searchQuery, newPage, pagination.limit);
-    } else {
-      fetchRegions(newPage, pagination.limit);
-    }
-  };
-
-  const handleLimitChange = (newLimit) => {
-    const newPagination = {
-      ...pagination,
-      limit: newLimit
-    };
-    setPagination(newPagination);
-    
-    if (searchQuery.trim()) {
-      searchRegions(searchQuery, 1, newLimit);
-    } else {
-      fetchRegions(1, newLimit);
-    }
-  };
-
-  useEffect(() => {
-    fetchRegions(1, pagination.limit);
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
-  }, [fetchRegions]);
+  const clearSearchState = useCallback(() => {
+    clearSearch();
+  }, [clearSearch]);
 
   return {
     regions,
@@ -201,6 +185,7 @@ const useRegionsPage = () => {
     setPagination,
     loading,
     error,
+    setError,
     searchQuery,
     searchLoading,
     handleSearchChange,
@@ -209,9 +194,10 @@ const useRegionsPage = () => {
     createRegion,
     getRegionById,
     updateRegion,
-    deleteRegion,
+    deleteRegion: deleteRegionConfirmation.showDeleteConfirmation,
     deleteRegionConfirmation,
     fetchRegions,
+    clearSearch: clearSearchState,
     handleAuthError
   };
 };

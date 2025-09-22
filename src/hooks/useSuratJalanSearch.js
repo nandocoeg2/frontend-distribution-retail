@@ -1,151 +1,109 @@
-import { useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toastService from '../services/toastService';
+import { useCallback } from 'react';
+import usePaginatedSearch from './usePaginatedSearch';
 import suratJalanService from '../services/suratJalanService';
 
+const INITIAL_SEARCH_PARAMS = {
+  no_surat_jalan: '',
+  deliver_to: ''
+};
+
+const INITIAL_PAGINATION = {
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1
+};
+
+const parseSuratJalanResponse = (response) => {
+  if (!response?.success) {
+    throw new Error(response?.message || 'Failed to search surat jalan');
+  }
+
+  const data = response.data || {};
+  const apiPagination = data.pagination || {};
+
+  return {
+    results: data.data || data.suratJalan || [],
+    pagination: {
+      page: apiPagination.currentPage || apiPagination.page || INITIAL_PAGINATION.page,
+      limit: apiPagination.itemsPerPage || apiPagination.limit || INITIAL_PAGINATION.limit,
+      total: apiPagination.totalItems || apiPagination.total || INITIAL_PAGINATION.total,
+      totalPages: apiPagination.totalPages || INITIAL_PAGINATION.totalPages
+    }
+  };
+};
+
+const resolveSuratJalanError = (error) => {
+  return error?.message || error?.response?.data?.error?.message || 'Gagal mencari surat jalan';
+};
+
 const useSuratJalanSearch = () => {
-  const [searchResults, setSearchResults] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 1
+  const {
+    input: searchParams,
+    setInput: setSearchParams,
+    searchResults,
+    setSearchResults,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    isSearching,
+    performSearch,
+    debouncedSearch,
+    handlePageChange,
+    handleLimitChange,
+    clearSearch,
+    clearDebounce,
+    handleAuthError,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialInput: INITIAL_SEARCH_PARAMS,
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (params, page, limit) => suratJalanService.searchSuratJalan(params, page, limit),
+    parseResponse: parseSuratJalanResponse,
+    resolveErrorMessage: resolveSuratJalanError,
+    requireInput: true
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [searchParams, setSearchParams] = useState({
-    no_surat_jalan: '',
-    deliver_to: ''
-  });
-  const [isSearching, setIsSearching] = useState(false);
-  const debounceTimeoutRef = useRef(null);
-  const navigate = useNavigate();
-
-  const handleAuthError = useCallback(() => {
-    localStorage.clear();
-    navigate('/login');
-    toastService.error('Session expired. Please login again.');
-  }, [navigate]);
-
-  const searchSuratJalan = useCallback(async (params, page = 1, limit = 10) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setIsSearching(true);
-      
-      const result = await suratJalanService.searchSuratJalan(params, page, limit);
-      
-      if (result.success) {
-        // API response structure: { success: true, data: { data: [...], pagination: {...} } }
-        setSearchResults(result.data.data || result.data.suratJalan || []);
-        
-        // Map pagination structure from API to expected format
-        const apiPagination = result.data.pagination || {};
-        setPagination({
-          page: apiPagination.currentPage || apiPagination.page || 1,
-          limit: apiPagination.itemsPerPage || apiPagination.limit || 10,
-          total: apiPagination.totalItems || apiPagination.total || 0,
-          totalPages: apiPagination.totalPages || 1
-        });
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to search surat jalan');
-      }
-    } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        handleAuthError();
-        return null;
-      }
-      
-      const errorMessage = err.message || 'Gagal mencari surat jalan';
-      setError(errorMessage);
-      toastService.error(errorMessage);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError]);
-
-  const debouncedSearch = useCallback((params, page = 1, limit = 10) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    debounceTimeoutRef.current = setTimeout(() => {
-      searchSuratJalan(params, page, limit);
-    }, 500);
-  }, [searchSuratJalan]);
 
   const handleSearch = useCallback((field, value) => {
-    const newParams = {
-      ...searchParams,
+    setSearchParams(prev => ({
+      ...prev,
       [field]: value
-    };
-    
-    setSearchParams(newParams);
-    
-    // Clear other fields when searching
-    if (value.trim()) {
-      const clearedParams = { no_surat_jalan: '', deliver_to: '' };
-      clearedParams[field] = value;
-      debouncedSearch(clearedParams, 1, pagination.limit);
+    }));
+
+    const trimmedValue = value.trim();
+    const currentLimit = resolveLimit(pagination);
+
+    if (trimmedValue) {
+      const requestParams = { ...INITIAL_SEARCH_PARAMS, [field]: trimmedValue };
+      debouncedSearch(requestParams, 1, currentLimit);
     } else {
-      // If search is cleared, show all results
-      setSearchResults([]);
-      setPagination({
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 1
-      });
-    }
-  }, [searchParams, pagination.limit, debouncedSearch]);
+      const hasRemainingFilters = Object.entries({ ...searchParams, [field]: trimmedValue })
+        .some(([, filterValue]) => filterValue.trim());
 
-  const handlePageChange = useCallback((newPage) => {
-    const hasSearchQuery = Object.values(searchParams).some(value => value.trim());
-    
-    if (hasSearchQuery) {
-      searchSuratJalan(searchParams, newPage, pagination.limit);
-    }
-  }, [searchParams, pagination.limit, searchSuratJalan]);
+      if (hasRemainingFilters) {
+        const requestParams = Object.fromEntries(
+          Object.entries({ ...searchParams, [field]: trimmedValue })
+            .filter(([, filterValue]) => filterValue.trim())
+        );
+        if (Object.keys(requestParams).length > 0) {
+          debouncedSearch(requestParams, 1, currentLimit);
+          return;
+        }
+      }
 
-  const handleLimitChange = useCallback((newLimit) => {
-    const newPagination = {
-      ...pagination,
-      limit: newLimit
-    };
-    setPagination(newPagination);
-
-    const hasSearchQuery = Object.values(searchParams).some(value => value.trim());
-    
-    if (hasSearchQuery) {
-      searchSuratJalan(searchParams, 1, newLimit);
+      clearSearch();
     }
-  }, [searchParams, pagination, searchSuratJalan]);
+  }, [clearSearch, debouncedSearch, pagination, resolveLimit, searchParams, setSearchParams]);
 
-  const clearSearch = useCallback(() => {
-    setSearchParams({
-      no_surat_jalan: '',
-      deliver_to: ''
-    });
-    setSearchResults([]);
-    setPagination({
-      page: 1,
-      limit: 10,
-      total: 0,
-      totalPages: 1
-    });
-    setError(null);
-    setIsSearching(false);
-    
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-  }, []);
+  const clearSearchState = useCallback(() => {
+    clearSearch();
+  }, [clearSearch]);
 
   const getSearchSummary = useCallback(() => {
     const activeFilters = Object.entries(searchParams)
-      .filter(([key, value]) => value.trim())
+      .filter(([, value]) => value.trim())
       .map(([key, value]) => `${key}: ${value}`)
       .join(', ');
 
@@ -157,18 +115,15 @@ const useSuratJalanSearch = () => {
       currentPage: pagination.page,
       totalPages: pagination.totalPages
     };
-  }, [searchParams, isSearching, searchResults.length, pagination]);
+  }, [isSearching, pagination, searchParams, searchResults.length]);
 
   const clearError = useCallback(() => {
     setError(null);
-  }, []);
+  }, [setError]);
 
-  // Cleanup timeout on unmount
   const cleanup = useCallback(() => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-  }, []);
+    clearDebounce();
+  }, [clearDebounce]);
 
   return {
     searchResults,
@@ -177,17 +132,19 @@ const useSuratJalanSearch = () => {
     setPagination,
     loading,
     error,
+    setError,
     searchParams,
     setSearchParams,
     isSearching,
-    searchSuratJalan,
+    searchSuratJalan: performSearch,
     handleSearch,
     handlePageChange,
     handleLimitChange,
-    clearSearch,
+    clearSearch: clearSearchState,
     getSearchSummary,
     clearError,
-    cleanup
+    cleanup,
+    handleAuthError
   };
 };
 
