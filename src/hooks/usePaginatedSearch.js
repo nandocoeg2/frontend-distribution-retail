@@ -90,6 +90,26 @@ const usePaginatedSearch = ({
   }, [navigate]);
 
   const authHandler = onAuthError || defaultAuthHandler;
+  const searchFnRef = useRef(searchFn);
+  const parseResponseRef = useRef(parseResponse);
+  const resolveErrorMessageRef = useRef(resolveErrorMessage);
+  const authHandlerRef = useRef(authHandler);
+
+  useEffect(() => {
+    searchFnRef.current = searchFn;
+  }, [searchFn]);
+
+  useEffect(() => {
+    parseResponseRef.current = parseResponse;
+  }, [parseResponse]);
+
+  useEffect(() => {
+    resolveErrorMessageRef.current = resolveErrorMessage;
+  }, [resolveErrorMessage]);
+
+  useEffect(() => {
+    authHandlerRef.current = authHandler;
+  }, [authHandler]);
 
   const clearDebounce = useCallback(() => {
     if (debounceTimeoutRef.current) {
@@ -147,8 +167,8 @@ const usePaginatedSearch = ({
       setError(null);
       setIsSearching(true);
 
-      const response = await searchFn(value, page, limit);
-      const { results, pagination: nextPagination } = parseResponse(response) || {};
+      const response = await searchFnRef.current(value, page, limit);
+      const { results, pagination: nextPagination } = parseResponseRef.current(response) || {};
 
       setSearchResults(results || []);
       setPagination(nextPagination || initialPagination);
@@ -156,11 +176,11 @@ const usePaginatedSearch = ({
       return response;
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
+        authHandlerRef.current();
         return null;
       }
 
-      const message = resolveErrorMessage(err);
+      const message = resolveErrorMessageRef.current(err);
       setError(message);
       if (toastOnError && message) {
         toastService.error(message);
@@ -170,7 +190,7 @@ const usePaginatedSearch = ({
     } finally {
       setLoading(false);
     }
-  }, [authHandler, clearDebounce, initialPagination, parseResponse, resolveErrorMessage, resetState, resolveLimit, searchFn, setPagination, shouldSkipSearch, toastOnError]);
+  }, [clearDebounce, initialPagination, resetState, resolveLimit, setPagination, shouldSkipSearch, toastOnError]);
 
   const debouncedSearch = useCallback((value = currentInputRef.current, page = 1, limit) => {
     clearDebounce();
