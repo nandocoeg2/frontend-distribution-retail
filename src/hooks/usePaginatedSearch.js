@@ -61,7 +61,7 @@ const usePaginatedSearch = ({
 } = {}) => {
   const navigate = useNavigate();
   const [searchResults, setSearchResults] = useState([]);
-  const [pagination, setPagination] = useState(initialPagination);
+  const [pagination, setPaginationState] = useState(initialPagination);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [input, setInputState] = useState(initialInput);
@@ -69,6 +69,19 @@ const usePaginatedSearch = ({
 
   const debounceTimeoutRef = useRef(null);
   const currentInputRef = useRef(initialInput);
+  const paginationRef = useRef(initialPagination);
+
+  const setPagination = useCallback((valueOrUpdater) => {
+    setPaginationState(prev => {
+      const nextValue = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater;
+      paginationRef.current = nextValue;
+      return nextValue;
+    });
+  }, []);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const defaultAuthHandler = useCallback(() => {
     localStorage.clear();
@@ -90,7 +103,7 @@ const usePaginatedSearch = ({
     setPagination(initialPagination);
     setError(null);
     setIsSearching(false);
-  }, [initialPagination]);
+  }, [initialPagination, setPagination]);
 
   const shouldSkipSearch = useCallback((value) => {
     if (!requireInput) {
@@ -108,13 +121,15 @@ const usePaginatedSearch = ({
     return value == null;
   }, [requireInput]);
 
-  const resolveLimit = useCallback((pageState = pagination) => {
-    if (!pageState) {
+  const resolveLimit = useCallback((pageState) => {
+    const state = pageState || paginationRef.current || initialPagination;
+
+    if (!state) {
       return initialPagination.itemsPerPage || initialPagination.limit || 10;
     }
 
-    return pageState.itemsPerPage || pageState.limit || initialPagination.itemsPerPage || 10;
-  }, [pagination, initialPagination]);
+    return state.itemsPerPage || state.limit || initialPagination.itemsPerPage || 10;
+  }, [initialPagination]);
 
   const performSearch = useCallback(async (value = currentInputRef.current, page = 1, limit = resolveLimit()) => {
     clearDebounce();
@@ -155,7 +170,7 @@ const usePaginatedSearch = ({
     } finally {
       setLoading(false);
     }
-  }, [authHandler, clearDebounce, initialPagination, parseResponse, resolveErrorMessage, resetState, resolveLimit, searchFn, shouldSkipSearch, toastOnError]);
+  }, [authHandler, clearDebounce, initialPagination, parseResponse, resolveErrorMessage, resetState, resolveLimit, searchFn, setPagination, shouldSkipSearch, toastOnError]);
 
   const debouncedSearch = useCallback((value = currentInputRef.current, page = 1, limit) => {
     clearDebounce();
@@ -179,7 +194,7 @@ const usePaginatedSearch = ({
     }));
 
     performSearch(currentInputRef.current, 1, newLimit);
-  }, [performSearch]);
+  }, [performSearch, setPagination]);
 
   const clearSearch = useCallback(() => {
     clearDebounce();
