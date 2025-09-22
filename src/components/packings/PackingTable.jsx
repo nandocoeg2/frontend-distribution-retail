@@ -6,10 +6,7 @@ const PackingTable = ({
   onViewById, 
   onEdit, 
   onDelete, 
-  isDeleting, 
-  deleteConfirmId, 
-  onConfirmDelete, 
-  onCancelDelete,
+  deleteLoading = false,
   selectedPackings = [],
   onSelectPacking,
   onSelectAllPackings,
@@ -123,33 +120,14 @@ const PackingTable = ({
                   >
                     <PencilIcon className="h-5 w-5" />
                   </button>
-                  {deleteConfirmId === packing.id ? (
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => onDelete(packing.id)}
-                        disabled={isDeleting}
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                        title="Confirm Delete"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={onCancelDelete}
-                        className="text-gray-600 hover:text-gray-900"
-                        title="Cancel"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => onConfirmDelete(packing.id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Delete"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => onDelete(packing.id)}
+                    disabled={deleteLoading}
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Delete"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -168,4 +146,5 @@ const PackingTable = ({
 };
 
 export default PackingTable;
+
 

@@ -7,7 +7,7 @@ import {
   ViewPackingModal
 } from '../components/packings';
 import Pagination from '../components/common/Pagination';
-import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { useConfirmationDialog, ConfirmationDialog as BaseConfirmationDialog } from '../components/ui/ConfirmationDialog';
 
 const Packings = () => {
   const {
@@ -20,25 +20,22 @@ const Packings = () => {
     searchLoading,
     viewingPacking,
     isViewModalOpen,
-    isDeleting,
-    deleteConfirmId,
     searchFilters,
     selectedPackings,
     isProcessing,
     hasSelectedPackings,
+    deletePacking,
+    deletePackingConfirmation,
     handleSearchChange,
     handleSearchFieldChange,
     handlePageChange,
     openViewModal,
     closeViewModal,
-    handleDeletePacking,
-    confirmDelete,
-    cancelDelete,
+    handleProcessPackings,
     handleFilterChange,
     clearFilters,
     handleSelectPacking,
     handleSelectAllPackings,
-    handleProcessPackings,
     refreshPackings
   } = usePackingsPage();
 
@@ -47,7 +44,7 @@ const Packings = () => {
   const [editingPacking, setEditingPacking] = React.useState(null);
 
   // Confirmation dialog for process packing
-  const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
+  const { showDialog, hideDialog, setLoading, ConfirmationDialog: ProcessConfirmationDialog } = useConfirmationDialog();
 
   const handleEditPacking = (packing) => {
     setEditingPacking(packing);
@@ -114,11 +111,8 @@ const Packings = () => {
                 packings={packings} 
                 onViewById={openViewModal}
                 onEdit={handleEditPacking}
-                onDelete={handleDeletePacking}
-                isDeleting={isDeleting}
-                deleteConfirmId={deleteConfirmId}
-                onConfirmDelete={confirmDelete}
-                onCancelDelete={cancelDelete}
+                onDelete={deletePacking}
+                deleteLoading={deletePackingConfirmation.loading}
                 selectedPackings={selectedPackings}
                 onSelectPacking={handleSelectPacking}
                 onSelectAllPackings={handleSelectAllPackings}
@@ -161,12 +155,25 @@ const Packings = () => {
           />
         )}
 
-        {/* Confirmation Dialog */}
-        <ConfirmationDialog onConfirm={handleConfirmProcess} />
+        {/* Confirmation Dialogs */}
+        <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
+
+        <BaseConfirmationDialog
+          show={deletePackingConfirmation.showConfirm}
+          onClose={deletePackingConfirmation.hideDeleteConfirmation}
+          onConfirm={deletePackingConfirmation.confirmDelete}
+          title={deletePackingConfirmation.title}
+          message={deletePackingConfirmation.message}
+          type="danger"
+          confirmText="Hapus"
+          cancelText="Batal"
+          loading={deletePackingConfirmation.loading}
+        />
       </div>
     </div>
   );
 };
 
 export default Packings;
+
 

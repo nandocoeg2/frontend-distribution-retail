@@ -9,6 +9,7 @@ import {
 } from '../services/packingService';
 import toastService from '../services/toastService';
 import usePaginatedSearch from './usePaginatedSearch';
+import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const INITIAL_PAGINATION = {
   currentPage: 1,
@@ -61,8 +62,6 @@ const usePackingsPage = () => {
   const [searchFilters, setSearchFilters] = useState({});
   const [viewingPacking, setViewingPacking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [selectedPackings, setSelectedPackings] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -131,7 +130,7 @@ const usePackingsPage = () => {
     return performSearch(payload, page, resolveLimit());
   }, [performSearch, resolveLimit, setSearchInput]);
 
-const clearFilters = useCallback(() => {
+  const clearFilters = useCallback(() => {
     setSearchFilters({});
     setSearchQuery('');
     setSelectedPackings([]);
@@ -163,8 +162,7 @@ const clearFilters = useCallback(() => {
     handlePageChangeInternal(page);
   }, [handlePageChangeInternal]);
 
-  const handleDeletePacking = useCallback(async (id) => {
-    setIsDeleting(true);
+  const deletePackingHandler = useCallback(async (id) => {
     try {
       await deletePacking(id);
       toastService.success('Packing berhasil dihapus');
@@ -181,9 +179,6 @@ const clearFilters = useCallback(() => {
       const message = err?.response?.data?.error?.message || err?.message || 'Gagal menghapus packing';
       setError(message);
       toastService.error(message);
-    } finally {
-      setIsDeleting(false);
-      setDeleteConfirmId(null);
     }
   }, [currentSearchValue, packings.length, pagination, performSearch, resolveLimit, setError]);
 
@@ -208,14 +203,6 @@ const clearFilters = useCallback(() => {
     const currentPage = pagination.currentPage || pagination.page || 1;
     performSearch(currentSearchValue, currentPage, resolveLimit());
   }, [currentSearchValue, pagination, performSearch, resolveLimit]);
-
-  const confirmDelete = useCallback((id) => {
-    setDeleteConfirmId(id);
-  }, []);
-
-  const cancelDelete = useCallback(() => {
-    setDeleteConfirmId(null);
-  }, []);
 
   const handleFilterChange = useCallback((filters) => {
     setSearchFilters(filters);
@@ -264,6 +251,12 @@ const clearFilters = useCallback(() => {
     }
   }, [processPackings, refreshPackings, selectedPackings]);
 
+  const deletePackingConfirmation = useDeleteConfirmation(
+    deletePackingHandler,
+    'Apakah Anda yakin ingin menghapus packing ini?',
+    'Hapus Packing'
+  );
+
   return {
     packings,
     pagination,
@@ -277,8 +270,6 @@ const clearFilters = useCallback(() => {
     searchLoading,
     viewingPacking,
     isViewModalOpen,
-    isDeleting,
-    deleteConfirmId,
     selectedPackings,
     isProcessing,
     hasSelectedPackings: selectedPackings.length > 0,
@@ -293,9 +284,8 @@ const clearFilters = useCallback(() => {
     openViewModal,
     closeViewModal,
     refreshPackings,
-    handleDeletePacking,
-    confirmDelete,
-    cancelDelete,
+    deletePacking: deletePackingConfirmation.showDeleteConfirmation,
+    deletePackingConfirmation,
     handleFilterChange,
     handleSelectPacking,
     handleSelectAllPackings,
