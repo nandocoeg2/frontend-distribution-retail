@@ -1,7 +1,58 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo } from 'react';
 import toastService from '../services/toastService';
+import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
+
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  page: 1,
+  totalPages: 1,
+  totalItems: 0,
+  total: 0,
+  itemsPerPage: 10,
+  limit: 10
+};
+
+const normalizePaginationShape = (paginationData = {}) => {
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+  const totalPages = paginationData.totalPages || INITIAL_PAGINATION.totalPages;
+
+  return {
+    currentPage,
+    page: currentPage,
+    totalPages,
+    totalItems,
+    total: totalItems,
+    itemsPerPage,
+    limit: itemsPerPage
+  };
+};
+
+const parseEntityResponse = (response, entityNamePlural) => {
+  if (response?.success === false) {
+    throw new Error(`Failed to fetch ${entityNamePlural}`);
+  }
+
+  const rawData = response?.data?.data || response?.data || [];
+  const paginationData = response?.data?.pagination || response?.meta || response?.pagination || {};
+
+  const results = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.data)
+      ? rawData.data
+      : [];
+
+  return {
+    results,
+    pagination: normalizePaginationShape(paginationData)
+  };
+};
+
+const createErrorResolver = (entityNamePlural) => (error) => {
+  return error?.response?.data?.error?.message || error?.message || `Failed to load ${entityNamePlural}`;
+};
 
 const useEntity = ({
   entityName,
@@ -11,180 +62,136 @@ const useEntity = ({
   deleteService,
   createService,
   updateService,
-  getByIdService,
 }) => {
-  const [entities, setEntities] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    totalPages: 1,
-    total: 0,
-    limit: 10
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults: entities,
+    setSearchResults: setEntities,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
+    clearSearch,
+    handleAuthError,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialInput: '',
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => {
+      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!trimmedQuery || !searchService) {
+        return getAllService(page, limit);
+      }
+      return searchService(trimmedQuery, page, limit);
+    },
+    parseResponse: (response) => parseEntityResponse(response, entityNamePlural),
+    resolveErrorMessage: createErrorResolver(entityNamePlural),
+    requireInput: false
   });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const navigate = useNavigate();
 
-  const handleAuthError = useCallback(() => {
-    localStorage.clear();
-    navigate('/login');
-    toastService.error('Sesi telah berakhir. Silakan login kembali.');
-  }, [navigate]);
+  useEffect(() => {
+    performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
+  }, [performSearch]);
 
-  const normalizePagination = (paginationData) => {
-    if (!paginationData) return { page: 1, totalPages: 1, total: 0, limit: 10 };
-    return {
-      page: paginationData.currentPage || paginationData.page || 1,
-      totalPages: paginationData.totalPages || 1,
-      total: paginationData.totalItems || paginationData.total || 0,
-      limit: paginationData.itemsPerPage || paginationData.limit || 10,
-    };
-  };
-
-  const fetchEntities = useCallback(async (page = 1, limit = 10) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await getAllService(page, limit);
-
-      if (result.success !== false) {
-        // Handle different response structures
-        const data = result.data?.data || result.data || [];
-        const paginationData = result.data?.pagination || result.meta || result.pagination;
-
-        setEntities(data);
-        setPagination(normalizePagination(paginationData));
-      } else {
-        throw new Error(`Failed to fetch ${entityNamePlural}`);
-      }
-    } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      setError(err.message);
-      toastService.error(err.message);
-    } finally {
-      setLoading(false);
+  const searchLoading = useMemo(() => {
+    if (typeof searchQuery !== 'string') {
+      return false;
     }
-  }, [getAllService, handleAuthError, entityNamePlural]);
+    return loading && Boolean(searchQuery.trim());
+  }, [loading, searchQuery]);
 
-  const searchEntities = useCallback(async (query, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      fetchEntities(page, limit);
-      return;
-    }
+  const handleSearchChange = useCallback((event) => {
+    const query = event?.target ? event.target.value : event;
+    setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit());
+  }, [debouncedSearch, resolveLimit, setSearchQuery]);
 
-    try {
-      setSearchLoading(true);
-      setError(null);
-      const result = await searchService(query, page, limit);
+  const fetchEntities = useCallback((page = 1, limit = resolveLimit()) => {
+    return performSearch('', page, limit);
+  }, [performSearch, resolveLimit]);
 
-      if (result.success !== false) {
-        const data = result.data?.data || result.data || [];
-        const paginationData = result.data?.pagination || result.meta || result.pagination;
+  const createEntity = useCallback(async (entityData) => {
+    if (!createService) return undefined;
 
-        setEntities(data);
-        setPagination(normalizePagination(paginationData));
-      } else {
-        throw new Error(`Failed to search ${entityNamePlural}`);
-      }
-    } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      setError(err.message);
-      toastService.error(err.message);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [searchService, fetchEntities, handleAuthError, entityNamePlural]);
-
-  const createEntity = async (entityData) => {
-    if (!createService) return;
     try {
       const result = await createService(entityData);
-
-      if (result.success !== false) {
-        toastService.success(`${entityName} berhasil dibuat`);
-        fetchEntities(pagination.page, pagination.limit);
-        return result.data || result;
-      } else {
+      if (result?.success === false) {
         throw new Error(`Failed to create ${entityName}`);
       }
+
+      toastService.success(`${entityName} berhasil dibuat`);
+      await fetchEntities(pagination.currentPage || pagination.page || 1, resolveLimit());
+      return result?.data || result;
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
-        return;
+        return undefined;
       }
-      toastService.error(err.message);
+      const message = err.message || `Failed to create ${entityName}`;
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [createService, entityName, fetchEntities, handleAuthError, pagination, resolveLimit]);
 
-  const updateEntity = async (id, entityData) => {
-    if (!updateService) return;
+  const updateEntity = useCallback(async (id, entityData) => {
+    if (!updateService) return undefined;
+
     try {
       const result = await updateService(id, entityData);
-
-      if (result.success !== false) {
-        toastService.success(`${entityName} berhasil diperbarui`);
-        setEntities(entities.map(entity =>
-          entity.id === id ? (result.data || result) : entity
-        ));
-        return result.data || result;
-      } else {
+      if (result?.success === false) {
         throw new Error(`Failed to update ${entityName}`);
       }
+
+      toastService.success(`${entityName} berhasil diperbarui`);
+      const updatedEntity = result?.data || result;
+      setEntities(prev => prev.map((entity) => (entity.id === id ? updatedEntity : entity)));
+      return updatedEntity;
     } catch (err) {
       if (err.message === 'Unauthorized') {
         handleAuthError();
-        return;
+        return undefined;
       }
-      toastService.error(err.message);
+      const message = err.message || `Failed to update ${entityName}`;
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [entityName, handleAuthError, setEntities, updateService]);
 
-  const deleteEntityFunction = async (id) => {
+  const deleteEntityFunction = useCallback(async (id) => {
     if (!deleteService) return;
+
     try {
-      console.log(`Deleting ${entityName} with ID:`, id);
       const result = await deleteService(id);
-      console.log('Delete result:', result);
-
-      if (result.success !== false) {
-        toastService.success(`${entityName} berhasil dihapus`);
-
-        const newTotal = pagination.total - 1;
-        const newTotalPages = Math.ceil(newTotal / pagination.limit);
-
-        console.log('Refreshing data after delete...');
-        if (entities.length === 1 && pagination.page > 1) {
-          // If it's the last item on a page that is not the first page, go to the previous page
-          fetchEntities(pagination.page - 1, pagination.limit);
-        } else if (pagination.page > newTotalPages && newTotalPages > 0) {
-          // If current page is now out of bounds, go to the new last page
-          fetchEntities(newTotalPages, pagination.limit);
-        } else {
-          // Otherwise, just refetch the current page
-          fetchEntities(pagination.page, pagination.limit);
-        }
-      } else {
+      if (result?.success === false) {
         throw new Error(`Failed to delete ${entityName}`);
       }
+
+      toastService.success(`${entityName} berhasil dihapus`);
+
+      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const itemsPerPage = resolveLimit();
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      const totalItems = pagination.totalItems || pagination.total || entities.length;
+      const newTotalItems = Math.max(totalItems - 1, 0);
+      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
+      const nextPage = Math.min(currentPage, newTotalPages);
+
+      await performSearch(trimmedQuery, nextPage, itemsPerPage);
     } catch (err) {
-      console.error(`Delete ${entityName} error:`, err);
       if (err.message === 'Unauthorized') {
         handleAuthError();
         return;
       }
-      toastService.error(err.message);
+      const message = err.message || `Failed to delete ${entityName}`;
+      toastService.error(message);
     }
-  };
+  }, [deleteService, entities.length, entityName, handleAuthError, pagination, performSearch, resolveLimit, searchQuery]);
 
   const deleteConfirmation = useDeleteConfirmation(
     deleteEntityFunction,
@@ -192,49 +199,17 @@ const useEntity = ({
     `Hapus ${entityName}`
   );
 
-  const deleteEntity = deleteConfirmation.showDeleteConfirmation;
+  const handlePageChange = useCallback((newPage) => {
+    handlePageChangeInternal(newPage);
+  }, [handlePageChangeInternal]);
 
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
+  const handleLimitChange = useCallback((newLimit) => {
+    handleLimitChangeInternal(newLimit);
+  }, [handleLimitChangeInternal]);
 
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      searchEntities(query, 1, pagination.limit);
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (searchQuery.trim()) {
-      searchEntities(searchQuery, newPage, pagination.limit);
-    } else {
-      fetchEntities(newPage, pagination.limit);
-    }
-  };
-
-  const handleLimitChange = (newLimit) => {
-    setPagination(p => ({ ...p, limit: newLimit, page: 1 }));
-    if (searchQuery.trim()) {
-      searchEntities(searchQuery, 1, newLimit);
-    } else {
-      fetchEntities(1, newLimit);
-    }
-  };
-
-  useEffect(() => {
-    fetchEntities(pagination.page, pagination.limit);
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
-  }, [fetchEntities]);
+  const clearSearchState = useCallback(() => {
+    clearSearch();
+  }, [clearSearch]);
 
   return {
     entities,
@@ -243,6 +218,7 @@ const useEntity = ({
     setPagination,
     loading,
     error,
+    setError,
     searchQuery,
     searchLoading,
     handleSearchChange,
@@ -250,9 +226,10 @@ const useEntity = ({
     handleLimitChange,
     createEntity,
     updateEntity,
-    deleteEntity,
+    deleteEntity: deleteConfirmation.showDeleteConfirmation,
     deleteConfirmation,
     fetchEntities,
+    clearSearch: clearSearchState,
     handleAuthError,
   };
 };

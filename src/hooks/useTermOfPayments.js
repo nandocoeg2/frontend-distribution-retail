@@ -1,185 +1,201 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { termOfPaymentService } from '../services/termOfPaymentService';
+import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
 
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+  page: 1,
+  limit: 10,
+  total: 0
+};
+
+const parseTermOfPaymentResponse = (response) => {
+  if (response?.success === false) {
+    throw new Error(response?.message || 'Failed to load term of payments');
+  }
+
+  const rawData = response?.data?.data || response?.data || [];
+  const paginationData = response?.data?.pagination || {};
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+
+  return {
+    results: Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [],
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages: paginationData.totalPages || INITIAL_PAGINATION.totalPages,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage
+    }
+  };
+};
+
+const resolveTermOfPaymentError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Gagal memuat data term of payments';
+};
+
 const useTermOfPayments = () => {
-  const [termOfPayments, setTermOfPayments] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    totalPages: 1,
-    total: 0,
-    limit: 10
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const navigate = useNavigate();
 
-  const handleAuthError = useCallback(() => {
+  const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
     navigate('/login');
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const fetchTermOfPayments = useCallback(async (page = 1, limit = 10) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await termOfPaymentService.getAllTermOfPayments(page, limit);
-      
-      if (result.success) {
-        setTermOfPayments(result.data.data || []);
-        setPagination({
-          page: result.data.pagination?.currentPage || 1,
-          totalPages: result.data.pagination?.totalPages || 1,
-          total: result.data.pagination?.totalItems || 0,
-          limit: result.data.pagination?.itemsPerPage || 10
-        });
-      } else {
-        throw new Error(result.message || 'Failed to fetch term of payments');
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults: termOfPayments,
+    setSearchResults: setTermOfPayments,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
+    handleAuthError: authHandler,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => {
+      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!trimmedQuery) {
+        return termOfPaymentService.getAllTermOfPayments(page, limit);
       }
-    } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      setError(err.message);
-      toastService.error('Gagal memuat data term of payments');
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError]);
+      return termOfPaymentService.searchTermOfPayments(trimmedQuery, page, limit);
+    },
+    parseResponse: parseTermOfPaymentResponse,
+    resolveErrorMessage: resolveTermOfPaymentError,
+    onAuthError: handleAuthRedirect
+  });
 
-  const searchTermOfPayments = useCallback(async (query, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      fetchTermOfPayments(page, limit);
-      return;
+  const searchLoading = useMemo(() => {
+    if (typeof searchQuery !== 'string') {
+      return false;
     }
+    return loading && Boolean(searchQuery.trim());
+  }, [loading, searchQuery]);
 
-    try {
-      setSearchLoading(true);
-      setError(null);
-      const result = await termOfPaymentService.searchTermOfPayments(query, page, limit);
-      
-      if (result.success) {
-        setTermOfPayments(result.data.data || []);
-        setPagination({
-          page: result.data.pagination?.currentPage || 1,
-          totalPages: result.data.pagination?.totalPages || 1,
-          total: result.data.pagination?.totalItems || 0,
-          limit: result.data.pagination?.itemsPerPage || 10
-        });
-      } else {
-        throw new Error(result.message || 'Failed to search term of payments');
-      }
-    } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
-      }
-      toastService.error('Gagal mencari data term of payments');
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [fetchTermOfPayments, handleAuthError]);
+  const fetchTermOfPayments = useCallback((page = 1, limit = resolveLimit()) => {
+    return performSearch('', page, limit);
+  }, [performSearch, resolveLimit]);
 
-  const createTermOfPayment = async (termOfPaymentData) => {
+  const searchTermOfPayments = useCallback((query, page = 1, limit = resolveLimit()) => {
+    return performSearch(query, page, limit);
+  }, [performSearch, resolveLimit]);
+
+  const handleSearchChange = useCallback((event) => {
+    const query = event?.target ? event.target.value : event;
+    setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit());
+  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+
+  const refreshAfterMutation = useCallback(async () => {
+    const itemsPerPage = resolveLimit();
+    const currentPage = pagination.currentPage || pagination.page || 1;
+    const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    await performSearch(trimmedQuery, currentPage, itemsPerPage);
+  }, [pagination, performSearch, resolveLimit, searchQuery]);
+
+  const createTermOfPayment = useCallback(async (termOfPaymentData) => {
     try {
-      setLoading(true);
       const result = await termOfPaymentService.createTermOfPayment(termOfPaymentData);
-      
-      if (result.success) {
-        toastService.success('Term of payment berhasil dibuat');
-        // Refresh data setelah create
-        fetchTermOfPayments(pagination.page, pagination.limit);
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to create term of payment');
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to create term of payment');
       }
+      toastService.success('Term of payment berhasil dibuat');
+      await refreshAfterMutation();
+      return result?.data;
     } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
+      if (err?.message === 'Unauthorized' || err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
       }
-      toastService.error('Gagal membuat term of payment');
+      const message = err?.response?.data?.error?.message || err?.message || 'Gagal membuat term of payment';
+      toastService.error(message);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [authHandler, refreshAfterMutation]);
 
-  const updateTermOfPayment = async (id, termOfPaymentData) => {
+  const updateTermOfPayment = useCallback(async (id, termOfPaymentData) => {
     try {
-      setLoading(true);
       const result = await termOfPaymentService.updateTermOfPayment(id, termOfPaymentData);
-      
-      if (result.success) {
-        toastService.success('Term of payment berhasil diperbarui');
-        // Refresh data setelah update
-        fetchTermOfPayments(pagination.page, pagination.limit);
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to update term of payment');
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to update term of payment');
       }
+      toastService.success('Term of payment berhasil diperbarui');
+      await refreshAfterMutation();
+      return result?.data;
     } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
+      if (err?.message === 'Unauthorized' || err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
       }
-      toastService.error('Gagal memperbarui term of payment');
+      const message = err?.response?.data?.error?.message || err?.message || 'Gagal memperbarui term of payment';
+      toastService.error(message);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [authHandler, refreshAfterMutation]);
 
-  const getTermOfPaymentById = async (id) => {
+  const getTermOfPaymentById = useCallback(async (id) => {
     try {
-      setLoading(true);
       const result = await termOfPaymentService.getTermOfPaymentById(id);
-      
-      if (result.success) {
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to fetch term of payment');
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to fetch term of payment');
       }
+      return result?.data;
     } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
-        return;
+      if (err?.message === 'Unauthorized' || err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
       }
-      toastService.error('Gagal mengambil data term of payment');
+      const message = err?.response?.data?.error?.message || err?.message || 'Gagal mengambil data term of payment';
+      toastService.error(message);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [authHandler]);
 
-  const deleteTermOfPaymentFunction = async (id) => {
+  const deleteTermOfPaymentFunction = useCallback(async (id) => {
     try {
       const result = await termOfPaymentService.deleteTermOfPayment(id);
-      
-      if (result === true || result.success) {
-        setTermOfPayments(termOfPayments.filter((top) => top.id !== id));
-        toastService.success('Term of payment berhasil dihapus');
-        // Refresh data setelah delete
-        fetchTermOfPayments(pagination.page, pagination.limit);
-      } else {
-        throw new Error(result.message || 'Failed to delete term of payment');
+      if (!(result === true || result?.success)) {
+        throw new Error(result?.message || 'Failed to delete term of payment');
       }
+      toastService.success('Term of payment berhasil dihapus');
+
+      const itemsPerPage = resolveLimit();
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      const totalItems = pagination.totalItems || pagination.total || termOfPayments.length;
+      const newTotalItems = Math.max(totalItems - 1, 0);
+      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
+      const nextPage = Math.min(currentPage, newTotalPages);
+      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+
+      await performSearch(trimmedQuery, nextPage, itemsPerPage);
     } catch (err) {
-      if (err.message === 'Unauthorized') {
-        handleAuthError();
+      if (err?.message === 'Unauthorized' || err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
         return;
       }
-      console.log(err);
-      toastService.error('Gagal menghapus term of payment');
+      const message = err?.response?.data?.error?.message || err?.message || 'Gagal menghapus term of payment';
+      setError(message);
+      toastService.error(message);
     }
-  };
+  }, [authHandler, pagination, performSearch, resolveLimit, searchQuery, setError, termOfPayments.length]);
 
   const deleteTermOfPaymentConfirmation = useDeleteConfirmation(
     deleteTermOfPaymentFunction,
@@ -187,53 +203,8 @@ const useTermOfPayments = () => {
     'Hapus Term of Payment'
   );
 
-  const deleteTermOfPayment = deleteTermOfPaymentConfirmation.showDeleteConfirmation;
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      searchTermOfPayments(query, 1, pagination.limit);
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (searchQuery.trim()) {
-      searchTermOfPayments(searchQuery, newPage, pagination.limit);
-    } else {
-      fetchTermOfPayments(newPage, pagination.limit);
-    }
-  };
-
-  const handleLimitChange = (newLimit) => {
-    const newPagination = {
-      ...pagination,
-      limit: newLimit
-    };
-    setPagination(newPagination);
-    
-    if (searchQuery.trim()) {
-      searchTermOfPayments(searchQuery, 1, newLimit);
-    } else {
-      fetchTermOfPayments(1, newLimit);
-    }
-  };
-
   useEffect(() => {
-    fetchTermOfPayments(1, pagination.limit);
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
+    fetchTermOfPayments(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchTermOfPayments]);
 
   return {
@@ -246,16 +217,16 @@ const useTermOfPayments = () => {
     searchQuery,
     searchLoading,
     handleSearchChange,
-    handlePageChange,
-    handleLimitChange,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
     createTermOfPayment,
     updateTermOfPayment,
     getTermOfPaymentById,
-    deleteTermOfPayment,
+    deleteTermOfPayment: deleteTermOfPaymentConfirmation.showDeleteConfirmation,
     deleteTermOfPaymentConfirmation,
     fetchTermOfPayments,
     searchTermOfPayments,
-    handleAuthError
+    handleAuthError: authHandler
   };
 };
 

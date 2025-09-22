@@ -1,95 +1,139 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '@/services/toastService';
 import supplierService from '@/services/supplierService';
+import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
 
-const API_URL = 'http://localhost:5050/api/v1';
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+  page: 1,
+  limit: 10,
+  total: 0
+};
+
+const parseSuppliersResponse = (response) => {
+  if (response?.success === false) {
+    throw new Error(response?.message || 'Failed to load suppliers');
+  }
+
+  const rawData = response?.data?.data || response?.data || [];
+  const paginationData = response?.data?.pagination || {};
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+
+  return {
+    results: Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [],
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages: paginationData.totalPages || INITIAL_PAGINATION.totalPages,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage
+    }
+  };
+};
+
+const resolveSupplierError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Failed to load suppliers';
+};
 
 const useSuppliers = () => {
-  const [suppliers, setSuppliers] = useState([]);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
   const navigate = useNavigate();
 
-  const handleAuthError = useCallback(() => {
+  const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
     navigate('/login');
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const fetchSuppliers = useCallback(async (page = 1, limit = 10) => {
-    try {
-      setLoading(true);
-      const result = await supplierService.getAllSuppliers(page, limit);
-      if (result.success) {
-        setSuppliers(result.data?.data || []);
-        setPagination({
-          currentPage: result.data?.pagination?.currentPage || 1,
-          totalPages: result.data?.pagination?.totalPages || 1,
-          totalItems: result.data?.pagination?.totalItems || 0,
-          itemsPerPage: result.data?.pagination?.itemsPerPage || 10
-        });
-      } else {
-        throw new Error(result.message || 'Failed to load suppliers');
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults: suppliers,
+    setSearchResults: setSuppliers,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
+    handleAuthError: authHandler,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => {
+      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!trimmedQuery) {
+        return supplierService.getAllSuppliers(page, limit);
       }
-    } catch (err) {
-      setError(err.message);
-      toastService.error('Failed to load suppliers');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return supplierService.searchSuppliers(trimmedQuery, page, limit);
+    },
+    parseResponse: parseSuppliersResponse,
+    resolveErrorMessage: resolveSupplierError,
+    onAuthError: handleAuthRedirect
+  });
 
-  const searchSuppliers = useCallback(async (query, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      fetchSuppliers(page, limit);
-      return;
+  const searchLoading = useMemo(() => {
+    if (typeof searchQuery !== 'string') {
+      return false;
     }
+    return loading && Boolean(searchQuery.trim());
+  }, [loading, searchQuery]);
 
-    try {
-      setSearchLoading(true);
-      const result = await supplierService.searchSuppliers(query, page, limit);
-      if (result.success) {
-        setSuppliers(result.data?.data || []);
-        setPagination({
-          currentPage: result.data?.pagination?.currentPage || 1,
-          totalPages: result.data?.pagination?.totalPages || 1,
-          totalItems: result.data?.pagination?.totalItems || 0,
-          itemsPerPage: result.data?.pagination?.itemsPerPage || 10
-        });
-      } else {
-        throw new Error(result.message || 'Failed to search suppliers');
-      }
-    } catch (err) {
-      toastService.error('Failed to search suppliers');
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [fetchSuppliers]);
+  const fetchSuppliers = useCallback((page = 1, limit = resolveLimit()) => {
+    return performSearch('', page, limit);
+  }, [performSearch, resolveLimit]);
 
-  const deleteSupplierFunction = async (id) => {
+  const handleSearchChange = useCallback((event) => {
+    const query = event?.target ? event.target.value : event;
+    setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit());
+  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+
+  const refreshAfterMutation = useCallback(async () => {
+    const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    const itemsPerPage = resolveLimit();
+    const currentPage = pagination.currentPage || pagination.page || 1;
+    await performSearch(trimmedQuery, currentPage, itemsPerPage);
+  }, [pagination, performSearch, resolveLimit, searchQuery]);
+
+  const deleteSupplierFunction = useCallback(async (id) => {
     try {
       const result = await supplierService.deleteSupplier(id);
-      setSuppliers(suppliers.filter((supplier) => supplier.id !== id));
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to delete supplier');
+      }
       toastService.success('Supplier deleted successfully');
+
+      const itemsPerPage = resolveLimit();
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      const totalItems = pagination.totalItems || pagination.total || suppliers.length;
+      const newTotalItems = Math.max(totalItems - 1, 0);
+      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
+      const nextPage = Math.min(currentPage, newTotalPages);
+      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+
+      await performSearch(trimmedQuery, nextPage, itemsPerPage);
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        handleAuthError();
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
         return;
       }
-      toastService.error('Failed to delete supplier');
+      const message = resolveSupplierError(err) || 'Failed to delete supplier';
+      setError(message);
+      toastService.error(message);
     }
-  };
+  }, [authHandler, pagination, performSearch, resolveLimit, searchQuery, setError, suppliers.length]);
 
   const deleteSupplierConfirmation = useDeleteConfirmation(
     deleteSupplierFunction,
@@ -97,113 +141,66 @@ const useSuppliers = () => {
     'Delete Supplier'
   );
 
-  const deleteSupplier = deleteSupplierConfirmation.showDeleteConfirmation;
-
-  const handlePageChange = (newPage) => {
-    if (searchQuery.trim()) {
-      searchSuppliers(searchQuery, newPage, pagination.itemsPerPage);
-    } else {
-      fetchSuppliers(newPage, pagination.itemsPerPage);
-    }
-  };
-
-  const handleLimitChange = (newLimit) => {
-    const newPagination = {
-      ...pagination,
-      itemsPerPage: newLimit
-    };
-    setPagination(newPagination);
-    
-    if (searchQuery.trim()) {
-      searchSuppliers(searchQuery, 1, newLimit); // Reset to first page when changing limit
-    } else {
-      fetchSuppliers(1, newLimit); // Reset to first page when changing limit
-    }
-  };
-
-    const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      searchSuppliers(query, 1, pagination.itemsPerPage); // Reset to first page when searching
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const createSupplier = async (supplierData) => {
+  const createSupplier = useCallback(async (supplierData) => {
     try {
       const result = await supplierService.createSupplier(supplierData);
-      if (result.success) {
-        setSuppliers([result.data, ...suppliers]);
-        toastService.success('Supplier created successfully');
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to create supplier');
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to create supplier');
       }
+      toastService.success('Supplier created successfully');
+      await refreshAfterMutation();
+      return result?.data;
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        handleAuthError();
-        return;
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
       }
-      toastService.error('Failed to create supplier');
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to create supplier';
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [authHandler, refreshAfterMutation]);
 
-  const updateSupplier = async (id, supplierData) => {
+  const updateSupplier = useCallback(async (id, supplierData) => {
     try {
       const result = await supplierService.updateSupplier(id, supplierData);
-      if (result.success) {
-        setSuppliers(suppliers.map(supplier => 
-          supplier.id === id ? result.data : supplier
-        ));
-        toastService.success('Supplier updated successfully');
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to update supplier');
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to update supplier');
       }
+      toastService.success('Supplier updated successfully');
+      await refreshAfterMutation();
+      return result?.data;
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        handleAuthError();
-        return;
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
       }
-      toastService.error('Failed to update supplier');
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to update supplier';
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [authHandler, refreshAfterMutation]);
 
-  const getSupplierById = async (id) => {
+  const getSupplierById = useCallback(async (id) => {
     try {
       const result = await supplierService.getSupplierById(id);
-      if (result.success) {
-        return result.data;
-      } else {
-        throw new Error(result.message || 'Failed to get supplier');
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to get supplier');
       }
+      return result?.data;
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        handleAuthError();
-        return;
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
       }
-      toastService.error('Failed to get supplier');
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to get supplier';
+      toastService.error(message);
       throw err;
     }
-  };
+  }, [authHandler]);
 
   useEffect(() => {
-    fetchSuppliers(1, pagination.itemsPerPage);
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
+    fetchSuppliers(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchSuppliers]);
 
   return {
@@ -216,15 +213,15 @@ const useSuppliers = () => {
     searchQuery,
     searchLoading,
     handleSearchChange,
-    handlePageChange,
-    handleLimitChange,
-    deleteSupplier,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
+    deleteSupplier: deleteSupplierConfirmation.showDeleteConfirmation,
     deleteSupplierConfirmation,
     createSupplier,
     updateSupplier,
     getSupplierById,
     fetchSuppliers,
-    handleAuthError
+    handleAuthError: authHandler
   };
 };
 

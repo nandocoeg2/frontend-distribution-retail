@@ -1,96 +1,123 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo } from 'react';
 import userService from '../services/userService';
 import toastService from '../services/toastService';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
+import usePaginatedSearch from './usePaginatedSearch';
 
-const useUsers = () => {
-  const [users, setUsers] = useState([]);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
-  const navigate = useNavigate();
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  page: 1,
+  totalPages: 1,
+  totalItems: 0,
+  total: 0,
+  itemsPerPage: 10,
+  limit: 10
+};
 
-  const handleAuthError = useCallback((err) => {
-    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-      localStorage.clear();
-      navigate('/login');
-      toastService.error('Session expired. Please login again.');
-      return true;
-    }
-    return false;
-  }, [navigate]);
+const parseUserResponse = (response) => {
+  const data = response?.data || [];
+  const paginationData = response?.pagination || {};
 
-  const fetchUsers = useCallback(async (page = 1, limit = 10) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await userService.getAllUsers(page, limit);
-      setUsers(result.data || []);
-      setPagination(result.pagination || {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 10
-      });
-    } catch (err) {
-      if (!handleAuthError(err)) {
-        setError(err.message);
-        toastService.error(`Gagal memuat data users: ${err.message}`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError]);
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+  const totalPages = paginationData.totalPages || INITIAL_PAGINATION.totalPages;
 
-  const searchUsers = useCallback(async (query, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      fetchUsers(page, limit);
-      return;
-    }
-
-    try {
-      setSearchLoading(true);
-      setError(null);
-      const result = await userService.searchUsers(query, page, limit);
-      setUsers(result.data || []);
-      setPagination(result.pagination || {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 10
-      });
-    } catch (err) {
-      if (!handleAuthError(err)) {
-        setError(err.message);
-        toastService.error(`Gagal mencari users: ${err.message}`);
-      }
-    } finally {
-      setSearchLoading(false);
-    }
-  }, [fetchUsers, handleAuthError]);
-
-  const deleteUserFunction = async (id) => {
-    try {
-      await userService.deleteUser(id);
-      setUsers(users.filter((user) => user.id !== id));
-      toastService.success('User berhasil dihapus');
-      // Refetch to ensure data consistency, especially with pagination
-      fetchUsers(pagination.currentPage, pagination.itemsPerPage);
-    } catch (err) {
-      if (!handleAuthError(err)) {
-        toastService.error(`Gagal menghapus user: ${err.message}`);
-      }
+  return {
+    results: Array.isArray(data) ? data : [],
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage
     }
   };
+};
+
+const resolveUserError = (error) => {
+  return error?.message || 'Gagal memuat data users';
+};
+
+const useUsers = () => {
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults: users,
+    setSearchResults: setUsers,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange,
+    handleLimitChange,
+    clearSearch,
+    handleAuthError,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialInput: '',
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => {
+      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+      if (!trimmedQuery) {
+        return userService.getAllUsers(page, limit);
+      }
+      return userService.searchUsers(trimmedQuery, page, limit);
+    },
+    parseResponse: parseUserResponse,
+    resolveErrorMessage: resolveUserError,
+    requireInput: false
+  });
+
+  useEffect(() => {
+    performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
+  }, [performSearch]);
+
+  const searchLoading = useMemo(() => {
+    if (typeof searchQuery !== 'string') {
+      return false;
+    }
+    return loading && Boolean(searchQuery.trim());
+  }, [loading, searchQuery]);
+
+  const handleSearchChange = useCallback((event) => {
+    const query = event?.target ? event.target.value : event;
+    setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit());
+  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+
+  const fetchUsers = useCallback((page = 1, limit = resolveLimit()) => {
+    return performSearch('', page, limit);
+  }, [performSearch, resolveLimit]);
+
+  const deleteUserFunction = useCallback(async (id) => {
+    try {
+      await userService.deleteUser(id);
+      toastService.success('User berhasil dihapus');
+
+      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const itemsPerPage = resolveLimit();
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      const totalItems = pagination.totalItems || pagination.total || users.length;
+      const newTotalItems = Math.max(totalItems - 1, 0);
+      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
+      const nextPage = Math.min(currentPage, newTotalPages);
+
+      await performSearch(trimmedQuery, nextPage, itemsPerPage);
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        handleAuthError();
+        return;
+      }
+      const message = err.message || 'Gagal menghapus user';
+      toastService.error(message);
+    }
+  }, [handleAuthError, pagination, performSearch, resolveLimit, searchQuery, users.length]);
 
   const deleteUserConfirmation = useDeleteConfirmation(
     deleteUserFunction,
@@ -98,55 +125,9 @@ const useUsers = () => {
     'Hapus User'
   );
 
-  const deleteUser = deleteUserConfirmation.showDeleteConfirmation;
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      searchUsers(query, 1, pagination.itemsPerPage); // Reset to first page when searching
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (searchQuery.trim()) {
-      searchUsers(searchQuery, newPage, pagination.itemsPerPage);
-    } else {
-      fetchUsers(newPage, pagination.itemsPerPage);
-    }
-  };
-
-  const handleLimitChange = (newLimit) => {
-    const newPagination = {
-      ...pagination,
-      itemsPerPage: newLimit,
-      currentPage: 1 // Reset to first page
-    };
-    setPagination(newPagination);
-    
-    if (searchQuery.trim()) {
-      searchUsers(searchQuery, 1, newLimit);
-    } else {
-      fetchUsers(1, newLimit);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers(1, pagination.itemsPerPage); // Start on first page
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
-  }, [fetchUsers]);
+  const clearSearchState = useCallback(() => {
+    clearSearch();
+  }, [clearSearch]);
 
   return {
     users,
@@ -155,14 +136,16 @@ const useUsers = () => {
     setPagination,
     loading,
     error,
+    setError,
     searchQuery,
     searchLoading,
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteUser,
+    deleteUser: deleteUserConfirmation.showDeleteConfirmation,
     deleteUserConfirmation,
     fetchUsers,
+    clearSearch: clearSearchState,
     handleAuthError
   };
 };

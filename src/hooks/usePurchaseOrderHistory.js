@@ -1,167 +1,153 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toastService from '../services/toastService';
 import purchaseOrderService from '../services/purchaseOrderService';
+import usePaginatedSearch from './usePaginatedSearch';
+
+const INITIAL_PAGINATION = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+  page: 1,
+  limit: 10,
+  total: 0
+};
+
+const parsePurchaseOrderHistoryResponse = (response) => {
+  if (response?.success === false) {
+    throw new Error(response?.error?.message || 'Failed to fetch purchase order history');
+  }
+
+  const rawData = response?.data?.data || response?.data || [];
+  const paginationData = response?.data?.pagination || {};
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+
+  return {
+    results: Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [],
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages: paginationData.totalPages || INITIAL_PAGINATION.totalPages,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage
+    }
+  };
+};
+
+const resolvePurchaseOrderHistoryError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Failed to load purchase order history';
+};
 
 const usePurchaseOrderHistory = () => {
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [searchField, setSearchField] = useState('customer_name');
-  const [debounceTimeout, setDebounceTimeout] = useState(null);
+  const searchFieldRef = useRef('customer_name');
 
-  const handleAuthError = useCallback(() => {
+  const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
     window.location.href = '/login';
     toastService.error('Session expired. Please login again.');
   }, []);
 
-  const fetchPurchaseOrders = useCallback(async (page = 1, limit = 10) => {
-    setLoading(true);
-    try {
-      const result = await purchaseOrderService.getPurchaseOrderHistory(page, limit);
-      
-      if (result.success) {
-        setPurchaseOrders(result.data.data || []);
-        setPagination(result.data.pagination || pagination);
-        setError(null);
-      } else {
-        throw new Error(result.error?.message || 'Failed to fetch purchase order history');
+  const {
+    input: searchQuery,
+    setInput: setSearchQuery,
+    searchResults: purchaseOrders,
+    pagination,
+    setPagination,
+    loading,
+    error,
+    setError,
+    performSearch,
+    debouncedSearch,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
+    handleAuthError: authHandler,
+    resolveLimit
+  } = usePaginatedSearch({
+    initialPagination: INITIAL_PAGINATION,
+    searchFn: (query, page, limit) => {
+      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+      const field = searchFieldRef.current || 'customer_name';
+      if (!trimmedQuery) {
+        return purchaseOrderService.getPurchaseOrderHistory(page, limit);
       }
-    } catch (err) {
-      setError(err.message);
-      if (err.message.includes('token') || err.message.includes('unauthorized')) {
-        handleAuthError();
-      } else {
-        toastService.error('Failed to load purchase order history');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError]);
+      const searchParams = { [field]: trimmedQuery };
+      return purchaseOrderService.searchPurchaseOrders(searchParams, page, limit);
+    },
+    parseResponse: parsePurchaseOrderHistoryResponse,
+    resolveErrorMessage: resolvePurchaseOrderHistoryError,
+    onAuthError: handleAuthRedirect
+  });
 
-  const searchPurchaseOrders = useCallback(async (query, field, page = 1, limit = 10) => {
-    if (!query.trim()) {
-      fetchPurchaseOrders(page, limit);
-      return;
+  const searchLoading = useMemo(() => {
+    if (typeof searchQuery !== 'string') {
+      return false;
     }
-    try {
-      setSearchLoading(true);
-      const searchParams = {};
-      searchParams[field || 'customer_name'] = query;
-      
-      const result = await purchaseOrderService.searchPurchaseOrders(searchParams, page, limit);
-      
-      if (result.success) {
-        setPurchaseOrders(result.data.data || []);
-        setPagination(result.data.pagination || pagination);
-      } else {
-        throw new Error(result.error?.message || 'Failed to search purchase order history');
-      }
-    } catch (err) {
-      if (err.message.includes('token') || err.message.includes('unauthorized')) {
-        handleAuthError();
-      } else {
-        toastService.error('Failed to search purchase order history');
-      }
-    } finally {
-      setSearchLoading(false);
+    return loading && Boolean(searchQuery.trim());
+  }, [loading, searchQuery]);
+
+  const fetchPurchaseOrders = useCallback((page = 1, limit = resolveLimit()) => {
+    return performSearch('', page, limit);
+  }, [performSearch, resolveLimit]);
+
+  const searchPurchaseOrders = useCallback((query, field = searchFieldRef.current, page = 1, limit = resolveLimit()) => {
+    if (field && field !== searchFieldRef.current) {
+      searchFieldRef.current = field;
+      setSearchField(field);
     }
-  }, [handleAuthError, fetchPurchaseOrders]);
+    setSearchQuery(query);
+    return performSearch(query, page, limit);
+  }, [performSearch, resolveLimit, setSearchQuery]);
+
+  const handleSearchChange = useCallback((event) => {
+    const query = event?.target ? event.target.value : event;
+    setSearchQuery(query);
+    debouncedSearch(query, 1, resolveLimit());
+  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+
+  const handleSearchFieldChange = useCallback((field) => {
+    searchFieldRef.current = field;
+    setSearchField(field);
+    if (typeof searchQuery === 'string' && searchQuery.trim()) {
+      performSearch(searchQuery, 1, resolveLimit());
+    }
+  }, [performSearch, resolveLimit, searchQuery]);
+
+  const handleSearchQueryChange = useCallback((query, field) => {
+    searchFieldRef.current = field;
+    setSearchField(field);
+    setSearchQuery(query);
+    if (typeof query === 'string' && query.trim()) {
+      performSearch(query, 1, resolveLimit());
+    } else {
+      performSearch('', 1, resolveLimit());
+    }
+  }, [performSearch, resolveLimit, setSearchQuery]);
 
   const getPurchaseOrder = useCallback(async (id) => {
     try {
       const result = await purchaseOrderService.getPurchaseOrderById(id);
-      
-      if (result.success) {
-        return result.data;
-      } else {
-        throw new Error(result.error?.message || 'Failed to fetch purchase order details');
+      if (result?.success === false) {
+        throw new Error(result?.error?.message || 'Failed to fetch purchase order details');
       }
+      return result?.data;
     } catch (err) {
-      if (err.message.includes('token') || err.message.includes('unauthorized')) {
-        handleAuthError();
+      if (err?.message?.includes('token') || err?.message?.includes('unauthorized')) {
+        authHandler();
       } else {
-        toastService.error('Failed to load purchase order details');
+        const message = err?.response?.data?.error?.message || err?.message || 'Failed to load purchase order details';
+        toastService.error(message);
       }
       return null;
     }
-  }, [handleAuthError]);
-
-  const handlePageChange = (newPage) => {
-    if (searchQuery.trim()) {
-      searchPurchaseOrders(searchQuery, searchField, newPage, pagination.itemsPerPage);
-    } else {
-      fetchPurchaseOrders(newPage, pagination.itemsPerPage);
-    }
-  };
-
-  const handleLimitChange = (newLimit) => {
-    const newPagination = {
-      ...pagination,
-      itemsPerPage: newLimit
-    };
-    setPagination(newPagination);
-    
-    if (searchQuery.trim()) {
-      searchPurchaseOrders(searchQuery, searchField, 1, newLimit); // Reset to first page when changing limit
-    } else {
-      fetchPurchaseOrders(1, newLimit); // Reset to first page when changing limit
-    }
-  };
-
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-
-    if (debounceTimeout) {
-      clearTimeout(debounceTimeout);
-    }
-
-    const timeout = setTimeout(() => {
-      if (!query.trim()) {
-        fetchPurchaseOrders(1, pagination.itemsPerPage); // Reset to first page when clearing search
-      } else {
-        searchPurchaseOrders(query, searchField, 1, pagination.itemsPerPage); // Reset to first page when searching
-      }
-    }, 500);
-
-    setDebounceTimeout(timeout);
-  };
-
-  const handleSearchFieldChange = (field) => {
-    setSearchField(field);
-    if (searchQuery.trim()) {
-      searchPurchaseOrders(searchQuery, field, 1, pagination.itemsPerPage);
-    }
-  };
-
-  const handleSearchQueryChange = (query, field) => {
-    setSearchQuery(query);
-    setSearchField(field);
-    
-    if (!query.trim()) {
-      fetchPurchaseOrders(1, pagination.itemsPerPage); // Reset to first page when clearing search
-    } else {
-      searchPurchaseOrders(query, field, 1, pagination.itemsPerPage); // Reset to first page when searching
-    }
-  };
+  }, [authHandler]);
 
   useEffect(() => {
-    fetchPurchaseOrders(1, pagination.itemsPerPage);
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
-      }
-    };
+    fetchPurchaseOrders(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchPurchaseOrders]);
 
   return {
@@ -175,8 +161,8 @@ const usePurchaseOrderHistory = () => {
     fetchPurchaseOrders,
     searchPurchaseOrders,
     getPurchaseOrder,
-    handlePageChange,
-    handleLimitChange,
+    handlePageChange: handlePageChangeInternal,
+    handleLimitChange: handleLimitChangeInternal,
     handleSearchChange,
     handleSearchFieldChange,
     handleSearchQueryChange,
