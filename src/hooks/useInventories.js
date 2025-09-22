@@ -11,7 +11,7 @@ const useInventories = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await getInventories(1, 1000); // Get all inventories
+      const response = await getInventories(1, 10); // Get all inventories
       console.log('Inventories API Response:', response); // Debug log
       
       if (response && response.success && response.data) {
