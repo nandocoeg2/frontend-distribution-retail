@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
-import invoiceService from '../services/invoiceService';
+import invoicePengirimanService from '../services/invoicePengirimanService';
 import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
 
@@ -15,9 +15,9 @@ const INITIAL_PAGINATION = {
   total: 0
 };
 
-const parseInvoicesResponse = (response) => {
+const parseInvoicePengirimanResponse = (response) => {
   if (response?.success === false) {
-    throw new Error(response?.error?.message || 'Failed to fetch invoices');
+    throw new Error(response?.error?.message || 'Failed to fetch invoice pengiriman');
   }
 
   const rawData = response?.data?.data || response?.data || [];
@@ -40,11 +40,11 @@ const parseInvoicesResponse = (response) => {
   };
 };
 
-const resolveInvoiceError = (error) => {
-  return error?.response?.data?.error?.message || error?.message || 'Failed to load invoices';
+const resolveInvoicePengirimanError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Failed to load invoice pengiriman';
 };
 
-const useInvoices = () => {
+const useInvoicePengiriman = () => {
   const navigate = useNavigate();
   const [searchField, setSearchField] = useState('no_invoice');
   const searchFieldRef = useRef('no_invoice');
@@ -58,8 +58,8 @@ const useInvoices = () => {
   const {
     input: searchQuery,
     setInput: setSearchQuery,
-    searchResults: invoices,
-    setSearchResults: setInvoices,
+    searchResults: invoicePengiriman,
+    setSearchResults: setInvoicePengiriman,
     pagination,
     setPagination,
     loading,
@@ -77,13 +77,13 @@ const useInvoices = () => {
       const trimmedQuery = typeof query === 'string' ? query.trim() : '';
       const field = searchFieldRef.current || 'no_invoice';
       if (!trimmedQuery) {
-        return invoiceService.getAllInvoices(page, limit);
+        return invoicePengirimanService.getAllInvoicePengiriman(page, limit);
       }
       const searchParams = { [field]: trimmedQuery };
-      return invoiceService.searchInvoices(searchParams, page, limit);
+      return invoicePengirimanService.searchInvoicePengiriman(searchParams, page, limit);
     },
-    parseResponse: parseInvoicesResponse,
-    resolveErrorMessage: resolveInvoiceError,
+    parseResponse: parseInvoicePengirimanResponse,
+    resolveErrorMessage: resolveInvoicePengirimanError,
     onAuthError: handleAuthRedirect
   });
 
@@ -94,11 +94,11 @@ const useInvoices = () => {
     return loading && Boolean(searchQuery.trim());
   }, [loading, searchQuery]);
 
-  const fetchInvoices = useCallback((page = 1, limit = resolveLimit()) => {
+  const fetchInvoicePengiriman = useCallback((page = 1, limit = resolveLimit()) => {
     return performSearch('', page, limit);
   }, [performSearch, resolveLimit]);
 
-  const searchInvoices = useCallback((query, field = searchFieldRef.current, page = 1, limit = resolveLimit()) => {
+  const searchInvoicePengiriman = useCallback((query, field = searchFieldRef.current, page = 1, limit = resolveLimit()) => {
     if (field && field !== searchFieldRef.current) {
       searchFieldRef.current = field;
       setSearchField(field);
@@ -130,13 +130,13 @@ const useInvoices = () => {
     await performSearch(trimmedQuery, currentPage, itemsPerPage);
   }, [pagination, performSearch, resolveLimit, searchQuery]);
 
-  const createInvoice = useCallback(async (invoiceData) => {
+  const createInvoicePengiriman = useCallback(async (invoiceData) => {
     try {
-      const result = await invoiceService.createInvoice(invoiceData);
+      const result = await invoicePengirimanService.createInvoicePengiriman(invoiceData);
       if (result?.success === false) {
-        throw new Error(result?.error?.message || 'Failed to create invoice');
+        throw new Error(result?.error?.message || 'Failed to create invoice pengiriman');
       }
-      toastService.success('Invoice created successfully');
+      toastService.success('Invoice pengiriman created successfully');
       await refreshAfterMutation();
       return result?.data;
     } catch (err) {
@@ -144,19 +144,19 @@ const useInvoices = () => {
         authHandler();
         return undefined;
       }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to create invoice';
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to create invoice pengiriman';
       toastService.error(message);
       throw err;
     }
   }, [authHandler, refreshAfterMutation]);
 
-  const updateInvoice = useCallback(async (id, updateData) => {
+  const updateInvoicePengiriman = useCallback(async (id, updateData) => {
     try {
-      const result = await invoiceService.updateInvoice(id, updateData);
+      const result = await invoicePengirimanService.updateInvoicePengiriman(id, updateData);
       if (result?.success === false) {
-        throw new Error(result?.error?.message || 'Failed to update invoice');
+        throw new Error(result?.error?.message || 'Failed to update invoice pengiriman');
       }
-      toastService.success('Invoice updated successfully');
+      toastService.success('Invoice pengiriman updated successfully');
       await refreshAfterMutation();
       return result?.data;
     } catch (err) {
@@ -164,23 +164,23 @@ const useInvoices = () => {
         authHandler();
         return undefined;
       }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to update invoice';
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to update invoice pengiriman';
       toastService.error(message);
       throw err;
     }
   }, [authHandler, refreshAfterMutation]);
 
-  const deleteInvoiceFunction = useCallback(async (id) => {
+  const deleteInvoicePengirimanFn = useCallback(async (id) => {
     try {
-      const result = await invoiceService.deleteInvoice(id);
-      if (!(result?.success || result === '')) {
-        throw new Error(result?.error?.message || 'Failed to delete invoice');
+      const result = await invoicePengirimanService.deleteInvoicePengiriman(id);
+      if (!(result?.success || result === '' || result === undefined)) {
+        throw new Error(result?.error?.message || 'Failed to delete invoice pengiriman');
       }
-      toastService.success('Invoice deleted successfully');
+      toastService.success('Invoice pengiriman berhasil dihapus');
 
       const itemsPerPage = resolveLimit();
       const currentPage = pagination.currentPage || pagination.page || 1;
-      const totalItems = pagination.totalItems || pagination.total || invoices.length;
+      const totalItems = pagination.totalItems || pagination.total || invoicePengiriman.length;
       const newTotalItems = Math.max(totalItems - 1, 0);
       const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
       const nextPage = Math.min(currentPage, newTotalPages);
@@ -192,25 +192,25 @@ const useInvoices = () => {
         authHandler();
         return;
       }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to delete invoice';
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to delete invoice pengiriman';
       setError(message);
       toastService.error(message);
     }
-  }, [authHandler, invoices.length, pagination, performSearch, resolveLimit, searchQuery, setError]);
+  }, [authHandler, invoicePengiriman.length, pagination, performSearch, resolveLimit, searchQuery, setError]);
 
-  const deleteInvoiceConfirmation = useDeleteConfirmation(
-    deleteInvoiceFunction,
-    'Are you sure you want to delete this invoice?',
-    'Delete Invoice'
+  const deleteInvoicePengirimanConfirmation = useDeleteConfirmation(
+    deleteInvoicePengirimanFn,
+    'Apakah Anda yakin ingin menghapus invoice pengiriman ini?',
+    'Hapus Invoice Pengiriman'
   );
 
   useEffect(() => {
-    fetchInvoices(1, INITIAL_PAGINATION.itemsPerPage);
-  }, [fetchInvoices]);
+    fetchInvoicePengiriman(1, INITIAL_PAGINATION.itemsPerPage);
+  }, [fetchInvoicePengiriman]);
 
   return {
-    invoices,
-    setInvoices,
+    invoicePengiriman,
+    setInvoicePengiriman,
     pagination,
     setPagination,
     loading,
@@ -222,13 +222,12 @@ const useInvoices = () => {
     handleSearchFieldChange,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
-    createInvoice,
-    updateInvoice,
-    deleteInvoice: deleteInvoiceConfirmation.showDeleteConfirmation,
-    deleteInvoiceConfirmation,
-    fetchInvoices,
+    createInvoice: createInvoicePengiriman,
+    updateInvoice: updateInvoicePengiriman,
+    deleteInvoiceConfirmation: deleteInvoicePengirimanConfirmation,
+    fetchInvoicePengiriman,
     handleAuthError: authHandler
   };
 };
 
-export default useInvoices;
+export default useInvoicePengiriman;

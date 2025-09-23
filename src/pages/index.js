@@ -13,7 +13,7 @@ export { default as BulkUploadHistory } from './BulkUploadHistory';
 export { default as Customers } from './Customers';
 export { default as Suppliers } from './Suppliers';
 export { default as Packings } from './Packings';
-export { default as Invoices } from './Invoices';
+export { default as InvoicePengiriman } from './InvoicePengiriman';
 export { default as SuratJalan } from './SuratJalan';
 export { default as TermOfPayments } from './TermOfPayments';
 export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';

@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import useInvoices from '@/hooks/useInvoicesPage';
-import InvoiceTable from '@/components/invoices/InvoiceTable';
-import InvoiceSearch from '@/components/invoices/InvoiceSearch';
-import AddInvoiceModal from '@/components/invoices/AddInvoiceModal';
-import EditInvoiceModal from '@/components/invoices/EditInvoiceModal';
-import ViewInvoiceModal from '@/components/invoices/ViewInvoiceModal';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
+import InvoicePengirimanTable from '@/components/invoicePengiriman/InvoicePengirimanTable';
+import InvoicePengirimanSearch from '@/components/invoicePengiriman/InvoicePengirimanSearch';
+import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
+import EditInvoicePengirimanModal from '@/components/invoicePengiriman/EditInvoicePengirimanModal';
+import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
-const Invoices = () => {
+const InvoicePengirimanPage = () => {
   const {
-    invoices,
-    setInvoices,
+    invoicePengiriman,
+    setInvoicePengiriman,
     pagination,
     loading,
     error,
@@ -21,10 +21,10 @@ const Invoices = () => {
     handleSearchFieldChange,
     handlePageChange,
     handleLimitChange,
-    deleteInvoice,
-    fetchInvoices,
+    deleteInvoiceConfirmation,
+    fetchInvoicePengiriman,
     handleAuthError
-  } = useInvoices();
+  } = useInvoicePengiriman();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -54,15 +54,19 @@ const Invoices = () => {
   };
 
   const handleInvoiceAdded = (newInvoice) => {
-    setInvoices([...invoices, newInvoice]);
+    if (!newInvoice) {
+      return;
+    }
+    setInvoicePengiriman((prev) => [...prev, newInvoice]);
     closeAddModal();
   };
 
   const handleInvoiceUpdated = (updatedInvoice) => {
-    setInvoices(
-      invoices.map((invoice) =>
-        invoice.id === updatedInvoice.id ? updatedInvoice : invoice
-      )
+    if (!updatedInvoice) {
+      return;
+    }
+    setInvoicePengiriman((prev) =>
+      prev.map((invoice) => (invoice.id === updatedInvoice.id ? updatedInvoice : invoice))
     );
     closeEditModal();
   };
@@ -78,12 +82,12 @@ const Invoices = () => {
   if (error) {
     return (
       <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-        <p className='text-red-800'>Error: {error}</p>
+        <p className='text-red-800'>Terjadi kesalahan: {error}</p>
         <button
-          onClick={fetchInvoices}
+          onClick={fetchInvoicePengiriman}
           className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
         >
-          Retry
+          Coba Lagi
         </button>
       </div>
     );
@@ -94,17 +98,19 @@ const Invoices = () => {
       <div className='bg-white shadow rounded-lg overflow-hidden'>
         <div className='px-4 py-5 sm:p-6'>
           <div className='mb-4 flex justify-between items-center'>
-            <h3 className='text-lg font-medium text-gray-900'>Invoice List</h3>
+            <div>
+              <h3 className='text-lg font-medium text-gray-900'>Daftar Invoice Pengiriman</h3>
+              <p className='text-sm text-gray-500'>Pantau seluruh invoice pengiriman termasuk informasi pelanggan dan status pembayaran.</p>
+            </div>
             {/* <button
               onClick={openAddModal}
               className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
             >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Invoice
+              Tambah Invoice Pengiriman
             </button> */}
           </div>
 
-          <InvoiceSearch
+          <InvoicePengirimanSearch
             searchQuery={searchQuery}
             searchField={searchField}
             handleSearchChange={handleSearchChange}
@@ -112,27 +118,27 @@ const Invoices = () => {
             searchLoading={searchLoading}
           />
 
-          <InvoiceTable
-            invoices={invoices}
+          <InvoicePengirimanTable
+            invoices={invoicePengiriman}
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal}
-            onDelete={deleteInvoice}
+            onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
             onView={openViewModal}
             searchQuery={searchQuery}
           />
         </div>
       </div>
 
-      <AddInvoiceModal
+      <AddInvoicePengirimanModal
         show={showAddModal}
         onClose={closeAddModal}
         onInvoiceAdded={handleInvoiceAdded}
         handleAuthError={handleAuthError}
       />
 
-      <EditInvoiceModal
+      <EditInvoicePengirimanModal
         show={showEditModal}
         onClose={closeEditModal}
         invoice={editingInvoice}
@@ -140,13 +146,25 @@ const Invoices = () => {
         handleAuthError={handleAuthError}
       />
 
-      <ViewInvoiceModal
+      <ViewInvoicePengirimanModal
         show={showViewModal}
         onClose={closeViewModal}
         invoice={viewingInvoice}
+      />
+
+      <ConfirmationDialog
+        show={deleteInvoiceConfirmation.showConfirm}
+        onClose={deleteInvoiceConfirmation.hideDeleteConfirmation}
+        onConfirm={deleteInvoiceConfirmation.confirmDelete}
+        title={deleteInvoiceConfirmation.title}
+        message={deleteInvoiceConfirmation.message}
+        type='danger'
+        confirmText='Hapus'
+        cancelText='Batal'
+        loading={deleteInvoiceConfirmation.loading}
       />
     </div>
   );
 };
 
-export default Invoices;
+export default InvoicePengirimanPage;

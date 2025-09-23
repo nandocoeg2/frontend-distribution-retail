@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import toastService from '../../services/toastService';
-import invoiceService from '../../services/invoiceService';
+import invoicePengirimanService from '../../services/invoicePengirimanService';
 
-const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => {
-  const [formData, setFormData] = useState({
-    no_invoice: '',
-    tanggal: '',
-    deliver_to: '',
-    sub_total: '',
-    total_discount: '',
-    total_price: '',
-    ppn_percentage: '',
-    ppn_rupiah: '',
-    grand_total: '',
-    expired_date: '',
-    TOP: '',
-    type: 'PEMBAYARAN'
-  });
+const buildInitialState = () => ({
+  no_invoice: '',
+  tanggal: '',
+  deliver_to: '',
+  sub_total: '',
+  total_discount: '',
+  total_price: '',
+  ppn_percentage: '',
+  ppn_rupiah: '',
+  grand_total: '',
+  expired_date: '',
+  TOP: '',
+  type: 'PENGIRIMAN'
+});
+
+const AddInvoicePengirimanModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => {
+  const [formData, setFormData] = useState(buildInitialState());
   const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
@@ -33,7 +35,6 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
     setLoading(true);
 
     try {
-      // Convert numeric fields to numbers
       const submitData = {
         ...formData,
         sub_total: parseFloat(formData.sub_total) || 0,
@@ -41,47 +42,27 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
         total_price: parseFloat(formData.total_price) || 0,
         ppn_percentage: parseFloat(formData.ppn_percentage) || 0,
         ppn_rupiah: parseFloat(formData.ppn_rupiah) || 0,
-        grand_total: parseFloat(formData.grand_total) || 0,
+        grand_total: parseFloat(formData.grand_total) || 0
       };
 
-      const accessToken = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5050/api/v1/invoices', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submitData),
-      });
+      const result = await invoicePengirimanService.createInvoicePengiriman(submitData);
 
-      if (response.status === 401 || response.status === 403) {
+      if (result?.success === false) {
+        throw new Error(result?.error?.message || 'Failed to create invoice pengiriman');
+      }
+
+      const createdInvoice = result?.data || result;
+      onInvoiceAdded(createdInvoice);
+      toastService.success('Invoice pengiriman created successfully');
+      setFormData(buildInitialState());
+      onClose();
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
         handleAuthError();
         return;
       }
-
-      if (!response.ok) throw new Error('Failed to create invoice');
-
-      const createResult = await response.json();
-      onInvoiceAdded(createResult.data || createResult);
-      toastService.success('Invoice created successfully');
-      onClose();
-      setFormData({
-        no_invoice: '',
-        tanggal: '',
-        deliver_to: '',
-        sub_total: '',
-        total_discount: '',
-        total_price: '',
-        ppn_percentage: '',
-        ppn_rupiah: '',
-        grand_total: '',
-        expired_date: '',
-        TOP: '',
-        type: 'PEMBAYARAN'
-      });
-    } catch (err) {
-      console.error('Error creating invoice:', err);
-      toastService.error('Failed to create invoice');
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to create invoice pengiriman';
+      toastService.error(message);
     } finally {
       setLoading(false);
     }
@@ -93,7 +74,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
       <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Add New Invoice</h3>
+          <h3 className="text-lg font-medium text-gray-900">Tambah Invoice Pengiriman</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
@@ -106,7 +87,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="no_invoice" className="block text-sm font-medium text-gray-700">
-                Invoice Number
+                Nomor Invoice
               </label>
               <input
                 type="text"
@@ -121,7 +102,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
 
             <div>
               <label htmlFor="tanggal" className="block text-sm font-medium text-gray-700">
-                Date
+                Tanggal
               </label>
               <input
                 type="date"
@@ -136,7 +117,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
 
             <div>
               <label htmlFor="deliver_to" className="block text-sm font-medium text-gray-700">
-                Deliver To
+                Tujuan Pengiriman
               </label>
               <input
                 type="text"
@@ -151,7 +132,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
 
             <div>
               <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                Type
+                Tipe Invoice
               </label>
               <select
                 id="type"
@@ -160,6 +141,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
                 onChange={handleInputChange}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               >
+                <option value="PENGIRIMAN">PENGIRIMAN</option>
                 <option value="PEMBAYARAN">PEMBAYARAN</option>
               </select>
             </div>
@@ -181,7 +163,7 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
 
             <div>
               <label htmlFor="total_discount" className="block text-sm font-medium text-gray-700">
-                Total Discount
+                Total Diskon
               </label>
               <input
                 type="number"
@@ -194,14 +176,42 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
             </div>
 
             <div>
+              <label htmlFor="total_price" className="block text-sm font-medium text-gray-700">
+                Total Harga
+              </label>
+              <input
+                type="number"
+                id="total_price"
+                name="total_price"
+                value={formData.total_price}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
               <label htmlFor="ppn_percentage" className="block text-sm font-medium text-gray-700">
-                PPN Percentage
+                PPN (%)
               </label>
               <input
                 type="number"
                 id="ppn_percentage"
                 name="ppn_percentage"
                 value={formData.ppn_percentage}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="ppn_rupiah" className="block text-sm font-medium text-gray-700">
+                PPN (Rp)
+              </label>
+              <input
+                type="number"
+                id="ppn_rupiah"
+                name="ppn_rupiah"
+                value={formData.ppn_rupiah}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
@@ -229,14 +239,14 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
               onClick={onClose}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Invoice'}
+              {loading ? 'Menyimpan...' : 'Simpan Invoice Pengiriman'}
             </button>
           </div>
         </form>
@@ -245,4 +255,4 @@ const AddInvoiceModal = ({ show, onClose, onInvoiceAdded, handleAuthError }) => 
   );
 };
 
-export default AddInvoiceModal;
+export default AddInvoicePengirimanModal;

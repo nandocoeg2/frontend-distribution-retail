@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
-import invoiceService from '../services/invoiceService';
+import invoicePengirimanService from '../services/invoicePengirimanService';
 import usePaginatedSearch from './usePaginatedSearch';
 
 const INITIAL_SEARCH_PARAMS = {
@@ -21,9 +21,9 @@ const INITIAL_PAGINATION = {
   itemsPerPage: 10
 };
 
-const parseInvoiceResponse = (response) => {
+const parseInvoicePengirimanResponse = (response) => {
   if (!response?.success) {
-    throw new Error(response?.error?.message || 'Gagal melakukan pencarian');
+    throw new Error(response?.error?.message || 'Gagal melakukan pencarian invoice pengiriman');
   }
 
   return {
@@ -32,11 +32,11 @@ const parseInvoiceResponse = (response) => {
   };
 };
 
-const resolveInvoiceError = (error) => {
-  return error?.response?.data?.error?.message || error?.message || 'Gagal melakukan pencarian';
+const resolveInvoicePengirimanError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Gagal melakukan pencarian invoice pengiriman';
 };
 
-const useInvoiceSearch = () => {
+const useInvoicePengirimanSearch = () => {
   const navigate = useNavigate();
 
   const searchFn = useCallback(async (params, page, limit) => {
@@ -49,7 +49,7 @@ const useInvoiceSearch = () => {
       })
     );
 
-    return invoiceService.searchInvoices(filteredParams, page, limit);
+    return invoicePengirimanService.searchInvoicePengiriman(filteredParams, page, limit);
   }, []);
 
   const {
@@ -73,8 +73,8 @@ const useInvoiceSearch = () => {
     initialInput: INITIAL_SEARCH_PARAMS,
     initialPagination: INITIAL_PAGINATION,
     searchFn,
-    parseResponse: parseInvoiceResponse,
-    resolveErrorMessage: resolveInvoiceError,
+    parseResponse: parseInvoicePengirimanResponse,
+    resolveErrorMessage: resolveInvoicePengirimanError,
     requireInput: false,
     onAuthError: () => {
       localStorage.clear();
@@ -150,4 +150,4 @@ const useInvoiceSearch = () => {
   };
 };
 
-export default useInvoiceSearch;
+export default useInvoicePengirimanSearch;

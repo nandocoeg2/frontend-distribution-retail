@@ -119,7 +119,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       iconEmoji: '📝',
       children: [
         { id: 'po-purchase-orders', name: 'Purchase Orders', url: '/po/purchase-orders' },
-        { id: 'po-invoices', name: 'Invoices', url: '/po/invoices' },
+        { id: 'po-invoices', name: 'Invoice Pengiriman', url: '/po/invoice-pengiriman' },
         { id: 'po-surat-jalan', name: 'Surat Jalan', url: '/po/surat-jalan' },
         { id: 'po-packings', name: 'Packings', url: '/po/packings' },
         { id: 'po-purchase-orders-history', name: 'Purchase Order History', url: '/po/purchase-orders-history' },
