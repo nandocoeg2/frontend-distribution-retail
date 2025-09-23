@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
+import { useAuth } from './useAuth';
 
 const DEFAULT_PAGINATION = {
   currentPage: 1,
@@ -83,17 +84,17 @@ const usePaginatedSearch = ({
     paginationRef.current = pagination;
   }, [pagination]);
 
-  const defaultAuthHandler = useCallback(() => {
-    localStorage.clear();
-    navigate('/login');
+  const { logout } = useAuth();
+
+  const defaultPostLogout = useCallback(() => {
+    navigate('/login', { replace: true });
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const authHandler = onAuthError || defaultAuthHandler;
   const searchFnRef = useRef(searchFn);
   const parseResponseRef = useRef(parseResponse);
   const resolveErrorMessageRef = useRef(resolveErrorMessage);
-  const authHandlerRef = useRef(authHandler);
+  const postLogoutHandlerRef = useRef(onAuthError || defaultPostLogout);
 
   useEffect(() => {
     searchFnRef.current = searchFn;
@@ -108,8 +109,20 @@ const usePaginatedSearch = ({
   }, [resolveErrorMessage]);
 
   useEffect(() => {
-    authHandlerRef.current = authHandler;
-  }, [authHandler]);
+    postLogoutHandlerRef.current = onAuthError || defaultPostLogout;
+  }, [onAuthError, defaultPostLogout]);
+
+  const triggerAuthError = useCallback(() => {
+    logout()
+      .catch((error) => {
+        console.error('Automatic logout failed:', error);
+      })
+      .finally(() => {
+        if (typeof postLogoutHandlerRef.current === 'function') {
+          postLogoutHandlerRef.current();
+        }
+      });
+  }, [logout]);
 
   const clearDebounce = useCallback(() => {
     if (debounceTimeoutRef.current) {
@@ -176,7 +189,7 @@ const usePaginatedSearch = ({
       return response;
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandlerRef.current();
+        triggerAuthError();
         return null;
       }
 
@@ -251,7 +264,7 @@ const usePaginatedSearch = ({
     clearSearch,
     clearDebounce,
     resolveLimit,
-    handleAuthError: authHandler
+    handleAuthError: triggerAuthError
   };
 };
 

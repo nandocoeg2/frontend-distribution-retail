@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/organisms/Sidebar.jsx';
 import NotificationBell from '../components/molecules/NotificationBell.jsx';
+import { useAuth } from '../hooks/useAuth';
 import authService from '../services/authService.js';
 
 const MainLayout = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [menus, setMenus] = useState([]);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const userMenus = authService.getMenus();
@@ -16,11 +18,11 @@ const MainLayout = ({ children }) => {
 
   const handleLogout = async () => {
     try {
-      await authService.logout();
-      navigate('/login');
+      await logout();
     } catch (error) {
       console.error('Logout error:', error);
-      navigate('/login');
+    } finally {
+      navigate('/login', { replace: true });
     }
   };
 
