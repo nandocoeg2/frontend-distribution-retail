@@ -2,6 +2,51 @@ import authService from './authService';
 
 const API_URL = 'http://localhost:5050/api/v1/inventories';
 
+const extractErrorMessage = (errorData, fallbackMessage) => {
+  if (!errorData) {
+    return fallbackMessage;
+  }
+
+  if (typeof errorData === 'string' && errorData.trim()) {
+    return errorData;
+  }
+
+  if (typeof errorData.message === 'string' && errorData.message.trim()) {
+    return errorData.message;
+  }
+
+  if (typeof errorData.error === 'string' && errorData.error.trim()) {
+    return errorData.error;
+  }
+
+  if (errorData.error && typeof errorData.error.message === 'string' && errorData.error.message.trim()) {
+    return errorData.error.message;
+  }
+
+  if (Array.isArray(errorData.errors) && errorData.errors.length) {
+    const firstError = errorData.errors[0];
+
+    if (typeof firstError === 'string' && firstError.trim()) {
+      return firstError;
+    }
+
+    if (firstError && typeof firstError.message === 'string' && firstError.message.trim()) {
+      return firstError.message;
+    }
+  }
+
+  return fallbackMessage;
+};
+
+const parseErrorMessage = async (response, fallbackMessage) => {
+  try {
+    const errorData = await response.json();
+    return extractErrorMessage(errorData, fallbackMessage);
+  } catch (error) {
+    return fallbackMessage;
+  }
+};
+
 const getHeaders = () => {
   const token = authService.getToken();
   return {
@@ -15,8 +60,8 @@ export const getInventories = async (page = 1, limit = 10) => {
     headers: getHeaders()
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: 'Failed to fetch inventories' } }));
-    throw new Error(errorData.error?.message || 'Failed to fetch inventories');
+    const errorMessage = await parseErrorMessage(response, 'Failed to fetch inventories');
+    throw new Error(errorMessage);
   }
   return response.json();
 };
@@ -26,8 +71,8 @@ export const getInventoryById = async (id) => {
     headers: getHeaders()
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: 'Failed to fetch inventory' } }));
-    throw new Error(errorData.error?.message || 'Failed to fetch inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to fetch inventory');
+    throw new Error(errorMessage);
   }
   return response.json();
 };
@@ -37,8 +82,8 @@ export const searchInventories = async (query, page = 1, limit = 10) => {
     headers: getHeaders()
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: 'Failed to search inventories' } }));
-    throw new Error(errorData.error?.message || 'Failed to search inventories');
+    const errorMessage = await parseErrorMessage(response, 'Failed to search inventories');
+    throw new Error(errorMessage);
   }
   return response.json();
 };
@@ -50,8 +95,8 @@ export const createInventory = async (inventoryData) => {
     body: JSON.stringify(inventoryData)
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: 'Failed to create inventory' } }));
-    throw new Error(errorData.error?.message || 'Failed to create inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to create inventory');
+    throw new Error(errorMessage);
   }
   return response.json();
 };
@@ -63,8 +108,8 @@ export const updateInventory = async (id, inventoryData) => {
     body: JSON.stringify(inventoryData)
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: 'Failed to update inventory' } }));
-    throw new Error(errorData.error?.message || 'Failed to update inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to update inventory');
+    throw new Error(errorMessage);
   }
   return response.json();
 };
@@ -80,8 +125,8 @@ export const deleteInventory = async (id) => {
   }
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: 'Failed to delete inventory' } }));
-    throw new Error(errorData.error?.message || 'Failed to delete inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to delete inventory');
+    throw new Error(errorMessage);
   }
 
   return response.json();

@@ -5,6 +5,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { useConfirmationDialog } from '../ui';
+import Pagination from '../common/Pagination';
 
 const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, loading }) => {
   const [deleteId, setDeleteId] = React.useState(null);
@@ -100,41 +101,13 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
         </table>
       </div>
       
-      <div className="flex justify-between items-center mt-4">
-        <div className="text-sm text-gray-700">
-          Showing <span className="font-medium">{(pagination.currentPage - 1) * pagination.itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}</span> of <span className="font-medium">{pagination.totalItems}</span> results
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-700">Items per page:</span>
-          <select
-            value={pagination.itemsPerPage}
-            onChange={(e) => onLimitChange(Number(e.target.value))}
-            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-          <nav className="flex space-x-1">
-            <button
-              onClick={() => onPageChange(pagination.currentPage - 1)}
-              disabled={pagination.currentPage === 1}
-              className="px-3 py-1 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => onPageChange(pagination.currentPage + 1)}
-              disabled={pagination.currentPage === pagination.totalPages}
-              className="px-3 py-1 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </nav>
-        </div>
-      </div>
-      
-      <ConfirmationDialog 
+      <Pagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+      />
+
+      <ConfirmationDialog
         onConfirm={handleConfirmDelete}
       />
     </>
