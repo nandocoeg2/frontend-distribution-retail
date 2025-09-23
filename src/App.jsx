@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 import {
   HashRouter as Router,
@@ -28,6 +28,7 @@ import Customers from './pages/Customers.jsx';
 import Suppliers from './pages/Suppliers.jsx';
 import Inventories from './pages/Inventories.jsx';
 import Packings from './pages/Packings.jsx';
+import LaporanPenerimaanBarang from './pages/LaporanPenerimaanBarang.jsx';
 import Invoices from './pages/Invoices.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
@@ -36,7 +37,6 @@ import Regions from './pages/Regions.jsx';
 import Companies from './pages/Companies.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-
 
 // Component untuk routes yang menggunakan useAuth
 const AppRoutes = () => {
@@ -48,21 +48,13 @@ const AppRoutes = () => {
       <Route
         path='/login'
         element={
-          isAuthenticated ? (
-            <Navigate to='/dashboard' replace />
-          ) : (
-            <Login />
-          )
+          isAuthenticated ? <Navigate to='/dashboard' replace /> : <Login />
         }
       />
       <Route
         path='/register'
         element={
-          isAuthenticated ? (
-            <Navigate to='/dashboard' replace />
-          ) : (
-            <Register />
-          )
+          isAuthenticated ? <Navigate to='/dashboard' replace /> : <Register />
         }
       />
 
@@ -216,6 +208,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Packings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/laporan-penerimaan-barang'
+        element={
+          <ProtectedRoute>
+            <LaporanPenerimaanBarang />
           </ProtectedRoute>
         }
       />

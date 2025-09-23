@@ -1,4 +1,4 @@
-// Core components
+﻿// Core components
 export { default as ProtectedRoute } from './ProtectedRoute';
 
 // Common/Reusable components
@@ -17,6 +17,9 @@ export * from './suppliers';
 // Inventory components
 export * from './inventories';
 
+
+// Laporan Penerimaan Barang components
+export * from './laporanPenerimaanBarang';
 // Invoice components
 export * from './invoices';
 
