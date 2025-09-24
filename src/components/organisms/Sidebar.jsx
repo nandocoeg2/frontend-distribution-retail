@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
@@ -93,7 +93,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       name: 'Dashboard',
       url: '/dashboard',
       icon: 'default',
-      iconEmoji: '🏠',
+      iconEmoji: 'ðŸ ',
     },
   ];
 
@@ -103,23 +103,24 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       name: 'Dashboard',
       url: '/dashboard',
       icon: 'default',
-      iconEmoji: '🏠',
+      iconEmoji: 'ðŸ ',
     },
     {
       id: 'users',
       name: 'Users',
       url: '/users',
       icon: 'user',
-      iconEmoji: '👥',
+      iconEmoji: 'ðŸ‘¥',
     },
     {
       id: 'po',
       name: 'Purchase Order',
       icon: 'clipboard-document-list',
-      iconEmoji: '📝',
+      iconEmoji: 'ðŸ“',
       children: [
         { id: 'po-purchase-orders', name: 'Purchase Orders', url: '/po/purchase-orders' },
         { id: 'po-invoices', name: 'Invoice Pengiriman', url: '/po/invoice-pengiriman' },
+        { id: 'po-invoice-penagihan', name: 'Invoice Penagihan', url: '/po/invoice-penagihan' },
         { id: 'po-surat-jalan', name: 'Surat Jalan', url: '/po/surat-jalan' },
         { id: 'po-packings', name: 'Packings', url: '/po/packings' },
         { id: 'po-purchase-orders-history', name: 'Purchase Order History', url: '/po/purchase-orders-history' },
@@ -129,7 +130,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       id: 'master',
       name: 'Master Data',
       icon: 'cog',
-      iconEmoji: '📦',
+      iconEmoji: 'ðŸ“¦',
       children: [
         { id: 'master-customers', name: 'Customers', url: '/master/customers' },
         { id: 'master-suppliers', name: 'Suppliers', url: '/master/suppliers' },
@@ -280,7 +281,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
           {!isCollapsed && (
             <div className='flex items-center space-x-3'>
               <div className='w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg'>
-                <span className='text-xl'>⚡</span>
+                <span className='text-xl'>âš¡</span>
               </div>
               <div>
                 <h1 className='text-xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent'>
@@ -292,7 +293,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
           )}
           {isCollapsed && (
             <div className='w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg mx-auto'>
-              <span className='text-xl'>⚡</span>
+              <span className='text-xl'>âš¡</span>
             </div>
           )}
           <button
@@ -338,7 +339,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
           <div className='mb-4 p-3 bg-white/5 rounded-xl border border-white/10'>
             <div className='flex items-center space-x-3'>
               <div className='w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center'>
-                <span className='text-sm font-bold text-white'>👤</span>
+                <span className='text-sm font-bold text-white'>ðŸ‘¤</span>
               </div>
               <div className='flex-1 min-w-0'>
                 <p className='text-sm font-medium text-white truncate'>

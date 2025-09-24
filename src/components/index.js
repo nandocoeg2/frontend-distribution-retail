@@ -22,6 +22,7 @@ export * from './inventories';
 export * from './laporanPenerimaanBarang';
 // Invoice components
 export * from './invoices';
+export * from './invoicePenagihan';
 
 // Packing components
 export * from './packings';
@@ -43,3 +44,4 @@ export { default as NotificationBell } from './molecules/NotificationBell';
 
 // Organism components
 export { default as Sidebar } from './organisms/Sidebar';
+

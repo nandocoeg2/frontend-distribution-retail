@@ -1,4 +1,4 @@
-export { default as Login } from './Login';
+﻿export { default as Login } from './Login';
 export { default as Register } from './Register';
 export { default as Dashboard } from './Dashboard';
 export { default as NotFound } from './NotFound';
@@ -14,6 +14,7 @@ export { default as Customers } from './Customers';
 export { default as Suppliers } from './Suppliers';
 export { default as Packings } from './Packings';
 export { default as InvoicePengiriman } from './InvoicePengiriman';
+export { default as InvoicePenagihan } from './InvoicePenagihan';
 export { default as SuratJalan } from './SuratJalan';
 export { default as TermOfPayments } from './TermOfPayments';
 export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';

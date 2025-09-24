@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 import {
   HashRouter as Router,
@@ -30,6 +30,7 @@ import Inventories from './pages/Inventories.jsx';
 import Packings from './pages/Packings.jsx';
 import LaporanPenerimaanBarang from './pages/LaporanPenerimaanBarang.jsx';
 import InvoicePengiriman from './pages/InvoicePengiriman.jsx';
+import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
@@ -136,6 +137,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <InvoicePengiriman />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/invoice-penagihan'
+        element={
+          <ProtectedRoute>
+            <InvoicePenagihan />
           </ProtectedRoute>
         }
       />
@@ -258,3 +267,4 @@ const App = () => {
 };
 
 export default App;
+
