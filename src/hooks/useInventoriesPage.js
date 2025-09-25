@@ -25,8 +25,26 @@ const parseInventoriesResponse = (response) => {
   const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
   const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
 
+  const normalizeInventory = (item) => {
+    if (!item || typeof item !== 'object') {
+      return item;
+    }
+
+    const dimension = item.dimensiKardus || {};
+
+    return {
+      ...item,
+      berat: item.berat ?? dimension.berat ?? 0,
+      panjang: item.panjang ?? dimension.panjang ?? 0,
+      lebar: item.lebar ?? dimension.lebar ?? 0,
+      tinggi: item.tinggi ?? dimension.tinggi ?? 0
+    };
+  };
+
+  const list = Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [];
+
   return {
-    results: Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [],
+    results: list.map(normalizeInventory),
     pagination: {
       currentPage,
       page: currentPage,

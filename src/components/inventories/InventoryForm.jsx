@@ -1,161 +1,282 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import FormField from '../common/FormField';
+import FormSection from '../common/FormSection';
+
+const DEFAULT_FORM_STATE = {
+  plu: '',
+  nama_barang: '',
+  stok_c: '',
+  stok_q: '',
+  harga_barang: '',
+  min_stok: '10',
+  berat: '0',
+  panjang: '0',
+  lebar: '0',
+  tinggi: '0'
+};
+
+const getDimensionValue = (source, field) => {
+  if (source == null) {
+    return '0';
+  }
+
+  const directValue = source[field];
+  if (directValue !== undefined && directValue !== null) {
+    return String(directValue);
+  }
+
+  const nestedValue = source.dimensiKardus?.[field];
+  if (nestedValue !== undefined && nestedValue !== null) {
+    return String(nestedValue);
+  }
+
+  return '0';
+};
+
+const parseInteger = (value, fallback = 0) => {
+  if (value === '' || value === null || value === undefined) {
+    return fallback;
+  }
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const parseDecimal = (value, fallback = 0) => {
+  if (value === '' || value === null || value === undefined) {
+    return fallback;
+  }
+  const parsed = parseFloat(value);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
 
 const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
-  const [formData, setFormData] = useState({
-    plu: '',
-    nama_barang: '',
-    stok_c: '',
-    stok_q: '',
-    harga_barang: '',
-    min_stok: 10
-  });
+  const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
 
   const memoizedInitialData = useMemo(() => initialData, [
+    initialData?.id,
     initialData?.plu,
     initialData?.nama_barang,
     initialData?.stok_c,
     initialData?.stok_q,
     initialData?.harga_barang,
-    initialData?.min_stok
+    initialData?.min_stok,
+    initialData?.berat,
+    initialData?.panjang,
+    initialData?.lebar,
+    initialData?.tinggi,
+    initialData?.dimensiKardus?.berat,
+    initialData?.dimensiKardus?.panjang,
+    initialData?.dimensiKardus?.lebar,
+    initialData?.dimensiKardus?.tinggi
   ]);
 
   useEffect(() => {
-    if (memoizedInitialData) {
-      setFormData({
-        plu: memoizedInitialData.plu || '',
-        nama_barang: memoizedInitialData.nama_barang || '',
-        stok_c: memoizedInitialData.stok_c || '',
-        stok_q: memoizedInitialData.stok_q || '',
-        harga_barang: memoizedInitialData.harga_barang || '',
-        min_stok: memoizedInitialData.min_stok || 10
-      });
+    if (!memoizedInitialData || Object.keys(memoizedInitialData).length === 0) {
+      setFormData({ ...DEFAULT_FORM_STATE });
+      return;
     }
+
+    setFormData({
+      plu: memoizedInitialData.plu || '',
+      nama_barang: memoizedInitialData.nama_barang || '',
+      stok_c: memoizedInitialData.stok_c !== undefined && memoizedInitialData.stok_c !== null
+        ? String(memoizedInitialData.stok_c)
+        : '',
+      stok_q: memoizedInitialData.stok_q !== undefined && memoizedInitialData.stok_q !== null
+        ? String(memoizedInitialData.stok_q)
+        : '',
+      harga_barang: memoizedInitialData.harga_barang !== undefined && memoizedInitialData.harga_barang !== null
+        ? String(memoizedInitialData.harga_barang)
+        : '',
+      min_stok: memoizedInitialData.min_stok !== undefined && memoizedInitialData.min_stok !== null
+        ? String(memoizedInitialData.min_stok)
+        : '10',
+      berat: getDimensionValue(memoizedInitialData, 'berat'),
+      panjang: getDimensionValue(memoizedInitialData, 'panjang'),
+      lebar: getDimensionValue(memoizedInitialData, 'lebar'),
+      tinggi: getDimensionValue(memoizedInitialData, 'tinggi')
+    });
   }, [memoizedInitialData]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleChange = ({ target }) => {
+    const { name, value } = target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
     const dataToSubmit = {
-      ...formData,
-      stok_c: parseInt(formData.stok_c, 10),
-      stok_q: parseInt(formData.stok_q, 10),
-      harga_barang: parseFloat(formData.harga_barang),
-      min_stok: parseInt(formData.min_stok, 10)
+      plu: formData.plu?.trim(),
+      nama_barang: formData.nama_barang?.trim(),
+      stok_c: parseInteger(formData.stok_c),
+      stok_q: parseInteger(formData.stok_q),
+      harga_barang: parseDecimal(formData.harga_barang),
+      min_stok: parseInteger(formData.min_stok, 10),
+      berat: parseDecimal(formData.berat),
+      panjang: parseDecimal(formData.panjang),
+      lebar: parseDecimal(formData.lebar),
+      tinggi: parseDecimal(formData.tinggi)
     };
     onSubmit(dataToSubmit);
   };
 
+  const isEditMode = Boolean(memoizedInitialData?.id);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error ? (
         <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-red-800 text-sm">{error}</p>
+          <p className="text-red-800 text-xs">{error}</p>
         </div>
-      )}
-      
-      <div>
-        <label htmlFor="plu" className="block text-sm font-medium text-gray-700">PLU (Price Look-Up)</label>
-        <input
-          type="text"
+      ) : null}
+
+      <FormSection
+        title="Informasi Dasar"
+        description="Lengkapi identitas utama inventory. PLU tidak dapat diubah setelah data dibuat."
+      >
+        <FormField
+          label="PLU (Price Look-Up)"
           name="plu"
-          id="plu"
           value={formData.plu}
           onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
-          disabled={!!memoizedInitialData.id} // Disable PLU on edit
+          disabled={isEditMode}
+          placeholder="Contoh: PLU001"
         />
-      </div>
-      
-      <div>
-        <label htmlFor="nama_barang" className="block text-sm font-medium text-gray-700">Nama Barang</label>
-        <input
-          type="text"
+        <FormField
+          label="Nama Barang"
           name="nama_barang"
-          id="nama_barang"
           value={formData.nama_barang}
           onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
+          placeholder="Contoh: Tas Belanja Premium"
         />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="stok_c" className="block text-sm font-medium text-gray-700">Stok Karton</label>
-          <input
-            type="number"
-            name="stok_c"
-            id="stok_c"
-            value={formData.stok_c}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            required
-            min="0"
-          />
-        </div>
-        <div>
-          <label htmlFor="stok_q" className="block text-sm font-medium text-gray-700">Stok Pcs</label>
-          <input
-            type="number"
-            name="stok_q"
-            id="stok_q"
-            value={formData.stok_q}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            required
-            min="0"
-          />
-        </div>
-      </div>
-      
-      <div>
-        <label htmlFor="harga_barang" className="block text-sm font-medium text-gray-700">Harga Barang</label>
-        <input
+      </FormSection>
+
+      <FormSection
+        title="Informasi Stok"
+        description="Gunakan angka non-negatif untuk stok karton dan stok pcs."
+        columns={3}
+      >
+        <FormField
+          label="Stok Karton"
+          name="stok_c"
           type="number"
-          name="harga_barang"
-          id="harga_barang"
-          value={formData.harga_barang}
+          value={formData.stok_c}
           onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
-          min="0"
+          min={0}
+          step={1}
+          inputMode="numeric"
         />
-      </div>
-      
-      <div>
-        <label htmlFor="min_stok" className="block text-sm font-medium text-gray-700">Minimal Stok</label>
-        <input
+        <FormField
+          label="Stok Pcs"
+          name="stok_q"
           type="number"
+          value={formData.stok_q}
+          onChange={handleChange}
+          required
+          min={0}
+          step={1}
+          inputMode="numeric"
+        />
+        <FormField
+          label="Minimal Stok"
           name="min_stok"
-          id="min_stok"
+          type="number"
           value={formData.min_stok}
           onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           required
-          min="0"
+          min={0}
+          step={1}
+          inputMode="numeric"
+          helperText="Sistem akan mengirim notifikasi jika stok berada di bawah angka ini."
         />
-      </div>
-      
-      <div className="flex justify-end space-x-2">
+      </FormSection>
+
+      <FormSection
+        title="Harga & Nilai"
+        description="Masukkan harga satuan barang dalam Rupiah."
+        columns={1}
+      >
+        <FormField
+          label="Harga Barang"
+          name="harga_barang"
+          type="number"
+          value={formData.harga_barang}
+          onChange={handleChange}
+          required
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+          helperText="Gunakan titik sebagai pemisah desimal jika diperlukan."
+        />
+      </FormSection>
+
+      <FormSection
+        title="Dimensi Kardus"
+        description="Opsional. Isi berat dan ukuran fisik kardus untuk perhitungan logistik."
+      >
+        <FormField
+          label="Berat (kg)"
+          name="berat"
+          type="number"
+          value={formData.berat}
+          onChange={handleChange}
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Panjang (cm)"
+          name="panjang"
+          type="number"
+          value={formData.panjang}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Lebar (cm)"
+          name="lebar"
+          type="number"
+          value={formData.lebar}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Tinggi (cm)"
+          name="tinggi"
+          type="number"
+          value={formData.tinggi}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+      </FormSection>
+
+      <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={onClose}
-          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={loading}
         >
-          Close
+          Batal
         </button>
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={loading}
         >
-          {loading ? 'Loading...' : (memoizedInitialData.id ? 'Update' : 'Create')}
+          {loading ? 'Menyimpan...' : isEditMode ? 'Simpan Perubahan' : 'Buat Inventory'}
         </button>
       </div>
     </form>

@@ -25,7 +25,15 @@ const useInventoryDetail = (inventoryId) => {
       const response = await getInventoryById(inventoryId);
       
       if (response.success) {
-        setInventory(response.data);
+        const detail = response.data || {};
+        const dimension = detail.dimensiKardus || {};
+        setInventory({
+          ...detail,
+          berat: detail.berat ?? dimension.berat ?? 0,
+          panjang: detail.panjang ?? dimension.panjang ?? 0,
+          lebar: detail.lebar ?? dimension.lebar ?? 0,
+          tinggi: detail.tinggi ?? dimension.tinggi ?? 0
+        });
       } else {
         throw new Error(response.error?.message || 'Failed to load inventory');
       }

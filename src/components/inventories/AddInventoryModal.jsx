@@ -1,11 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import InventoryForm from './InventoryForm';
 import { useInventoryOperations } from '../../hooks/useInventory';
 
 const AddInventoryModal = ({ onClose }) => {
-  const { createInventoryItem, loading, error } = useInventoryOperations();
+  const {
+    createInventoryItem,
+    loading,
+    error,
+    setError,
+    clearError,
+    validateInventoryData
+  } = useInventoryOperations();
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const handleSubmit = async (formData) => {
+    const validationErrors = validateInventoryData(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      const [firstErrorMessage] = Object.values(validationErrors);
+      setError(firstErrorMessage);
+      return;
+    }
+
     try {
       await createInventoryItem(formData);
       onClose();
@@ -15,18 +33,29 @@ const AddInventoryModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-9999">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Add Inventory Item</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">&times;</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Tambah Inventory</h2>
+            <p className="text-sm text-gray-600">Lengkapi detail barang sesuai dokumentasi API terbaru.</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-gray-500 transition hover:bg-white hover:text-gray-700"
+            aria-label="Tutup"
+          >
+            ×
+          </button>
         </div>
-        <InventoryForm 
-          onSubmit={handleSubmit} 
-          onClose={onClose} 
-          loading={loading}
-          error={error}
-        />
+        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
+          <InventoryForm
+            onSubmit={handleSubmit}
+            onClose={onClose}
+            loading={loading}
+            error={error}
+          />
+        </div>
       </div>
     </div>
   );

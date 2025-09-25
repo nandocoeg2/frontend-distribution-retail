@@ -128,21 +128,33 @@ const useInventoryOperations = () => {
       errors.nama_barang = 'Nama barang is required';
     }
 
-    if (data.stok_c === undefined || data.stok_c === null || data.stok_c < 0) {
+    if (data.stok_c === undefined || data.stok_c === null || Number.isNaN(data.stok_c) || data.stok_c < 0) {
       errors.stok_c = 'Stok karton must be a valid number';
     }
 
-    if (data.stok_q === undefined || data.stok_q === null || data.stok_q < 0) {
+    if (data.stok_q === undefined || data.stok_q === null || Number.isNaN(data.stok_q) || data.stok_q < 0) {
       errors.stok_q = 'Stok pcs must be a valid number';
     }
 
-    if (data.harga_barang === undefined || data.harga_barang === null || data.harga_barang < 0) {
+    if (data.harga_barang === undefined || data.harga_barang === null || Number.isNaN(data.harga_barang) || data.harga_barang < 0) {
       errors.harga_barang = 'Harga barang must be a valid number';
     }
 
-    if (data.min_stok === undefined || data.min_stok === null || data.min_stok < 0) {
+    if (data.min_stok === undefined || data.min_stok === null || Number.isNaN(data.min_stok) || data.min_stok < 0) {
       errors.min_stok = 'Minimum stok must be a valid number';
     }
+
+    const dimensionFields = ['berat', 'panjang', 'lebar', 'tinggi'];
+    dimensionFields.forEach((field) => {
+      const value = data[field];
+      if (value === undefined || value === null || value === '') {
+        return;
+      }
+
+      if (Number.isNaN(value) || value < 0) {
+        errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} must be zero or greater`;
+      }
+    });
 
     return errors;
   }, []);

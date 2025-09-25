@@ -1,22 +1,35 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AccordionItem,
   InfoCard,
   StatusBadge,
   InfoTable
 } from '../ui';
+import useInventoryDetail from '../../hooks/useInventoryDetail';
 
 const ViewInventoryModal = ({ show, inventory, onClose }) => {
+  const inventoryId = show ? inventory?.id : null;
+  const {
+    inventory: detailedInventory,
+    loading,
+    error
+  } = useInventoryDetail(inventoryId);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     stockInfo: false,
     pricingInfo: false,
-    metaInfo: false
+    dimensionInfo: false,
+    metaInfo: false,
+    auditInfo: false
   });
 
   if (!show || !inventory) {
     return null;
   }
+
+  const resolvedInventory = useMemo(() => {
+    return detailedInventory || inventory;
+  }, [detailedInventory, inventory]);
 
   const formatCurrency = (amount) => {
     if (!amount) return 'N/A';
@@ -51,8 +64,17 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     return { status: 'In Stock', variant: 'success' };
   };
 
-  const totalStock = (inventory.stok_c || 0) + (inventory.stok_q || 0);
-  const stockStatus = getStockStatus(totalStock, inventory.min_stok);
+  const totalCartons = resolvedInventory?.stok_c || 0;
+  const totalPieces = resolvedInventory?.stok_q || 0;
+  const minimumStock = resolvedInventory?.min_stok || 0;
+  const totalStock = totalCartons + totalPieces;
+  const stockStatus = getStockStatus(totalStock, minimumStock);
+
+  const weight = resolvedInventory?.berat ?? resolvedInventory?.dimensiKardus?.berat;
+  const length = resolvedInventory?.panjang ?? resolvedInventory?.dimensiKardus?.panjang;
+  const width = resolvedInventory?.lebar ?? resolvedInventory?.dimensiKardus?.lebar;
+  const height = resolvedInventory?.tinggi ?? resolvedInventory?.dimensiKardus?.tinggi;
+  const dimensionExists = [weight, length, width, height].some((value) => value !== null && value !== undefined);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -65,7 +87,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Inventory Details</h2>
-              <p className="text-sm text-gray-600">{inventory.nama_barang}</p>
+              <p className="text-sm text-gray-600">{resolvedInventory?.nama_barang}</p>
             </div>
           </div>
           <button 
@@ -80,6 +102,20 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {error ? (
+            <InfoCard
+              variant="danger"
+              title="Gagal memuat data"
+              description={error}
+            />
+          ) : null}
+
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            </div>
+          ) : null}
+
           <div className="space-y-6">
             {/* Basic Information */}
             <AccordionItem
@@ -90,9 +126,9 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             >
               <InfoTable 
                 data={[
-                  { label: 'PLU', value: inventory.plu, copyable: true },
-                  { label: 'Nama Barang', value: inventory.nama_barang },
-                  { label: 'Inventory ID', value: inventory.id, copyable: true }
+                  { label: 'PLU', value: resolvedInventory?.plu, copyable: true },
+                  { label: 'Nama Barang', value: resolvedInventory?.nama_barang },
+                  { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true }
                 ]}
               />
             </AccordionItem>
@@ -106,10 +142,10 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             >
               <InfoTable 
                 data={[
-                  { label: 'Stok Karton', value: `${inventory.stok_c} karton` },
-                  { label: 'Stok Pcs', value: `${inventory.stok_q} pcs` },
-                  { label: 'Total Stok', value: `${totalStock} pcs` },
-                  { label: 'Minimum Stock', value: `${inventory.min_stok} pcs` },
+                  { label: 'Stok Karton', value: `${totalCartons} karton` },
+                  { label: 'Stok Pcs', value: `${totalPieces} pcs` },
+                  { label: 'Total Stok', value: `${totalStock} unit` },
+                  { label: 'Minimum Stock', value: `${minimumStock} unit` },
                   { 
                     label: 'Stock Status', 
                     component: <StatusBadge status={stockStatus.status} variant={stockStatus.variant} />
@@ -127,10 +163,35 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             >
               <InfoTable 
                 data={[
-                  { label: 'Harga Barang', value: formatCurrency(inventory.harga_barang) },
-                  { label: 'Total Value', value: formatCurrency(inventory.harga_barang * totalStock) }
+                  { label: 'Harga Barang', value: formatCurrency(resolvedInventory?.harga_barang) },
+                  { label: 'Total Value', value: formatCurrency((resolvedInventory?.harga_barang || 0) * totalStock) }
                 ]}
               />
+            </AccordionItem>
+
+            {/* Dimension Information */}
+            <AccordionItem
+              title="Dimension Information"
+              isExpanded={expandedSections.dimensionInfo}
+              onToggle={() => toggleSection('dimensionInfo')}
+              bgColor="bg-gradient-to-r from-lime-50 to-emerald-50"
+            >
+              {dimensionExists ? (
+                <InfoTable
+                  data={[
+                    { label: 'Berat', value: `${weight || 0} kg` },
+                    { label: 'Panjang', value: `${length || 0} cm` },
+                    { label: 'Lebar', value: `${width || 0} cm` },
+                    { label: 'Tinggi', value: `${height || 0} cm` }
+                  ]}
+                />
+              ) : (
+                <InfoCard
+                  variant="info"
+                  title="Dimensi belum diatur"
+                  description="Tidak ada data berat atau ukuran kardus untuk inventory ini."
+                />
+              )}
             </AccordionItem>
 
             {/* System Information */}
@@ -142,8 +203,23 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             >
               <InfoTable 
                 data={[
-                  { label: 'Created At', value: formatDate(inventory.createdAt) },
-                  { label: 'Updated At', value: formatDate(inventory.updatedAt) }
+                  { label: 'Created At', value: formatDate(resolvedInventory?.createdAt) },
+                  { label: 'Updated At', value: formatDate(resolvedInventory?.updatedAt) }
+                ]}
+              />
+            </AccordionItem>
+
+            {/* Audit Information */}
+            <AccordionItem
+              title="Audit Trail"
+              isExpanded={expandedSections.auditInfo}
+              onToggle={() => toggleSection('auditInfo')}
+              bgColor="bg-gradient-to-r from-slate-50 to-slate-100"
+            >
+              <InfoTable
+                data={[
+                  { label: 'Created By', value: resolvedInventory?.createdBy, copyable: true },
+                  { label: 'Updated By', value: resolvedInventory?.updatedBy, copyable: true }
                 ]}
               />
             </AccordionItem>
