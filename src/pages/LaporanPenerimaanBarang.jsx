@@ -28,12 +28,14 @@ const LaporanPenerimaanBarang = () => {
     deleteReport,
     deleteReportConfirmation,
     fetchReports,
+    fetchReportById,
   } = useLaporanPenerimaanBarangPage();
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const openCreateModal = () => {
     setSelectedReport(null);
@@ -55,14 +57,30 @@ const LaporanPenerimaanBarang = () => {
     setSelectedReport(null);
   };
 
-  const openDetailModal = (report) => {
-    setSelectedReport(report);
+  const openDetailModal = async (report) => {
+    if (!report?.id) {
+      return;
+    }
+
     setIsDetailModalOpen(true);
+    setDetailLoading(true);
+    setSelectedReport(null);
+
+    try {
+      const detail = await fetchReportById(report.id);
+      setSelectedReport(detail?.data || detail || null);
+    } catch (error) {
+      console.error('Failed to fetch laporan penerimaan barang detail:', error);
+      setIsDetailModalOpen(false);
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const closeDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedReport(null);
+    setDetailLoading(false);
   };
 
   const handleCreateSubmit = async (payload) => {
@@ -158,6 +176,7 @@ const LaporanPenerimaanBarang = () => {
         isOpen={isDetailModalOpen}
         onClose={closeDetailModal}
         report={selectedReport}
+        isLoading={detailLoading}
       />
 
       <ConfirmationDialog

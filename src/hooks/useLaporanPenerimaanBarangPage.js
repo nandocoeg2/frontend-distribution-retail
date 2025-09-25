@@ -144,6 +144,28 @@ const useLaporanPenerimaanBarangPage = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
+  const fetchReportById = useCallback(async (id) => {
+    if (!id) {
+      return null;
+    }
+
+    try {
+      const result = await laporanPenerimaanBarangService.getReportById(id);
+      if (result?.success === false) {
+        throw new Error(result?.error?.message || 'Failed to fetch laporan penerimaan barang detail');
+      }
+      return result?.data || result;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return null;
+      }
+      const message = err?.response?.data?.error?.message || err?.message || 'Failed to fetch laporan penerimaan barang detail';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler]);
+
   const createReportFromFile = useCallback(async ({ file, prompt }) => {
     try {
       const result = await laporanPenerimaanBarangService.uploadFromFile({ file, prompt });
@@ -243,6 +265,7 @@ const useLaporanPenerimaanBarangPage = () => {
     fetchReports,
     handleAuthError: authHandler,
     createReportFromFile,
+    fetchReportById,
   };
 };
 
