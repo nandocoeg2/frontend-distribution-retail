@@ -88,6 +88,32 @@ class LaporanPenerimaanBarangService {
       throw error;
     }
   }
+
+  async uploadFromFile({ file, prompt } = {}) {
+    try {
+      if (!file) {
+        throw new Error('File is required');
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      if (prompt) {
+        formData.append('prompt', prompt);
+      }
+
+      const response = await this.api.post('/laporan-penerimaan-barang/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading laporan penerimaan barang file:', error);
+      throw error;
+    }
+  }
 }
 
 export default new LaporanPenerimaanBarangService();

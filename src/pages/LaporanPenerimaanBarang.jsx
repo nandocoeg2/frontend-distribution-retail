@@ -23,6 +23,7 @@ const LaporanPenerimaanBarang = () => {
     handlePageChange,
     handleLimitChange,
     createReport,
+    createReportFromFile,
     updateReport,
     deleteReport,
     deleteReportConfirmation,
@@ -142,6 +143,7 @@ const LaporanPenerimaanBarang = () => {
         onClose={closeCreateModal}
         onSubmit={handleCreateSubmit}
         isEdit={false}
+        onUploadFromFile={createReportFromFile}
       />
 
       <LaporanPenerimaanBarangModal

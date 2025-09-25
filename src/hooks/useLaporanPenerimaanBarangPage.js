@@ -144,6 +144,30 @@ const useLaporanPenerimaanBarangPage = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
+  const createReportFromFile = useCallback(async ({ file, prompt }) => {
+    try {
+      const result = await laporanPenerimaanBarangService.uploadFromFile({ file, prompt });
+      if (result?.success === false) {
+        throw new Error(result?.message || result?.error?.message || 'Failed to upload laporan penerimaan barang file');
+      }
+      toastService.success(result?.message || 'File uploaded and converted successfully');
+      await refreshAfterMutation();
+      return result?.data;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
+      }
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to upload laporan penerimaan barang file';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler, refreshAfterMutation]);
+
   const updateReport = useCallback(async (id, reportData) => {
     try {
       const result = await laporanPenerimaanBarangService.updateReport(id, reportData);
@@ -218,6 +242,7 @@ const useLaporanPenerimaanBarangPage = () => {
     deleteReportConfirmation,
     fetchReports,
     handleAuthError: authHandler,
+    createReportFromFile,
   };
 };
 

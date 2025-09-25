@@ -5,6 +5,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
+import { StatusBadge } from '../ui/Badge';
 
 const formatDate = (value) => {
   if (!value) {
@@ -21,6 +22,51 @@ const formatDate = (value) => {
     month: 'short',
     day: 'numeric',
   });
+};
+
+const resolveStatusVariant = (status) => {
+  const value = typeof status === 'string' ? status.toLowerCase() : '';
+
+  if (!value) {
+    return 'secondary';
+  }
+
+  if (
+    value.includes('approve') ||
+    value.includes('success') ||
+    value.includes('selesai') ||
+    value.includes('complete')
+  ) {
+    return 'success';
+  }
+
+  if (
+    value.includes('pending') ||
+    value.includes('menunggu') ||
+    value.includes('waiting')
+  ) {
+    return 'warning';
+  }
+
+  if (
+    value.includes('reject') ||
+    value.includes('cancel') ||
+    value.includes('batal') ||
+    value.includes('failed') ||
+    value.includes('error')
+  ) {
+    return 'danger';
+  }
+
+  if (value.includes('process') || value.includes('proses')) {
+    return 'primary';
+  }
+
+  if (value.includes('draft')) {
+    return 'secondary';
+  }
+
+  return 'default';
 };
 
 const LaporanPenerimaanBarangTable = ({
@@ -60,7 +106,11 @@ const LaporanPenerimaanBarangTable = ({
               const poNumber = report?.purchaseOrder?.po_number || report?.purchaseOrderId || '-';
               const customerName = report?.customer?.namaCustomer || report?.customerId || '-';
               const terminName = report?.termOfPayment?.nama_top || report?.termin_bayar || '-';
-              const statusName = report?.status?.status_name || report?.status?.status_code || report?.statusId || '-';
+              const statusName =
+                report?.status?.status_name ||
+                report?.status?.status_code ||
+                report?.statusId ||
+                '-';
               const fileCount = Array.isArray(report?.files) ? report.files.length : 0;
 
               return (
@@ -70,7 +120,14 @@ const LaporanPenerimaanBarangTable = ({
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{customerName}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{report?.alamat_customer || '-'}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{terminName}</td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{statusName}</td>
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                    <StatusBadge
+                      status={statusName}
+                      variant={resolveStatusVariant(statusName)}
+                      size='sm'
+                      dot
+                    />
+                  </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{fileCount}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                     <div className='flex space-x-2 justify-end'>

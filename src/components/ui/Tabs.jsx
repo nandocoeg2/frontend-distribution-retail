@@ -105,6 +105,7 @@ export const TabContainer = ({
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            type='button'
             onClick={() => !tab.disabled && handleTabChange(tab.id)}
             disabled={tab.disabled}
             className={`${sizeClasses} font-medium flex items-center space-x-2 transition-colors ${fullWidth ? 'flex-1 justify-center' : ''} ${

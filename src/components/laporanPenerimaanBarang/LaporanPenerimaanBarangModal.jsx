@@ -6,6 +6,7 @@ import customerService from '@/services/customerService';
 import termOfPaymentService from '@/services/termOfPaymentService';
 import statusService from '@/services/statusService';
 import toastService from '@/services/toastService';
+import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
 
 const defaultFormValues = {
   purchaseOrderId: '',
@@ -98,7 +99,8 @@ const mapPurchaseOrderOption = (po) => {
 
   const idString = String(id);
   const number = po.po_number || po.poNumber;
-  const customerName = po.customer?.namaCustomer || po.customer?.name || po.customerName;
+  const customerName =
+    po.customer?.namaCustomer || po.customer?.name || po.customerName;
   const labelParts = [number, customerName].filter(Boolean);
 
   return {
@@ -118,7 +120,10 @@ const mapCustomerOption = (customer) => {
   }
 
   const idString = String(id);
-  const labelParts = [customer.namaCustomer || customer.name, customer.kodeCustomer].filter(Boolean);
+  const labelParts = [
+    customer.namaCustomer || customer.name,
+    customer.kodeCustomer,
+  ].filter(Boolean);
 
   return {
     id: idString,
@@ -224,9 +229,16 @@ const LaporanPenerimaanBarangModal = ({
   onSubmit,
   initialValues = null,
   isEdit = false,
+  onUploadFromFile = null,
 }) => {
   const [formValues, setFormValues] = useState(defaultFormValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const [activeTab, setActiveTab] = useState('manual');
 
   const [purchaseOrderOptions, setPurchaseOrderOptions] = useState([]);
   const [customerOptions, setCustomerOptions] = useState([]);
@@ -242,7 +254,11 @@ const LaporanPenerimaanBarangModal = ({
     setPurchaseOrderLoading(true);
     try {
       const response = query
-        ? await purchaseOrderService.searchPurchaseOrders({ po_number: query }, 1, 10)
+        ? await purchaseOrderService.searchPurchaseOrders(
+            { po_number: query },
+            1,
+            10
+          )
         : await purchaseOrderService.getAllPurchaseOrders(1, 10);
 
       const items = extractArray(response)
@@ -285,9 +301,7 @@ const LaporanPenerimaanBarangModal = ({
         ? await termOfPaymentService.searchTermOfPayments(query, 1, 10)
         : await termOfPaymentService.getAllTermOfPayments(1, 10);
 
-      const items = extractArray(response)
-        .map(mapTermOption)
-        .filter(Boolean);
+      const items = extractArray(response).map(mapTermOption).filter(Boolean);
 
       setTermOptions((prev) => mergeUniqueOptions(items, prev));
     } catch (error) {
@@ -302,9 +316,7 @@ const LaporanPenerimaanBarangModal = ({
     setStatusLoading(true);
     try {
       const response = await statusService.getAllStatuses();
-      const items = extractArray(response)
-        .map(mapStatusOption)
-        .filter(Boolean);
+      const items = extractArray(response).map(mapStatusOption).filter(Boolean);
 
       setStatusOptions((prev) => mergeUniqueOptions(items, prev));
     } catch (error) {
@@ -324,7 +336,21 @@ const LaporanPenerimaanBarangModal = ({
     fetchCustomerOptions();
     fetchTermOptions();
     fetchStatusOptions();
-  }, [isOpen, fetchPurchaseOrderOptions, fetchCustomerOptions, fetchTermOptions, fetchStatusOptions]);
+  }, [
+    isOpen,
+    fetchPurchaseOrderOptions,
+    fetchCustomerOptions,
+    fetchTermOptions,
+    fetchStatusOptions,
+  ]);
+
+  const resetUploadState = useCallback(() => {
+    setIsUploadingFile(false);
+    setSelectedFile(null);
+    setCustomPrompt('');
+    setUploadError('');
+    setFileInputKey((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -334,15 +360,29 @@ const LaporanPenerimaanBarangModal = ({
     const purchaseOrderOption = mapPurchaseOrderOption({
       id: initialValues?.purchaseOrderId || initialValues?.purchaseOrder?.id,
       po_number: initialValues?.purchaseOrder?.po_number,
-      customer: initialValues?.purchaseOrder?.customer || initialValues?.customer,
+      customer:
+        initialValues?.purchaseOrder?.customer || initialValues?.customer,
     });
 
-    const customerOption = mapCustomerOption(initialValues?.customer || (initialValues?.customerId ? { id: initialValues.customerId } : null));
-    const termOption = mapTermOption(initialValues?.termOfPayment || (initialValues?.termin_bayar ? { id: initialValues.termin_bayar } : null));
-    const statusOption = mapStatusOption(initialValues?.status || (initialValues?.statusId ? { id: initialValues.statusId } : null));
+    const customerOption = mapCustomerOption(
+      initialValues?.customer ||
+        (initialValues?.customerId ? { id: initialValues.customerId } : null)
+    );
+    const termOption = mapTermOption(
+      initialValues?.termOfPayment ||
+        (initialValues?.termin_bayar
+          ? { id: initialValues.termin_bayar }
+          : null)
+    );
+    const statusOption = mapStatusOption(
+      initialValues?.status ||
+        (initialValues?.statusId ? { id: initialValues.statusId } : null)
+    );
 
     if (purchaseOrderOption) {
-      setPurchaseOrderOptions((prev) => mergeUniqueOptions([purchaseOrderOption], prev));
+      setPurchaseOrderOptions((prev) =>
+        mergeUniqueOptions([purchaseOrderOption], prev)
+      );
     }
     if (customerOption) {
       setCustomerOptions((prev) => mergeUniqueOptions([customerOption], prev));
@@ -357,28 +397,48 @@ const LaporanPenerimaanBarangModal = ({
 
   useEffect(() => {
     if (isOpen) {
+      setActiveTab('manual');
       setFormValues({
-        purchaseOrderId: toIdString(initialValues?.purchaseOrderId || initialValues?.purchaseOrder?.id),
-        tanggal_po: toDateInput(initialValues?.tanggal_po || initialValues?.purchaseOrder?.tanggal_po),
-        customerId: toIdString(initialValues?.customerId || initialValues?.customer?.id),
-        alamat_customer: initialValues?.alamat_customer || initialValues?.customer?.alamat || '',
-        termin_bayar: toIdString(initialValues?.termin_bayar || initialValues?.termOfPayment?.id),
-        statusId: toIdString(initialValues?.statusId || initialValues?.status?.id),
+        purchaseOrderId: toIdString(
+          initialValues?.purchaseOrderId || initialValues?.purchaseOrder?.id
+        ),
+        tanggal_po: toDateInput(
+          initialValues?.tanggal_po || initialValues?.purchaseOrder?.tanggal_po
+        ),
+        customerId: toIdString(
+          initialValues?.customerId || initialValues?.customer?.id
+        ),
+        alamat_customer:
+          initialValues?.alamat_customer ||
+          initialValues?.customer?.alamat ||
+          '',
+        termin_bayar: toIdString(
+          initialValues?.termin_bayar || initialValues?.termOfPayment?.id
+        ),
+        statusId: toIdString(
+          initialValues?.statusId || initialValues?.status?.id
+        ),
         filesText: extractFileIds(initialValues?.files),
       });
       setIsSubmitting(false);
+      resetUploadState();
     } else {
       setFormValues(defaultFormValues);
       setIsSubmitting(false);
+      resetUploadState();
     }
-  }, [initialValues, isOpen]);
+  }, [initialValues, isOpen, resetUploadState]);
 
   const modalTitle = useMemo(() => {
-    return isEdit ? 'Edit Laporan Penerimaan Barang' : 'Tambah Laporan Penerimaan Barang';
+    return isEdit
+      ? 'Edit Laporan Penerimaan Barang'
+      : 'Tambah Laporan Penerimaan Barang';
   }, [isEdit]);
 
   const modalSubtitle = useMemo(() => {
-    return isEdit ? 'Perbarui detail laporan penerimaan barang.' : 'Lengkapi data untuk membuat laporan penerimaan barang baru.';
+    return isEdit
+      ? 'Perbarui detail laporan penerimaan barang.'
+      : 'Lengkapi data untuk membuat laporan penerimaan barang baru.';
   }, [isEdit]);
 
   const handleChange = (event) => {
@@ -389,8 +449,216 @@ const LaporanPenerimaanBarangModal = ({
     }));
   };
 
+  const handleFileInputChange = (event) => {
+    const file =
+      event.target.files && event.target.files[0]
+        ? event.target.files[0]
+        : null;
+    setSelectedFile(file);
+    setUploadError('');
+  };
+
+  const handlePromptChange = (event) => {
+    setCustomPrompt(event.target.value);
+  };
+
+  const handleUploadFromFile = async () => {
+    if (typeof onUploadFromFile !== 'function') {
+      toastService.error('Fitur upload file belum tersedia.');
+      return;
+    }
+
+    if (!selectedFile) {
+      const message = 'Silakan pilih file yang akan diunggah.';
+      setUploadError(message);
+      toastService.error(message);
+      return;
+    }
+
+    setIsUploadingFile(true);
+    setUploadError('');
+
+    try {
+      await onUploadFromFile({
+        file: selectedFile,
+        prompt: customPrompt.trim() || undefined,
+      });
+      resetUploadState();
+      onClose();
+    } catch (error) {
+      console.error('Failed to upload laporan penerimaan barang file:', error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Gagal mengunggah file.';
+      setUploadError(message);
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setUploadError('');
+  }, []);
+
+  const renderFileUploadPanel = () => (
+    <div className='border border-dashed border-blue-300 rounded-lg bg-blue-50/50 p-4'>
+      <h4 className='text-sm font-semibold text-gray-900 mb-1'>Upload File Laporan</h4>
+      <p className='text-xs text-gray-600 mb-3'>Unggah file LPB (PDF, EDI, DOC, XLS, atau gambar) untuk membuat laporan secara otomatis. Opsional, berikan prompt khusus untuk proses konversi.</p>
+      <div className='space-y-3'>
+        <input
+          key={fileInputKey}
+          type='file'
+          accept='.pdf,.PDF,.edi,.EDI,.doc,.DOC,.docx,.DOCX,.xls,.xlsx,.png,.jpg,.jpeg'
+          onChange={handleFileInputChange}
+          disabled={isUploadingFile || isSubmitting}
+          className='block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200'
+        />
+        <textarea
+          value={customPrompt}
+          onChange={handlePromptChange}
+          rows={2}
+          placeholder='Custom prompt (opsional)'
+          disabled={isUploadingFile || isSubmitting}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+        />
+        {uploadError && <p className='text-sm text-red-600'>{uploadError}</p>}
+        <div className='flex items-center gap-3'>
+          <button
+            type='button'
+            onClick={handleUploadFromFile}
+            disabled={isUploadingFile || isSubmitting}
+            className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300'
+          >
+            {isUploadingFile ? 'Mengunggah...' : 'Upload & Konversi'}
+          </button>
+          {selectedFile && !isUploadingFile && (
+            <span className='text-xs text-gray-600 truncate'>File dipilih: {selectedFile.name}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderManualForm = () => (
+    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+      <div>
+        <Autocomplete
+          label='Purchase Order'
+          name='purchaseOrderId'
+          options={purchaseOrderOptions}
+          value={formValues.purchaseOrderId}
+          onChange={handleChange}
+          placeholder='Cari nomor PO atau customer'
+          displayKey='label'
+          valueKey='id'
+          required
+          loading={purchaseOrderLoading}
+          onSearch={fetchPurchaseOrderOptions}
+          showId
+        />
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-1'>Tanggal PO</label>
+        <input
+          type='date'
+          name='tanggal_po'
+          value={formValues.tanggal_po}
+          onChange={handleChange}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+        />
+      </div>
+
+      <div>
+        <Autocomplete
+          label='Customer'
+          name='customerId'
+          options={customerOptions}
+          value={formValues.customerId}
+          onChange={handleChange}
+          placeholder='Cari customer'
+          displayKey='label'
+          valueKey='id'
+          required
+          loading={customerLoading}
+          onSearch={fetchCustomerOptions}
+          showId
+        />
+      </div>
+
+      <div className='md:col-span-2'>
+        <label className='block text-sm font-medium text-gray-700 mb-1'>Alamat Customer</label>
+        <textarea
+          name='alamat_customer'
+          value={formValues.alamat_customer}
+          onChange={handleChange}
+          rows={3}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          placeholder='Jl. Contoh No. 123, Jakarta'
+        />
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-1'>Termin Bayar</label>
+        <select
+          name='termin_bayar'
+          value={formValues.termin_bayar}
+          onChange={handleChange}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          disabled={termLoading}
+        >
+          <option value=''>Pilih termin bayar</option>
+          {termOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium text-gray-700 mb-1'>Status</label>
+        <select
+          name='statusId'
+          value={formValues.statusId}
+          onChange={handleChange}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          disabled={statusLoading}
+        >
+          <option value=''>Pilih status laporan</option>
+          {statusOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className='md:col-span-2'>
+        <label className='block text-sm font-medium text-gray-700 mb-1'>File IDs</label>
+        <textarea
+          name='filesText'
+          value={formValues.filesText}
+          onChange={handleChange}
+          rows={2}
+          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          placeholder='Pisahkan ID file dengan koma. Contoh: file-id-1, file-id-2'
+        />
+        <p className='mt-1 text-xs text-gray-500'>Sisakan kosong jika tidak ada file yang ingin dilampirkan.</p>
+      </div>
+    </div>
+  );
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!isEdit && activeTab === 'file') {
+      await handleUploadFromFile();
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -415,119 +683,29 @@ const LaporanPenerimaanBarangModal = ({
       handleSubmit={handleSubmit}
       entityName='Laporan'
     >
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+      {!isEdit && typeof onUploadFromFile === 'function' ? (
         <div>
-          <Autocomplete
-            label='Purchase Order'
-            name='purchaseOrderId'
-            options={purchaseOrderOptions}
-            value={formValues.purchaseOrderId}
-            onChange={handleChange}
-            placeholder='Cari nomor PO atau customer'
-            displayKey='label'
-            valueKey='id'
-            required
-            loading={purchaseOrderLoading}
-            onSearch={fetchPurchaseOrderOptions}
-            showId
-          />
-        </div>
-
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Tanggal PO</label>
-          <input
-            type='date'
-            name='tanggal_po'
-            value={formValues.tanggal_po}
-            onChange={handleChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-
-        <div>
-          <Autocomplete
-            label='Customer'
-            name='customerId'
-            options={customerOptions}
-            value={formValues.customerId}
-            onChange={handleChange}
-            placeholder='Cari customer'
-            displayKey='label'
-            valueKey='id'
-            required
-            loading={customerLoading}
-            onSearch={fetchCustomerOptions}
-            showId
-          />
-        </div>
-
-        <div className='md:col-span-2'>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Alamat Customer</label>
-          <textarea
-            name='alamat_customer'
-            value={formValues.alamat_customer}
-            onChange={handleChange}
-            rows={3}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Jl. Contoh No. 123, Jakarta'
-          />
-        </div>
-
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Termin Bayar</label>
-          <select
-            name='termin_bayar'
-            value={formValues.termin_bayar}
-            onChange={handleChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            disabled={termLoading}
+          <TabContainer
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            variant='underline'
+            size='sm'
+            className='mb-4'
           >
-            <option value=''>Pilih termin bayar</option>
-            {termOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            <Tab id='manual' label='Input Manual' />
+            <Tab id='file' label='Upload File' />
+          </TabContainer>
 
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>Status</label>
-          <select
-            name='statusId'
-            value={formValues.statusId}
-            onChange={handleChange}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            disabled={statusLoading}
-          >
-            <option value=''>Pilih status laporan</option>
-            {statusOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <TabContent activeTab={activeTab} unmountInactive>
+            <TabPanel tabId='manual'>{renderManualForm()}</TabPanel>
+            <TabPanel tabId='file'>{renderFileUploadPanel()}</TabPanel>
+          </TabContent>
         </div>
-
-        <div className='md:col-span-2'>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>File IDs</label>
-          <textarea
-            name='filesText'
-            value={formValues.filesText}
-            onChange={handleChange}
-            rows={2}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Pisahkan ID file dengan koma. Contoh: file-id-1, file-id-2'
-          />
-          <p className='mt-1 text-xs text-gray-500'>Sisakan kosong jika tidak ada file yang ingin dilampirkan.</p>
-        </div>
-      </div>
+      ) : (
+        renderManualForm()
+      )}
     </FormModal>
   );
 };
 
 export default LaporanPenerimaanBarangModal;
-
-
-
-
