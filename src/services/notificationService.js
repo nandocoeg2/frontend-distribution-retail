@@ -1,12 +1,30 @@
 import axios from 'axios';
+import authService from './authService';
 
 const API_BASE_URL = 'http://localhost:5050/api/v1/notifications';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = authService.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 const notificationService = {
   // Get all notifications
   async getAllNotifications() {
     try {
-      const response = await axios.get(`${API_BASE_URL}`);
+      const response = await api.get('/');
       return response.data;
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -17,7 +35,7 @@ const notificationService = {
   // Get unread notifications
   async getUnreadNotifications() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/unread`);
+      const response = await api.get('/unread');
       return response.data;
     } catch (error) {
       console.error('Error fetching unread notifications:', error);
@@ -28,7 +46,7 @@ const notificationService = {
   // Get alerts (low stock alerts)
   async getAlerts() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/alerts`);
+      const response = await api.get('/alerts');
       return response.data;
     } catch (error) {
       console.error('Error fetching alerts:', error);
@@ -39,9 +57,7 @@ const notificationService = {
   // Mark specific notification as read
   async markAsRead(notificationId) {
     try {
-      const response = await axios.patch(
-        `${API_BASE_URL}/${notificationId}/read`
-      );
+      const response = await api.patch(`/${notificationId}/read`);
       return response.data;
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -52,7 +68,7 @@ const notificationService = {
   // Mark all notifications as read
   async markAllAsRead() {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/read-all`);
+      const response = await api.patch('/read-all');
       return response.data;
     } catch (error) {
       console.error('Error marking all notifications as read:', error);

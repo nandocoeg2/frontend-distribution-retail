@@ -17,7 +17,7 @@ class InvoicePenagihanService {
     this.api.interceptors.request.use((config) => {
       const token = authService.getToken();
       if (token) {
-        config.headers.Authorization = Bearer;
+        config.headers.Authorization = `Bearer ${token}`;
       }
       return config;
     });
