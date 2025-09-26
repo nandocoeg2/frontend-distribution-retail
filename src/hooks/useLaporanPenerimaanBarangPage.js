@@ -190,6 +190,96 @@ const useLaporanPenerimaanBarangPage = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
+  const uploadBulkReports = useCallback(async ({ files, prompt } = {}) => {
+    try {
+      const result = await laporanPenerimaanBarangService.uploadBulkReports({
+        files,
+        prompt,
+      });
+      if (result?.success === false) {
+        throw new Error(
+          result?.message ||
+            result?.error?.message ||
+            'Failed to upload bulk laporan penerimaan barang files'
+        );
+      }
+      toastService.success(
+        result?.message ||
+          'Bulk upload laporan penerimaan barang berhasil dikirim ke background.'
+      );
+      return result?.data || result;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
+      }
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to upload bulk laporan penerimaan barang files';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler]);
+
+  const fetchBulkStatus = useCallback(async (bulkId) => {
+    const id = typeof bulkId === 'string' ? bulkId.trim() : bulkId;
+    if (!id) {
+      return null;
+    }
+
+    try {
+      const result = await laporanPenerimaanBarangService.getBulkStatus(id);
+      if (result?.success === false) {
+        throw new Error(
+          result?.message ||
+            result?.error?.message ||
+            'Failed to fetch laporan penerimaan barang bulk status'
+        );
+      }
+      return result?.data || result;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return null;
+      }
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to fetch laporan penerimaan barang bulk status';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler]);
+
+  const fetchBulkFiles = useCallback(async ({ status } = {}) => {
+    try {
+      const result = await laporanPenerimaanBarangService.getBulkFiles({ status });
+      if (result?.success === false) {
+        throw new Error(
+          result?.message ||
+            result?.error?.message ||
+            'Failed to fetch laporan penerimaan barang bulk files'
+        );
+      }
+      return result?.data || result;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return null;
+      }
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to fetch laporan penerimaan barang bulk files';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler]);
+
   const updateReport = useCallback(async (id, reportData) => {
     try {
       const result = await laporanPenerimaanBarangService.updateReport(id, reportData);
@@ -265,6 +355,9 @@ const useLaporanPenerimaanBarangPage = () => {
     fetchReports,
     handleAuthError: authHandler,
     createReportFromFile,
+    uploadBulkReports,
+    fetchBulkStatus,
+    fetchBulkFiles,
     fetchReportById,
   };
 };

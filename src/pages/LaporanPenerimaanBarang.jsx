@@ -5,6 +5,7 @@ import {
   LaporanPenerimaanBarangTable,
   LaporanPenerimaanBarangModal,
   LaporanPenerimaanBarangDetailModal,
+  LaporanPenerimaanBarangBulkModal,
 } from '@/components/laporanPenerimaanBarang';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
@@ -24,6 +25,8 @@ const LaporanPenerimaanBarang = () => {
     handleLimitChange,
     createReport,
     createReportFromFile,
+    uploadBulkReports,
+    fetchBulkStatus,
     updateReport,
     deleteReport,
     deleteReportConfirmation,
@@ -33,6 +36,7 @@ const LaporanPenerimaanBarang = () => {
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -45,6 +49,14 @@ const LaporanPenerimaanBarang = () => {
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
     setSelectedReport(null);
+  };
+
+  const openBulkModal = () => {
+    setIsBulkModalOpen(true);
+  };
+
+  const closeBulkModal = () => {
+    setIsBulkModalOpen(false);
   };
 
   const openEditModal = (report) => {
@@ -104,15 +116,24 @@ const LaporanPenerimaanBarang = () => {
     <div className='p-6'>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
         <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex justify-between items-center'>
+          <div className='mb-4 flex items-center justify-between'>
             <h3 className='text-lg font-medium text-gray-900'>Laporan Penerimaan Barang</h3>
-            <button
-              onClick={openCreateModal}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-            >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Tambah Laporan
-            </button>
+            <div className='flex items-center gap-2'>
+              <button
+                onClick={openBulkModal}
+                className='inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600'
+              >
+                <HeroIcon name='arrow-up-tray' className='mr-2 h-5 w-5' />
+                Upload Bulk
+              </button>
+              <button
+                onClick={openCreateModal}
+                className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700'
+              >
+                <HeroIcon name='plus' className='mr-2 h-5 w-5' />
+                Tambah Laporan
+              </button>
+            </div>
           </div>
 
           <LaporanPenerimaanBarangSearch
@@ -177,6 +198,13 @@ const LaporanPenerimaanBarang = () => {
         onClose={closeDetailModal}
         report={selectedReport}
         isLoading={detailLoading}
+      />
+
+      <LaporanPenerimaanBarangBulkModal
+        isOpen={isBulkModalOpen}
+        onClose={closeBulkModal}
+        onBulkUpload={uploadBulkReports}
+        onFetchStatus={fetchBulkStatus}
       />
 
       <ConfirmationDialog

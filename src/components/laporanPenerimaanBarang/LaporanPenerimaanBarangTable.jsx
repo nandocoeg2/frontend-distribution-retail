@@ -87,7 +87,6 @@ const LaporanPenerimaanBarangTable = ({
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>No. PO</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Tanggal PO</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Customer</th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Alamat</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Termin Bayar</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Status</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>File</th>
@@ -97,7 +96,7 @@ const LaporanPenerimaanBarangTable = ({
         <tbody className='bg-white divide-y divide-gray-200'>
           {reports.length === 0 ? (
             <tr>
-              <td colSpan='8' className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan='7' className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'Tidak ada laporan yang cocok dengan pencarian.' : 'Belum ada laporan penerimaan barang.'}
               </td>
             </tr>
@@ -118,7 +117,6 @@ const LaporanPenerimaanBarangTable = ({
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{poNumber}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{formatDate(report?.tanggal_po || report?.purchaseOrder?.tanggal_po)}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{customerName}</td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{report?.alamat_customer || '-'}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{terminName}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
                     <StatusBadge

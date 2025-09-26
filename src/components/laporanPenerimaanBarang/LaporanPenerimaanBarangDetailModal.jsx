@@ -175,7 +175,7 @@ const LaporanPenerimaanBarangDetailModal = ({
       },
       {
         label: 'Alamat Customer',
-        value: report?.alamat_customer || '-',
+        value: report?.customer?.alamat || '-',
       },
       {
         label: 'Termin Pembayaran',

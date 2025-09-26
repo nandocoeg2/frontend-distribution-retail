@@ -12,7 +12,6 @@ const defaultFormValues = {
   purchaseOrderId: '',
   tanggal_po: '',
   customerId: '',
-  alamat_customer: '',
   termin_bayar: '',
   statusId: '',
   filesText: '',
@@ -196,10 +195,6 @@ const buildPayload = (values) => {
 
   if (customerId) {
     payload.customerId = customerId;
-  }
-
-  if (values.alamat_customer?.trim()) {
-    payload.alamat_customer = values.alamat_customer.trim();
   }
 
   if (values.termin_bayar?.trim()) {
@@ -408,10 +403,6 @@ const LaporanPenerimaanBarangModal = ({
         customerId: toIdString(
           initialValues?.customerId || initialValues?.customer?.id
         ),
-        alamat_customer:
-          initialValues?.alamat_customer ||
-          initialValues?.customer?.alamat ||
-          '',
         termin_bayar: toIdString(
           initialValues?.termin_bayar || initialValues?.termOfPayment?.id
         ),
@@ -505,12 +496,12 @@ const LaporanPenerimaanBarangModal = ({
   const renderFileUploadPanel = () => (
     <div className='border border-dashed border-blue-300 rounded-lg bg-blue-50/50 p-4'>
       <h4 className='text-sm font-semibold text-gray-900 mb-1'>Upload File Laporan</h4>
-      <p className='text-xs text-gray-600 mb-3'>Unggah file LPB (PDF, EDI, DOC, XLS, atau gambar) untuk membuat laporan secara otomatis. Opsional, berikan prompt khusus untuk proses konversi.</p>
+      <p className='text-xs text-gray-600 mb-3'>Unggah file LPB (PDF atau EDI) untuk membuat laporan secara otomatis. Opsional, berikan prompt khusus untuk proses konversi.</p>
       <div className='space-y-3'>
         <input
           key={fileInputKey}
           type='file'
-          accept='.pdf,.PDF,.edi,.EDI,.doc,.DOC,.docx,.DOCX,.xls,.xlsx,.png,.jpg,.jpeg'
+          accept='.pdf,.PDF,.edi,.EDI'
           onChange={handleFileInputChange}
           disabled={isUploadingFile || isSubmitting}
           className='block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200'
@@ -585,18 +576,6 @@ const LaporanPenerimaanBarangModal = ({
           loading={customerLoading}
           onSearch={fetchCustomerOptions}
           showId
-        />
-      </div>
-
-      <div className='md:col-span-2'>
-        <label className='block text-sm font-medium text-gray-700 mb-1'>Alamat Customer</label>
-        <textarea
-          name='alamat_customer'
-          value={formValues.alamat_customer}
-          onChange={handleChange}
-          rows={3}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          placeholder='Jl. Contoh No. 123, Jakarta'
         />
       </div>
 
