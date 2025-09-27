@@ -1,10 +1,8 @@
 import { get } from './apiService';
 
 const bulkPurchaseOrderService = {
-  getAll: (params) => get('/purchase-orders/bulk/all', params),
-  getStatus: (id) => get(`/purchase-orders/bulk/status/${id}`),
+  getAll: (params) => get('/bulk-purchase-order/bulk/files', params || {}),
+  getStatus: (id) => get('/bulk-purchase-order/bulk/status/' + id),
 };
 
 export default bulkPurchaseOrderService;
-
-

@@ -85,16 +85,32 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
 
   const handleFileChange = (e) => {
     setError(null);
+    const files = e.target.files;
     if (activeTab === 'bulk') {
-      setSelectedFile(e.target.files.length > 0 ? e.target.files : null);
+      if (!files || files.length === 0) {
+        setSelectedFile(null);
+        return;
+      }
+      const allExcel = Array.from(files).every((file) =>
+        file.name.toLowerCase().endsWith('.xlsx')
+      );
+      if (!allExcel) {
+        setError('Please select Excel (.xlsx) files only.');
+        setSelectedFile(null);
+        if (bulkFileInputRef.current) {
+          bulkFileInputRef.current.value = '';
+        }
+        return;
+      }
+      setSelectedFile(files);
     } else {
-      setSelectedFile(e.target.files.length > 0 ? e.target.files[0] : null);
+      setSelectedFile(files && files.length > 0 ? files[0] : null);
     }
   };
 
   const handleBulkUpload = async () => {
     if (!selectedFile || selectedFile.length === 0) {
-      setError('Please select files to upload.');
+      setError('Please select an Excel (.xlsx) file to upload.');
       return;
     }
     setLoading(true);
@@ -102,7 +118,11 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
     try {
       const result = await fileService.uploadBulkPurchaseOrders(selectedFile);
       if (result.success) {
-        toast.success(result.data.message || 'Files uploaded successfully!');
+        toast.success(result.data.message || 'File uploaded successfully!');
+        setSelectedFile(null);
+        if (bulkFileInputRef.current) {
+          bulkFileInputRef.current.value = '';
+        }
         if (onFinished) onFinished();
       } else {
         throw new Error(result.error);
@@ -341,21 +361,20 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload Bulk Purchase Orders</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Upload Bulk Purchase Orders (Excel)</label>
                   <div className="flex items-center space-x-2">
                     <input 
                       ref={bulkFileInputRef}
                       type="file" 
-                      multiple 
                       onChange={handleFileChange} 
-                      accept=".pdf,.edi"
+                      accept=".xlsx"
                       className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
                     />
                   </div>
                   {selectedFile && selectedFile.length > 0 && (
                     <div className="mt-2 p-3 bg-gray-50 rounded-md border">
                       <p className="text-sm text-gray-600 mb-2">
-                        <strong>{selectedFile.length}</strong> file(s) dipilih untuk upload:
+                        <strong>{selectedFile.length}</strong> file Excel dipilih untuk upload:
                       </p>
                       <div className="space-y-1">
                         {Array.from(selectedFile).map((file, index) => (
@@ -383,14 +402,14 @@ const AddPurchaseOrderModal = ({ isOpen, onClose, onFinished, createPurchaseOrde
                     </svg>
                     <div>
                       <h4 className="text-sm font-medium text-yellow-800">Format File yang Didukung</h4>
-                      <p className="text-sm text-yellow-700 mt-1">PDF, EDI</p>
+                      <p className="text-sm text-yellow-700 mt-1">Excel (.xlsx)</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300" disabled={loading}>Cancel</button>
-                  <button type="button" onClick={handleBulkUpload} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={!selectedFile || loading}>{loading ? 'Uploading...' : 'Upload Files'}</button>
+                  <button type="button" onClick={handleBulkUpload} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50" disabled={!selectedFile || loading}>{loading ? 'Uploading...' : 'Upload File'}</button>
                 </div>
               </div>
             </div>
