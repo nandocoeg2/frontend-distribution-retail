@@ -27,6 +27,7 @@ const LaporanPenerimaanBarang = () => {
     createReportFromFile,
     uploadBulkReports,
     fetchBulkStatus,
+    fetchBulkFiles,
     updateReport,
     deleteReport,
     deleteReportConfirmation,
@@ -205,6 +206,7 @@ const LaporanPenerimaanBarang = () => {
         onClose={closeBulkModal}
         onBulkUpload={uploadBulkReports}
         onFetchStatus={fetchBulkStatus}
+        onFetchBulkFiles={fetchBulkFiles}
       />
 
       <ConfirmationDialog
