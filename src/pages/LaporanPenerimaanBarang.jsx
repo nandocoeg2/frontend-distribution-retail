@@ -34,6 +34,7 @@ const LaporanPenerimaanBarang = () => {
     fetchReports,
     fetchReportById,
     processReports,
+    completeReports,
   } = useLaporanPenerimaanBarangPage();
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -44,11 +45,18 @@ const LaporanPenerimaanBarang = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReportIds, setSelectedReportIds] = useState([]);
   const [isProcessingReports, setIsProcessingReports] = useState(false);
+  const [isCompletingReports, setIsCompletingReports] = useState(false);
   const {
     showDialog: showProcessDialog,
     hideDialog: hideProcessDialog,
     setLoading: setProcessDialogLoading,
     ConfirmationDialog: ProcessConfirmationDialog,
+  } = useConfirmationDialog();
+  const {
+    showDialog: showCompleteDialog,
+    hideDialog: hideCompleteDialog,
+    setLoading: setCompleteDialogLoading,
+    ConfirmationDialog: CompleteConfirmationDialog,
   } = useConfirmationDialog();
 
   const resolveReportId = (report) => {
@@ -109,7 +117,7 @@ const LaporanPenerimaanBarang = () => {
     });
   }, [reports]);
 
-  const selectionDisabled = loading || isProcessingReports;
+  const selectionDisabled = loading || isProcessingReports || isCompletingReports;
   const hasSelectedReports = selectedReportIds.length > 0;
 
   const handleProcessSelected = () => {
@@ -149,6 +157,46 @@ const LaporanPenerimaanBarang = () => {
     } finally {
       setProcessDialogLoading(false);
       setIsProcessingReports(false);
+    }
+  };
+
+  const handleCompleteSelected = () => {
+    if (!hasSelectedReports) {
+      return;
+    }
+
+    showCompleteDialog({
+      title: 'Selesaikan Laporan Penerimaan Barang',
+      message: `Apakah Anda yakin ingin menyelesaikan ${selectedReportIds.length} laporan penerimaan barang yang dipilih?`,
+      confirmText: 'Selesaikan',
+      cancelText: 'Batal',
+      type: 'info',
+    });
+  };
+
+  const handleConfirmComplete = async () => {
+    setCompleteDialogLoading(true);
+    setIsCompletingReports(true);
+
+    try {
+      const result = await completeReports(selectedReportIds);
+
+      if (result && Array.isArray(result.failed)) {
+        const failedIds = result.failed
+          .map((item) => resolveReportId(item))
+          .filter(Boolean);
+
+        setSelectedReportIds(Array.from(new Set(failedIds)));
+      } else if (result) {
+        setSelectedReportIds([]);
+      }
+
+      hideCompleteDialog();
+    } catch (error) {
+      console.error('Failed to complete laporan penerimaan barang:', error);
+    } finally {
+      setCompleteDialogLoading(false);
+      setIsCompletingReports(false);
     }
   };
 
@@ -288,7 +336,9 @@ const LaporanPenerimaanBarang = () => {
                 onSelectReport={handleSelectReport}
                 onSelectAllReports={handleSelectAllReports}
                 onProcessSelected={handleProcessSelected}
+                onCompleteSelected={handleCompleteSelected}
                 isProcessing={isProcessingReports}
+                isCompleting={isCompletingReports}
                 disableSelection={selectionDisabled}
               />
             </>
@@ -328,6 +378,7 @@ const LaporanPenerimaanBarang = () => {
       />
 
       <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
+      <CompleteConfirmationDialog onConfirm={handleConfirmComplete} />
 
       <ConfirmationDialog
         show={deleteReportConfirmation.showConfirm}

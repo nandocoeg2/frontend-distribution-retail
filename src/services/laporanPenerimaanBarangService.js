@@ -221,6 +221,24 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  async completeReports(ids = []) {
+    try {
+      const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+      if (!payloadIds.length) {
+        throw new Error('Minimal satu ID laporan diperlukan untuk diselesaikan');
+      }
+
+      const response = await this.api.patch(
+        '/laporan-penerimaan-barang/complete',
+        { ids: payloadIds }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error completing laporan penerimaan barang:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();

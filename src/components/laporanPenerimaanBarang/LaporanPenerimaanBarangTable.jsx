@@ -4,7 +4,7 @@ import {
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { PlayIcon } from '@heroicons/react/24/solid';
+import { PlayIcon, CheckIcon } from '@heroicons/react/24/solid';
 import Pagination from '../common/Pagination';
 import { StatusBadge } from '../ui/Badge';
 
@@ -91,7 +91,9 @@ const LaporanPenerimaanBarangTable = ({
   onSelectReport,
   onSelectAllReports,
   onProcessSelected,
+  onCompleteSelected,
   isProcessing = false,
+  isCompleting = false,
   disableSelection = false,
 }) => {
   const data = Array.isArray(reports) ? reports : [];
@@ -110,22 +112,40 @@ const LaporanPenerimaanBarangTable = ({
           <div>
             <span className='text-sm font-medium text-blue-900'>{selectedIds.length} laporan dipilih</span>
           </div>
-          <button
-            type='button'
-            onClick={() => onProcessSelected && onProcessSelected()}
-            disabled={isProcessing}
-            className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60'
-          >
-            {isProcessing ? (
-              <svg className='-ml-0.5 mr-2 h-4 w-4 animate-spin text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
-                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
-                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
-              </svg>
-            ) : (
-              <PlayIcon className='-ml-0.5 mr-2 h-4 w-4' />
-            )}
-            <span>{isProcessing ? 'Memproses...' : `Proses Laporan (${selectedIds.length})`}</span>
-          </button>
+          <div className='flex items-center gap-2'>
+            <button
+              type='button'
+              onClick={() => onProcessSelected && onProcessSelected()}
+              disabled={isProcessing || isCompleting}
+              className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              {isProcessing ? (
+                <svg className='-ml-0.5 mr-2 h-4 w-4 animate-spin text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                  <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                  <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+                </svg>
+              ) : (
+                <PlayIcon className='-ml-0.5 mr-2 h-4 w-4' />
+              )}
+              <span>{isProcessing ? 'Memproses...' : `Proses (${selectedIds.length})`}</span>
+            </button>
+            <button
+              type='button'
+              onClick={() => onCompleteSelected && onCompleteSelected()}
+              disabled={isProcessing || isCompleting}
+              className='inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              {isCompleting ? (
+                <svg className='-ml-0.5 mr-2 h-4 w-4 animate-spin text-white' xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'>
+                  <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                  <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+                </svg>
+              ) : (
+                <CheckIcon className='-ml-0.5 mr-2 h-4 w-4' />
+              )}
+              <span>{isCompleting ? 'Menyelesaikan...' : `Selesaikan (${selectedIds.length})`}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -144,7 +164,7 @@ const LaporanPenerimaanBarangTable = ({
                     }
                   }}
                   onChange={(e) => onSelectAllReports && onSelectAllReports(e.target.checked)}
-                  disabled={selectionDisabled || isProcessing || !onSelectAllReports}
+                  disabled={selectionDisabled || isProcessing || isCompleting || !onSelectAllReports}
                 />
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'>No. PO</th>
@@ -191,7 +211,7 @@ const LaporanPenerimaanBarangTable = ({
                             onSelectReport(reportId, e.target.checked);
                           }
                         }}
-                        disabled={selectionDisabled || isProcessing || !reportId || !onSelectReport}
+                        disabled={selectionDisabled || isProcessing || isCompleting || !reportId || !onSelectReport}
                       />
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>{poNumber}</td>
