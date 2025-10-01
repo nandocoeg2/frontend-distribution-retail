@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import laporanPenerimaanBarangService from '../services/laporanPenerimaanBarangService';
@@ -328,6 +328,60 @@ const useLaporanPenerimaanBarangPage = () => {
     }
   }, [authHandler, pagination, performSearch, reports.length, resolveLimit, searchQuery, setError]);
 
+  const processReports = useCallback(async (ids = []) => {
+    const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+
+    if (!payloadIds.length) {
+      toastService.warning('Pilih minimal satu laporan penerimaan barang untuk diproses.');
+      return null;
+    }
+
+    try {
+      const result = await laporanPenerimaanBarangService.processReports(payloadIds);
+
+      if (result?.success === false) {
+        throw new Error(
+          result?.message ||
+          result?.error?.message ||
+          'Failed to process laporan penerimaan barang'
+        );
+      }
+
+      const responseData = result?.data || result || {};
+      const successItems = Array.isArray(responseData?.success) ? responseData.success : [];
+      const failedItems = Array.isArray(responseData?.failed) ? responseData.failed : [];
+
+      if (successItems.length > 0) {
+        const baseMessage = `Berhasil memproses ${successItems.length} laporan penerimaan barang.`;
+        if (failedItems.length > 0) {
+          toastService.success(`${baseMessage} ${failedItems.length} laporan gagal diproses.`);
+        } else {
+          toastService.success(baseMessage);
+        }
+      }
+
+      if (!successItems.length && failedItems.length > 0) {
+        toastService.warning(`${failedItems.length} laporan gagal diproses.`);
+      }
+
+      await refreshAfterMutation();
+      return { success: successItems, failed: failedItems };
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return null;
+      }
+
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to process laporan penerimaan barang';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler, refreshAfterMutation]);
+
   const deleteReportConfirmation = useDeleteConfirmation(
     deleteReportFunction,
     'Are you sure you want to delete this laporan penerimaan barang?',
@@ -358,6 +412,7 @@ const useLaporanPenerimaanBarangPage = () => {
     uploadBulkReports,
     fetchBulkStatus,
     fetchBulkFiles,
+    processReports,
     fetchReportById,
   };
 };

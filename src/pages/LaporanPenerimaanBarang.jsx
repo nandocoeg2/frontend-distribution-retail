@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import useLaporanPenerimaanBarangPage from '@/hooks/useLaporanPenerimaanBarangPage';
 import {
   LaporanPenerimaanBarangSearch,
@@ -7,7 +7,7 @@ import {
   LaporanPenerimaanBarangDetailModal,
   LaporanPenerimaanBarangBulkModal,
 } from '@/components/laporanPenerimaanBarang';
-import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { ConfirmationDialog, useConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const LaporanPenerimaanBarang = () => {
@@ -33,6 +33,7 @@ const LaporanPenerimaanBarang = () => {
     deleteReportConfirmation,
     fetchReports,
     fetchReportById,
+    processReports,
   } = useLaporanPenerimaanBarangPage();
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -41,6 +42,117 @@ const LaporanPenerimaanBarang = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [selectedReportIds, setSelectedReportIds] = useState([]);
+  const [isProcessingReports, setIsProcessingReports] = useState(false);
+  const {
+    showDialog: showProcessDialog,
+    hideDialog: hideProcessDialog,
+    setLoading: setProcessDialogLoading,
+    ConfirmationDialog: ProcessConfirmationDialog,
+  } = useConfirmationDialog();
+
+  const resolveReportId = (report) => {
+    if (!report) {
+      return null;
+    }
+
+    return report?.id || report?.lpbId || report?._id || report?.uuid || null;
+  };
+
+  const handleSelectReport = (reportId, checked) => {
+    if (!reportId) {
+      return;
+    }
+
+    setSelectedReportIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(reportId);
+      } else {
+        next.delete(reportId);
+      }
+      return Array.from(next);
+    });
+  };
+
+  const handleSelectAllReports = (checked) => {
+    if (!Array.isArray(reports)) {
+      setSelectedReportIds([]);
+      return;
+    }
+
+    if (checked) {
+      const ids = reports
+        .map((reportItem) => resolveReportId(reportItem))
+        .filter(Boolean);
+      setSelectedReportIds(Array.from(new Set(ids)));
+    } else {
+      setSelectedReportIds([]);
+    }
+  };
+
+  React.useEffect(() => {
+    setSelectedReportIds((prev) => {
+      if (!Array.isArray(reports)) {
+        return prev.length ? [] : prev;
+      }
+
+      const availableIds = new Set(
+        reports
+          .map((item) => resolveReportId(item))
+          .filter(Boolean)
+      );
+
+      const filtered = prev.filter((id) => availableIds.has(id));
+
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [reports]);
+
+  const selectionDisabled = loading || isProcessingReports;
+  const hasSelectedReports = selectedReportIds.length > 0;
+
+  const handleProcessSelected = () => {
+    if (!hasSelectedReports) {
+      return;
+    }
+
+    showProcessDialog({
+      title: 'Proses Laporan Penerimaan Barang',
+      message: `Apakah Anda yakin ingin memproses ${selectedReportIds.length} laporan penerimaan barang yang dipilih?`,
+      confirmText: 'Proses',
+      cancelText: 'Batal',
+      type: 'warning',
+    });
+  };
+
+  const handleConfirmProcess = async () => {
+    setProcessDialogLoading(true);
+    setIsProcessingReports(true);
+
+    try {
+      const result = await processReports(selectedReportIds);
+
+      if (result && Array.isArray(result.failed)) {
+        const failedIds = result.failed
+          .map((item) => resolveReportId(item))
+          .filter(Boolean);
+
+        setSelectedReportIds(Array.from(new Set(failedIds)));
+      } else if (result) {
+        setSelectedReportIds([]);
+      }
+
+      hideProcessDialog();
+    } catch (error) {
+      console.error('Failed to process laporan penerimaan barang:', error);
+    } finally {
+      setProcessDialogLoading(false);
+      setIsProcessingReports(false);
+    }
+  };
+
+
 
   const openCreateModal = () => {
     setSelectedReport(null);
@@ -172,6 +284,12 @@ const LaporanPenerimaanBarang = () => {
                 onDelete={deleteReport}
                 onView={openDetailModal}
                 searchQuery={searchQuery}
+                selectedReports={selectedReportIds}
+                onSelectReport={handleSelectReport}
+                onSelectAllReports={handleSelectAllReports}
+                onProcessSelected={handleProcessSelected}
+                isProcessing={isProcessingReports}
+                disableSelection={selectionDisabled}
               />
             </>
           )}
@@ -208,6 +326,8 @@ const LaporanPenerimaanBarang = () => {
         onFetchStatus={fetchBulkStatus}
         onFetchBulkFiles={fetchBulkFiles}
       />
+
+      <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
 
       <ConfirmationDialog
         show={deleteReportConfirmation.showConfirm}

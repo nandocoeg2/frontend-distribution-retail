@@ -203,6 +203,24 @@ class LaporanPenerimaanBarangService {
       throw error;
     }
   }
+  async processReports(ids = []) {
+    try {
+      const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+      if (!payloadIds.length) {
+        throw new Error('Minimal satu ID laporan diperlukan untuk diproses');
+      }
+
+      const response = await this.api.patch(
+        '/laporan-penerimaan-barang/process',
+        { ids: payloadIds }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error processing laporan penerimaan barang:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();
