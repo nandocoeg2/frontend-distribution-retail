@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
 import PurchaseOrderSearch from '../components/purchaseOrders/PurchaseOrderSearch.jsx';
@@ -10,6 +10,78 @@ import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { useNavigate } from 'react-router-dom';
+
+const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
+
+const extractDuplicateGroups = (failedItems = []) => {
+  const groupsMap = new Map();
+
+  failedItems.forEach((item) => {
+    if (!item) {
+      return;
+    }
+
+    const errorText = typeof item.error === 'string' ? item.error.toLowerCase() : '';
+    if (!errorText.includes('duplicate')) {
+      return;
+    }
+
+    const poNumber = item.poNumber || item.po_number || item.po;
+    if (!poNumber) {
+      return;
+    }
+
+    const idSet = groupsMap.get(poNumber) || new Set();
+    if (Array.isArray(item.duplicateIds)) {
+      item.duplicateIds.filter(Boolean).forEach((id) => idSet.add(id));
+    }
+    if (item.id) {
+      idSet.add(item.id);
+    }
+
+    groupsMap.set(poNumber, idSet);
+  });
+
+  return Array.from(groupsMap.entries())
+    .map(([poNumber, idSet]) => ({
+      poNumber,
+      ids: Array.from(idSet)
+    }))
+    .filter((group) => group.ids.length > 1);
+};
+
+const formatDuplicateMessage = (groups = []) => {
+  if (!groups.length) {
+    return 'Ditemukan nomor PO duplikat. Hapus duplikat (menyisakan data paling awal) lalu lanjutkan proses?';
+  }
+
+  const details = groups
+    .map((group) => `"${group.poNumber}" (${group.ids.length} data)`)
+    .join(', ');
+
+  return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin menghapus duplikat (menyisakan data paling awal) lalu melanjutkan proses?`;
+};
+
+
+const resolveCreatedAtValue = (source) => {
+  if (!source) {
+    return null;
+  }
+
+  if (source.createdAt) {
+    return source.createdAt;
+  }
+
+  if (source.created_at) {
+    return source.created_at;
+  }
+
+  const fallbackKey = Object.keys(source).find((key) => {
+    return typeof key === 'string' && key.toLowerCase() === 'createdat';
+  });
+
+  return fallbackKey ? source[fallbackKey] : null;
+};
 
 const PurchaseOrders = () => {
   const {
@@ -40,6 +112,12 @@ const PurchaseOrders = () => {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
+  const confirmActionRef = useRef(() => {});
+
+  const openConfirmationDialog = (options, onConfirm) => {
+    confirmActionRef.current = onConfirm;
+    showDialog(options);
+  };
   const navigate = useNavigate();
 
   // This function is now the callback for when the Add modal is finished.
@@ -93,40 +171,63 @@ const PurchaseOrders = () => {
       return;
     }
 
-    showDialog({
+    const idsSnapshot = [...selectedOrders];
+
+    openConfirmationDialog({
       title: "Proses Purchase Orders",
-      message: `Apakah Anda yakin ingin memproses ${selectedOrders.length} purchase order yang dipilih?`,
+      message: `Apakah Anda yakin ingin memproses ${idsSnapshot.length} purchase order yang dipilih?`,
       confirmText: "Proses",
       cancelText: "Batal",
       type: "warning"
-    });
+    }, () => handleConfirmBulkProcess(idsSnapshot));
   };
 
-  const handleConfirmBulkProcess = async () => {
+  const handleConfirmBulkProcess = async (ids = [], options = {}) => {
+    const { deletionCount = 0 } = options;
+
+    if (!ids.length) {
+      showWarning('Tidak ada purchase order yang diproses.');
+      hideDialog();
+      return;
+    }
+
     setLoading(true);
     setBulkProcessing(true);
-    
+
     try {
-      const result = await purchaseOrderService.processPurchaseOrder(selectedOrders, 'PROCESSING PURCHASE ORDER');
-      
-      if (result.success) {
-        const successCount = result.data?.success?.length || 0;
-        const failedCount = result.data?.failed?.length || 0;
-        
-        let message = `Berhasil memproses ${successCount} purchase order.`;
-        if (failedCount > 0) {
-          message += ` ${failedCount} purchase order gagal diproses.`;
-        }
-        
-        showSuccess(message);
-        
-        // Refresh data dan clear selection
-        fetchPurchaseOrders();
-        setSelectedOrders([]);
-        hideDialog();
-      } else {
+      const result = await purchaseOrderService.processPurchaseOrder(ids, PROCESS_STATUS_CODE);
+
+      if (!result.success) {
         throw new Error('Failed to process purchase orders');
       }
+
+      const duplicateGroups = extractDuplicateGroups(result.data?.failed);
+
+      if (duplicateGroups.length > 0) {
+        promptDuplicateCleanup(duplicateGroups, ids, { deletionCount });
+        return;
+      }
+
+      const successCount = result.data?.success?.length || 0;
+      const failedCount = result.data?.failed?.length || 0;
+
+      const messageParts = [];
+
+      if (deletionCount > 0) {
+        messageParts.push(`Berhasil menghapus ${deletionCount} purchase order duplikat.`);
+      }
+
+      messageParts.push(`Berhasil memproses ${successCount} purchase order.`);
+
+      if (failedCount > 0) {
+        messageParts.push(`${failedCount} purchase order gagal diproses.`);
+      }
+
+      showSuccess(messageParts.join(' '));
+
+      await fetchPurchaseOrders();
+      setSelectedOrders([]);
+      hideDialog();
     } catch (error) {
       console.error('Error processing purchase orders:', error);
       showError(`Gagal memproses purchase orders: ${error.message}`);
@@ -136,6 +237,166 @@ const PurchaseOrders = () => {
     }
   };
 
+
+
+  const resolveOrderDetails = async (id) => {
+    if (!id) {
+      return null;
+    }
+
+    const existing = purchaseOrders.find((order) => order.id === id);
+    if (existing && (existing.createdAt || existing.created_at)) {
+      return existing;
+    }
+
+    try {
+      const response = await purchaseOrderService.getPurchaseOrderById(id);
+      if (response?.data) {
+        return response.data?.data || response.data;
+      }
+      return response;
+    } catch (error) {
+      console.error(`Failed to fetch purchase order ${id} for duplicate cleanup:`, error);
+      return null;
+    }
+  };
+
+  const determineDeletionTargets = async (groups) => {
+    const idsToDeleteSet = new Set();
+    const idsToKeepSet = new Set();
+    const fetchErrorSet = new Set();
+
+    for (const group of groups) {
+      const detailedOrders = await Promise.all(
+        group.ids.map(async (id) => {
+          const detail = await resolveOrderDetails(id);
+          if (!detail) {
+            fetchErrorSet.add(id);
+          }
+          return detail;
+        })
+      );
+
+      const normalized = detailedOrders
+        .map((order, index) => {
+          if (!order) {
+            return null;
+          }
+
+          const resolvedId = order.id || order._id || group.ids[index];
+          if (!resolvedId) {
+            fetchErrorSet.add(group.ids[index]);
+            return null;
+          }
+
+          const createdAtValue = resolveCreatedAtValue(order);
+          const timestamp = createdAtValue ? new Date(createdAtValue).getTime() : NaN;
+
+          return {
+            id: resolvedId,
+            timestamp: Number.isFinite(timestamp) ? timestamp : Number.MAX_SAFE_INTEGER,
+          };
+        })
+        .filter(Boolean);
+
+      if (normalized.length === 0) {
+        continue;
+      }
+
+      normalized.sort((a, b) => a.timestamp - b.timestamp);
+      const keep = normalized[0];
+      idsToKeepSet.add(keep.id);
+
+      normalized.slice(1).forEach(({ id }) => {
+        idsToDeleteSet.add(id);
+      });
+    }
+
+    return {
+      idsToDelete: Array.from(idsToDeleteSet),
+      idsToKeep: Array.from(idsToKeepSet),
+      fetchErrors: Array.from(fetchErrorSet),
+    };
+  };
+
+  const promptDuplicateCleanup = (duplicateGroups, ids, options = {}) => {
+    const idsSnapshot = [...ids];
+
+    openConfirmationDialog({
+      title: "Hapus Duplikat Purchase Order",
+      message: formatDuplicateMessage(duplicateGroups),
+      confirmText: "Hapus & Proses",
+      cancelText: "Batal",
+      type: "danger"
+    }, () => handleDuplicateCleanup(duplicateGroups, idsSnapshot, options));
+  };
+
+  const handleDuplicateCleanup = async (duplicateGroups, originalIds, options = {}) => {
+    const currentDeletionCount = options.deletionCount || 0;
+
+    setLoading(true);
+    setBulkProcessing(true);
+
+    try {
+      const { idsToDelete, idsToKeep, fetchErrors } = await determineDeletionTargets(duplicateGroups);
+
+      if (fetchErrors.length > 0) {
+        showWarning(`Tidak dapat memuat detail untuk ${fetchErrors.length} purchase order duplikat. Data tersebut tidak akan dihapus otomatis.`);
+      }
+
+      if (idsToDelete.length === 0) {
+        if (fetchErrors.length > 0) {
+          showError('Tidak dapat menentukan purchase order duplikat yang akan dihapus. Silakan periksa data secara manual.');
+        } else {
+          showWarning('Tidak ditemukan purchase order duplikat yang perlu dihapus.');
+        }
+        hideDialog();
+        return;
+      }
+
+      const failedDeletes = [];
+
+      for (const id of idsToDelete) {
+        try {
+          await purchaseOrderService.deletePurchaseOrder(id);
+        } catch (err) {
+          failedDeletes.push({ id, error: err });
+          console.error(`Failed to delete duplicate purchase order ${id}:`, err);
+        }
+      }
+
+      if (failedDeletes.length > 0) {
+        const failedIds = failedDeletes.map(({ id }) => id).join(', ');
+        showError(`Gagal menghapus ${failedDeletes.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
+        return;
+      }
+
+      const deletedSet = new Set(idsToDelete);
+      setSelectedOrders((prev) => prev.filter((id) => !deletedSet.has(id)));
+
+      const idsToProcessSet = new Set((originalIds || []).filter((id) => !deletedSet.has(id)));
+      idsToKeep.forEach((id) => idsToProcessSet.add(id));
+
+      const idsToProcess = Array.from(idsToProcessSet);
+
+      if (idsToProcess.length === 0) {
+        showSuccess(`Berhasil menghapus ${idsToDelete.length} purchase order duplikat. Tidak ada data tersisa untuk diproses.`);
+        await fetchPurchaseOrders();
+        hideDialog();
+        return;
+      }
+
+      const totalDeletionCount = currentDeletionCount + idsToDelete.length;
+
+      await handleConfirmBulkProcess(idsToProcess, { deletionCount: totalDeletionCount });
+    } catch (error) {
+      console.error('Error resolving duplicate purchase orders:', error);
+      showError(`Gagal menyelesaikan duplikat purchase orders: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setBulkProcessing(false);
+    }
+  };
   // Clear selection when data changes
   useEffect(() => {
     setSelectedOrders([]);
@@ -264,7 +525,7 @@ const PurchaseOrders = () => {
       )}
 
       {/* Bulk Process Confirmation Dialog */}
-      <ConfirmationDialog onConfirm={handleConfirmBulkProcess} />
+      <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
       
       {/* Alert Component */}
       <AlertComponent />
