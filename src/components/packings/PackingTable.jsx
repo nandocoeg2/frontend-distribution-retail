@@ -25,6 +25,27 @@ const PackingTable = ({
     return statusMap[statusName] || 'bg-gray-100 text-gray-800';
   };
 
+  const processingStatusVariants = ['processing packing', 'processing packing order'];
+
+  const normalizeStatusValue = (value) => {
+    if (!value) {
+      return '';
+    }
+
+    return value.toString().trim().toLowerCase().replace(/_/g, ' ');
+  };
+
+  const isProcessingStatus = (packing) => {
+    if (!packing?.status) {
+      return false;
+    }
+
+    const normalizedName = normalizeStatusValue(packing.status.status_name);
+    const normalizedCode = normalizeStatusValue(packing.status.status_code);
+
+    return processingStatusVariants.includes(normalizedName) || processingStatusVariants.includes(normalizedCode);
+  };
+
   const isAllSelected = packings.length > 0 && selectedPackings.length === packings.length;
   const isIndeterminate = selectedPackings.length > 0 && selectedPackings.length < packings.length;
 
@@ -73,65 +94,74 @@ const PackingTable = ({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {Array.isArray(packings) && packings.length > 0 ? packings.map((packing) => (
-            <tr key={packing.id} className={selectedPackings.includes(packing.id) ? 'bg-blue-50' : ''}>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <input
-                  type="checkbox"
-                  checked={selectedPackings.includes(packing.id)}
-                  onChange={() => onSelectPacking(packing.id)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {packing.packing_number || 'N/A'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {packing.purchaseOrder?.po_number || 'N/A'}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {new Date(packing.tanggal_packing).toLocaleDateString()}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    getStatusBadge(packing.status?.status_name)
-                  }`}
-                >
-                  {packing.status?.status_name || 'Unknown'}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {packing.packingItems?.length || 0}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => onViewById(packing.id)}
-                    className="text-indigo-600 hover:text-indigo-900"
-                    title="View Details"
+          {Array.isArray(packings) && packings.length > 0 ? packings.map((packing) => {
+            const isProcessing = isProcessingStatus(packing);
+
+            return (
+              <tr
+                key={packing.id}
+                className={selectedPackings.includes(packing.id) ? 'bg-blue-50' : ''}
+              >
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={selectedPackings.includes(packing.id)}
+                    onChange={() => onSelectPacking(packing.id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {packing.packing_number || 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {packing.purchaseOrder?.po_number || 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(packing.tanggal_packing).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(packing.status?.status_name)}`}
                   >
-                    <EyeIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => onEdit(packing)}
-                    className="text-green-600 hover:text-green-900"
-                    title="Edit"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => onDelete(packing.id)}
-                    disabled={deleteLoading}
-                    className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Delete"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          )) : (
+                    {packing.status?.status_name || 'Unknown'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {packing.packingItems?.length || 0}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => onViewById(packing.id)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                      title="View Details"
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => !isProcessing && onEdit(packing)}
+                      className={`p-1 ${isProcessing ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:text-green-900'}`}
+                      title={isProcessing ? 'Packing sedang diproses dan tidak dapat diedit.' : 'Edit'}
+                      disabled={isProcessing}
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(packing.id)}
+                      disabled={deleteLoading}
+                      className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Delete"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          }) : (
             <tr>
               <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                 {Array.isArray(packings) ? 'Tidak ada data packing' : 'Loading...'}

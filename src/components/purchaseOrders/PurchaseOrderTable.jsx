@@ -56,6 +56,23 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
     return 'bg-gray-100 text-gray-800';
   };
 
+  const isProcessingStatus = (order) => {
+    if (!order?.status) {
+      return false;
+    }
+
+    const normalize = (value) => {
+      if (!value) {
+        return '';
+      }
+      return value.toString().trim().toLowerCase().replace(/_/g, ' ');
+    };
+
+    const normalizedName = normalize(order.status.status_name);
+    const normalizedCode = normalize(order.status.status_code);
+    return normalizedName === 'processing purchase order' || normalizedCode === 'processing purchase order';
+  };
+
   return (
     <>
       <div className="overflow-x-auto">
@@ -108,105 +125,121 @@ const PurchaseOrderTable = ({ orders, pagination, onPageChange, onLimitChange, o
                 </td>
               </tr>
             ) : (
-              orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={selectedOrders.includes(order.id)}
-                      onChange={(e) => onSelectionChange && onSelectionChange(order.id, e.target.checked)}
-                      disabled={loading || isHistory}
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {order.po_number}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.customer?.namaCustomer || '-'}
-                    </div>
-                    {order.customer?.kodeCustomer && (
-                      <div className="text-xs text-gray-500">
-                        {order.customer.kodeCustomer}
+              orders.map((order) => {
+                const isProcessing = isProcessingStatus(order);
+
+                return (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedOrders.includes(order.id)}
+                        onChange={(e) => onSelectionChange && onSelectionChange(order.id, e.target.checked)}
+                        disabled={loading || isHistory}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {order.po_number}
                       </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.total_items}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.tanggal_masuk_po ? new Date(order.tanggal_masuk_po).toLocaleDateString('id-ID') : '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.tanggal_batas_kirim ? new Date(order.tanggal_batas_kirim).toLocaleDateString('id-ID') : '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.termin_bayar || '-'}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.po_type}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {order.status?.status_name ? (
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          order.status.status_name.toLowerCase().includes('approved')
-                            ? 'bg-green-100 text-green-800'
-                            : order.status.status_name.toLowerCase().includes('failed')
-                              ? 'bg-red-100 text-red-800'
-                              : getStatusClass(order.status.status_name)
-                        }`}
-                      >
-                        {order.status.status_name}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-500">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => onView(order)}
-                        className="text-indigo-600 hover:text-indigo-900 p-1"
-                        title="View"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
-                      {!isHistory && (
-                        <>
-                          <button
-                            onClick={() => onEdit(order)}
-                            className="text-indigo-600 hover:text-indigo-900 p-1"
-                            title="Edit"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(order.id, order.po_number)}
-                            className="text-red-600 hover:text-red-900 p-1"
-                            title="Delete"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {order.customer?.namaCustomer || '-'}
+                      </div>
+                      {order.customer?.kodeCustomer && (
+                        <div className="text-xs text-gray-500">
+                          {order.customer.kodeCustomer}
+                        </div>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {order.total_items}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {order.tanggal_masuk_po ? new Date(order.tanggal_masuk_po).toLocaleDateString('id-ID') : '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {order.tanggal_batas_kirim ? new Date(order.tanggal_batas_kirim).toLocaleDateString('id-ID') : '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {order.termin_bayar || '-'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {order.po_type}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {order.status?.status_name ? (
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            order.status.status_name.toLowerCase().includes('approved')
+                              ? 'bg-green-100 text-green-800'
+                              : order.status.status_name.toLowerCase().includes('failed')
+                                ? 'bg-red-100 text-red-800'
+                                : getStatusClass(order.status.status_name)
+                          }`}
+                        >
+                          {order.status.status_name}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => onView(order)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1"
+                          title="View"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        {!isHistory && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => !isProcessing && onEdit(order)}
+                              className={`p-1 ${
+                                isProcessing
+                                  ? 'text-gray-400 cursor-not-allowed'
+                                  : 'text-indigo-600 hover:text-indigo-900'
+                              }`}
+                              title={
+                                isProcessing
+                                  ? 'Purchase order sedang diproses dan tidak dapat diedit.'
+                                  : 'Edit'
+                              }
+                              disabled={isProcessing}
+                            >
+                              <PencilIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(order.id, order.po_number)}
+                              className="text-red-600 hover:text-red-900 p-1"
+                              title="Delete"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
