@@ -33,9 +33,9 @@ api.interceptors.response.use(
       const { status, data } = error.response;
       if (status === 401 || status === 403) {
         localStorage.clear();
-        // Use window.location to force a full page reload to the login page
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        // Use window.location.hash for HashRouter compatibility in Electron
+        if (!window.location.hash.includes('#/login')) {
+          window.location.hash = '#/login';
           toastService.error('Session expired. Please login again.');
         }
         return Promise.reject(new Error('Unauthorized'));
