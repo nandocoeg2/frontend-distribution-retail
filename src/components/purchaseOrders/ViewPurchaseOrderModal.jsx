@@ -4,6 +4,7 @@ import HeroIcon from '../atoms/HeroIcon';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 import purchaseOrderService from '../../services/purchaseOrderService';
 import ActivityTimeline from '../common/ActivityTimeline';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   AccordionItem,
   InfoCard,
@@ -264,7 +265,12 @@ const ViewPurchaseOrderModal = ({
                         {
                           label: 'Status',
                           component: (
-                            <StatusBadge status={order.status?.status_name} />
+                            <StatusBadge
+                              status={order.status?.status_name}
+                              variant={resolveStatusVariant(order.status?.status_name)}
+                              size='sm'
+                              dot
+                            />
                           ),
                         },
                         {

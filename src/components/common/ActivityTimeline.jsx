@@ -161,6 +161,8 @@ const ActivityTimeline = ({
                     <StatusBadge
                       status={actionLabel || 'UNKNOWN'}
                       variant={getStatusVariant(actionLabel)}
+                      size='sm'
+                      dot
                     />
                   </div>
 

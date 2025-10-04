@@ -7,6 +7,7 @@ import {
 import { PlayIcon, CheckIcon } from '@heroicons/react/24/solid';
 import Pagination from '../common/Pagination';
 import { StatusBadge } from '../ui/Badge';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const formatDate = (value) => {
   if (!value) {
@@ -23,51 +24,6 @@ const formatDate = (value) => {
     month: 'short',
     day: 'numeric',
   });
-};
-
-const resolveStatusVariant = (status) => {
-  const value = typeof status === 'string' ? status.toLowerCase() : '';
-
-  if (!value) {
-    return 'secondary';
-  }
-
-  if (
-    value.includes('approve') ||
-    value.includes('success') ||
-    value.includes('selesai') ||
-    value.includes('complete')
-  ) {
-    return 'success';
-  }
-
-  if (
-    value.includes('pending') ||
-    value.includes('menunggu') ||
-    value.includes('waiting')
-  ) {
-    return 'warning';
-  }
-
-  if (
-    value.includes('reject') ||
-    value.includes('cancel') ||
-    value.includes('batal') ||
-    value.includes('failed') ||
-    value.includes('error')
-  ) {
-    return 'danger';
-  }
-
-  if (value.includes('process') || value.includes('proses')) {
-    return 'primary';
-  }
-
-  if (value.includes('draft')) {
-    return 'secondary';
-  }
-
-  return 'default';
 };
 
 const resolveReportId = (report) => {

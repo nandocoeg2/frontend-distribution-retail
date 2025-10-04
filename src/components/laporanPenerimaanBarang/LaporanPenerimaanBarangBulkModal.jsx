@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   StatusBadge,
   LoadingDots,
@@ -36,30 +37,6 @@ const formatFileSize = (bytes) => {
   const size = value / 1024 ** index;
   const formatted = size >= 10 || index === 0 ? size.toFixed(0) : size.toFixed(1);
   return formatted + ' ' + units[index];
-};
-
-const resolveStatusVariant = (status) => {
-  const value = typeof status === 'string' ? status.toLowerCase() : '';
-  if (!value) {
-    return 'secondary';
-  }
-  if (
-    value.includes('complete') ||
-    value.includes('selesai') ||
-    value.includes('success')
-  ) {
-    return 'success';
-  }
-  if (value.includes('process')) {
-    return 'primary';
-  }
-  if (value.includes('fail') || value.includes('error')) {
-    return 'danger';
-  }
-  if (value.includes('pending')) {
-    return 'warning';
-  }
-  return 'default';
 };
 
 const LaporanPenerimaanBarangBulkModal = ({

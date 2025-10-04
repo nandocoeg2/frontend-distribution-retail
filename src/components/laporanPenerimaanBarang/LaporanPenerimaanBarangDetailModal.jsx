@@ -2,6 +2,7 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import InfoTable from '../ui/InfoTable';
 import ActivityTimeline from '../common/ActivityTimeline';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   TabContainer,
   Tab,
@@ -45,50 +46,6 @@ const formatFileSize = (bytes) => {
   const index = Math.floor(Math.log(value) / Math.log(1024));
   const size = value / 1024 ** Math.max(index, 0);
   return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
-};
-
-const resolveStatusVariant = (status) => {
-  const value = typeof status === 'string' ? status.toLowerCase() : '';
-  if (!value) {
-    return 'secondary';
-  }
-
-  if (
-    value.includes('approve') ||
-    value.includes('success') ||
-    value.includes('selesai') ||
-    value.includes('complete')
-  ) {
-    return 'success';
-  }
-
-  if (
-    value.includes('pending') ||
-    value.includes('menunggu') ||
-    value.includes('waiting')
-  ) {
-    return 'warning';
-  }
-
-  if (
-    value.includes('reject') ||
-    value.includes('cancel') ||
-    value.includes('batal') ||
-    value.includes('failed') ||
-    value.includes('error')
-  ) {
-    return 'danger';
-  }
-
-  if (value.includes('process') || value.includes('proses')) {
-    return 'primary';
-  }
-
-  if (value.includes('draft')) {
-    return 'secondary';
-  }
-
-  return 'default';
 };
 
 const renderFileList = (files) => {

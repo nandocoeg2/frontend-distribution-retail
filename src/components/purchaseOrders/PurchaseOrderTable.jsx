@@ -2,6 +2,8 @@ import React from 'react';
 import { PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 import { useConfirmationDialog } from '../ui/ConfirmationDialog';
+import { StatusBadge } from '../ui/Badge';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const PurchaseOrderTable = ({
   orders,
@@ -55,20 +57,6 @@ const PurchaseOrderTable = ({
     }
   };
 
-  const getStatusClass = (status) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    const lowerCaseStatus = status.toLowerCase();
-    if (lowerCaseStatus.includes('pending')) {
-      return 'bg-gray-100 text-gray-800';
-    }
-    if (lowerCaseStatus.includes('processing')) {
-      return 'bg-yellow-100 text-yellow-800';
-    }
-    if (lowerCaseStatus.includes('processed')) {
-      return 'bg-green-100 text-green-800';
-    }
-    return 'bg-gray-100 text-gray-800';
-  };
 
   const isProcessingStatus = (order) => {
     if (!order?.status) {
@@ -219,21 +207,12 @@ const PurchaseOrderTable = ({
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       {order.status?.status_name ? (
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            order.status.status_name
-                              .toLowerCase()
-                              .includes('approved')
-                              ? 'bg-green-100 text-green-800'
-                              : order.status.status_name
-                                    .toLowerCase()
-                                    .includes('failed')
-                                ? 'bg-red-100 text-red-800'
-                                : getStatusClass(order.status.status_name)
-                          }`}
-                        >
-                          {order.status.status_name}
-                        </span>
+                        <StatusBadge
+                          status={order.status.status_name}
+                          variant={resolveStatusVariant(order.status.status_name)}
+                          size='sm'
+                          dot
+                        />
                       ) : (
                         <span className='text-sm text-gray-500'>-</span>
                       )}

@@ -1,5 +1,7 @@
 import React from 'react';
 import { EyeIcon, PencilIcon, TrashIcon, PlayIcon } from '@heroicons/react/24/solid';
+import { StatusBadge } from '../ui/Badge';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const PackingTable = ({ 
   packings, 
@@ -14,15 +16,39 @@ const PackingTable = ({
   isProcessing = false,
   hasSelectedPackings = false
 }) => {
-  const getStatusBadge = (statusName) => {
-    const statusMap = {
-      'Pending Packing': 'bg-yellow-100 text-yellow-800',
-      'Packed': 'bg-green-100 text-green-800',
-      'Shipped': 'bg-blue-100 text-blue-800',
-      'Delivered': 'bg-purple-100 text-purple-800',
-      'Cancelled': 'bg-red-100 text-red-800',
-    };
-    return statusMap[statusName] || 'bg-gray-100 text-gray-800';
+  const resolveStatusVariant = (status) => {
+    const value = typeof status === 'string' ? status.toLowerCase() : '';
+
+    if (!value) {
+      return 'secondary';
+    }
+
+    // Complete = Hijau
+    if (value.includes('delivered') || value.includes('complete')) {
+      return 'success';
+    }
+
+    // Failed = Merah
+    if (value.includes('cancelled') || value.includes('failed') || value.includes('error')) {
+      return 'danger';
+    }
+
+    // Processed = Biru (Shipped/Packed considered as processed)
+    if (value.includes('shipped') || value.includes('packed')) {
+      return 'primary';
+    }
+
+    // Processing/In Progress = Kuning
+    if (value.includes('processing') || value.includes('in progress')) {
+      return 'warning';
+    }
+
+    // Pending/Draft = Netral/Abu-abu
+    if (value.includes('pending') || value.includes('draft')) {
+      return 'secondary';
+    }
+
+    return 'default';
   };
 
   const processingStatusVariants = ['processing packing', 'processing packing order'];
@@ -120,11 +146,12 @@ const PackingTable = ({
                   {new Date(packing.tanggal_packing).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(packing.status?.status_name)}`}
-                  >
-                    {packing.status?.status_name || 'Unknown'}
-                  </span>
+                  <StatusBadge
+                    status={packing.status?.status_name || 'Unknown'}
+                    variant={resolveStatusVariant(packing.status?.status_name)}
+                    size='sm'
+                    dot
+                  />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {packing.packingItems?.length || 0}

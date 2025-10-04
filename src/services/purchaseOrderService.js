@@ -302,6 +302,39 @@ const purchaseOrderService = {
     }
 
     return response.json();
+  },
+
+  // Get purchase orders by status code dengan pagination
+  getPurchaseOrdersByStatus: async (statusCode, page = 1, limit = 10) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const url = new URL(`${API_URL}/search`);
+
+    // Add status_code parameter if provided
+    if (statusCode) {
+      url.searchParams.append('status_code', statusCode);
+    }
+
+    // Add pagination
+    url.searchParams.append('page', page);
+    url.searchParams.append('limit', limit);
+
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to fetch purchase orders by status');
+    }
+
+    return response.json();
   }
 };
 

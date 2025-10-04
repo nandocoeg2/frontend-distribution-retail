@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ActivityTimeline from '../common/ActivityTimeline';
 import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   TabContainer,
   Tab,
@@ -92,13 +93,38 @@ const ViewPackingModal = ({ packing, onClose }) => {
     setSelectedItem(null);
   };
 
-  const getStatusVariant = (statusCode) => {
-    if (!statusCode) return 'default';
-    const status = statusCode.toUpperCase();
-    if (status.includes('PENDING')) return 'warning';
-    if (status.includes('COMPLETED')) return 'success';
-    if (status.includes('IN_PROGRESS')) return 'primary';
-    if (status.includes('CANCELLED')) return 'danger';
+  const resolveStatusVariant = (status) => {
+    const value = typeof status === 'string' ? status.toLowerCase() : '';
+
+    if (!value) {
+      return 'secondary';
+    }
+
+    // Complete = Hijau
+    if (value.includes('completed') || value.includes('complete')) {
+      return 'success';
+    }
+
+    // Failed = Merah
+    if (value.includes('cancelled') || value.includes('failed') || value.includes('error')) {
+      return 'danger';
+    }
+
+    // Processed = Biru
+    if (value.includes('processed') && !value.includes('processing')) {
+      return 'primary';
+    }
+
+    // Processing/In Progress = Kuning
+    if (value.includes('processing') || value.includes('in_progress') || value.includes('in progress')) {
+      return 'warning';
+    }
+
+    // Pending/Draft = Netral/Abu-abu
+    if (value.includes('pending') || value.includes('draft')) {
+      return 'secondary';
+    }
+
     return 'default';
   };
 
@@ -195,9 +221,11 @@ const ViewPackingModal = ({ packing, onClose }) => {
                         component: packing.status?.status_name ? (
                           <StatusBadge
                             status={packing.status.status_name}
-                            variant={getStatusVariant(
-                              packing.status?.status_code
+                            variant={resolveStatusVariant(
+                              packing.status?.status_name
                             )}
+                            size='sm'
+                            dot
                           />
                         ) : (
                           <span className='text-gray-500'>No Status</span>

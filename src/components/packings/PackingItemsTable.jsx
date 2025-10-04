@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StatusBadge } from '../ui';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const PackingItemsTable = ({ packingItems, onItemClick }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -16,13 +17,38 @@ const PackingItemsTable = ({ packingItems, onItemClick }) => {
     });
   };
 
-  const getStatusVariant = (statusCode) => {
-    if (!statusCode) return 'default';
-    const status = statusCode.toUpperCase();
-    if (status.includes('PENDING')) return 'warning';
-    if (status.includes('COMPLETED')) return 'success';
-    if (status.includes('IN_PROGRESS')) return 'primary';
-    if (status.includes('CANCELLED')) return 'danger';
+  const resolveStatusVariant = (status) => {
+    const value = typeof status === 'string' ? status.toLowerCase() : '';
+
+    if (!value) {
+      return 'secondary';
+    }
+
+    // Complete = Hijau
+    if (value.includes('completed') || value.includes('complete')) {
+      return 'success';
+    }
+
+    // Failed = Merah
+    if (value.includes('cancelled') || value.includes('failed') || value.includes('error')) {
+      return 'danger';
+    }
+
+    // Processed = Biru
+    if (value.includes('processed') && !value.includes('processing')) {
+      return 'primary';
+    }
+
+    // Processing/In Progress = Kuning
+    if (value.includes('processing') || value.includes('in_progress') || value.includes('in progress')) {
+      return 'warning';
+    }
+
+    // Pending/Draft = Netral/Abu-abu
+    if (value.includes('pending') || value.includes('draft')) {
+      return 'secondary';
+    }
+
     return 'default';
   };
 
@@ -102,9 +128,11 @@ const PackingItemsTable = ({ packingItems, onItemClick }) => {
                 {item.isi_per_carton}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 border-b">
-                <StatusBadge 
-                  status={item.status?.status_code || 'N/A'} 
-                  variant={getStatusVariant(item.status?.status_code)} 
+                <StatusBadge
+                  status={item.status?.status_name || item.status?.status_code || 'N/A'}
+                  variant={resolveStatusVariant(item.status?.status_name || item.status?.status_code)}
+                  size='sm'
+                  dot
                 />
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 border-b">

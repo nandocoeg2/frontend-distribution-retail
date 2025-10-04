@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
 import PurchaseOrderSearch from '../components/purchaseOrders/PurchaseOrderSearch.jsx';
@@ -10,8 +10,10 @@ import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { useNavigate } from 'react-router-dom';
+import { TabContainer, Tab, TabContent, TabPanel } from '../components/ui/Tabs';
 
 const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
+const FAILED_STATUS_CODE = 'FAILED PURCHASE ORDER';
 
 const extractDuplicateGroups = (failedItems = []) => {
   const groupsMap = new Map();
@@ -52,14 +54,14 @@ const extractDuplicateGroups = (failedItems = []) => {
 
 const formatDuplicateMessage = (groups = []) => {
   if (!groups.length) {
-    return 'Ditemukan nomor PO duplikat. Hapus duplikat (menyisakan data paling awal) lalu lanjutkan proses?';
+    return 'Ditemukan nomor PO duplikat. Tandai duplikat sebagai FAILED (menyisakan data paling awal) lalu lanjutkan proses?';
   }
 
   const details = groups
     .map((group) => `"${group.poNumber}" (${group.ids.length} data)`)
     .join(', ');
 
-  return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin menghapus duplikat (menyisakan data paling awal) lalu melanjutkan proses?`;
+  return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin menandai duplikat sebagai FAILED (menyisakan data paling awal) lalu melanjutkan proses?`;
 };
 
 
@@ -110,6 +112,18 @@ const PurchaseOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabData, setTabData] = useState([]);
+  const [tabPagination, setTabPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+    page: 1,
+    limit: 10,
+    total: 0
+  });
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
   const confirmActionRef = useRef(() => {});
@@ -120,10 +134,70 @@ const PurchaseOrders = () => {
   };
   const navigate = useNavigate();
 
+  // Map tab to status code
+  const getStatusCodeForTab = (tab) => {
+    const statusMap = {
+      'all': null,
+      'pending': 'PENDING PURCHASE ORDER',
+      'processing': 'PROCESSING PURCHASE ORDER',
+      'processed': 'PROCESSED PURCHASE ORDER',
+      'completed': 'COMPLETED PURCHASE ORDER',
+      'failed': 'FAILED PURCHASE ORDER'
+    };
+    return statusMap[tab];
+  };
+
+  // Fetch data based on active tab
+  const fetchDataByTab = useCallback(async (tab = activeTab, page = 1, limit = 10) => {
+    setTabLoading(true);
+    try {
+      const statusCode = getStatusCodeForTab(tab);
+      let response;
+
+      if (statusCode === null) {
+        // Fetch all purchase orders
+        response = await purchaseOrderService.getAllPurchaseOrders(page, limit);
+      } else {
+        // Fetch by status code
+        response = await purchaseOrderService.getPurchaseOrdersByStatus(statusCode, page, limit);
+      }
+
+      const rawData = response?.data?.data || response?.data || [];
+      const paginationData = response?.data?.pagination || {};
+
+      const currentPage = paginationData.currentPage || paginationData.page || 1;
+      const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || 10;
+      const totalItems = paginationData.totalItems || paginationData.total || 0;
+
+      const data = Array.isArray(rawData) ? rawData : [];
+
+      setTabData(data);
+      setTabPagination({
+        currentPage,
+        page: currentPage,
+        totalPages: paginationData.totalPages || 1,
+        totalItems,
+        total: totalItems,
+        itemsPerPage,
+        limit: itemsPerPage
+      });
+
+      return data;
+    } catch (err) {
+      console.error('Error fetching data by tab:', err);
+      showError(err.message || 'Failed to fetch purchase orders');
+      setTabData([]);
+      return [];
+    } finally {
+      setTabLoading(false);
+    }
+  }, [activeTab, showError]);
+
   // This function is now the callback for when the Add modal is finished.
   const handleAddFinished = () => {
     setAddModalOpen(false);
     fetchPurchaseOrders(); // Always refresh the list when the modal closes.
+    fetchDataByTab(); // Also refresh tab data
   };
 
   const handleEditOrder = async (id, formData) => {
@@ -131,6 +205,7 @@ const PurchaseOrders = () => {
     if (result) {
       setEditModalOpen(false);
       setSelectedOrder(null);
+      fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
     }
   };
 
@@ -146,6 +221,22 @@ const PurchaseOrders = () => {
     setSelectedOrder(orderData);
   };
 
+  // Tab change handler
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(newTab);
+    setTabPagination(prev => ({ ...prev, currentPage: 1, page: 1 }));
+    fetchDataByTab(newTab, 1, tabPagination.itemsPerPage);
+  }, [fetchDataByTab, tabPagination.itemsPerPage]);
+
+  // Tab pagination handlers
+  const handleTabPageChange = useCallback((page) => {
+    fetchDataByTab(activeTab, page, tabPagination.itemsPerPage);
+  }, [activeTab, fetchDataByTab, tabPagination.itemsPerPage]);
+
+  const handleTabLimitChange = useCallback((limit) => {
+    fetchDataByTab(activeTab, 1, limit);
+  }, [activeTab, fetchDataByTab]);
+
   // Bulk selection handlers
   const handleSelectionChange = (orderId, checked) => {
     if (checked) {
@@ -157,7 +248,7 @@ const PurchaseOrders = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      const allIds = purchaseOrders.map(order => order.id);
+      const allIds = tabData.map(order => order.id);
       setSelectedOrders(allIds);
     } else {
       setSelectedOrders([]);
@@ -183,7 +274,7 @@ const PurchaseOrders = () => {
   };
 
   const handleConfirmBulkProcess = async (ids = [], options = {}) => {
-    const { deletionCount = 0 } = options;
+    const { failedCount = 0 } = options;
 
     if (!ids.length) {
       showWarning('Tidak ada purchase order yang diproses.');
@@ -204,28 +295,29 @@ const PurchaseOrders = () => {
       const duplicateGroups = extractDuplicateGroups(result.data?.failed);
 
       if (duplicateGroups.length > 0) {
-        promptDuplicateCleanup(duplicateGroups, ids, { deletionCount });
+        promptDuplicateCleanup(duplicateGroups, ids, { failedCount });
         return;
       }
 
       const successCount = result.data?.success?.length || 0;
-      const failedCount = result.data?.failed?.length || 0;
+      const failedCountFromResult = result.data?.failed?.length || 0;
 
       const messageParts = [];
 
-      if (deletionCount > 0) {
-        messageParts.push(`Berhasil menghapus ${deletionCount} purchase order duplikat.`);
+      if (failedCount > 0) {
+        messageParts.push(`Berhasil mengupdate ${failedCount} purchase order duplikat menjadi FAILED.`);
       }
 
       messageParts.push(`Berhasil memproses ${successCount} purchase order.`);
 
-      if (failedCount > 0) {
-        messageParts.push(`${failedCount} purchase order gagal diproses.`);
+      if (failedCountFromResult > 0) {
+        messageParts.push(`${failedCountFromResult} purchase order gagal diproses.`);
       }
 
       showSuccess(messageParts.join(' '));
 
       await fetchPurchaseOrders();
+      await fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
       setSelectedOrders([]);
       hideDialog();
     } catch (error) {
@@ -323,16 +415,16 @@ const PurchaseOrders = () => {
     const idsSnapshot = [...ids];
 
     openConfirmationDialog({
-      title: "Hapus Duplikat Purchase Order",
+      title: "Tandai Duplikat Purchase Order sebagai FAILED",
       message: formatDuplicateMessage(duplicateGroups),
-      confirmText: "Hapus & Proses",
+      confirmText: "Tandai FAILED & Proses",
       cancelText: "Batal",
       type: "danger"
     }, () => handleDuplicateCleanup(duplicateGroups, idsSnapshot, options));
   };
 
   const handleDuplicateCleanup = async (duplicateGroups, originalIds, options = {}) => {
-    const currentDeletionCount = options.deletionCount || 0;
+    const currentFailedCount = options.failedCount || 0;
 
     setLoading(true);
     setBulkProcessing(true);
@@ -341,54 +433,56 @@ const PurchaseOrders = () => {
       const { idsToDelete, idsToKeep, fetchErrors } = await determineDeletionTargets(duplicateGroups);
 
       if (fetchErrors.length > 0) {
-        showWarning(`Tidak dapat memuat detail untuk ${fetchErrors.length} purchase order duplikat. Data tersebut tidak akan dihapus otomatis.`);
+        showWarning(`Tidak dapat memuat detail untuk ${fetchErrors.length} purchase order duplikat. Data tersebut tidak akan diupdate otomatis.`);
       }
 
       if (idsToDelete.length === 0) {
         if (fetchErrors.length > 0) {
-          showError('Tidak dapat menentukan purchase order duplikat yang akan dihapus. Silakan periksa data secara manual.');
+          showError('Tidak dapat menentukan purchase order duplikat yang akan diupdate. Silakan periksa data secara manual.');
         } else {
-          showWarning('Tidak ditemukan purchase order duplikat yang perlu dihapus.');
+          showWarning('Tidak ditemukan purchase order duplikat yang perlu diupdate.');
         }
         hideDialog();
         return;
       }
 
-      const failedDeletes = [];
+      const failedUpdates = [];
 
+      // Update status duplikat menjadi FAILED PURCHASE ORDER
       for (const id of idsToDelete) {
         try {
-          await purchaseOrderService.deletePurchaseOrder(id);
+          await purchaseOrderService.updatePurchaseOrder(id, { status_code: FAILED_STATUS_CODE });
         } catch (err) {
-          failedDeletes.push({ id, error: err });
-          console.error(`Failed to delete duplicate purchase order ${id}:`, err);
+          failedUpdates.push({ id, error: err });
+          console.error(`Failed to update duplicate purchase order ${id}:`, err);
         }
       }
 
-      if (failedDeletes.length > 0) {
-        const failedIds = failedDeletes.map(({ id }) => id).join(', ');
-        showError(`Gagal menghapus ${failedDeletes.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
+      if (failedUpdates.length > 0) {
+        const failedIds = failedUpdates.map(({ id }) => id).join(', ');
+        showError(`Gagal mengupdate ${failedUpdates.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
         return;
       }
 
-      const deletedSet = new Set(idsToDelete);
-      setSelectedOrders((prev) => prev.filter((id) => !deletedSet.has(id)));
+      const failedSet = new Set(idsToDelete);
+      setSelectedOrders((prev) => prev.filter((id) => !failedSet.has(id)));
 
-      const idsToProcessSet = new Set((originalIds || []).filter((id) => !deletedSet.has(id)));
+      const idsToProcessSet = new Set((originalIds || []).filter((id) => !failedSet.has(id)));
       idsToKeep.forEach((id) => idsToProcessSet.add(id));
 
       const idsToProcess = Array.from(idsToProcessSet);
 
       if (idsToProcess.length === 0) {
-        showSuccess(`Berhasil menghapus ${idsToDelete.length} purchase order duplikat. Tidak ada data tersisa untuk diproses.`);
+        showSuccess(`Berhasil mengupdate ${idsToDelete.length} purchase order duplikat menjadi FAILED. Tidak ada data tersisa untuk diproses.`);
         await fetchPurchaseOrders();
+        await fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
         hideDialog();
         return;
       }
 
-      const totalDeletionCount = currentDeletionCount + idsToDelete.length;
+      const totalFailedCount = currentFailedCount + idsToDelete.length;
 
-      await handleConfirmBulkProcess(idsToProcess, { deletionCount: totalDeletionCount });
+      await handleConfirmBulkProcess(idsToProcess, { failedCount: totalFailedCount });
     } catch (error) {
       console.error('Error resolving duplicate purchase orders:', error);
       showError(`Gagal menyelesaikan duplikat purchase orders: ${error.message}`);
@@ -397,10 +491,16 @@ const PurchaseOrders = () => {
       setBulkProcessing(false);
     }
   };
-  // Clear selection when data changes
+  // Fetch data when component mounts
+  useEffect(() => {
+    fetchDataByTab(activeTab, 1, 10);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
+  // Clear selection when tab changes
   useEffect(() => {
     setSelectedOrders([]);
-  }, [purchaseOrders]);
+  }, [activeTab]);
 
   if (error) {
     return (
@@ -472,15 +572,53 @@ const PurchaseOrders = () => {
             searchLoading={searchLoading}
           />
 
+          {/* Tabs for filtering by status */}
+          <div className="mb-4">
+            <TabContainer
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              variant="underline"
+            >
+              <Tab
+                id="all"
+                label="All"
+                badge={tabPagination.totalItems}
+              />
+              <Tab
+                id="pending"
+                label="Pending"
+              />
+              <Tab
+                id="processing"
+                label="Processing"
+              />
+              <Tab
+                id="processed"
+                label="Processed"
+              />
+              <Tab
+                id="completed"
+                label="Completed"
+              />
+              <Tab
+                id="failed"
+                label="Failed"
+              />
+            </TabContainer>
+          </div>
+
           <PurchaseOrderTable
-            orders={purchaseOrders}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
+            orders={tabData}
+            pagination={tabPagination}
+            onPageChange={handleTabPageChange}
+            onLimitChange={handleTabLimitChange}
             onView={handleViewOrder}
             onEdit={handleEditModalOpen}
-            onDelete={deletePurchaseOrder}
-            loading={loading}
+            onDelete={async (id) => {
+              await deletePurchaseOrder(id);
+              await fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
+            }}
+            loading={tabLoading}
             selectedOrders={selectedOrders}
             onSelectionChange={handleSelectionChange}
             onSelectAll={handleSelectAll}
@@ -517,9 +655,10 @@ const PurchaseOrders = () => {
             setSelectedOrder(null);
           }}
           order={selectedOrder}
-          loading={!selectedOrder} 
+          loading={!selectedOrder}
           onProcessed={() => {
             fetchPurchaseOrders();
+            fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
           }}
         />
       )}

@@ -2,17 +2,27 @@ import React, { useEffect, useState } from 'react';
 import bulkPurchaseOrderService from '../services/bulkPurchaseOrderService';
 import { formatDateTime, truncateText, getStatusVariant } from '../utils/modalUtils';
 
-const StatusBadge = ({ status }) => {
+const StatusBadgeInline = ({ status }) => {
   const variant = getStatusVariant(status);
   const colorMap = {
     success: 'bg-green-100 text-green-800',
     warning: 'bg-yellow-100 text-yellow-800',
     danger: 'bg-red-100 text-red-800',
     primary: 'bg-blue-100 text-blue-800',
+    secondary: 'bg-gray-100 text-gray-800',
     default: 'bg-gray-100 text-gray-800',
   };
+  const dotColorMap = {
+    success: 'bg-green-600',
+    warning: 'bg-yellow-600',
+    danger: 'bg-red-600',
+    primary: 'bg-blue-600',
+    secondary: 'bg-gray-600',
+    default: 'bg-gray-600',
+  };
   return (
-    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorMap[variant] || colorMap.default}`}>
+    <span className={`px-2 inline-flex items-center gap-1.5 text-xs leading-5 font-semibold rounded-full ${colorMap[variant] || colorMap.default}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColorMap[variant] || dotColorMap.default}`} />
       {status || 'N/A'}
     </span>
   );
@@ -38,7 +48,7 @@ const DetailModal = ({ isOpen, onClose, item }) => {
             <div className="text-gray-500">Size</div>
             <div className="col-span-2">{item.size} bytes</div>
             <div className="text-gray-500">Status</div>
-            <div className="col-span-2"><StatusBadge status={item.status?.status_code} /></div>
+            <div className="col-span-2"><StatusBadgeInline status={item.status?.status_code} /></div>
             <div className="text-gray-500">Created</div>
             <div className="col-span-2">{formatDateTime(item.createdAt)}</div>
             <div className="text-gray-500">Updated</div>
@@ -139,7 +149,7 @@ const BulkUploadHistory = () => {
                   items.map((it) => (
                     <tr key={it.id}>
                       <td className="px-6 py-4 text-sm text-gray-900">{truncateText(it.filename, 60)}</td>
-                      <td className="px-6 py-4 text-sm"><StatusBadge status={it.status?.status_code} /></td>
+                      <td className="px-6 py-4 text-sm"><StatusBadgeInline status={it.status?.status_code} /></td>
                       <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(it.createdAt)}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(it.updatedAt)}</td>
                       <td className="px-6 py-4 text-right">

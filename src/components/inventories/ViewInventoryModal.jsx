@@ -55,7 +55,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     }));
   };
 
-  const getStockStatus = (currentStock, minStock) => {
+  const resolveStockStatusVariant = (currentStock, minStock) => {
     if (currentStock <= minStock) {
       return { status: 'Low Stock', variant: 'danger' };
     } else if (currentStock <= minStock * 1.5) {
@@ -68,7 +68,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
   const totalPieces = resolvedInventory?.stok_q || 0;
   const minimumStock = resolvedInventory?.min_stok || 0;
   const totalStock = totalCartons + totalPieces;
-  const stockStatus = getStockStatus(totalStock, minimumStock);
+  const stockStatus = resolveStockStatusVariant(totalStock, minimumStock);
 
   const weight = resolvedInventory?.berat ?? resolvedInventory?.dimensiKardus?.berat;
   const length = resolvedInventory?.panjang ?? resolvedInventory?.dimensiKardus?.panjang;
@@ -146,9 +146,9 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                   { label: 'Stok Pcs', value: `${totalPieces} pcs` },
                   { label: 'Total Stok', value: `${totalStock} unit` },
                   { label: 'Minimum Stock', value: `${minimumStock} unit` },
-                  { 
-                    label: 'Stock Status', 
-                    component: <StatusBadge status={stockStatus.status} variant={stockStatus.variant} />
+                  {
+                    label: 'Stock Status',
+                    component: <StatusBadge status={stockStatus.status} variant={stockStatus.variant} size='sm' dot />
                   }
                 ]}
               />

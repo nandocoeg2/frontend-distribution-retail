@@ -72,37 +72,91 @@ export const formatNumber = (number) => {
 };
 
 /**
- * Get status badge color variant based on status text
+ * Resolve status badge color variant based on status text
+ * Standardized color scheme:
+ * - Complete = Hijau (success)
+ * - Failed = Merah (danger)
+ * - Processed = Biru (primary)
+ * - Processing/In Progress = Kuning (warning)
+ * - Pending/Draft = Abu-abu (secondary)
+ *
  * @param {string} status - Status text
  * @returns {string} Color variant name
  */
-export const getStatusVariant = (status) => {
-  if (!status) return 'default';
-  
-  const statusLower = status.toLowerCase();
-  
-  if (statusLower.includes('completed') || 
-      statusLower.includes('processed') || 
-      statusLower.includes('approved') || 
-      statusLower.includes('success')) {
+export const resolveStatusVariant = (status) => {
+  const value = typeof status === 'string' ? status.toLowerCase() : '';
+
+  if (!value) {
+    return 'secondary';
+  }
+
+  // Complete = Hijau
+  if (
+    value.includes('complete') ||
+    value.includes('completed') ||
+    value.includes('selesai') ||
+    value.includes('success') ||
+    value.includes('approve') ||
+    value.includes('approved') ||
+    value.includes('delivered')
+  ) {
     return 'success';
   }
-  
-  if (statusLower.includes('pending') || 
-      statusLower.includes('waiting') || 
-      statusLower.includes('in_progress')) {
-    return 'warning';
-  }
-  
-  if (statusLower.includes('cancelled') || 
-      statusLower.includes('rejected') || 
-      statusLower.includes('failed') || 
-      statusLower.includes('error')) {
+
+  // Failed = Merah
+  if (
+    value.includes('failed') ||
+    value.includes('fail') ||
+    value.includes('error') ||
+    value.includes('reject') ||
+    value.includes('rejected') ||
+    value.includes('cancel') ||
+    value.includes('cancelled') ||
+    value.includes('batal')
+  ) {
     return 'danger';
   }
-  
-  return 'primary';
+
+  // Processed = Biru (check processed but not processing)
+  if (
+    (value.includes('processed') && !value.includes('processing')) ||
+    value.includes('ready') ||
+    value.includes('ready_to_ship') ||
+    value.includes('packed') ||
+    value.includes('shipped')
+  ) {
+    return 'primary';
+  }
+
+  // Processing/In Progress = Kuning
+  if (
+    value.includes('processing') ||
+    value.includes('proses') ||
+    value.includes('in progress') ||
+    value.includes('in_progress') ||
+    value.includes('shipping')
+  ) {
+    return 'warning';
+  }
+
+  // Pending/Draft = Netral/Abu-abu
+  if (
+    value.includes('pending') ||
+    value.includes('menunggu') ||
+    value.includes('waiting') ||
+    value.includes('draft')
+  ) {
+    return 'secondary';
+  }
+
+  return 'default';
 };
+
+/**
+ * Alias for resolveStatusVariant for backward compatibility
+ * @deprecated Use resolveStatusVariant instead
+ */
+export const getStatusVariant = resolveStatusVariant;
 
 /**
  * Get stock status and variant based on current and minimum stock

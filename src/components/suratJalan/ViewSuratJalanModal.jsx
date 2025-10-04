@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   AccordionItem,
   InfoCard,
@@ -119,25 +120,14 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                     { label: 'PIC', value: suratJalan.PIC },
                     { label: 'Alamat Tujuan', value: suratJalan.alamat_tujuan },
                     { label: 'Surat Jalan ID', value: suratJalan.id, copyable: true },
-                    { 
-                      label: 'Status', 
+                    {
+                      label: 'Status',
                       component: (
-                        <StatusBadge 
-                          status={typeof suratJalan.status === 'string' ? suratJalan.status : (suratJalan.status?.status_code || suratJalan.status?.status_name || 'DRAFT SURAT JALAN')}
-                          variant={
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT SURAT JALAN' ? 'warning' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY TO SHIP SURAT JALAN' ? 'info' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED SURAT JALAN' ? 'primary' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED SURAT JALAN' ? 'success' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED SURAT JALAN' ? 'danger' :
-                            // Fallback untuk status lama
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DRAFT' ? 'warning' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'READY_TO_SHIP' ? 'info' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'SHIPPED' ? 'primary' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'DELIVERED' ? 'success' :
-                            (typeof suratJalan.status === 'string' ? suratJalan.status : suratJalan.status?.status_code) === 'CANCELLED' ? 'danger' :
-                            'warning'
-                          }
+                        <StatusBadge
+                          status={typeof suratJalan.status === 'string' ? suratJalan.status : (suratJalan.status?.status_name || suratJalan.status?.status_code || 'DRAFT SURAT JALAN')}
+                          variant={resolveStatusVariant(typeof suratJalan.status === 'string' ? suratJalan.status : (suratJalan.status?.status_name || suratJalan.status?.status_code))}
+                          size='sm'
+                          dot
                         />
                       )
                     }
@@ -154,12 +144,14 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               >
                 <InfoTable 
                   data={[
-                    { 
-                      label: 'Print Status', 
+                    {
+                      label: 'Print Status',
                       component: (
-                        <StatusBadge 
-                          status={suratJalan.is_printed ? 'Printed' : 'Not Printed'} 
-                          variant={suratJalan.is_printed ? 'success' : 'warning'} 
+                        <StatusBadge
+                          status={suratJalan.is_printed ? 'Printed' : 'Not Printed'}
+                          variant={suratJalan.is_printed ? 'success' : 'secondary'}
+                          size='sm'
+                          dot
                         />
                       )
                     },
