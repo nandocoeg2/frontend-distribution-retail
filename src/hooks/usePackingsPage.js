@@ -84,19 +84,22 @@ const usePackingsPage = () => {
     resolveLimit
   } = usePaginatedSearch({
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (value, page) => {
+    searchFn: (value, page, limit) => {
+      const effectiveLimit =
+        typeof limit === 'number' ? limit : INITIAL_PAGINATION.itemsPerPage;
+
       if (value && typeof value === 'object' && value.type === 'filters') {
-        return searchPackingsAdvanced(value.filters || {}, page);
+        return searchPackingsAdvanced(value.filters || {}, page, effectiveLimit);
       }
 
       const trimmedQuery = typeof value === 'string' ? value.trim() : '';
       const field = searchFieldRef.current || 'packing_number';
 
       if (!trimmedQuery) {
-        return getPackings(page);
+        return getPackings(page, effectiveLimit);
       }
 
-      return searchPackings(trimmedQuery, field, page);
+      return searchPackings(trimmedQuery, field, page, effectiveLimit);
     },
     parseResponse: parsePackingsResponse,
     resolveErrorMessage: resolvePackingsError
@@ -271,6 +274,7 @@ const usePackingsPage = () => {
     viewingPacking,
     isViewModalOpen,
     selectedPackings,
+    setSelectedPackings,
     isProcessing,
     hasSelectedPackings: selectedPackings.length > 0,
     handleSearchChange,

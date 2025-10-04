@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import useSuratJalanPage from '../hooks/useSuratJalanPage';
 import SuratJalanTable from '../components/suratJalan/SuratJalanTable';
 import SuratJalanSearch from '../components/suratJalan/SuratJalanSearch';
@@ -6,6 +6,76 @@ import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
 import EditSuratJalanModal from '../components/suratJalan/EditSuratJalanModal';
 import ViewSuratJalanModal from '../components/suratJalan/ViewSuratJalanModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import { TabContainer, Tab } from '../components/ui/Tabs';
+import suratJalanService from '../services/suratJalanService';
+import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
+
+const TAB_STATUS_CONFIG = {
+  all: { label: 'All', statusCode: null },
+  draft: { label: 'Draft', statusCode: 'DRAFT SURAT JALAN' },
+  readyToShip: {
+    label: 'Ready to Ship',
+    statusCode: 'READY TO SHIP SURAT JALAN',
+  },
+  shipped: { label: 'Shipped', statusCode: 'SHIPPED SURAT JALAN' },
+  delivered: { label: 'Delivered', statusCode: 'DELIVERED SURAT JALAN' },
+  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED SURAT JALAN' },
+};
+
+const TAB_ORDER = [
+  'all',
+  'draft',
+  'readyToShip',
+  'shipped',
+  'delivered',
+  'cancelled',
+];
+
+const INITIAL_TAB_PAGINATION = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+  page: 1,
+  limit: 10,
+  total: 0,
+};
+
+const parseSuratJalanApiResponse = (response = {}) => {
+  const rawData =
+    response?.data?.suratJalan ?? response?.data?.data ?? response?.data ?? [];
+  const paginationData = response?.data?.pagination ?? {};
+  const currentPage = paginationData.currentPage ?? paginationData.page ?? 1;
+  const itemsPerPage =
+    paginationData.itemsPerPage ??
+    paginationData.limit ??
+    INITIAL_TAB_PAGINATION.itemsPerPage;
+  const totalItems =
+    paginationData.totalItems ??
+    paginationData.total ??
+    (Array.isArray(rawData) ? rawData.length : 0);
+
+  const results = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.data)
+      ? rawData.data
+      : [];
+
+  return {
+    results,
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages:
+        paginationData.totalPages ??
+        Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1),
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage,
+    },
+  };
+};
 
 const SuratJalan = () => {
   const {
@@ -22,8 +92,9 @@ const SuratJalan = () => {
     handlePageChange,
     handleLimitChange,
     deleteSuratJalan,
+    deleteSuratJalanConfirmation,
     fetchSuratJalan,
-    handleAuthError
+    handleAuthError,
   } = useSuratJalanPage();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -31,6 +102,214 @@ const SuratJalan = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingSuratJalan, setEditingSuratJalan] = useState(null);
   const [viewingSuratJalan, setViewingSuratJalan] = useState(null);
+
+  const [activeTab, setActiveTab] = useState('all');
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabData, setTabData] = useState([]);
+  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
+
+  const isSearchActive = useMemo(() => {
+    if (searchQuery == null) {
+      return false;
+    }
+
+    if (typeof searchQuery === 'string') {
+      return searchQuery.trim() !== '';
+    }
+
+    return Boolean(searchQuery);
+  }, [searchQuery]);
+
+  const tableSuratJalan = useMemo(() => {
+    if (isSearchActive || activeTab === 'all') {
+      return suratJalan;
+    }
+    return tabData;
+  }, [activeTab, isSearchActive, suratJalan, tabData]);
+
+  const tablePagination = useMemo(() => {
+    if (isSearchActive || activeTab === 'all') {
+      return pagination;
+    }
+    return tabPagination;
+  }, [activeTab, isSearchActive, pagination, tabPagination]);
+
+  const tableLoading = useMemo(() => {
+    if (isSearchActive || activeTab === 'all') {
+      return loading;
+    }
+    return tabLoading;
+  }, [activeTab, isSearchActive, loading, tabLoading]);
+
+  const getStatusCodeForTab = useCallback(
+    (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode || null,
+    []
+  );
+
+  const fetchDataByTab = useCallback(
+    async (tab = activeTab, page = 1, limit) => {
+      const effectiveLimit =
+        typeof limit === 'number'
+          ? limit
+          : tabPagination.itemsPerPage ||
+            tabPagination.limit ||
+            INITIAL_TAB_PAGINATION.itemsPerPage;
+
+      if (tab === 'all') {
+        await fetchSuratJalan(page, effectiveLimit);
+        return;
+      }
+
+      const statusCode = getStatusCodeForTab(tab);
+      if (!statusCode) {
+        setTabData([]);
+        setTabPagination((prev) => ({
+          ...prev,
+          currentPage: 1,
+          page: 1,
+          totalItems: 0,
+          total: 0,
+          totalPages: 1,
+        }));
+        return;
+      }
+
+      setTabLoading(true);
+      try {
+        const response = await suratJalanService.searchSuratJalan(
+          { status_code: statusCode },
+          page,
+          effectiveLimit
+        );
+        const { results, pagination: parsedPagination } =
+          parseSuratJalanApiResponse(response);
+        setTabData(results);
+        setTabPagination(parsedPagination);
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+        }
+        console.error('Failed to fetch surat jalan by status:', err);
+        setTabData([]);
+        setTabPagination((prev) => ({
+          ...prev,
+          currentPage: 1,
+          page: 1,
+          totalItems: 0,
+          total: 0,
+          totalPages: 1,
+        }));
+      } finally {
+        setTabLoading(false);
+      }
+    },
+    [
+      activeTab,
+      fetchSuratJalan,
+      getStatusCodeForTab,
+      handleAuthError,
+      tabPagination.itemsPerPage,
+      tabPagination.limit,
+    ]
+  );
+
+  const handleTabChange = useCallback(
+    (newTab) => {
+      setActiveTab(newTab);
+
+      if (newTab === 'all') {
+        const currentPage = pagination?.currentPage || pagination?.page || 1;
+        const currentLimit =
+          pagination?.itemsPerPage ||
+          pagination?.limit ||
+          INITIAL_TAB_PAGINATION.itemsPerPage;
+        fetchSuratJalan(currentPage, currentLimit);
+      } else {
+        setTabPagination((prev) => ({
+          ...prev,
+          currentPage: 1,
+          page: 1,
+        }));
+        const currentLimit =
+          tabPagination.itemsPerPage ||
+          tabPagination.limit ||
+          INITIAL_TAB_PAGINATION.itemsPerPage;
+        fetchDataByTab(newTab, 1, currentLimit);
+      }
+    },
+    [
+      fetchDataByTab,
+      fetchSuratJalan,
+      pagination,
+      tabPagination.itemsPerPage,
+      tabPagination.limit,
+    ]
+  );
+
+  const handleTabPageChange = useCallback(
+    (page) => {
+      fetchDataByTab(activeTab, page);
+    },
+    [activeTab, fetchDataByTab]
+  );
+
+  const handleTabLimitChange = useCallback(
+    (limit) => {
+      fetchDataByTab(activeTab, 1, limit);
+    },
+    [activeTab, fetchDataByTab]
+  );
+
+  const handleTablePageChange = useCallback(
+    (page) => {
+      if (isSearchActive || activeTab === 'all') {
+        handlePageChange(page);
+      } else {
+        handleTabPageChange(page);
+      }
+    },
+    [activeTab, handlePageChange, handleTabPageChange, isSearchActive]
+  );
+
+  const handleTableLimitChange = useCallback(
+    (limit) => {
+      if (isSearchActive || activeTab === 'all') {
+        handleLimitChange(limit);
+      } else {
+        handleTabLimitChange(limit);
+      }
+    },
+    [activeTab, handleLimitChange, handleTabLimitChange, isSearchActive]
+  );
+
+  const refreshActiveTab = useCallback(async () => {
+    if (isSearchActive) {
+      return;
+    }
+
+    if (activeTab === 'all') {
+      const currentPage = pagination?.currentPage || pagination?.page || 1;
+      const currentLimit =
+        pagination?.itemsPerPage ||
+        pagination?.limit ||
+        INITIAL_TAB_PAGINATION.itemsPerPage;
+      await fetchSuratJalan(currentPage, currentLimit);
+    } else {
+      const currentPage = tabPagination.currentPage || tabPagination.page || 1;
+      const currentLimit =
+        tabPagination.itemsPerPage ||
+        tabPagination.limit ||
+        INITIAL_TAB_PAGINATION.itemsPerPage;
+      await fetchDataByTab(activeTab, currentPage, currentLimit);
+    }
+  }, [
+    activeTab,
+    fetchDataByTab,
+    fetchSuratJalan,
+    isSearchActive,
+    pagination,
+    tabPagination,
+  ]);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
@@ -54,34 +333,41 @@ const SuratJalan = () => {
   };
 
   const handleSuratJalanAdded = (newSuratJalan) => {
-    setSuratJalan([...suratJalan, newSuratJalan]);
+    setSuratJalan((prev) => [...prev, newSuratJalan]);
     closeAddModal();
+    refreshActiveTab();
   };
 
   const handleSuratJalanUpdated = (updatedSuratJalan) => {
-    setSuratJalan(
-      suratJalan.map((item) =>
+    setSuratJalan((prev) =>
+      prev.map((item) =>
         item.id === updatedSuratJalan.id ? updatedSuratJalan : item
       )
     );
     closeEditModal();
+    refreshActiveTab();
   };
+
+  const handleDeleteConfirm = useCallback(async () => {
+    await deleteSuratJalanConfirmation.confirmDelete();
+    await refreshActiveTab();
+  }, [deleteSuratJalanConfirmation, refreshActiveTab]);
 
   if (loading) {
     return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+      <div className='flex items-center justify-center h-64'>
+        <div className='w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin'></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+      <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
         <p className='text-red-800'>Error: {error}</p>
         <button
           onClick={fetchSuratJalan}
-          className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+          className='px-4 py-2 mt-2 text-white bg-red-600 rounded hover:bg-red-700'
         >
           Retry
         </button>
@@ -89,15 +375,19 @@ const SuratJalan = () => {
     );
   }
 
+  const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
+
   return (
     <div className='p-6'>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
+      <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex justify-between items-center'>
-            <h3 className='text-lg font-medium text-gray-900'>Surat Jalan List</h3>
+          <div className='flex items-center justify-between mb-4'>
+            <h3 className='text-lg font-medium text-gray-900'>
+              Surat Jalan List
+            </h3>
             {/* <button
               onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+              className='inline-flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
             >
               <HeroIcon name='plus' className='w-5 h-5 mr-2' />
               Add Surat Jalan
@@ -112,15 +402,37 @@ const SuratJalan = () => {
             searchLoading={searchLoading}
           />
 
+          <div className='mb-4 overflow-x-auto'>
+            <TabContainer
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              variant='underline'
+            >
+              {TAB_ORDER.map((tabId) => (
+                <Tab
+                  key={tabId}
+                  id={tabId}
+                  label={TAB_STATUS_CONFIG[tabId].label}
+                  badge={
+                    activeTab === tabId
+                      ? (resolvedPagination?.totalItems ?? 0)
+                      : null
+                  }
+                />
+              ))}
+            </TabContainer>
+          </div>
+
           <SuratJalanTable
-            suratJalan={suratJalan}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
+            suratJalan={tableSuratJalan}
+            pagination={resolvedPagination}
+            onPageChange={handleTablePageChange}
+            onLimitChange={handleTableLimitChange}
             onEdit={openEditModal}
             onDelete={deleteSuratJalan}
             onView={openViewModal}
             searchQuery={searchQuery}
+            loading={tableLoading}
           />
         </div>
       </div>
@@ -144,6 +456,18 @@ const SuratJalan = () => {
         show={showViewModal}
         onClose={closeViewModal}
         suratJalan={viewingSuratJalan}
+      />
+
+      <ConfirmationDialog
+        show={deleteSuratJalanConfirmation.showConfirm}
+        onClose={deleteSuratJalanConfirmation.hideDeleteConfirmation}
+        onConfirm={handleDeleteConfirm}
+        title={deleteSuratJalanConfirmation.title}
+        message={deleteSuratJalanConfirmation.message}
+        type='danger'
+        confirmText='Hapus'
+        cancelText='Batal'
+        loading={deleteSuratJalanConfirmation.loading}
       />
     </div>
   );

@@ -8,7 +8,7 @@ import Pagination from '../common/Pagination';
 import { StatusBadge } from '../ui/Badge';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 
-const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery, loading = false }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
       year: 'numeric',
@@ -46,7 +46,13 @@ const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitCha
           </tr>
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
-          {safeSuratJalan.length === 0 ? (
+          {loading ? (
+            <tr>
+              <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
+                Memuat data surat jalan...
+              </td>
+            </tr>
+          ) : safeSuratJalan.length === 0 ? (
             <tr>
               <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'Tidak ada surat jalan yang sesuai dengan pencarian.' : 'Belum ada surat jalan.'}
@@ -119,3 +125,5 @@ const SuratJalanTable = ({ suratJalan = [], pagination, onPageChange, onLimitCha
 };
 
 export default SuratJalanTable;
+
+

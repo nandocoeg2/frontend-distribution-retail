@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
 import PurchaseOrderSearch from '../components/purchaseOrders/PurchaseOrderSearch.jsx';
@@ -126,6 +126,36 @@ const PurchaseOrders = () => {
   });
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
+
+  const isSearchActive = useMemo(() => {
+    if (searchQuery == null) {
+      return false;
+    }
+
+    if (searchField === 'statusId') {
+      return searchQuery !== '';
+    }
+
+    if (typeof searchQuery === 'string') {
+      return searchQuery.trim() !== '';
+    }
+
+    if (Array.isArray(searchQuery)) {
+      return searchQuery.length > 0;
+    }
+
+    if (typeof searchQuery === 'number') {
+      return !Number.isNaN(searchQuery);
+    }
+
+    return Boolean(searchQuery);
+  }, [searchField, searchQuery]);
+
+  const tableOrders = isSearchActive ? purchaseOrders : tabData;
+  const tablePagination = isSearchActive ? pagination : tabPagination;
+  const tableLoading = isSearchActive ? loading : tabLoading;
+
+  const { currentPage: tabCurrentPage, itemsPerPage: tabItemsPerPage } = tabPagination;
   const confirmActionRef = useRef(() => {});
 
   const openConfirmationDialog = (options, onConfirm) => {
@@ -237,6 +267,30 @@ const PurchaseOrders = () => {
     fetchDataByTab(activeTab, 1, limit);
   }, [activeTab, fetchDataByTab]);
 
+  const handleTablePageChange = useCallback((page) => {
+    if (isSearchActive) {
+      handlePageChange(page);
+    } else {
+      handleTabPageChange(page);
+    }
+  }, [handlePageChange, handleTabPageChange, isSearchActive]);
+
+  const handleTableLimitChange = useCallback((limit) => {
+    if (isSearchActive) {
+      handleLimitChange(limit);
+    } else {
+      handleTabLimitChange(limit);
+    }
+  }, [handleLimitChange, handleTabLimitChange, isSearchActive]);
+
+  const handleDeleteOrder = useCallback(async (id) => {
+    const success = await deletePurchaseOrder(id);
+    if (success && !isSearchActive) {
+      await fetchDataByTab(activeTab, tabCurrentPage, tabItemsPerPage);
+    }
+    return success;
+  }, [deletePurchaseOrder, isSearchActive, fetchDataByTab, activeTab, tabCurrentPage, tabItemsPerPage]);
+
   // Bulk selection handlers
   const handleSelectionChange = (orderId, checked) => {
     if (checked) {
@@ -246,14 +300,14 @@ const PurchaseOrders = () => {
     }
   };
 
-  const handleSelectAll = (checked) => {
+  const handleSelectAll = useCallback((checked) => {
     if (checked) {
-      const allIds = tabData.map(order => order.id);
+      const allIds = tableOrders.map(order => order.id);
       setSelectedOrders(allIds);
     } else {
       setSelectedOrders([]);
     }
-  };
+  }, [tableOrders]);
 
   // Bulk process handlers
   const handleBulkProcess = () => {
@@ -608,17 +662,14 @@ const PurchaseOrders = () => {
           </div>
 
           <PurchaseOrderTable
-            orders={tabData}
-            pagination={tabPagination}
-            onPageChange={handleTabPageChange}
-            onLimitChange={handleTabLimitChange}
+            orders={tableOrders}
+            pagination={tablePagination}
+            onPageChange={handleTablePageChange}
+            onLimitChange={handleTableLimitChange}
             onView={handleViewOrder}
             onEdit={handleEditModalOpen}
-            onDelete={async (id) => {
-              await deletePurchaseOrder(id);
-              await fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
-            }}
-            loading={tabLoading}
+            onDelete={handleDeleteOrder}
+            loading={tableLoading}
             selectedOrders={selectedOrders}
             onSelectionChange={handleSelectionChange}
             onSelectAll={handleSelectAll}

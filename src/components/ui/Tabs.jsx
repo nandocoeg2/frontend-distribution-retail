@@ -116,7 +116,7 @@ export const TabContainer = ({
           >
             {tab.icon && <span>{tab.icon}</span>}
             <span>{tab.label}</span>
-            {tab.badge && (
+            {tab.badge != null && activeTab === tab.id && (
               <span className="ml-2 bg-blue-100 text-blue-600 py-1 px-2 rounded-full text-xs font-semibold">
                 {tab.badge}
               </span>
