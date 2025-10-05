@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ActivityTimeline from '../common/ActivityTimeline';
 import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
+import { exportStickerToPDF, printSticker } from './PrintPackingSticker';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   TabContainer,
@@ -93,6 +94,14 @@ const ViewPackingModal = ({ packing, onClose }) => {
     setSelectedItem(null);
   };
 
+  const handleExportPDF = () => {
+    exportStickerToPDF(packing, packing.packingItems);
+  };
+
+  const handlePrintSticker = () => {
+    printSticker(packing, packing.packingItems);
+  };
+
   const resolveStatusVariant = (status) => {
     const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -106,7 +115,11 @@ const ViewPackingModal = ({ packing, onClose }) => {
     }
 
     // Failed = Merah
-    if (value.includes('cancelled') || value.includes('failed') || value.includes('error')) {
+    if (
+      value.includes('cancelled') ||
+      value.includes('failed') ||
+      value.includes('error')
+    ) {
       return 'danger';
     }
 
@@ -116,7 +129,11 @@ const ViewPackingModal = ({ packing, onClose }) => {
     }
 
     // Processing/In Progress = Kuning
-    if (value.includes('processing') || value.includes('in_progress') || value.includes('in progress')) {
+    if (
+      value.includes('processing') ||
+      value.includes('in_progress') ||
+      value.includes('in progress')
+    ) {
       return 'warning';
     }
 
@@ -371,8 +388,48 @@ const ViewPackingModal = ({ packing, onClose }) => {
                   <h3 className='text-xl font-semibold text-gray-900'>
                     Packing Items
                   </h3>
-                  <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
-                    {packing.packingItems?.length || 0} items
+                  <div className='flex items-center space-x-3'>
+                    <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
+                      {packing.packingItems?.length || 0} items
+                    </div>
+                    {/* <button
+                      onClick={handlePrintSticker}
+                      className='flex items-center px-4 py-2 space-x-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700'
+                    >
+                      <svg
+                        className='w-5 h-5'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z'
+                        />
+                      </svg>
+                      <span>Print Sticker</span>
+                    </button> */}
+                    <button
+                      onClick={handleExportPDF}
+                      className='flex items-center px-4 py-2 space-x-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700'
+                    >
+                      <svg
+                        className='w-5 h-5'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                        />
+                      </svg>
+                      <span>Print Stiker</span>
+                    </button>
                   </div>
                 </div>
 
