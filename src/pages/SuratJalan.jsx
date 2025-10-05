@@ -8,7 +8,7 @@ import ViewSuratJalanModal from '../components/suratJalan/ViewSuratJalanModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { TabContainer, Tab } from '../components/ui/Tabs';
 import suratJalanService from '../services/suratJalanService';
-import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { useConfirmationDialog, ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 
 const TAB_STATUS_CONFIG = {
   all: { label: 'All', statusCode: null },
@@ -87,10 +87,17 @@ const SuratJalan = () => {
     searchQuery,
     searchField,
     searchLoading,
+    selectedSuratJalan,
+    setSelectedSuratJalan,
+    hasSelectedSuratJalan,
+    isProcessingSuratJalan,
     handleSearchChange,
     handleSearchFieldChange,
     handlePageChange,
     handleLimitChange,
+    handleSelectSuratJalan,
+    handleSelectAllSuratJalan,
+    handleProcessSuratJalan,
     deleteSuratJalan,
     deleteSuratJalanConfirmation,
     fetchSuratJalan,
@@ -102,6 +109,13 @@ const SuratJalan = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingSuratJalan, setEditingSuratJalan] = useState(null);
   const [viewingSuratJalan, setViewingSuratJalan] = useState(null);
+
+  const {
+    showDialog: showProcessDialog,
+    hideDialog: hideProcessDialog,
+    setLoading: setProcessDialogLoading,
+    ConfirmationDialog: ProcessConfirmationDialog,
+  } = useConfirmationDialog();
 
   const [activeTab, setActiveTab] = useState('all');
   const [tabLoading, setTabLoading] = useState(false);
@@ -216,6 +230,7 @@ const SuratJalan = () => {
   const handleTabChange = useCallback(
     (newTab) => {
       setActiveTab(newTab);
+      setSelectedSuratJalan([]);
 
       if (newTab === 'all') {
         const currentPage = pagination?.currentPage || pagination?.page || 1;
@@ -246,43 +261,73 @@ const SuratJalan = () => {
     ]
   );
 
+  const handleSearchChangeWithReset = useCallback((event) => {
+    setSelectedSuratJalan([]);
+    handleSearchChange(event);
+  }, [handleSearchChange, setSelectedSuratJalan]);
+
+  const handleSearchFieldChangeWithReset = useCallback((field) => {
+    setSelectedSuratJalan([]);
+    handleSearchFieldChange(field);
+  }, [handleSearchFieldChange, setSelectedSuratJalan]);
+
   const handleTabPageChange = useCallback(
     (page) => {
+      setSelectedSuratJalan([]);
       fetchDataByTab(activeTab, page);
     },
-    [activeTab, fetchDataByTab]
+    [activeTab, fetchDataByTab, setSelectedSuratJalan]
   );
 
   const handleTabLimitChange = useCallback(
     (limit) => {
+      setSelectedSuratJalan([]);
       fetchDataByTab(activeTab, 1, limit);
     },
-    [activeTab, fetchDataByTab]
+    [activeTab, fetchDataByTab, setSelectedSuratJalan]
   );
 
   const handleTablePageChange = useCallback(
     (page) => {
+      setSelectedSuratJalan([]);
       if (isSearchActive || activeTab === 'all') {
         handlePageChange(page);
       } else {
         handleTabPageChange(page);
       }
     },
-    [activeTab, handlePageChange, handleTabPageChange, isSearchActive]
+    [activeTab, handlePageChange, handleTabPageChange, isSearchActive, setSelectedSuratJalan]
   );
 
   const handleTableLimitChange = useCallback(
     (limit) => {
+      setSelectedSuratJalan([]);
       if (isSearchActive || activeTab === 'all') {
         handleLimitChange(limit);
       } else {
         handleTabLimitChange(limit);
       }
     },
-    [activeTab, handleLimitChange, handleTabLimitChange, isSearchActive]
+    [activeTab, handleLimitChange, handleTabLimitChange, isSearchActive, setSelectedSuratJalan]
   );
 
+  const handleProcessSelected = useCallback(() => {
+    if (!hasSelectedSuratJalan) {
+      return;
+    }
+
+    showProcessDialog({
+      title: 'Konfirmasi Proses Surat Jalan',
+      message: `Apakah Anda yakin ingin memproses ${selectedSuratJalan.length} surat jalan yang dipilih? Status akan berubah dari "DRAFT SURAT JALAN" menjadi "READY TO SHIP SURAT JALAN".`,
+      confirmText: 'Ya, Proses',
+      cancelText: 'Batal',
+      type: 'warning',
+    });
+  }, [hasSelectedSuratJalan, selectedSuratJalan, showProcessDialog]);
+
   const refreshActiveTab = useCallback(async () => {
+    setSelectedSuratJalan([]);
+
     if (isSearchActive) {
       return;
     }
@@ -309,6 +354,25 @@ const SuratJalan = () => {
     isSearchActive,
     pagination,
     tabPagination,
+    setSelectedSuratJalan,
+  ]);
+
+  const handleConfirmProcess = useCallback(async () => {
+    setProcessDialogLoading(true);
+    try {
+      await handleProcessSuratJalan();
+      await refreshActiveTab();
+      hideProcessDialog();
+    } catch (processError) {
+      console.error('Error processing surat jalan:', processError);
+    } finally {
+      setProcessDialogLoading(false);
+    }
+  }, [
+    handleProcessSuratJalan,
+    hideProcessDialog,
+    refreshActiveTab,
+    setProcessDialogLoading,
   ]);
 
   const openAddModal = () => setShowAddModal(true);
@@ -334,6 +398,7 @@ const SuratJalan = () => {
 
   const handleSuratJalanAdded = (newSuratJalan) => {
     setSuratJalan((prev) => [...prev, newSuratJalan]);
+    setSelectedSuratJalan([]);
     closeAddModal();
     refreshActiveTab();
   };
@@ -344,14 +409,16 @@ const SuratJalan = () => {
         item.id === updatedSuratJalan.id ? updatedSuratJalan : item
       )
     );
+    setSelectedSuratJalan([]);
     closeEditModal();
     refreshActiveTab();
   };
 
   const handleDeleteConfirm = useCallback(async () => {
     await deleteSuratJalanConfirmation.confirmDelete();
+    setSelectedSuratJalan([]);
     await refreshActiveTab();
-  }, [deleteSuratJalanConfirmation, refreshActiveTab]);
+  }, [deleteSuratJalanConfirmation, refreshActiveTab, setSelectedSuratJalan]);
 
   if (loading) {
     return (
@@ -397,8 +464,8 @@ const SuratJalan = () => {
           <SuratJalanSearch
             searchQuery={searchQuery}
             searchField={searchField}
-            handleSearchChange={handleSearchChange}
-            handleSearchFieldChange={handleSearchFieldChange}
+            handleSearchChange={handleSearchChangeWithReset}
+            handleSearchFieldChange={handleSearchFieldChangeWithReset}
             searchLoading={searchLoading}
           />
 
@@ -433,6 +500,12 @@ const SuratJalan = () => {
             onView={openViewModal}
             searchQuery={searchQuery}
             loading={tableLoading}
+            selectedSuratJalan={selectedSuratJalan}
+            onSelectSuratJalan={handleSelectSuratJalan}
+            onSelectAllSuratJalan={handleSelectAllSuratJalan}
+            onProcessSelected={handleProcessSelected}
+            isProcessing={isProcessingSuratJalan}
+            hasSelectedSuratJalan={hasSelectedSuratJalan}
           />
         </div>
       </div>
@@ -457,6 +530,8 @@ const SuratJalan = () => {
         onClose={closeViewModal}
         suratJalan={viewingSuratJalan}
       />
+
+      <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
 
       <ConfirmationDialog
         show={deleteSuratJalanConfirmation.showConfirm}

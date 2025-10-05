@@ -55,6 +55,8 @@ const useSuratJalanPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchField, setSearchField] = useState('no_surat_jalan');
   const searchFieldRef = useRef('no_surat_jalan');
+  const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
+  const [isProcessingSuratJalan, setIsProcessingSuratJalan] = useState(false);
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -165,6 +167,31 @@ const useSuratJalanPage = () => {
     'Hapus Surat Jalan'
   );
 
+  const handleSelectSuratJalan = useCallback((suratJalanId) => {
+    setSelectedSuratJalan((prevSelected) => {
+      if (prevSelected.includes(suratJalanId)) {
+        return prevSelected.filter((id) => id !== suratJalanId);
+      }
+      return [...prevSelected, suratJalanId];
+    });
+  }, []);
+
+  const handleSelectAllSuratJalan = useCallback((items = []) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      setSelectedSuratJalan([]);
+      return;
+    }
+
+    const ids = items.map((item) => item?.id).filter(Boolean);
+    if (ids.length === 0) {
+      setSelectedSuratJalan([]);
+      return;
+    }
+
+    const isAllSelected = ids.every((id) => selectedSuratJalan.includes(id));
+    setSelectedSuratJalan(isAllSelected ? [] : ids);
+  }, [selectedSuratJalan]);
+
   useEffect(() => {
     fetchSuratJalan(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchSuratJalan]);
@@ -173,6 +200,51 @@ const useSuratJalanPage = () => {
     const currentPage = pagination.currentPage || pagination.page || 1;
     performSearch(currentSearchValue, currentPage, resolveLimit());
   }, [currentSearchValue, pagination, performSearch, resolveLimit]);
+
+  const handleProcessSuratJalan = useCallback(async (ids) => {
+    const targetIds = Array.isArray(ids) && ids.length > 0 ? ids : selectedSuratJalan;
+    const validIds = Array.from(new Set((targetIds || []).filter(Boolean)));
+
+    if (validIds.length === 0) {
+      toastService.error('Pilih minimal satu surat jalan untuk diproses');
+      return;
+    }
+
+    setIsProcessingSuratJalan(true);
+
+    try {
+      const response = await suratJalanService.processSuratJalan(validIds);
+
+      if (response?.success === false) {
+        const errorMessage =
+          response?.message ||
+          response?.error?.message ||
+          'Gagal memproses surat jalan';
+        toastService.error(errorMessage);
+        return response;
+      }
+
+      const successMessage =
+        response?.data?.message ||
+        `Surat jalan berhasil diproses (${validIds.length})`;
+      toastService.success(successMessage);
+      setSelectedSuratJalan([]);
+      await refreshData();
+      return response;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return;
+      }
+      const message =
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Gagal memproses surat jalan';
+      toastService.error(message);
+    } finally {
+      setIsProcessingSuratJalan(false);
+    }
+  }, [authHandler, refreshData, selectedSuratJalan]);
 
   return {
     suratJalan,
@@ -184,10 +256,17 @@ const useSuratJalanPage = () => {
     searchQuery,
     searchField,
     searchLoading,
+    selectedSuratJalan,
+    setSelectedSuratJalan,
+    hasSelectedSuratJalan: selectedSuratJalan.length > 0,
+    isProcessingSuratJalan,
     handleSearchChange,
     handleSearchFieldChange,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
+    handleSelectSuratJalan,
+    handleSelectAllSuratJalan,
+    handleProcessSuratJalan,
     deleteSuratJalan: deleteSuratJalanConfirmation.showDeleteConfirmation,
     deleteSuratJalanConfirmation,
     fetchSuratJalan,

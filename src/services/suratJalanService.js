@@ -86,6 +86,16 @@ class SuratJalanService {
       throw error;
     }
   }
+
+  async processSuratJalan(ids = []) {
+    try {
+      const response = await this.api.post('/surat-jalan/process', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error processing surat jalan:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SuratJalanService();
