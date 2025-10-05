@@ -58,7 +58,7 @@ const PurchaseOrderTable = ({
   };
 
 
-  const isProcessingStatus = (order) => {
+  const isEditDisabled = (order) => {
     if (!order?.status) {
       return false;
     }
@@ -74,7 +74,13 @@ const PurchaseOrderTable = ({
     const normalizedCode = normalize(order.status.status_code);
     return (
       normalizedName === 'processing purchase order' ||
-      normalizedCode === 'processing purchase order'
+      normalizedCode === 'processing purchase order' ||
+      normalizedName === 'failed purchase order' ||
+      normalizedCode === 'failed purchase order' ||
+      normalizedName === 'processed purchase order' ||
+      normalizedCode === 'processed purchase order' ||
+      normalizedName === 'completed purchase order' ||
+      normalizedCode === 'completed purchase order'
     );
   };
 
@@ -136,7 +142,7 @@ const PurchaseOrderTable = ({
               </tr>
             ) : (
               orders.map((order) => {
-                const isProcessing = isProcessingStatus(order);
+                const editDisabled = isEditDisabled(order);
 
                 return (
                   <tr key={order.id} className='hover:bg-gray-50'>
@@ -231,18 +237,18 @@ const PurchaseOrderTable = ({
                           <>
                             <button
                               type='button'
-                              onClick={() => !isProcessing && onEdit(order)}
+                              onClick={() => !editDisabled && onEdit(order)}
                               className={`p-1 ${
-                                isProcessing
+                                editDisabled
                                   ? 'text-gray-400 cursor-not-allowed'
                                   : 'text-indigo-600 hover:text-indigo-900'
                               }`}
                               title={
-                                isProcessing
-                                  ? 'Purchase order sedang diproses dan tidak dapat diedit.'
+                                editDisabled
+                                  ? 'Purchase order tidak dapat diedit.'
                                   : 'Edit'
                               }
-                              disabled={isProcessing}
+                              disabled={editDisabled}
                             >
                               <PencilIcon className='w-4 h-4' />
                             </button>
