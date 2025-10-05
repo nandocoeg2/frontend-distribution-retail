@@ -81,16 +81,38 @@ class LaporanPenerimaanBarangService {
     }
   }
 
-  async searchReports(query, page = 1, limit = 10) {
+  async searchReports(criteria = '', page = 1, limit = 10) {
     try {
       const params = new URLSearchParams();
-      if (query) {
-        params.append('q', query);
+      const isObjectCriteria =
+        criteria && typeof criteria === 'object' && !Array.isArray(criteria);
+
+      if (isObjectCriteria) {
+        Object.entries(criteria).forEach(([key, value]) => {
+          if (value === null || value === undefined) {
+            return;
+          }
+
+          if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed === '') {
+              return;
+            }
+            params.append(key, trimmed);
+            return;
+          }
+
+          params.append(key, value);
+        });
+      } else if (typeof criteria === 'string' && criteria.trim()) {
+        params.append('q', criteria.trim());
       }
-      params.append('page', page);
-      params.append('limit', limit);
+
+      params.set('page', page);
+      params.set('limit', limit);
+      const queryString = params.toString();
       const response = await this.api.get(
-        '/laporan-penerimaan-barang/search?' + params.toString()
+        '/laporan-penerimaan-barang/search' + (queryString ? '?' + queryString : '')
       );
       return response.data;
     } catch (error) {
@@ -98,7 +120,6 @@ class LaporanPenerimaanBarangService {
       throw error;
     }
   }
-
   async uploadFromFile({ file, prompt } = {}) {
     try {
       if (!file) {
