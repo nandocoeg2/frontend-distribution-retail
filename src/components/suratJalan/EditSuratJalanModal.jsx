@@ -1,27 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import FormModal from '../common/FormModal';
 import toastService from '../../services/toastService';
 import suratJalanService from '../../services/suratJalanService';
 
+const defaultFormValues = {
+  no_surat_jalan: '',
+  deliver_to: '',
+  PIC: '',
+  alamat_tujuan: '',
+  invoiceId: '',
+  checklistSuratJalan: {
+    tanggal: '',
+    checker: '',
+    driver: '',
+    mobil: '',
+    kota: ''
+  },
+  suratJalanDetails: []
+};
+
 const EditSuratJalanModal = ({ show, onClose, suratJalan, onSuratJalanUpdated, handleAuthError }) => {
-  const [formData, setFormData] = useState({
-    no_surat_jalan: '',
-    deliver_to: '',
-    PIC: '',
-    alamat_tujuan: '',
-    invoiceId: '',
-    suratJalanDetails: []
-  });
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState(defaultFormValues);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expandedDetails, setExpandedDetails] = useState({});
 
   useEffect(() => {
     if (suratJalan) {
+      const hasChecklist = suratJalan.checklistSuratJalan && Object.keys(suratJalan.checklistSuratJalan).length > 0;
+
       setFormData({
         no_surat_jalan: suratJalan.no_surat_jalan || '',
         deliver_to: suratJalan.deliver_to || '',
         PIC: suratJalan.PIC || '',
         alamat_tujuan: suratJalan.alamat_tujuan || '',
         invoiceId: suratJalan.invoiceId || '',
+        checklistSuratJalan: hasChecklist ? {
+          tanggal: suratJalan.checklistSuratJalan.tanggal ? new Date(suratJalan.checklistSuratJalan.tanggal).toISOString().slice(0, 16) : '',
+          checker: suratJalan.checklistSuratJalan.checker || '',
+          driver: suratJalan.checklistSuratJalan.driver || '',
+          mobil: suratJalan.checklistSuratJalan.mobil || '',
+          kota: suratJalan.checklistSuratJalan.kota || ''
+        } : {
+          tanggal: '',
+          checker: '',
+          driver: '',
+          mobil: '',
+          kota: ''
+        },
         suratJalanDetails: suratJalan.suratJalanDetails || []
       });
     }
@@ -35,9 +61,27 @@ const EditSuratJalanModal = ({ show, onClose, suratJalan, onSuratJalanUpdated, h
     }));
   };
 
+  const handleChecklistChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      checklistSuratJalan: {
+        ...prev.checklistSuratJalan,
+        [name]: value
+      }
+    }));
+  };
+
+  const toggleDetail = (detailId) => {
+    setExpandedDetails(prev => ({
+      ...prev,
+      [detailId]: !prev[detailId]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmitting(true);
 
     try {
       const submitData = {
@@ -57,122 +101,343 @@ const EditSuratJalanModal = ({ show, onClose, suratJalan, onSuratJalanUpdated, h
       console.error('Error updating surat jalan:', err);
       toastService.error('Failed to update surat jalan');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (!show || !suratJalan) return null;
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Edit Surat Jalan</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
+  const renderBasicInfoSection = () => (
+    <div className="mb-6">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+        <span className="mr-2">📄</span>
+        Informasi Dasar
+      </h3>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="no_surat_jalan" className="block mb-1 text-sm font-medium text-gray-700">
+            No Surat Jalan <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="no_surat_jalan"
+            name="no_surat_jalan"
+            value={formData.no_surat_jalan}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+            placeholder="Masukkan nomor surat jalan"
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="no_surat_jalan" className="block text-sm font-medium text-gray-700">
-                No Surat Jalan
-              </label>
-              <input
-                type="text"
-                id="no_surat_jalan"
-                name="no_surat_jalan"
-                value={formData.no_surat_jalan}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                required
-              />
-            </div>
+        <div>
+          <label htmlFor="deliver_to" className="block mb-1 text-sm font-medium text-gray-700">
+            Deliver To <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="deliver_to"
+            name="deliver_to"
+            value={formData.deliver_to}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+            placeholder="Nama penerima"
+          />
+        </div>
 
-            <div>
-              <label htmlFor="deliver_to" className="block text-sm font-medium text-gray-700">
-                Deliver To
-              </label>
-              <input
-                type="text"
-                id="deliver_to"
-                name="deliver_to"
-                value={formData.deliver_to}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                required
-              />
-            </div>
+        <div>
+          <label htmlFor="PIC" className="block mb-1 text-sm font-medium text-gray-700">
+            PIC <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="PIC"
+            name="PIC"
+            value={formData.PIC}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+            placeholder="Person in Charge"
+          />
+        </div>
 
-            <div>
-              <label htmlFor="PIC" className="block text-sm font-medium text-gray-700">
-                PIC
-              </label>
-              <input
-                type="text"
-                id="PIC"
-                name="PIC"
-                value={formData.PIC}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                required
-              />
-            </div>
+        <div>
+          <label htmlFor="alamat_tujuan" className="block mb-1 text-sm font-medium text-gray-700">
+            Alamat Tujuan <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="alamat_tujuan"
+            name="alamat_tujuan"
+            value={formData.alamat_tujuan}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+            placeholder="Alamat pengiriman"
+          />
+        </div>
 
-            <div>
-              <label htmlFor="alamat_tujuan" className="block text-sm font-medium text-gray-700">
-                Alamat Tujuan
-              </label>
-              <input
-                type="text"
-                id="alamat_tujuan"
-                name="alamat_tujuan"
-                value={formData.alamat_tujuan}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                required
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label htmlFor="invoiceId" className="block text-sm font-medium text-gray-700">
-                Invoice ID (Optional)
-              </label>
-              <input
-                type="text"
-                id="invoiceId"
-                name="invoiceId"
-                value={formData.invoiceId}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Leave empty if not linked to invoice"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Updating...' : 'Update Surat Jalan'}
-            </button>
-          </div>
-        </form>
+        <div className="md:col-span-2">
+          <label htmlFor="invoiceId" className="block mb-1 text-sm font-medium text-gray-700">
+            Invoice ID (Optional)
+          </label>
+          <input
+            type="text"
+            id="invoiceId"
+            name="invoiceId"
+            value={formData.invoiceId}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Kosongkan jika tidak terkait invoice"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Sisakan kosong jika surat jalan tidak terkait dengan invoice tertentu.
+          </p>
+        </div>
       </div>
     </div>
+  );
+
+  const renderChecklistSection = () => (
+    <div className="mb-6">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+        <span className="mr-2">✅</span>
+        Checklist Surat Jalan
+      </h3>
+      <div className="p-4 border border-blue-200 rounded-lg bg-blue-50/30">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="tanggal" className="block mb-1 text-sm font-medium text-gray-700">
+              Tanggal <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              id="tanggal"
+              name="tanggal"
+              value={formData.checklistSuratJalan.tanggal}
+              onChange={handleChecklistChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="checker" className="block mb-1 text-sm font-medium text-gray-700">
+              Checker <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="checker"
+              name="checker"
+              value={formData.checklistSuratJalan.checker}
+              onChange={handleChecklistChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              required
+              placeholder="Nama pemeriksa"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="driver" className="block mb-1 text-sm font-medium text-gray-700">
+              Driver <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="driver"
+              name="driver"
+              value={formData.checklistSuratJalan.driver}
+              onChange={handleChecklistChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              required
+              placeholder="Nama driver"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="mobil" className="block mb-1 text-sm font-medium text-gray-700">
+              Mobil <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="mobil"
+              name="mobil"
+              value={formData.checklistSuratJalan.mobil}
+              onChange={handleChecklistChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              required
+              placeholder="Nomor kendaraan (misal: B 1234 XYZ)"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="kota" className="block mb-1 text-sm font-medium text-gray-700">
+              Kota <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="kota"
+              name="kota"
+              value={formData.checklistSuratJalan.kota}
+              onChange={handleChecklistChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              required
+              placeholder="Kota tujuan"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDetailsSection = () => {
+    if (!formData.suratJalanDetails || formData.suratJalanDetails.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+          <span className="mr-2">📦</span>
+          Surat Jalan Details (Read-only)
+        </h3>
+        <div className="p-4 border border-gray-200 rounded-lg bg-gray-50/30">
+          <p className="text-xs text-gray-600 mb-3">
+            Total: {formData.suratJalanDetails.length} box(es)
+          </p>
+
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {formData.suratJalanDetails.map((detail, detailIndex) => (
+              <div key={detail.id || detailIndex} className="bg-white border border-gray-200 rounded-md overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleDetail(detail.id || detailIndex)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-1.5 bg-blue-100 rounded">
+                      <span className="text-sm">📦</span>
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-semibold text-gray-900">Box #{detail.no_box}</h5>
+                      <p className="text-xs text-gray-600">
+                        Total Qty: {detail.total_quantity_in_box} • Boxes: {detail.total_box}
+                      </p>
+                    </div>
+                  </div>
+                  {expandedDetails[detail.id || detailIndex] ? (
+                    <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+                  )}
+                </button>
+
+                {expandedDetails[detail.id || detailIndex] && (
+                  <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50">
+                    <div className="mt-3 grid grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">No Box</label>
+                        <input
+                          type="text"
+                          value={detail.no_box}
+                          disabled
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm bg-gray-100 text-gray-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Total Quantity in Box</label>
+                        <input
+                          type="number"
+                          value={detail.total_quantity_in_box}
+                          disabled
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm bg-gray-100 text-gray-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Isi Box</label>
+                        <input
+                          type="number"
+                          value={detail.isi_box}
+                          disabled
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm bg-gray-100 text-gray-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Sisa</label>
+                        <input
+                          type="number"
+                          value={detail.sisa}
+                          disabled
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm bg-gray-100 text-gray-700"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Total Box</label>
+                        <input
+                          type="number"
+                          value={detail.total_box}
+                          disabled
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm bg-gray-100 text-gray-700"
+                        />
+                      </div>
+                    </div>
+
+                    {(detail.items || detail.suratJalanDetailItems) && (detail.items?.length > 0 || detail.suratJalanDetailItems?.length > 0) && (
+                      <div>
+                        <h6 className="text-xs font-semibold text-gray-700 mb-2">
+                          Items ({(detail.items || detail.suratJalanDetailItems).length})
+                        </h6>
+                        <div className="overflow-x-auto border border-gray-200 rounded">
+                          <table className="min-w-full divide-y divide-gray-200 text-xs">
+                            <thead className="bg-gray-100">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Nama Barang</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">PLU</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Qty</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Satuan</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Total Box</th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">Keterangan</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {(detail.items || detail.suratJalanDetailItems || []).map((item, itemIndex) => (
+                                <tr key={item.id || itemIndex} className="hover:bg-gray-50">
+                                  <td className="px-3 py-2 whitespace-nowrap text-gray-900">{item.nama_barang}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-gray-900">{item.PLU}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-gray-900">{item.quantity}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-gray-900">{item.satuan}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-gray-900">{item.total_box}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap text-gray-900">{item.keterangan || '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <FormModal
+      show={show}
+      onClose={onClose}
+      title="Edit Surat Jalan"
+      subtitle="Perbarui detail surat jalan."
+      isSubmitting={isSubmitting}
+      isEdit={true}
+      handleSubmit={handleSubmit}
+      entityName="Surat Jalan"
+    >
+      {renderBasicInfoSection()}
+      {renderChecklistSection()}
+      {renderDetailsSection()}
+    </FormModal>
   );
 };
 
