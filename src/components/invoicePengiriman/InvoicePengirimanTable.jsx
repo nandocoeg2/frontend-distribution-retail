@@ -13,7 +13,8 @@ const InvoicePengirimanTable = ({
   searchQuery,
 }) => {
   const formatCurrency = (amount) => {
-    if (typeof amount !== 'number') {
+    // grand_total: '1000';
+    if (amount == null) {
       return '-';
     }
     return new Intl.NumberFormat('id-ID', {
@@ -50,9 +51,6 @@ const InvoicePengirimanTable = ({
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Grand Total
             </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Tipe
-            </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Aksi
             </th>
@@ -88,11 +86,6 @@ const InvoicePengirimanTable = ({
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatCurrency(invoice.grand_total)}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {invoice.type || 'PENGIRIMAN'}
                   </div>
                 </td>
                 <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>

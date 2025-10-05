@@ -10,11 +10,11 @@ import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
 
 const TAB_STATUS_CONFIG = {
-  all: { label: 'ALL', statusCode: null },
-  cancelled: { label: 'CANCELLED INVOICE', statusCode: 'CANCELLED INVOICE' },
-  pending: { label: 'PENDING INVOICE', statusCode: 'PENDING INVOICE' },
-  paid: { label: 'PAID INVOICE', statusCode: 'PAID INVOICE' },
-  overdue: { label: 'OVERDUE INVOICE', statusCode: 'OVERDUE INVOICE' }
+  all: { label: 'All', statusCode: null },
+  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED INVOICE' },
+  pending: { label: 'Pending', statusCode: 'PENDING INVOICE' },
+  paid: { label: 'Paid', statusCode: 'PAID INVOICE' },
+  overdue: { label: 'Overdue', statusCode: 'OVERDUE INVOICE' },
 };
 
 const TAB_ORDER = ['all', 'cancelled', 'pending', 'paid', 'overdue'];
@@ -26,7 +26,7 @@ const INITIAL_TAB_PAGINATION = {
   itemsPerPage: 10,
   page: 1,
   limit: 10,
-  total: 0
+  total: 0,
 };
 
 const parseInvoicePengirimanApiResponse = (response = {}) => {
@@ -58,8 +58,8 @@ const parseInvoicePengirimanApiResponse = (response = {}) => {
       totalItems,
       total: totalItems,
       itemsPerPage,
-      limit: itemsPerPage
-    }
+      limit: itemsPerPage,
+    },
   };
 };
 
@@ -79,7 +79,7 @@ const InvoicePengirimanPage = () => {
     handleLimitChange,
     deleteInvoiceConfirmation,
     fetchInvoicePengiriman,
-    handleAuthError
+    handleAuthError,
   } = useInvoicePengiriman();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -121,7 +121,10 @@ const InvoicePengirimanPage = () => {
     return tabLoading;
   }, [activeTab, isSearchActive, loading, tabLoading]);
 
-  const getStatusCodeForTab = useCallback((tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode ?? null, []);
+  const getStatusCodeForTab = useCallback(
+    (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode ?? null,
+    []
+  );
 
   const fetchDataByTab = useCallback(
     async (tab = activeTab, page = 1, limit) => {
@@ -146,7 +149,7 @@ const InvoicePengirimanPage = () => {
           page: 1,
           totalItems: 0,
           total: 0,
-          totalPages: 1
+          totalPages: 1,
         }));
         return;
       }
@@ -158,7 +161,8 @@ const InvoicePengirimanPage = () => {
           page,
           effectiveLimit
         );
-        const { results, pagination: parsedPagination } = parseInvoicePengirimanApiResponse(response);
+        const { results, pagination: parsedPagination } =
+          parseInvoicePengirimanApiResponse(response);
         setTabData(results);
         setTabPagination(parsedPagination);
       } catch (err) {
@@ -173,7 +177,7 @@ const InvoicePengirimanPage = () => {
           page: 1,
           totalItems: 0,
           total: 0,
-          totalPages: 1
+          totalPages: 1,
         }));
       } finally {
         setTabLoading(false);
@@ -185,7 +189,7 @@ const InvoicePengirimanPage = () => {
       getStatusCodeForTab,
       handleAuthError,
       tabPagination.itemsPerPage,
-      tabPagination.limit
+      tabPagination.limit,
     ]
   );
 
@@ -204,7 +208,7 @@ const InvoicePengirimanPage = () => {
         setTabPagination((prev) => ({
           ...prev,
           currentPage: 1,
-          page: 1
+          page: 1,
         }));
         const currentLimit =
           tabPagination.itemsPerPage ||
@@ -218,7 +222,7 @@ const InvoicePengirimanPage = () => {
       fetchInvoicePengiriman,
       pagination,
       tabPagination.itemsPerPage,
-      tabPagination.limit
+      tabPagination.limit,
     ]
   );
 
@@ -241,7 +245,7 @@ const InvoicePengirimanPage = () => {
         setTabPagination((prev) => ({
           ...prev,
           itemsPerPage: limit,
-          limit
+          limit,
         }));
         fetchDataByTab(activeTab, 1, limit);
       }
@@ -278,7 +282,7 @@ const InvoicePengirimanPage = () => {
     handlePageChange,
     isSearchActive,
     pagination,
-    tabPagination
+    tabPagination,
   ]);
 
   const openAddModal = () => setShowAddModal(true);
@@ -316,7 +320,9 @@ const InvoicePengirimanPage = () => {
       return;
     }
     setInvoicePengiriman((prev) =>
-      prev.map((invoice) => (invoice.id === updatedInvoice.id ? updatedInvoice : invoice))
+      prev.map((invoice) =>
+        invoice.id === updatedInvoice.id ? updatedInvoice : invoice
+      )
     );
     closeEditModal();
     refreshActiveTab();
@@ -332,19 +338,19 @@ const InvoicePengirimanPage = () => {
 
   if (loading && activeTab === 'all' && !isSearchActive) {
     return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+      <div className='flex items-center justify-center h-64'>
+        <div className='w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin'></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+      <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
         <p className='text-red-800'>Terjadi kesalahan: {error}</p>
         <button
           onClick={fetchInvoicePengiriman}
-          className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+          className='px-4 py-2 mt-2 text-white bg-red-600 rounded hover:bg-red-700'
         >
           Coba Lagi
         </button>
@@ -356,16 +362,21 @@ const InvoicePengirimanPage = () => {
 
   return (
     <div className='p-6'>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
+      <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex justify-between items-center'>
+          <div className='flex items-center justify-between mb-4'>
             <div>
-              <h3 className='text-lg font-medium text-gray-900'>Daftar Invoice Pengiriman</h3>
-              <p className='text-sm text-gray-500'>Pantau seluruh invoice pengiriman termasuk informasi pelanggan dan status pembayaran.</p>
+              <h3 className='text-lg font-medium text-gray-900'>
+                Daftar Invoice Pengiriman
+              </h3>
+              <p className='text-sm text-gray-500'>
+                Pantau seluruh invoice pengiriman termasuk informasi pelanggan
+                dan status pembayaran.
+              </p>
             </div>
             {/* <button
               onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+              className='inline-flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
             >
               Tambah Invoice Pengiriman
             </button> */}
@@ -401,7 +412,7 @@ const InvoicePengirimanPage = () => {
           </div>
 
           {tableLoading ? (
-            <div className='flex justify-center items-center h-40'>
+            <div className='flex items-center justify-center h-40'>
               <div className='w-10 h-10 border-b-2 border-blue-600 rounded-full animate-spin'></div>
             </div>
           ) : (
