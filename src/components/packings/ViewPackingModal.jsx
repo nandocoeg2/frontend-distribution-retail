@@ -12,6 +12,7 @@ import {
   AccordionItem,
   InfoCard,
   StatusBadge,
+  DotBadge,
   InfoTable,
 } from '../ui';
 
@@ -277,6 +278,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
                         {
                           label: 'PO Number',
                           value: packing.purchaseOrder.po_number,
+                          copyable: true,
                         },
                         {
                           label: 'Tanggal Masuk PO',
@@ -292,7 +294,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
                         },
                         {
                           label: 'TOP',
-                          value: packing.purchaseOrder.termin_bayar,
+                          value: packing.purchaseOrder.termOfPayment.kode_top,
                         },
                         {
                           label: 'PO Type',
@@ -303,17 +305,9 @@ const ViewPackingModal = ({ packing, onClose }) => {
                           value: packing.purchaseOrder.total_items,
                         },
                         {
-                          label: 'Customer ID',
-                          value: packing.purchaseOrder.customerId,
+                          label: 'Customer',
+                          value: packing.purchaseOrder.customer.namaCustomer,
                           copyable: true,
-                        },
-                        {
-                          label: 'Supplier ID',
-                          value:
-                            packing.purchaseOrder.supplierId || 'Not assigned',
-                          copyable: packing.purchaseOrder.supplierId
-                            ? true
-                            : false,
                         },
                       ]}
                     />
@@ -332,7 +326,19 @@ const ViewPackingModal = ({ packing, onClose }) => {
                       data={[
                         {
                           label: 'Status Code',
-                          value: packing.status.status_code,
+                          component: (
+                            <div className='flex items-center space-x-2'>
+                              <StatusBadge
+                                status={packing.status.status_code}
+                                variant={resolveStatusVariant(
+                                  packing.status?.status_name ||
+                                    packing.status?.status_code
+                                )}
+                                size='sm'
+                                dot
+                              />
+                            </div>
+                          ),
                         },
                         {
                           label: 'Status Name',
