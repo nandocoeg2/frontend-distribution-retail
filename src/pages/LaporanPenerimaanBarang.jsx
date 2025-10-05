@@ -7,27 +7,30 @@ import {
   LaporanPenerimaanBarangDetailModal,
   LaporanPenerimaanBarangBulkModal,
 } from '@/components/laporanPenerimaanBarang';
-import { ConfirmationDialog, useConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import {
+  ConfirmationDialog,
+  useConfirmationDialog,
+} from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TAB_STATUS_CONFIG = {
-  all: { label: 'ALL', statusCode: null },
+  all: { label: 'All', statusCode: null },
   pending: {
-    label: 'PENDING LAPORAN PENERIMAAN BARANG',
+    label: 'Pending',
     statusCode: 'PENDING LAPORAN PENERIMAAN BARANG',
   },
   processing: {
-    label: 'PROCESSING LAPORAN PENERIMAAN BARANG',
+    label: 'Processing',
     statusCode: 'PROCESSING LAPORAN PENERIMAAN BARANG',
   },
   completed: {
-    label: 'COMPLETED LAPORAN PENERIMAAN BARANG',
+    label: 'Completed',
     statusCode: 'COMPLETED LAPORAN PENERIMAAN BARANG',
   },
   failed: {
-    label: 'FAILED LAPORAN PENERIMAAN BARANG',
+    label: 'Failed',
     statusCode: 'FAILED LAPORAN PENERIMAAN BARANG',
   },
 };
@@ -211,9 +214,7 @@ const LaporanPenerimaanBarang = () => {
       }
 
       const availableIds = new Set(
-        dataSource
-          .map((item) => resolveReportId(item))
-          .filter(Boolean)
+        dataSource.map((item) => resolveReportId(item)).filter(Boolean)
       );
 
       const filtered = prev.filter((id) => availableIds.has(id));
@@ -269,7 +270,10 @@ const LaporanPenerimaanBarang = () => {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
           handleAuthError();
         }
-        console.error('Failed to fetch laporan penerimaan barang by status:', err);
+        console.error(
+          'Failed to fetch laporan penerimaan barang by status:',
+          err
+        );
         setTabReports([]);
         setTabPagination((prev) => ({
           ...prev,
@@ -392,13 +396,13 @@ const LaporanPenerimaanBarang = () => {
     tabPagination,
   ]);
 
-
   const handleDeleteConfirm = useCallback(async () => {
     await deleteReportConfirmation.confirmDelete();
     await refreshActiveTab();
   }, [deleteReportConfirmation, refreshActiveTab]);
 
-  const selectionDisabled = tableLoading || isProcessingReports || isCompletingReports;
+  const selectionDisabled =
+    tableLoading || isProcessingReports || isCompletingReports;
   const hasSelectedReports = selectedReportIds.length > 0;
   const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
   const activeTabBadge =
@@ -486,8 +490,6 @@ const LaporanPenerimaanBarang = () => {
     }
   };
 
-
-
   const openCreateModal = () => {
     setSelectedReport(null);
     setIsCreateModalOpen(true);
@@ -542,11 +544,14 @@ const LaporanPenerimaanBarang = () => {
     setDetailLoading(false);
   };
 
-  const handleUploadFromFile = useCallback(async ({ file, prompt }) => {
-    const result = await createReportFromFile({ file, prompt });
-    await refreshActiveTab();
-    return result;
-  }, [createReportFromFile, refreshActiveTab]);
+  const handleUploadFromFile = useCallback(
+    async ({ file, prompt }) => {
+      const result = await createReportFromFile({ file, prompt });
+      await refreshActiveTab();
+      return result;
+    },
+    [createReportFromFile, refreshActiveTab]
+  );
 
   const handleCreateSubmit = async (payload) => {
     await createReport(payload);
@@ -573,23 +578,25 @@ const LaporanPenerimaanBarang = () => {
 
   return (
     <div className='p-6'>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
+      <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex items-center justify-between'>
-            <h3 className='text-lg font-medium text-gray-900'>Laporan Penerimaan Barang</h3>
+          <div className='flex items-center justify-between mb-4'>
+            <h3 className='text-lg font-medium text-gray-900'>
+              Laporan Penerimaan Barang
+            </h3>
             <div className='flex items-center gap-2'>
               <button
                 onClick={openBulkModal}
-                className='inline-flex items-center rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600'
+                className='inline-flex items-center px-4 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600'
               >
-                <HeroIcon name='arrow-up-tray' className='mr-2 h-5 w-5' />
+                <HeroIcon name='arrow-up-tray' className='w-5 h-5 mr-2' />
                 Upload Bulk
               </button>
               <button
                 onClick={openCreateModal}
-                className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700'
+                className='inline-flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
               >
-                <HeroIcon name='plus' className='mr-2 h-5 w-5' />
+                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
                 Tambah Laporan
               </button>
             </div>
@@ -621,11 +628,13 @@ const LaporanPenerimaanBarang = () => {
           </div>
 
           {error ? (
-            <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-              <p className='text-red-800 text-sm mb-3'>Terjadi kesalahan: {error}</p>
+            <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
+              <p className='mb-3 text-sm text-red-800'>
+                Terjadi kesalahan: {error}
+              </p>
               <button
                 onClick={handleRetry}
-                className='px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
+                className='px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700'
               >
                 Coba Lagi
               </button>
@@ -634,7 +643,7 @@ const LaporanPenerimaanBarang = () => {
             <>
               {tableLoading && (
                 <div className='flex items-center mb-4 text-sm text-gray-500'>
-                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2'></div>
+                  <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
                   Memuat data laporan...
                 </div>
               )}

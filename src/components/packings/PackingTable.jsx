@@ -1,5 +1,5 @@
 import React from 'react';
-import { EyeIcon, PencilIcon, TrashIcon, PlayIcon } from '@heroicons/react/24/solid';
+import { EyeIcon, PencilIcon, TrashIcon, PlayIcon, CheckIcon } from '@heroicons/react/24/solid';
 import { StatusBadge } from '../ui/Badge';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 
@@ -13,7 +13,9 @@ const PackingTable = ({
   onSelectPacking,
   onSelectAllPackings,
   onProcessSelected,
+  onCompleteSelected,
   isProcessing = false,
+  isCompleting = false,
   hasSelectedPackings = false
 }) => {
   const resolveStatusVariant = (status) => {
@@ -75,6 +77,8 @@ const PackingTable = ({
   const isAllSelected = packings.length > 0 && selectedPackings.length === packings.length;
   const isIndeterminate = selectedPackings.length > 0 && selectedPackings.length < packings.length;
 
+  const actionDisabled = isProcessing || isCompleting;
+
   return (
     <div className="space-y-4">
       {/* Process Button */}
@@ -85,14 +89,24 @@ const PackingTable = ({
               {selectedPackings.length} packing dipilih
             </span>
           </div>
-          <button
-            onClick={onProcessSelected}
-            disabled={isProcessing}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <PlayIcon className="h-4 w-4" />
-            <span>{isProcessing ? 'Memproses...' : 'Proses Packing'}</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onProcessSelected}
+              disabled={actionDisabled}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <PlayIcon className="h-4 w-4" />
+              <span>{isProcessing ? 'Memproses...' : 'Proses Packing'}</span>
+            </button>
+            <button
+              onClick={onCompleteSelected}
+              disabled={actionDisabled}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <CheckIcon className="h-4 w-4" />
+              <span>{isCompleting ? 'Menyelesaikan...' : 'Selesaikan Packing'}</span>
+            </button>
+          </div>
         </div>
       )}
 

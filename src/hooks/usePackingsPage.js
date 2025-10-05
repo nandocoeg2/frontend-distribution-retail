@@ -5,7 +5,8 @@ import {
   searchPackings,
   searchPackingsAdvanced,
   deletePacking,
-  processPackings
+  processPackings,
+  completePackings
 } from '../services/packingService';
 import toastService from '../services/toastService';
 import usePaginatedSearch from './usePaginatedSearch';
@@ -64,6 +65,7 @@ const usePackingsPage = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedPackings, setSelectedPackings] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const searchFieldRef = useRef('packing_number');
 
@@ -254,6 +256,41 @@ const usePackingsPage = () => {
     }
   }, [processPackings, refreshPackings, selectedPackings]);
 
+  const handleCompletePackings = useCallback(async () => {
+    if (selectedPackings.length === 0) {
+      toastService.error('Pilih minimal satu packing untuk diselesaikan');
+      return;
+    }
+
+    setIsCompleting(true);
+    try {
+      const response = await completePackings(selectedPackings);
+      if (response?.success) {
+        const {
+          message,
+          completedCount,
+          completedPackingItemsCount,
+        } = response.data || {};
+        const infoMessage = message
+          || `Berhasil menyelesaikan ${completedCount ?? selectedPackings.length} packing`;
+        const detailMessage =
+          completedPackingItemsCount != null
+            ? `${infoMessage} dengan ${completedPackingItemsCount} item`
+            : infoMessage;
+        toastService.success(detailMessage);
+        setSelectedPackings([]);
+        refreshPackings();
+      } else {
+        toastService.error(response?.error?.message || 'Gagal menyelesaikan packing');
+      }
+    } catch (err) {
+      const message = err?.response?.data?.error?.message || err?.message || 'Gagal menyelesaikan packing';
+      toastService.error(message);
+    } finally {
+      setIsCompleting(false);
+    }
+  }, [completePackings, refreshPackings, selectedPackings]);
+
   const deletePackingConfirmation = useDeleteConfirmation(
     deletePackingHandler,
     'Apakah Anda yakin ingin menghapus packing ini?',
@@ -276,6 +313,7 @@ const usePackingsPage = () => {
     selectedPackings,
     setSelectedPackings,
     isProcessing,
+    isCompleting,
     hasSelectedPackings: selectedPackings.length > 0,
     handleSearchChange,
     handleSearchFieldChange,
@@ -293,7 +331,8 @@ const usePackingsPage = () => {
     handleFilterChange,
     handleSelectPacking,
     handleSelectAllPackings,
-    handleProcessPackings
+    handleProcessPackings,
+    handleCompletePackings
   };
 };
 

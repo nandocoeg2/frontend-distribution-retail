@@ -50,3 +50,8 @@ export const processPackings = (ids) => {
   return post(`${API_URL}/process`, { ids });
 };
 
+// Complete packing - change status from PROCESSING PACKING to COMPLETED PACKING
+export const completePackings = (ids) => {
+  return post(`${API_URL}/complete`, { ids });
+};
+

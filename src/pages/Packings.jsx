@@ -47,6 +47,7 @@ const Packings = () => {
     searchFilters,
     selectedPackings,
     isProcessing,
+    isCompleting,
     hasSelectedPackings,
     deletePacking,
     deletePackingConfirmation,
@@ -57,6 +58,7 @@ const Packings = () => {
     openViewModal,
     closeViewModal,
     handleProcessPackings,
+    handleCompletePackings,
     handleFilterChange,
     clearFilters,
     handleSelectPacking,
@@ -73,10 +75,17 @@ const Packings = () => {
   const [activeTab, setActiveTab] = useState('all');
 
   const {
-    showDialog,
-    hideDialog,
+    showDialog: showProcessDialog,
+    hideDialog: hideProcessDialog,
     setLoading: setProcessDialogLoading,
     ConfirmationDialog: ProcessConfirmationDialog,
+  } = useConfirmationDialog();
+
+  const {
+    showDialog: showCompleteDialog,
+    hideDialog: hideCompleteDialog,
+    setLoading: setCompleteDialogLoading,
+    ConfirmationDialog: CompleteConfirmationDialog,
   } = useConfirmationDialog();
 
   const resolvedPagination = pagination || INITIAL_PAGINATION;
@@ -145,7 +154,7 @@ const Packings = () => {
       return;
     }
 
-    showDialog({
+    showProcessDialog({
       title: 'Konfirmasi Proses Packing',
       message: `Apakah Anda yakin ingin memproses ${selectedPackings.length} packing yang dipilih? Status akan berubah dari "PENDING PACKING" menjadi "PROCESSING PACKING".`,
       confirmText: 'Ya, Proses',
@@ -158,11 +167,37 @@ const Packings = () => {
     setProcessDialogLoading(true);
     try {
       await handleProcessPackings();
-      hideDialog();
+      hideProcessDialog();
     } catch (processError) {
       console.error('Error processing packings:', processError);
     } finally {
       setProcessDialogLoading(false);
+    }
+  };
+
+  const handleCompleteSelected = () => {
+    if (!hasSelectedPackings) {
+      return;
+    }
+
+    showCompleteDialog({
+      title: 'Konfirmasi Selesaikan Packing',
+      message: `Apakah Anda yakin ingin menyelesaikan ${selectedPackings.length} packing yang dipilih? Status akan berubah menjadi "COMPLETED PACKING".`,
+      confirmText: 'Ya, Selesaikan',
+      cancelText: 'Batal',
+      type: 'info',
+    });
+  };
+
+  const handleConfirmComplete = async () => {
+    setCompleteDialogLoading(true);
+    try {
+      await handleCompletePackings();
+      hideCompleteDialog();
+    } catch (completeError) {
+      console.error('Error completing packings:', completeError);
+    } finally {
+      setCompleteDialogLoading(false);
     }
   };
 
@@ -228,7 +263,9 @@ const Packings = () => {
                     onSelectPacking={handleSelectPacking}
                     onSelectAllPackings={handleSelectAllPackings}
                     onProcessSelected={handleProcessSelected}
+                    onCompleteSelected={handleCompleteSelected}
                     isProcessing={isProcessing}
+                    isCompleting={isCompleting}
                     hasSelectedPackings={hasSelectedPackings}
                   />
                   <Pagination
@@ -267,6 +304,7 @@ const Packings = () => {
         )}
 
         <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
+        <CompleteConfirmationDialog onConfirm={handleConfirmComplete} />
 
         <BaseConfirmationDialog
           show={deletePackingConfirmation.showConfirm}
