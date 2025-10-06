@@ -8,6 +8,7 @@ import ViewSuratJalanModal from '../components/suratJalan/ViewSuratJalanModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { TabContainer, Tab } from '../components/ui/Tabs';
 import suratJalanService from '../services/suratJalanService';
+import toastService from '../services/toastService';
 import { useConfirmationDialog, ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 
 const TAB_STATUS_CONFIG = {
@@ -378,18 +379,62 @@ const SuratJalan = () => {
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = (suratJalanItem) => {
-    setEditingSuratJalan(suratJalanItem);
-    setShowEditModal(true);
+  const openEditModal = async (suratJalanItem) => {
+    if (!suratJalanItem?.id) {
+      toastService.error('Surat jalan tidak valid');
+      return;
+    }
+
+    try {
+      const response = await suratJalanService.getSuratJalanById(suratJalanItem.id);
+      const detailData = response?.data?.data ?? response?.data;
+
+      if (response?.success === false || !detailData) {
+        toastService.error(response?.message || 'Gagal memuat detail surat jalan');
+        return;
+      }
+
+      setEditingSuratJalan(detailData);
+      setShowEditModal(true);
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      console.error('Error fetching surat jalan detail:', err);
+      toastService.error('Gagal memuat detail surat jalan');
+    }
   };
   const closeEditModal = () => {
     setEditingSuratJalan(null);
     setShowEditModal(false);
   };
 
-  const openViewModal = (suratJalanItem) => {
-    setViewingSuratJalan(suratJalanItem);
-    setShowViewModal(true);
+  const openViewModal = async (suratJalanItem) => {
+    if (!suratJalanItem?.id) {
+      toastService.error('Surat jalan tidak valid');
+      return;
+    }
+
+    try {
+      const response = await suratJalanService.getSuratJalanById(suratJalanItem.id);
+      const detailData = response?.data?.data ?? response?.data;
+
+      if (response?.success === false || !detailData) {
+        toastService.error(response?.message || 'Gagal memuat detail surat jalan');
+        return;
+      }
+
+      setViewingSuratJalan(detailData);
+      setShowViewModal(true);
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      console.error('Error fetching surat jalan detail:', err);
+      toastService.error('Gagal memuat detail surat jalan');
+    }
   };
   const closeViewModal = () => {
     setViewingSuratJalan(null);
