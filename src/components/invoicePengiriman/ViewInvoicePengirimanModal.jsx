@@ -12,11 +12,20 @@ const ViewInvoicePengirimanModal = ({ show, onClose, invoice }) => {
   if (!show || !invoice) return null;
 
   const formatCurrency = (amount) => {
-    if (typeof amount !== 'number') return '-';
+    if (amount === null || amount === undefined || amount === '') return '-';
+    const numericAmount = Number(amount);
+    if (Number.isNaN(numericAmount)) return '-';
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
-    }).format(amount);
+    }).format(numericAmount);
+  };
+
+  const formatPercentage = (value) => {
+    if (value === null || value === undefined || value === '') return '-';
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return '-';
+    return `${numericValue}%`;
   };
 
   const formatDate = (dateString) => {
@@ -150,7 +159,15 @@ const ViewInvoicePengirimanModal = ({ show, onClose, invoice }) => {
                     },
                     {
                       label: 'Purchase Order',
-                      value: invoice.purchaseOrder?.no_po || '-',
+                      value: invoice.purchaseOrder?.no_purchase_order || '-',
+                    },
+                    {
+                      label: 'Customer',
+                      value: invoice.purchaseOrder?.customer?.name || '-',
+                    },
+                    {
+                      label: 'Supplier',
+                      value: invoice.purchaseOrder?.supplier?.name || '-',
                     },
                     { label: 'Invoice ID', value: invoice.id, copyable: true },
                   ]}
@@ -179,9 +196,7 @@ const ViewInvoicePengirimanModal = ({ show, onClose, invoice }) => {
                     },
                     {
                       label: 'PPN (%)',
-                      value: invoice.ppn_percentage
-                        ? `${invoice.ppn_percentage}%`
-                        : '-',
+                      value: formatPercentage(invoice.ppn_percentage),
                     },
                     {
                       label: 'PPN (Rp)',
@@ -256,6 +271,18 @@ const ViewInvoicePengirimanModal = ({ show, onClose, invoice }) => {
                         <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                           Total
                         </th>
+                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                          Diskon (%)
+                        </th>
+                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                          Diskon (Rp)
+                        </th>
+                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                          PPN (%)
+                        </th>
+                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                          PPN (Rp)
+                        </th>
                       </tr>
                     </thead>
                     <tbody className='bg-white divide-y divide-gray-200'>
@@ -281,6 +308,18 @@ const ViewInvoicePengirimanModal = ({ show, onClose, invoice }) => {
                           </td>
                           <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
                             {formatCurrency(detail.total)}
+                          </td>
+                          <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                            {formatPercentage(detail.discount_percentage)}
+                          </td>
+                          <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                            {formatCurrency(detail.discount_rupiah)}
+                          </td>
+                          <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                            {formatPercentage(detail.PPN_pecentage ?? detail.ppn_percentage)}
+                          </td>
+                          <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                            {formatCurrency(detail.ppn_rupiah)}
                           </td>
                         </tr>
                       ))}
