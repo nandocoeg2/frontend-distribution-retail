@@ -44,10 +44,19 @@ const formatCurrency = (value) => {
   }).format(amount);
 };
 
-const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, handleAuthError }) => {
+const EditInvoicePengirimanModal = ({
+  show,
+  onClose,
+  invoice,
+  onInvoiceUpdated,
+  handleAuthError,
+  invoiceLoading = false,
+  invoiceError = null,
+  onRetry,
+}) => {
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   useEffect(() => {
     if (show && invoice) {
@@ -155,7 +164,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
       return;
     }
 
-    setLoading(true);
+    setSubmitLoading(true);
     try {
       const payload = { ...formData };
       numericFields.forEach((field) => {
@@ -183,11 +192,11 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
       const message = err?.response?.data?.error?.message || err?.message || 'Gagal memperbarui invoice pengiriman';
       toastService.error(message);
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
     }
   };
 
-  if (!show || !invoice) return null;
+  if (!show) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 py-10">
@@ -195,8 +204,10 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
         <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Ubah Invoice Pengiriman</p>
-            <h2 className="mt-1 text-2xl font-bold text-gray-900">{invoice.no_invoice || '-'} </h2>
-            <p className="text-sm text-gray-500">Tanggal dibuat: {invoice.tanggal ? new Date(invoice.tanggal).toLocaleDateString('id-ID') : '-'} </p>
+            <h2 className="mt-1 text-2xl font-bold text-gray-900">{invoice?.no_invoice || '-'} </h2>
+            <p className="text-sm text-gray-500">
+              Tanggal dibuat: {invoice?.tanggal ? new Date(invoice.tanggal).toLocaleDateString('id-ID') : '-'}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -207,8 +218,39 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
           </button>
         </div>
 
-        <div className="max-h-[80vh] overflow-y-auto px-6 py-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {invoiceError ? (
+          <div className="px-6 py-12 text-center">
+            <p className="mb-6 text-sm text-red-600">{invoiceError}</p>
+            <div className="flex justify-center space-x-3">
+              {onRetry ? (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Coba Muat Ulang
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        ) : invoiceLoading ? (
+          <div className="flex items-center justify-center px-6 py-24">
+            <div className="w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin" />
+          </div>
+        ) : !invoice ? (
+          <div className="px-6 py-12 text-center text-sm text-gray-600">
+            Data invoice pengiriman tidak tersedia.
+          </div>
+        ) : (
+          <div className="max-h-[80vh] overflow-y-auto px-6 py-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Grand Total</p>
               <p className="mt-2 text-xl font-bold text-blue-700">{formatCurrency(formData.grand_total)}</p>
@@ -238,6 +280,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('deliver_to', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.deliver_to ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Masukkan alamat tujuan"
+                    disabled={submitLoading}
                   />
                   {errors.deliver_to && <p className="mt-1 text-sm text-red-600">{errors.deliver_to}</p>}
                 </div>
@@ -251,6 +294,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     value={formData.expired_date}
                     onChange={(e) => handleChange('expired_date', e.target.value)}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    disabled={submitLoading}
                   />
                 </div>
 
@@ -264,6 +308,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('TOP', e.target.value)}
                     placeholder="Contoh: 30 hari"
                     className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    disabled={submitLoading}
                   />
                 </div>
 
@@ -275,6 +320,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     value={formData.type}
                     onChange={(e) => handleChange('type', e.target.value)}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    disabled={submitLoading}
                   >
                     <option value="PENGIRIMAN">PENGIRIMAN</option>
                     <option value="PEMBAYARAN">PEMBAYARAN</option>
@@ -292,7 +338,8 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                 <button
                   type="button"
                   onClick={recalculateFinancials}
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
+                  disabled={submitLoading}
                 >
                   <ArrowPathIcon className="h-4 w-4" /> Hitung otomatis
                 </button>
@@ -310,6 +357,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('sub_total', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.sub_total ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Subtotal sebelum diskon"
+                    disabled={submitLoading}
                   />
                   {errors.sub_total && <p className="mt-1 text-sm text-red-600">{errors.sub_total}</p>}
                 </div>
@@ -325,6 +373,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('total_discount', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.total_discount ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Diskon total (opsional)"
+                    disabled={submitLoading}
                   />
                   {errors.total_discount && <p className="mt-1 text-sm text-red-600">{errors.total_discount}</p>}
                 </div>
@@ -340,6 +389,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('total_price', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.total_price ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Harga setelah diskon"
+                    disabled={submitLoading}
                   />
                   {errors.total_price && <p className="mt-1 text-sm text-red-600">{errors.total_price}</p>}
                 </div>
@@ -355,6 +405,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('ppn_percentage', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.ppn_percentage ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Persentase PPN"
+                    disabled={submitLoading}
                   />
                   {errors.ppn_percentage && <p className="mt-1 text-sm text-red-600">{errors.ppn_percentage}</p>}
                 </div>
@@ -370,6 +421,7 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('ppn_rupiah', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.ppn_rupiah ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Nilai PPN dalam Rupiah"
+                    disabled={submitLoading}
                   />
                   {errors.ppn_rupiah && <p className="mt-1 text-sm text-red-600">{errors.ppn_rupiah}</p>}
                 </div>
@@ -385,8 +437,32 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                     onChange={(e) => handleChange('grand_total', e.target.value)}
                     className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.grand_total ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Total akhir termasuk PPN"
+                    disabled={submitLoading}
                   />
                   {errors.grand_total && <p className="mt-1 text-sm text-red-600">{errors.grand_total}</p>}
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900">Catatan Sistem</h3>
+              <p className="text-sm text-gray-500">Informasi referensi yang dihasilkan secara otomatis oleh sistem.</p>
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Dibuat Oleh</p>
+                  <p className="mt-1 text-sm font-medium text-gray-800">{invoice?.createdBy || '-'}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Diperbarui Oleh</p>
+                  <p className="mt-1 text-sm font-medium text-gray-800">{invoice?.updatedBy || '-'}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Dibuat Pada</p>
+                  <p className="mt-1 text-sm font-medium text-gray-800">{invoice?.createdAt ? new Date(invoice.createdAt).toLocaleString('id-ID') : '-'}</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Diperbarui Pada</p>
+                  <p className="mt-1 text-sm font-medium text-gray-800">{invoice?.updatedAt ? new Date(invoice.updatedAt).toLocaleString('id-ID') : '-'}</p>
                 </div>
               </div>
             </section>
@@ -396,20 +472,21 @@ const EditInvoicePengirimanModal = ({ show, onClose, invoice, onInvoiceUpdated, 
                 type="button"
                 onClick={onClose}
                 className="rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                disabled={loading}
+                disabled={submitLoading}
               >
                 Batal
               </button>
               <button
                 type="submit"
                 className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
-                disabled={loading}
+                disabled={submitLoading}
               >
-                {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
+                {submitLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
               </button>
             </div>
-          </form>
-        </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

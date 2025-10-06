@@ -12,7 +12,10 @@ const InvoicePengirimanSearch = ({
       return 'date';
     }
     if (searchField === 'type') {
-      return 'select';
+      return 'type-select';
+    }
+    if (searchField === 'status_code') {
+      return 'status-select';
     }
     return 'text';
   };
@@ -38,14 +41,14 @@ const InvoicePengirimanSearch = ({
           <option value='no_invoice'>Nomor Invoice</option>
           <option value='deliver_to'>Tujuan Pengiriman</option>
           <option value='type'>Tipe Invoice</option>
-          <option value='statusPembayaranId'>Status Pembayaran ID</option>
+          <option value='status_code'>Status Invoice</option>
           <option value='purchaseOrderId'>Purchase Order ID</option>
           <option value='tanggal_start'>Tanggal Mulai</option>
           <option value='tanggal_end'>Tanggal Akhir</option>
         </select>
       </div>
       <div className='relative md:col-span-2'>
-        {getInputType() === 'select' ? (
+        {getInputType() === 'type-select' ? (
           <select
             value={searchQuery}
             onChange={handleSearchChange}
@@ -54,6 +57,18 @@ const InvoicePengirimanSearch = ({
             <option value=''>Semua Tipe</option>
             <option value='PENGIRIMAN'>PENGIRIMAN</option>
             <option value='PEMBAYARAN'>PEMBAYARAN</option>
+          </select>
+        ) : getInputType() === 'status-select' ? (
+          <select
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            <option value=''>Semua Status</option>
+            <option value='PENDING INVOICE'>PENDING INVOICE</option>
+            <option value='PAID INVOICE'>PAID INVOICE</option>
+            <option value='OVERDUE INVOICE'>OVERDUE INVOICE</option>
+            <option value='CANCELLED INVOICE'>CANCELLED INVOICE</option>
           </select>
         ) : (
           <input

@@ -87,6 +87,12 @@ const InvoicePengirimanPage = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [viewingInvoice, setViewingInvoice] = useState(null);
+  const [editingInvoiceId, setEditingInvoiceId] = useState(null);
+  const [viewingInvoiceId, setViewingInvoiceId] = useState(null);
+  const [editModalLoading, setEditModalLoading] = useState(false);
+  const [editModalError, setEditModalError] = useState(null);
+  const [viewModalLoading, setViewModalLoading] = useState(false);
+  const [viewModalError, setViewModalError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('all');
   const [tabLoading, setTabLoading] = useState(false);
@@ -120,6 +126,52 @@ const InvoicePengirimanPage = () => {
     }
     return tabLoading;
   }, [activeTab, isSearchActive, loading, tabLoading]);
+
+  const fetchInvoiceDetail = useCallback(
+    async (id) => {
+      try {
+        const response = await invoicePengirimanService.getInvoicePengirimanById(id);
+        if (response?.success === false) {
+          throw new Error(
+            response?.error?.message || 'Gagal memuat detail invoice pengiriman'
+          );
+        }
+        return response?.data ?? response;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+          return null;
+        }
+        throw err;
+      }
+    },
+    [handleAuthError]
+  );
+
+  const loadInvoiceIntoState = useCallback(
+    async (id, setInvoice, setLoadingState, setErrorState) => {
+      if (!id) {
+        return;
+      }
+      setLoadingState(true);
+      setErrorState(null);
+      try {
+        const detail = await fetchInvoiceDetail(id);
+        if (detail) {
+          setInvoice(detail);
+        }
+      } catch (err) {
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Gagal memuat detail invoice pengiriman';
+        setErrorState(message);
+      } finally {
+        setLoadingState(false);
+      }
+    },
+    [fetchInvoiceDetail]
+  );
 
   const getStatusCodeForTab = useCallback(
     (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode ?? null,
@@ -288,23 +340,83 @@ const InvoicePengirimanPage = () => {
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = (invoice) => {
-    setEditingInvoice(invoice);
-    setShowEditModal(true);
-  };
-  const closeEditModal = () => {
-    setEditingInvoice(null);
-    setShowEditModal(false);
-  };
+  const openEditModal = useCallback(
+    (invoice) => {
+      if (!invoice?.id) {
+        console.error('Invoice ID tidak ditemukan untuk modal edit');
+        return;
+      }
+      setEditingInvoiceId(invoice.id);
+      setEditingInvoice(invoice);
+      setShowEditModal(true);
+      loadInvoiceIntoState(
+        invoice.id,
+        setEditingInvoice,
+        setEditModalLoading,
+        setEditModalError
+      );
+    },
+    [loadInvoiceIntoState]
+  );
 
-  const openViewModal = (invoice) => {
-    setViewingInvoice(invoice);
-    setShowViewModal(true);
-  };
-  const closeViewModal = () => {
+  const closeEditModal = useCallback(() => {
+    setEditingInvoice(null);
+    setEditingInvoiceId(null);
+    setEditModalError(null);
+    setEditModalLoading(false);
+    setShowEditModal(false);
+  }, []);
+
+  const reloadEditingInvoice = useCallback(() => {
+    if (!editingInvoiceId) {
+      return;
+    }
+    loadInvoiceIntoState(
+      editingInvoiceId,
+      setEditingInvoice,
+      setEditModalLoading,
+      setEditModalError
+    );
+  }, [editingInvoiceId, loadInvoiceIntoState]);
+
+  const openViewModal = useCallback(
+    (invoice) => {
+      if (!invoice?.id) {
+        console.error('Invoice ID tidak ditemukan untuk modal view');
+        return;
+      }
+      setViewingInvoiceId(invoice.id);
+      setViewingInvoice(invoice);
+      setShowViewModal(true);
+      loadInvoiceIntoState(
+        invoice.id,
+        setViewingInvoice,
+        setViewModalLoading,
+        setViewModalError
+      );
+    },
+    [loadInvoiceIntoState]
+  );
+
+  const closeViewModal = useCallback(() => {
     setViewingInvoice(null);
+    setViewingInvoiceId(null);
+    setViewModalError(null);
+    setViewModalLoading(false);
     setShowViewModal(false);
-  };
+  }, []);
+
+  const reloadViewingInvoice = useCallback(() => {
+    if (!viewingInvoiceId) {
+      return;
+    }
+    loadInvoiceIntoState(
+      viewingInvoiceId,
+      setViewingInvoice,
+      setViewModalLoading,
+      setViewModalError
+    );
+  }, [loadInvoiceIntoState, viewingInvoiceId]);
 
   const handleInvoiceAdded = (newInvoice) => {
     if (!newInvoice) {
@@ -443,12 +555,18 @@ const InvoicePengirimanPage = () => {
         invoice={editingInvoice}
         onInvoiceUpdated={handleInvoiceUpdated}
         handleAuthError={handleAuthError}
+        invoiceLoading={editModalLoading}
+        invoiceError={editModalError}
+        onRetry={reloadEditingInvoice}
       />
 
       <ViewInvoicePengirimanModal
         show={showViewModal}
         onClose={closeViewModal}
         invoice={viewingInvoice}
+        loading={viewModalLoading}
+        error={viewModalError}
+        onRetry={reloadViewingInvoice}
       />
 
       <ConfirmationDialog
