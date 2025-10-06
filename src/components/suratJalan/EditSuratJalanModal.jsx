@@ -84,9 +84,54 @@ const EditSuratJalanModal = ({ show, onClose, suratJalan, onSuratJalanUpdated, h
     setIsSubmitting(true);
 
     try {
+      // Normalize payload to match API contract
+      const sanitizedChecklist = (() => {
+        if (!formData.checklistSuratJalan) {
+          return null;
+        }
+
+        const { id, suratJalanId, createdAt, updatedAt, ...restChecklist } = formData.checklistSuratJalan;
+        let tanggalValue = restChecklist.tanggal;
+
+        if (tanggalValue) {
+          if (!tanggalValue.endsWith('Z')) {
+            if (tanggalValue.length === 16) {
+              tanggalValue += ':00Z';
+            } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(tanggalValue)) {
+              tanggalValue += '.000Z';
+            }
+          }
+          tanggalValue = new Date(tanggalValue).toISOString();
+        }
+
+        return {
+          ...restChecklist,
+          tanggal: tanggalValue || null
+        };
+      })();
+
+      const sanitizedDetails = (formData.suratJalanDetails || []).map(detail => {
+        const { items, suratJalanDetailItems, createdAt, updatedAt, suratJalanId, ...detailRest } = detail;
+        const detailItems = items || suratJalanDetailItems || [];
+
+        const normalizedItems = detailItems.map(({ id, suratJalanDetailId, createdAt: itemCreatedAt, updatedAt: itemUpdatedAt, ...itemRest }) => ({
+          ...itemRest
+        }));
+
+        return {
+          ...detailRest,
+          items: normalizedItems
+        };
+      });
+
       const submitData = {
-        ...formData,
-        // For now, keep existing details, can be enhanced later
+        no_surat_jalan: formData.no_surat_jalan,
+        deliver_to: formData.deliver_to,
+        PIC: formData.PIC,
+        alamat_tujuan: formData.alamat_tujuan,
+        invoiceId: formData.invoiceId || null,
+        checklistSuratJalan: sanitizedChecklist,
+        suratJalanDetails: sanitizedDetails
       };
 
       const result = await suratJalanService.updateSuratJalan(suratJalan.id, submitData);
