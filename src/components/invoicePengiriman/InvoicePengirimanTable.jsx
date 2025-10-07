@@ -11,6 +11,8 @@ const InvoicePengirimanTable = ({
   onDelete,
   onView,
   searchQuery,
+  onTogglePenagihan,
+  creatingPenagihanId,
 }) => {
   const formatCurrency = (amount) => {
     // grand_total: '1000';
@@ -39,6 +41,9 @@ const InvoicePengirimanTable = ({
       <table className='min-w-full divide-y divide-gray-200'>
         <thead>
           <tr>
+            <th className='px-4 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
+              Penagihan
+            </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               No Invoice
             </th>
@@ -68,6 +73,28 @@ const InvoicePengirimanTable = ({
           ) : (
             invoices.map((invoice) => (
               <tr key={invoice.id} className='hover:bg-gray-50'>
+                <td className='px-4 py-4 text-center whitespace-nowrap'>
+                  <div className='flex items-center justify-center'>
+                    {creatingPenagihanId === invoice.id ? (
+                      <span className='inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin'></span>
+                    ) : (
+                      <input
+                        type='checkbox'
+                        className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:cursor-not-allowed'
+                        checked={Boolean(invoice.invoicePenagihanId)}
+                        disabled={
+                          Boolean(invoice.invoicePenagihanId) ||
+                          !onTogglePenagihan
+                        }
+                        onChange={() => {
+                          if (!invoice.invoicePenagihanId && onTogglePenagihan) {
+                            onTogglePenagihan(invoice);
+                          }
+                        }}
+                      />
+                    )}
+                  </div>
+                </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {invoice.no_invoice}

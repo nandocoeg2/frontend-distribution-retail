@@ -150,6 +150,29 @@ const useInvoicePengiriman = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
+  const createInvoicePenagihan = useCallback(async (id, payload = {}) => {
+    try {
+      const result = await invoicePengirimanService.createInvoicePenagihan(id, payload);
+      if (result?.success === false) {
+        throw new Error(result?.error?.message || 'Failed to create invoice penagihan');
+      }
+      toastService.success('Invoice penagihan berhasil dibuat');
+      await refreshAfterMutation();
+      return result?.data;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
+      }
+      const apiMessage =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message;
+      const message = apiMessage || err?.message || 'Failed to create invoice penagihan';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler, refreshAfterMutation]);
+
   const updateInvoicePengiriman = useCallback(async (id, updateData) => {
     try {
       const result = await invoicePengirimanService.updateInvoicePengiriman(id, updateData);
@@ -223,6 +246,7 @@ const useInvoicePengiriman = () => {
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     createInvoice: createInvoicePengiriman,
+    createInvoicePenagihan,
     updateInvoice: updateInvoicePengiriman,
     deleteInvoiceConfirmation: deleteInvoicePengirimanConfirmation,
     fetchInvoicePengiriman,

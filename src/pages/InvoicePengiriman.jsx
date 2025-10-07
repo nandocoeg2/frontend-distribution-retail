@@ -77,6 +77,7 @@ const InvoicePengirimanPage = () => {
     handleSearchFieldChange,
     handlePageChange,
     handleLimitChange,
+    createInvoicePenagihan,
     deleteInvoiceConfirmation,
     fetchInvoicePengiriman,
     handleAuthError,
@@ -98,6 +99,13 @@ const InvoicePengirimanPage = () => {
   const [tabLoading, setTabLoading] = useState(false);
   const [tabData, setTabData] = useState([]);
   const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
+  const [creatingInvoicePenagihanId, setCreatingInvoicePenagihanId] =
+    useState(null);
+  const [createPenagihanDialog, setCreatePenagihanDialog] = useState({
+    show: false,
+    invoice: null,
+    loading: false,
+  });
 
   const isSearchActive = useMemo(() => {
     if (typeof searchQuery !== 'string') {
@@ -337,6 +345,72 @@ const InvoicePengirimanPage = () => {
     tabPagination,
   ]);
 
+  const handleInvoicePenagihanToggle = useCallback(
+    (invoice) => {
+      if (!invoice?.id || invoice?.invoicePenagihanId) {
+        return;
+      }
+      setCreatePenagihanDialog({
+        show: true,
+        invoice,
+        loading: false,
+      });
+    },
+    []
+  );
+
+  const closeCreatePenagihanDialog = useCallback(() => {
+    setCreatePenagihanDialog({
+      show: false,
+      invoice: null,
+      loading: false,
+    });
+  }, []);
+
+  const confirmCreateInvoicePenagihan = useCallback(async () => {
+    setCreatePenagihanDialog((prev) => ({
+      ...prev,
+      loading: true,
+    }));
+
+    const invoiceId = createPenagihanDialog.invoice?.id;
+
+    if (!invoiceId) {
+      setCreatePenagihanDialog({
+        show: false,
+        invoice: null,
+        loading: false,
+      });
+      return;
+    }
+
+    try {
+      setCreatingInvoicePenagihanId(invoiceId);
+      await createInvoicePenagihan(invoiceId);
+      refreshActiveTab();
+      setCreatePenagihanDialog({
+        show: false,
+        invoice: null,
+        loading: false,
+      });
+    } catch (err) {
+      console.error(
+        'Failed to create invoice penagihan from invoice pengiriman:',
+        err
+      );
+      setCreatePenagihanDialog((prev) => ({
+        ...prev,
+        loading: false,
+      }));
+    } finally {
+      setCreatingInvoicePenagihanId(null);
+    }
+  }, [
+    createInvoicePenagihan,
+    createPenagihanDialog.invoice?.id,
+    refreshActiveTab,
+  ]);
+
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
@@ -537,6 +611,8 @@ const InvoicePengirimanPage = () => {
               onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
               onView={openViewModal}
               searchQuery={searchQuery}
+              onTogglePenagihan={handleInvoicePenagihanToggle}
+              creatingPenagihanId={creatingInvoicePenagihanId}
             />
           )}
         </div>
@@ -579,6 +655,18 @@ const InvoicePengirimanPage = () => {
         confirmText='Hapus'
         cancelText='Batal'
         loading={deleteInvoiceConfirmation.loading}
+      />
+
+      <ConfirmationDialog
+        show={createPenagihanDialog.show}
+        onClose={closeCreatePenagihanDialog}
+        onConfirm={confirmCreateInvoicePenagihan}
+        title='Buat Invoice Penagihan'
+        message={`Buat invoice penagihan dari ${createPenagihanDialog.invoice?.no_invoice || 'invoice ini'}?`}
+        confirmText='Ya, Buat'
+        cancelText='Batal'
+        type='warning'
+        loading={createPenagihanDialog.loading}
       />
     </div>
   );

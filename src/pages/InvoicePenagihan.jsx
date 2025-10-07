@@ -63,7 +63,9 @@ const InvoicePenagihanPage = () => {
         }
         const exists = prev.some((item) => item.id === createdInvoice.id);
         if (exists) {
-          return prev.map((item) => (item.id === createdInvoice.id ? createdInvoice : item));
+          return prev.map((item) =>
+            item.id === createdInvoice.id ? createdInvoice : item
+          );
         }
         return [...prev, createdInvoice];
       });
@@ -75,7 +77,9 @@ const InvoicePenagihanPage = () => {
     const updatedInvoice = await updateInvoice(id, payload);
     if (updatedInvoice) {
       setInvoicePenagihan((prev) =>
-        prev.map((invoice) => (invoice.id === updatedInvoice.id ? updatedInvoice : invoice)),
+        prev.map((invoice) =>
+          invoice.id === updatedInvoice.id ? updatedInvoice : invoice
+        )
       );
     }
     return updatedInvoice;
@@ -84,18 +88,18 @@ const InvoicePenagihanPage = () => {
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600'></div>
+        <div className='w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin'></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className='rounded-lg border border-red-200 bg-red-50 p-4'>
+      <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
         <p className='text-red-800'>Terjadi kesalahan: {error}</p>
         <button
           onClick={() => fetchInvoicePenagihan()}
-          className='mt-2 rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700'
+          className='px-4 py-2 mt-2 text-white bg-red-600 rounded hover:bg-red-700'
         >
           Coba Lagi
         </button>
@@ -105,21 +109,26 @@ const InvoicePenagihanPage = () => {
 
   return (
     <div className='p-6'>
-      <div className='overflow-hidden rounded-lg bg-white shadow'>
+      <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
+          <div className='flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between'>
             <div>
-              <h3 className='text-lg font-medium text-gray-900'>Daftar Invoice Penagihan</h3>
-              <p className='text-sm text-gray-500'>Kelola invoice penagihan termasuk informasi pelanggan, status, serta rincian pembayaran.</p>
+              <h3 className='text-lg font-medium text-gray-900'>
+                Daftar Invoice Penagihan
+              </h3>
+              <p className='text-sm text-gray-500'>
+                Kelola invoice penagihan termasuk informasi pelanggan, status,
+                serta rincian pembayaran.
+              </p>
             </div>
-            <div className='flex justify-end'>
+            {/* <div className='flex justify-end'>
               <button
                 onClick={openAddModal}
-                className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700'
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
               >
                 Tambah Invoice Penagihan
               </button>
-            </div>
+            </div> */}
           </div>
 
           <InvoicePenagihanSearch

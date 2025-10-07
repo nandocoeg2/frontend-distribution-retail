@@ -81,6 +81,16 @@ class InvoicePengirimanService {
     }
   }
 
+  async createInvoicePenagihan(id, payload = {}) {
+    try {
+      const response = await this.api.post(`/${id}/create-penagihan`, payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating invoice penagihan from invoice pengiriman:', error);
+      throw error;
+    }
+  }
+
   async deleteInvoicePengiriman(id) {
     try {
       const response = await this.api.delete(`/${id}`);
