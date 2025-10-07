@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { AccordionItem, InfoTable } from '../ui';
+import printInvoicePengiriman, {
+  exportInvoicePengirimanToPDF,
+} from './PrintInvoicePengiriman';
 
 const ViewInvoicePengirimanModal = ({
   show,
@@ -58,6 +61,18 @@ const ViewInvoicePengirimanModal = ({
   const hasError = Boolean(error);
   const detailCount = invoice?.invoiceDetails?.length ?? 0;
 
+  const handlePrintInvoice = () => {
+    if (invoice && !hasError && !isLoading) {
+      printInvoicePengiriman(invoice);
+    }
+  };
+
+  const handleExportPdf = () => {
+    if (invoice && !hasError && !isLoading) {
+      exportInvoicePengirimanToPDF(invoice);
+    }
+  };
+
   const tabs = [
     { id: 'overview', label: 'Ringkasan', icon: '[O]' },
     {
@@ -85,25 +100,69 @@ const ViewInvoicePengirimanModal = ({
               <p className='text-sm text-gray-600'>{invoice?.no_invoice || '-'}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className='p-2 transition-colors rounded-lg hover:bg-gray-100'
-            aria-label='Tutup detail invoice pengiriman'
-          >
-            <svg
-              className='w-6 h-6 text-gray-500'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
+          <div className='flex items-center space-x-2'>
+            <button
+              type='button'
+              onClick={handleExportPdf}
+              disabled={hasError || isLoading || !invoice}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M6 18L18 6M6 6l12 12'
-              />
-            </svg>
-          </button>
+              <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M12 11.5v9m0 0l-3.5-3.5M12 20.5l3.5-3.5M6 15v-2a2 2 0 012-2h2m4 0h2a2 2 0 012 2v2m1-5V6a2 2 0 00-2-2H7a2 2 0 00-2 2v4'
+                />
+              </svg>
+              <span>Export PDF</span>
+            </button>
+            <button
+              type='button'
+              onClick={handlePrintInvoice}
+              disabled={hasError || isLoading || !invoice}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60'
+            >
+              <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M6 9V5a2 2 0 012-2h8a2 2 0 012 2v4m-12 0h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2zm2 7h8'
+                />
+              </svg>
+              <span>Print Invoice</span>
+            </button>
+            <button
+              onClick={onClose}
+              className='p-2 transition-colors rounded-lg hover:bg-gray-100'
+              aria-label='Tutup detail invoice pengiriman'
+            >
+              <svg
+                className='w-6 h-6 text-gray-500'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M6 18L18 6M6 6l12 12'
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className='border-b border-gray-200 bg-gray-50'>

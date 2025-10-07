@@ -175,24 +175,46 @@ const ViewPackingModal = ({ packing, onClose }) => {
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className='p-2 transition-colors rounded-lg hover:bg-gray-100'
-          >
-            <svg
-              className='w-6 h-6 text-gray-500'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
+          <div className='flex items-center space-x-2'>
+            <button
+              type='button'
+              onClick={handleExportPDF}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700'
             >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth={2}
-                d='M6 18L18 6M6 6l12 12'
-              />
-            </svg>
-          </button>
+              <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                />
+              </svg>
+              <span>Print Stiker</span>
+            </button>
+            <button
+              onClick={onClose}
+              className='p-2 transition-colors rounded-lg hover:bg-gray-100'
+            >
+              <svg
+                className='w-6 h-6 text-gray-500'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M6 18L18 6M6 6l12 12'
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Tabs Navigation */}
@@ -398,44 +420,6 @@ const ViewPackingModal = ({ packing, onClose }) => {
                     <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
                       {packing.packingItems?.length || 0} items
                     </div>
-                    {/* <button
-                      onClick={handlePrintSticker}
-                      className='flex items-center px-4 py-2 space-x-2 font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700'
-                    >
-                      <svg
-                        className='w-5 h-5'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z'
-                        />
-                      </svg>
-                      <span>Print Sticker</span>
-                    </button> */}
-                    <button
-                      onClick={handleExportPDF}
-                      className='flex items-center px-4 py-2 space-x-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700'
-                    >
-                      <svg
-                        className='w-5 h-5'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                        />
-                      </svg>
-                      <span>Print Stiker</span>
-                    </button>
                   </div>
                 </div>
 
