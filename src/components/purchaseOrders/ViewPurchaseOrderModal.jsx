@@ -267,7 +267,9 @@ const ViewPurchaseOrderModal = ({
                           component: (
                             <StatusBadge
                               status={order.status?.status_name}
-                              variant={resolveStatusVariant(order.status?.status_name)}
+                              variant={resolveStatusVariant(
+                                order.status?.status_name
+                              )}
                               size='sm'
                               dot
                             />
@@ -295,9 +297,8 @@ const ViewPurchaseOrderModal = ({
                           label: 'Invoice Pengiriman',
                           value: order.invoicePengiriman,
                         },
-                        { label: 'Surat PO', value: order.suratPO },
                         {
-                          label: 'Surat Penagihan',
+                          label: 'Packing List',
                           value: order.suratPenagihan,
                         },
                       ]}
