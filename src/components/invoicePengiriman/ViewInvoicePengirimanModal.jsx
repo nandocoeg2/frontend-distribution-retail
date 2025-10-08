@@ -22,7 +22,6 @@ const ViewInvoicePengirimanModal = ({
   if (!show) return null;
 
   const formatCurrency = (amount) => {
-    if (typeof amount !== 'number') return '-';
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -97,7 +96,9 @@ const ViewInvoicePengirimanModal = ({
               <h2 className='text-2xl font-bold text-gray-900'>
                 Detail Invoice Pengiriman
               </h2>
-              <p className='text-sm text-gray-600'>{invoice?.no_invoice || '-'}</p>
+              <p className='text-sm text-gray-600'>
+                {invoice?.no_invoice || '-'}
+              </p>
             </div>
           </div>
           <div className='flex items-center space-x-2'>
@@ -218,7 +219,7 @@ const ViewInvoicePengirimanModal = ({
               <div className='w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin' />
             </div>
           ) : !invoice ? (
-            <div className='px-4 py-12 text-center text-sm text-gray-600'>
+            <div className='px-4 py-12 text-sm text-center text-gray-600'>
               Data invoice pengiriman tidak tersedia.
             </div>
           ) : (
@@ -234,7 +235,10 @@ const ViewInvoicePengirimanModal = ({
                     <InfoTable
                       data={[
                         { label: 'Nomor Invoice', value: invoice.no_invoice },
-                        { label: 'Tanggal', value: formatDate(invoice.tanggal) },
+                        {
+                          label: 'Tanggal',
+                          value: formatDate(invoice.tanggal),
+                        },
                         {
                           label: 'Jatuh Tempo',
                           value: formatDate(invoice.expired_date),
@@ -250,13 +254,17 @@ const ViewInvoicePengirimanModal = ({
                         },
                         {
                           label: 'Status Pembayaran',
-                          value: invoice.statusPembayaran?.name || '-',
+                          value: invoice.statusPembayaran?.status_code || '-',
                         },
                         {
                           label: 'Purchase Order',
-                          value: invoice.purchaseOrder?.no_purchase_order || '-',
+                          value: invoice.purchaseOrder?.po_number || '-',
                         },
-                        { label: 'Invoice ID', value: invoice.id, copyable: true },
+                        {
+                          label: 'Invoice ID',
+                          value: invoice.id,
+                          copyable: true,
+                        },
                       ]}
                     />
                   </AccordionItem>
@@ -315,7 +323,10 @@ const ViewInvoicePengirimanModal = ({
                           label: 'Diperbarui Pada',
                           value: formatDateTime(invoice.updatedAt),
                         },
-                        { label: 'Dibuat Oleh', value: invoice.createdBy || '-' },
+                        {
+                          label: 'Dibuat Oleh',
+                          value: invoice.createdBy || '-',
+                        },
                         {
                           label: 'Diperbarui Oleh',
                           value: invoice.updatedBy || '-',
@@ -337,7 +348,8 @@ const ViewInvoicePengirimanModal = ({
                     </div>
                   </div>
 
-                  {invoice.invoiceDetails && invoice.invoiceDetails.length > 0 ? (
+                  {invoice.invoiceDetails &&
+                  invoice.invoiceDetails.length > 0 ? (
                     <div className='overflow-x-auto bg-white border border-gray-200 rounded-lg'>
                       <table className='min-w-full divide-y divide-gray-200'>
                         <thead className='bg-gray-50'>
