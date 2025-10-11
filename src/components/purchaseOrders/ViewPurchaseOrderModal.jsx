@@ -503,7 +503,7 @@ const ViewPurchaseOrderModal = ({
 
                   {/* Packing List */}
                   <AccordionItem
-                    title='Packing List'
+                    title='Packing'
                     isExpanded={expandedSections.documentsPacking}
                     onToggle={() => toggleSection('documentsPacking')}
                     bgColor='bg-gradient-to-r from-purple-50 to-purple-100'
