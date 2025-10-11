@@ -27,8 +27,10 @@ const ViewPurchaseOrderModal = ({
     basicInfo: true,
     customerSupplier: false,
     statusInfo: false,
-    documentsInfo: false,
     metaInfo: false,
+    documentsSuratJalan: true,
+    documentsInvoice: false,
+    documentsPacking: false,
   });
 
   if (!isOpen) return null;
@@ -66,9 +68,7 @@ const ViewPurchaseOrderModal = ({
         return numbers.join(', ');
       }
 
-      return `${suratJalan.length} record${
-        suratJalan.length > 1 ? 's' : ''
-      }`;
+      return `${suratJalan.length} record${suratJalan.length > 1 ? 's' : ''}`;
     }
 
     return (
@@ -119,6 +119,7 @@ const ViewPurchaseOrderModal = ({
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📋' },
     { id: 'details', label: 'Order Details', icon: '📦' },
+    { id: 'documents', label: 'Documents Information', icon: '📄' },
     {
       id: 'files',
       label: 'Attached Files',
@@ -308,31 +309,6 @@ const ViewPurchaseOrderModal = ({
                     />
                   </AccordionItem>
 
-                  {/* Documents Information */}
-                  <AccordionItem
-                    title='Documents Information'
-                    isExpanded={expandedSections.documentsInfo}
-                    onToggle={() => toggleSection('documentsInfo')}
-                    bgColor='bg-gradient-to-r from-purple-50 to-purple-100'
-                  >
-                    <InfoTable
-                      data={[
-                        {
-                          label: 'Surat Jalan',
-                          value: formatSuratJalanValue(order.suratJalan),
-                        },
-                        {
-                          label: 'Invoice Pengiriman',
-                          value: order.invoicePengiriman || 'Not assigned',
-                        },
-                        {
-                          label: 'Packing List',
-                          value: order.packing?.packing_number || 'Not assigned',
-                        },
-                      ]}
-                    />
-                  </AccordionItem>
-
                   {/* System Information */}
                   <AccordionItem
                     title='System Information'
@@ -368,6 +344,214 @@ const ViewPurchaseOrderModal = ({
                       details={order.purchaseOrderDetails}
                     />
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'documents' && (
+                <div className='space-y-6'>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h3 className='text-xl font-semibold text-gray-900'>
+                      Documents Information
+                    </h3>
+                  </div>
+
+                  {/* Surat Jalan */}
+                  <AccordionItem
+                    title='Surat Jalan'
+                    isExpanded={expandedSections.documentsSuratJalan}
+                    onToggle={() => toggleSection('documentsSuratJalan')}
+                    bgColor='bg-gradient-to-r from-blue-50 to-blue-100'
+                  >
+                    {order.suratJalan ? (
+                      <InfoTable
+                        data={[
+                          {
+                            label: 'No. Surat Jalan',
+                            value: order.suratJalan.no_surat_jalan,
+                            copyable: true,
+                          },
+                          {
+                            label: 'Deliver To',
+                            value: order.suratJalan.deliver_to,
+                          },
+                          {
+                            label: 'PIC',
+                            value: order.suratJalan.PIC,
+                          },
+                          {
+                            label: 'Alamat Tujuan',
+                            value: order.suratJalan.alamat_tujuan,
+                          },
+                          {
+                            label: 'Status',
+                            component: (
+                              <StatusBadge
+                                status={order.suratJalan.status?.status_name}
+                                variant={resolveStatusVariant(
+                                  order.suratJalan.status?.status_name
+                                )}
+                                size='sm'
+                                dot
+                              />
+                            ),
+                          },
+                          {
+                            label: 'Is Printed',
+                            value: order.suratJalan.is_printed ? 'Yes' : 'No',
+                          },
+                          {
+                            label: 'Print Counter',
+                            value: order.suratJalan.print_counter || 0,
+                          },
+                          {
+                            label: 'Created At',
+                            value: formatDateTime(order.suratJalan.createdAt),
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <div className='py-8 text-center text-gray-500'>
+                        <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
+                          <span className='text-2xl'>📄</span>
+                        </div>
+                        <p>No Surat Jalan available</p>
+                      </div>
+                    )}
+                  </AccordionItem>
+
+                  {/* Invoice Pengiriman */}
+                  <AccordionItem
+                    title='Invoice Pengiriman'
+                    isExpanded={expandedSections.documentsInvoice}
+                    onToggle={() => toggleSection('documentsInvoice')}
+                    bgColor='bg-gradient-to-r from-green-50 to-green-100'
+                  >
+                    {order.invoice ? (
+                      <InfoTable
+                        data={[
+                          {
+                            label: 'No. Invoice',
+                            value: order.invoice.no_invoice,
+                            copyable: true,
+                          },
+                          {
+                            label: 'Deliver To',
+                            value: order.invoice.deliver_to,
+                          },
+                          {
+                            label: 'Tanggal',
+                            value: formatDate(order.invoice.tanggal),
+                          },
+                          {
+                            label: 'Sub Total',
+                            value: `Rp ${parseInt(order.invoice.sub_total).toLocaleString('id-ID')}`,
+                          },
+                          {
+                            label: 'Total Discount',
+                            value: `Rp ${parseInt(order.invoice.total_discount).toLocaleString('id-ID')}`,
+                          },
+                          {
+                            label: 'Total Price',
+                            value: `Rp ${parseInt(order.invoice.total_price).toLocaleString('id-ID')}`,
+                          },
+                          {
+                            label: 'Grand Total',
+                            value: `Rp ${parseInt(order.invoice.grand_total).toLocaleString('id-ID')}`,
+                          },
+                          {
+                            label: 'PPN Percentage',
+                            value: `${order.invoice.ppn_percentage}%`,
+                          },
+                          {
+                            label: 'TOP',
+                            value: `${order.invoice.TOP} hari`,
+                          },
+                          {
+                            label: 'Type',
+                            value: order.invoice.type,
+                          },
+                          {
+                            label: 'Status Pembayaran',
+                            component: (
+                              <StatusBadge
+                                status={
+                                  order.invoice.statusPembayaran?.status_name
+                                }
+                                variant={resolveStatusVariant(
+                                  order.invoice.statusPembayaran?.status_name
+                                )}
+                                size='sm'
+                                dot
+                              />
+                            ),
+                          },
+                          {
+                            label: 'Created At',
+                            value: formatDateTime(order.invoice.createdAt),
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <div className='py-8 text-center text-gray-500'>
+                        <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
+                          <span className='text-2xl'>🧾</span>
+                        </div>
+                        <p>No Invoice available</p>
+                      </div>
+                    )}
+                  </AccordionItem>
+
+                  {/* Packing List */}
+                  <AccordionItem
+                    title='Packing List'
+                    isExpanded={expandedSections.documentsPacking}
+                    onToggle={() => toggleSection('documentsPacking')}
+                    bgColor='bg-gradient-to-r from-purple-50 to-purple-100'
+                  >
+                    {order.packing ? (
+                      <InfoTable
+                        data={[
+                          {
+                            label: 'Packing Number',
+                            value: order.packing.packing_number,
+                            copyable: true,
+                          },
+                          {
+                            label: 'Tanggal Packing',
+                            value: formatDate(order.packing.tanggal_packing),
+                          },
+                          {
+                            label: 'Total Items',
+                            value: order.packing.packingItems?.length || 0,
+                          },
+                          {
+                            label: 'Status',
+                            component: (
+                              <StatusBadge
+                                status={order.packing.status?.status_name}
+                                variant={resolveStatusVariant(
+                                  order.packing.status?.status_name
+                                )}
+                                size='sm'
+                                dot
+                              />
+                            ),
+                          },
+                          {
+                            label: 'Created At',
+                            value: formatDateTime(order.packing.createdAt),
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <div className='py-8 text-center text-gray-500'>
+                        <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
+                          <span className='text-2xl'>📦</span>
+                        </div>
+                        <p>No Packing List available</p>
+                      </div>
+                    )}
+                  </AccordionItem>
                 </div>
               )}
 
