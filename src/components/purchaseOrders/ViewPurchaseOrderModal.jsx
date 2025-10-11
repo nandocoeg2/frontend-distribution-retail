@@ -231,7 +231,6 @@ const ViewPurchaseOrderModal = ({
                           label: 'TOP',
                           value: order.termOfPayment.kode_top,
                         },
-                        { label: 'PO ID', value: order.id, copyable: true },
                       ]}
                     />
                   </AccordionItem>
@@ -245,11 +244,6 @@ const ViewPurchaseOrderModal = ({
                   >
                     <InfoTable
                       data={[
-                        {
-                          label: 'Customer ID',
-                          value: order.customerId,
-                          copyable: true,
-                        },
                         {
                           label: 'Customer Name',
                           value: order.customer?.namaCustomer,
@@ -265,11 +259,6 @@ const ViewPurchaseOrderModal = ({
                         {
                           label: 'Customer Phone',
                           value: order.customer?.phoneNumber,
-                        },
-                        {
-                          label: 'Supplier ID',
-                          value: order.supplierId || 'Not assigned',
-                          copyable: order.supplierId ? true : false,
                         },
                         {
                           label: 'Supplier Name',
@@ -325,6 +314,18 @@ const ViewPurchaseOrderModal = ({
                         {
                           label: 'Updated At',
                           value: formatDateTime(order.updatedAt),
+                        },
+                        { label: 'PO ID', value: order.id, copyable: true },
+
+                        {
+                          label: 'Customer ID',
+                          value: order.customerId,
+                          copyable: true,
+                        },
+                        {
+                          label: 'Supplier ID',
+                          value: order.supplierId || 'Not assigned',
+                          copyable: order.supplierId ? true : false,
                         },
                       ]}
                     />
