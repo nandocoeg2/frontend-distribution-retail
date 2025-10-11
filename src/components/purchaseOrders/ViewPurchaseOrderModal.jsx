@@ -54,6 +54,31 @@ const ViewPurchaseOrderModal = ({
     });
   };
 
+  const formatSuratJalanValue = (suratJalan) => {
+    if (!suratJalan) return 'Not assigned';
+
+    if (Array.isArray(suratJalan)) {
+      const numbers = suratJalan
+        .map((item) => item?.no_surat_jalan || item?.noSuratJalan)
+        .filter(Boolean);
+
+      if (numbers.length > 0) {
+        return numbers.join(', ');
+      }
+
+      return `${suratJalan.length} record${
+        suratJalan.length > 1 ? 's' : ''
+      }`;
+    }
+
+    return (
+      suratJalan.no_surat_jalan ||
+      suratJalan.noSuratJalan ||
+      suratJalan.id ||
+      'Not assigned'
+    );
+  };
+
   const toggleSection = (section) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -292,14 +317,17 @@ const ViewPurchaseOrderModal = ({
                   >
                     <InfoTable
                       data={[
-                        { label: 'Surat Jalan', value: order.suratJalan },
+                        {
+                          label: 'Surat Jalan',
+                          value: formatSuratJalanValue(order.suratJalan),
+                        },
                         {
                           label: 'Invoice Pengiriman',
-                          value: order.invoicePengiriman,
+                          value: order.invoicePengiriman || 'Not assigned',
                         },
                         {
                           label: 'Packing List',
-                          value: order.suratPenagihan,
+                          value: order.packing?.packing_number || 'Not assigned',
                         },
                       ]}
                     />
