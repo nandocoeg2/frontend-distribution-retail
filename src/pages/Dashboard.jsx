@@ -6,7 +6,11 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import Card, { StatCard, CardHeader } from '../components/ui/Card.jsx';
 import { LoadingState } from '../components/ui/Loading.jsx';
 import { StatusBadge } from '../components/ui/Badge.jsx';
-import { formatCurrency, formatDate, formatDateTime } from '../utils/formatUtils';
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+} from '../utils/formatUtils';
 import {
   getOperationalDashboard,
   getFinancialDashboard,
@@ -90,7 +94,11 @@ const formatDateRangeLabel = (start, end) => {
 const getStatusVariant = (statusCode = '') => {
   const normalized = statusCode.toUpperCase();
 
-  if (normalized.includes('DELIVERED') || normalized.includes('PAID') || normalized.includes('COMPLETE')) {
+  if (
+    normalized.includes('DELIVERED') ||
+    normalized.includes('PAID') ||
+    normalized.includes('COMPLETE')
+  ) {
     return 'success';
   }
 
@@ -172,15 +180,18 @@ const Dashboard = () => {
     setUserData(user);
   }, [navigate]);
 
-  const ensureValidDateRange = useCallback((scope) => {
-    if (startDate && endDate && startDate > endDate) {
-      const message = 'Tanggal mulai tidak boleh setelah tanggal akhir.';
-      setErrorState((prev) => ({ ...prev, [scope]: message }));
-      toastService.error(message);
-      return false;
-    }
-    return true;
-  }, [startDate, endDate]);
+  const ensureValidDateRange = useCallback(
+    (scope) => {
+      if (startDate && endDate && startDate > endDate) {
+        const message = 'Tanggal mulai tidak boleh setelah tanggal akhir.';
+        setErrorState((prev) => ({ ...prev, [scope]: message }));
+        toastService.error(message);
+        return false;
+      }
+      return true;
+    },
+    [startDate, endDate]
+  );
 
   const fetchOperational = useCallback(async () => {
     setErrorState((prev) => ({ ...prev, operational: '' }));
@@ -192,14 +203,21 @@ const Dashboard = () => {
     setLoadingState((prev) => ({ ...prev, operational: true }));
 
     try {
-      const response = await getOperationalDashboard({ period, startDate, endDate });
+      const response = await getOperationalDashboard({
+        period,
+        startDate,
+        endDate,
+      });
       if (!response?.success) {
-        throw new Error(response?.error?.message || 'Gagal memuat data dashboard operasional.');
+        throw new Error(
+          response?.error?.message || 'Gagal memuat data dashboard operasional.'
+        );
       }
 
       setOperationalData(response.data);
     } catch (error) {
-      const message = error.message || 'Gagal memuat data dashboard operasional.';
+      const message =
+        error.message || 'Gagal memuat data dashboard operasional.';
       setOperationalData(null);
       setErrorState((prev) => ({ ...prev, operational: message }));
       toastService.error(message);
@@ -218,9 +236,15 @@ const Dashboard = () => {
     setLoadingState((prev) => ({ ...prev, financial: true }));
 
     try {
-      const response = await getFinancialDashboard({ period, startDate, endDate });
+      const response = await getFinancialDashboard({
+        period,
+        startDate,
+        endDate,
+      });
       if (!response?.success) {
-        throw new Error(response?.error?.message || 'Gagal memuat data dashboard finansial.');
+        throw new Error(
+          response?.error?.message || 'Gagal memuat data dashboard finansial.'
+        );
       }
 
       setFinancialData(response.data);
@@ -241,7 +265,9 @@ const Dashboard = () => {
     try {
       const response = await getInventoryDashboard();
       if (!response?.success) {
-        throw new Error(response?.error?.message || 'Gagal memuat data dashboard inventory.');
+        throw new Error(
+          response?.error?.message || 'Gagal memuat data dashboard inventory.'
+        );
       }
 
       setInventoryData(response.data);
@@ -275,7 +301,12 @@ const Dashboard = () => {
     setEndDate('');
   };
 
-  const renderStatusBreakdown = (title, statuses = [], total = 0, accent = 'bg-blue-500') => (
+  const renderStatusBreakdown = (
+    title,
+    statuses = [],
+    total = 0,
+    accent = 'bg-blue-500'
+  ) => (
     <Card padding='lg' className='h-full'>
       <CardHeader
         title={`Status ${title}`}
@@ -300,7 +331,7 @@ const Dashboard = () => {
                     {percentage.toFixed(1)}%
                   </span>
                 </div>
-                <div className='h-2 w-full rounded-full bg-gray-200'>
+                <div className='w-full h-2 bg-gray-200 rounded-full'>
                   <div
                     className={`h-2 rounded-full ${accent}`}
                     style={{ width: `${percentage}%` }}
@@ -332,16 +363,16 @@ const Dashboard = () => {
           <CardHeader
             title='Tidak dapat memuat data operasional'
             subtitle={errorState.operational}
-            action={(
+            action={
               <button
                 type='button'
                 onClick={fetchOperational}
-                className='inline-flex items-center rounded-lg border border-blue-500 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50'
+                className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
-                <ArrowPathIcon className='mr-2 h-4 w-4' />
+                <ArrowPathIcon className='w-4 h-4 mr-2' />
                 Coba lagi
               </button>
-            )}
+            }
           />
         </Card>
       );
@@ -353,16 +384,16 @@ const Dashboard = () => {
           <CardHeader
             title='Data operasional belum tersedia'
             subtitle='Silakan perbarui filter atau muat ulang halaman.'
-            action={(
+            action={
               <button
                 type='button'
                 onClick={fetchOperational}
-                className='inline-flex items-center rounded-lg border border-blue-500 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50'
+                className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
-                <ArrowPathIcon className='mr-2 h-4 w-4' />
+                <ArrowPathIcon className='w-4 h-4 mr-2' />
                 Muat ulang
               </button>
-            )}
+            }
           />
         </Card>
       );
@@ -384,8 +415,16 @@ const Dashboard = () => {
 
     const trackingItems = [
       { key: 'packing', label: 'Packing', metrics: documentTracking.packing },
-      { key: 'invoicePengiriman', label: 'Invoice Pengiriman', metrics: documentTracking.invoicePengiriman },
-      { key: 'suratJalan', label: 'Surat Jalan', metrics: documentTracking.suratJalan },
+      {
+        key: 'invoicePengiriman',
+        label: 'Invoice Pengiriman',
+        metrics: documentTracking.invoicePengiriman,
+      },
+      {
+        key: 'suratJalan',
+        label: 'Surat Jalan',
+        metrics: documentTracking.suratJalan,
+      },
     ].filter((item) => item.metrics);
 
     const latestDeliveries = deliveryStatus.latestDeliveries || [];
@@ -402,28 +441,45 @@ const Dashboard = () => {
             <StatCard
               title='Total Purchase Order'
               value={formatNumber(purchaseOrders.total || 0)}
-              icon={<ChartBarIcon className='h-8 w-8 text-blue-600' />}
+              icon={<ChartBarIcon className='w-8 h-8 text-blue-600' />}
               variant='primary'
             />
             <StatCard
               title='Total Packing'
               value={formatNumber(packing.total || 0)}
-              icon={<ClipboardDocumentListIcon className='h-8 w-8 text-green-600' />}
+              icon={
+                <ClipboardDocumentListIcon className='w-8 h-8 text-green-600' />
+              }
               variant='success'
             />
             <StatCard
               title='Total Surat Jalan'
               value={formatNumber(suratJalan.total || 0)}
-              icon={<TruckIcon className='h-8 w-8 text-purple-600' />}
+              icon={<TruckIcon className='w-8 h-8 text-purple-600' />}
               variant='warning'
             />
           </div>
         </Card>
 
         <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
-          {renderStatusBreakdown('Purchase Order', purchaseOrders.byStatus, purchaseOrders.total, 'bg-blue-500')}
-          {renderStatusBreakdown('Packing', packing.byStatus, packing.total, 'bg-green-500')}
-          {renderStatusBreakdown('Surat Jalan', suratJalan.byStatus, suratJalan.total, 'bg-purple-500')}
+          {renderStatusBreakdown(
+            'Purchase Order',
+            purchaseOrders.byStatus,
+            purchaseOrders.total,
+            'bg-blue-500'
+          )}
+          {renderStatusBreakdown(
+            'Packing',
+            packing.byStatus,
+            packing.total,
+            'bg-green-500'
+          )}
+          {renderStatusBreakdown(
+            'Surat Jalan',
+            suratJalan.byStatus,
+            suratJalan.total,
+            'bg-purple-500'
+          )}
         </div>
 
         <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
@@ -433,31 +489,34 @@ const Dashboard = () => {
               subtitle='10 update terbaru'
             />
             <div className='space-y-4'>
-              {latestDeliveries.length > 0 ? latestDeliveries.map((delivery) => (
-                <div
-                  key={delivery.id || delivery.suratJalanNumber}
-                  className='rounded-lg border border-gray-100 p-4 transition hover:border-blue-200 hover:bg-blue-50/40'
-                >
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <p className='text-sm font-semibold text-gray-900'>
-                        {delivery.suratJalanNumber}
-                      </p>
-                      <p className='text-xs text-gray-500'>
-                        {delivery.deliverTo}
-                      </p>
+              {latestDeliveries.length > 0 ? (
+                latestDeliveries.map((delivery) => (
+                  <div
+                    key={delivery.id || delivery.suratJalanNumber}
+                    className='p-4 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
+                  >
+                    <div className='flex items-center justify-between'>
+                      <div>
+                        <p className='text-sm font-semibold text-gray-900'>
+                          {delivery.suratJalanNumber}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          {delivery.deliverTo}
+                        </p>
+                      </div>
+                      <StatusBadge
+                        status={delivery.statusName || delivery.statusCode}
+                        variant={getStatusVariant(delivery.statusCode)}
+                        size='sm'
+                      />
                     </div>
-                    <StatusBadge
-                      status={delivery.statusName || delivery.statusCode}
-                      variant={getStatusVariant(delivery.statusCode)}
-                      size='sm'
-                    />
+                    <p className='mt-2 text-xs text-gray-500'>
+                      Pembaruan terakhir:{' '}
+                      {formatDateTime(delivery.deliveryDate)}
+                    </p>
                   </div>
-                  <p className='mt-2 text-xs text-gray-500'>
-                    Pembaruan terakhir: {formatDateTime(delivery.deliveryDate)}
-                  </p>
-                </div>
-              )) : (
+                ))
+              ) : (
                 <p className='text-sm text-gray-500'>
                   Belum ada aktivitas pengiriman pada periode ini.
                 </p>
@@ -471,33 +530,38 @@ const Dashboard = () => {
               subtitle='Perbandingan cetak dokumen'
             />
             <div className='space-y-5'>
-              {trackingItems.length > 0 ? trackingItems.map(({ key, label, metrics: trackingMetrics }) => {
-                const printed = trackingMetrics.totalPrinted || 0;
-                const total = trackingMetrics.totalPrintCount || 0;
-                const percentage = calculatePercentage(printed, total);
+              {trackingItems.length > 0 ? (
+                trackingItems.map(
+                  ({ key, label, metrics: trackingMetrics }) => {
+                    const printed = trackingMetrics.totalPrinted || 0;
+                    const total = trackingMetrics.totalPrintCount || 0;
+                    const percentage = calculatePercentage(printed, total);
 
-                return (
-                  <div key={key} className='space-y-2'>
-                    <div className='flex items-center justify-between'>
-                      <p className='text-sm font-semibold text-gray-800'>
-                        {label}
-                      </p>
-                      <span className='text-xs text-gray-500'>
-                        {formatNumber(printed)} / {formatNumber(total)} cetak
-                      </span>
-                    </div>
-                    <div className='h-2 w-full rounded-full bg-gray-200'>
-                      <div
-                        className='h-2 rounded-full bg-blue-500 transition-all'
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <p className='text-xs font-medium text-gray-500'>
-                      {percentage.toFixed(1)}% dokumen berhasil dicetak
-                    </p>
-                  </div>
-                );
-              }) : (
+                    return (
+                      <div key={key} className='space-y-2'>
+                        <div className='flex items-center justify-between'>
+                          <p className='text-sm font-semibold text-gray-800'>
+                            {label}
+                          </p>
+                          <span className='text-xs text-gray-500'>
+                            {formatNumber(printed)} / {formatNumber(total)}{' '}
+                            cetak
+                          </span>
+                        </div>
+                        <div className='w-full h-2 bg-gray-200 rounded-full'>
+                          <div
+                            className='h-2 transition-all bg-blue-500 rounded-full'
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <p className='text-xs font-medium text-gray-500'>
+                          {percentage.toFixed(1)}% dokumen berhasil dicetak
+                        </p>
+                      </div>
+                    );
+                  }
+                )
+              ) : (
                 <p className='text-sm text-gray-500'>
                   Belum ada data pencetakan dokumen.
                 </p>
@@ -523,16 +587,16 @@ const Dashboard = () => {
           <CardHeader
             title='Tidak dapat memuat data finansial'
             subtitle={errorState.financial}
-            action={(
+            action={
               <button
                 type='button'
                 onClick={fetchFinancial}
-                className='inline-flex items-center rounded-lg border border-blue-500 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50'
+                className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
-                <ArrowPathIcon className='mr-2 h-4 w-4' />
+                <ArrowPathIcon className='w-4 h-4 mr-2' />
                 Coba lagi
               </button>
-            )}
+            }
           />
         </Card>
       );
@@ -544,16 +608,16 @@ const Dashboard = () => {
           <CardHeader
             title='Data finansial belum tersedia'
             subtitle='Silakan perbarui filter atau muat ulang halaman.'
-            action={(
+            action={
               <button
                 type='button'
                 onClick={fetchFinancial}
-                className='inline-flex items-center rounded-lg border border-blue-500 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50'
+                className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
-                <ArrowPathIcon className='mr-2 h-4 w-4' />
+                <ArrowPathIcon className='w-4 h-4 mr-2' />
                 Muat ulang
               </button>
-            )}
+            }
           />
         </Card>
       );
@@ -587,25 +651,25 @@ const Dashboard = () => {
             <StatCard
               title='Total Revenue'
               value={formatCurrency(overview.totalRevenue)}
-              icon={<CurrencyDollarIcon className='h-8 w-8 text-emerald-600' />}
+              icon={<CurrencyDollarIcon className='w-8 h-8 text-emerald-600' />}
               variant='success'
             />
             <StatCard
               title='Total Discount'
               value={formatCurrency(overview.totalDiscount)}
-              icon={<TagIcon className='h-8 w-8 text-orange-500' />}
+              icon={<TagIcon className='w-8 h-8 text-orange-500' />}
               variant='warning'
             />
             <StatCard
               title='Total PPN'
               value={formatCurrency(overview.totalPPN)}
-              icon={<BanknotesIcon className='h-8 w-8 text-blue-600' />}
+              icon={<BanknotesIcon className='w-8 h-8 text-blue-600' />}
               variant='primary'
             />
             <StatCard
               title='Total Invoice'
               value={formatNumber(overview.totalInvoices || 0)}
-              icon={<DocumentTextIcon className='h-8 w-8 text-purple-600' />}
+              icon={<DocumentTextIcon className='w-8 h-8 text-purple-600' />}
             />
           </div>
         </Card>
@@ -617,19 +681,21 @@ const Dashboard = () => {
               subtitle='Invoice yang belum lunas'
             />
             <div className='space-y-4'>
-              <div className='rounded-lg border border-amber-200 bg-amber-50 p-4'>
-                <p className='text-xs font-semibold uppercase tracking-wide text-amber-600'>
+              <div className='p-4 border rounded-lg border-amber-200 bg-amber-50'>
+                <p className='text-xs font-semibold tracking-wide uppercase text-amber-600'>
                   Total Outstanding
                 </p>
                 <p className='mt-1 text-2xl font-bold text-amber-700'>
                   {formatCurrency(outstandingPayments.total)}
                 </p>
                 <p className='mt-1 text-sm text-amber-700'>
-                  {formatNumber(outstandingPayments.count || 0)} invoice menunggu pembayaran
+                  {formatNumber(outstandingPayments.count || 0)} invoice
+                  menunggu pembayaran
                 </p>
               </div>
               <p className='text-xs text-gray-500'>
-                Gunakan data ini untuk memprioritaskan penagihan dan menjaga arus kas tetap sehat.
+                Gunakan data ini untuk memprioritaskan penagihan dan menjaga
+                arus kas tetap sehat.
               </p>
             </div>
           </Card>
@@ -641,26 +707,31 @@ const Dashboard = () => {
                 subtitle='Kontributor revenue terbesar'
               />
               <div className='space-y-3'>
-                {topCustomers.length > 0 ? topCustomers.map((customer, index) => (
-                  <div
-                    key={customer.customerId || `${customer.customerName}-${index}`}
-                    className='flex items-center justify-between rounded-lg border border-gray-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/40'
-                  >
-                    <div>
-                      <p className='text-sm font-semibold text-gray-900'>
-                        {customer.customerName}
-                      </p>
-                      <p className='text-xs text-gray-500'>
-                        Peringkat #{index + 1}
-                      </p>
+                {topCustomers.length > 0 ? (
+                  topCustomers.map((customer, index) => (
+                    <div
+                      key={
+                        customer.customerId ||
+                        `${customer.customerName}-${index}`
+                      }
+                      className='flex items-center justify-between p-3 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
+                    >
+                      <div>
+                        <p className='text-sm font-semibold text-gray-900'>
+                          {customer.customerName}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          Peringkat #{index + 1}
+                        </p>
+                      </div>
+                      <div className='text-right'>
+                        <p className='text-sm font-semibold text-gray-900'>
+                          {formatCurrency(customer.totalRevenue)}
+                        </p>
+                      </div>
                     </div>
-                    <div className='text-right'>
-                      <p className='text-sm font-semibold text-gray-900'>
-                        {formatCurrency(customer.totalRevenue)}
-                      </p>
-                    </div>
-                  </div>
-                )) : (
+                  ))
+                ) : (
                   <p className='text-sm text-gray-500'>
                     Belum ada data revenue per customer.
                   </p>
@@ -674,26 +745,31 @@ const Dashboard = () => {
                 subtitle='Supplier dengan nilai transaksi terbesar'
               />
               <div className='space-y-3'>
-                {topSuppliers.length > 0 ? topSuppliers.map((supplier, index) => (
-                  <div
-                    key={supplier.supplierId || `${supplier.supplierName}-${index}`}
-                    className='flex items-center justify-between rounded-lg border border-gray-100 p-3 transition hover:border-blue-200 hover:bg-blue-50/40'
-                  >
-                    <div>
-                      <p className='text-sm font-semibold text-gray-900'>
-                        {supplier.supplierName}
-                      </p>
-                      <p className='text-xs text-gray-500'>
-                        Peringkat #{index + 1}
-                      </p>
+                {topSuppliers.length > 0 ? (
+                  topSuppliers.map((supplier, index) => (
+                    <div
+                      key={
+                        supplier.supplierId ||
+                        `${supplier.supplierName}-${index}`
+                      }
+                      className='flex items-center justify-between p-3 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
+                    >
+                      <div>
+                        <p className='text-sm font-semibold text-gray-900'>
+                          {supplier.supplierName}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          Peringkat #{index + 1}
+                        </p>
+                      </div>
+                      <div className='text-right'>
+                        <p className='text-sm font-semibold text-gray-900'>
+                          {formatCurrency(supplier.totalRevenue)}
+                        </p>
+                      </div>
                     </div>
-                    <div className='text-right'>
-                      <p className='text-sm font-semibold text-gray-900'>
-                        {formatCurrency(supplier.totalRevenue)}
-                      </p>
-                    </div>
-                  </div>
-                )) : (
+                  ))
+                ) : (
                   <p className='text-sm text-gray-500'>
                     Belum ada data revenue per supplier.
                   </p>
@@ -720,16 +796,16 @@ const Dashboard = () => {
           <CardHeader
             title='Tidak dapat memuat data inventory'
             subtitle={errorState.inventory}
-            action={(
+            action={
               <button
                 type='button'
                 onClick={fetchInventory}
-                className='inline-flex items-center rounded-lg border border-blue-500 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50'
+                className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
-                <ArrowPathIcon className='mr-2 h-4 w-4' />
+                <ArrowPathIcon className='w-4 h-4 mr-2' />
                 Coba lagi
               </button>
-            )}
+            }
           />
         </Card>
       );
@@ -741,16 +817,16 @@ const Dashboard = () => {
           <CardHeader
             title='Data inventory belum tersedia'
             subtitle='Silakan muat ulang untuk mendapatkan data terbaru.'
-            action={(
+            action={
               <button
                 type='button'
                 onClick={fetchInventory}
-                className='inline-flex items-center rounded-lg border border-blue-500 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50'
+                className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
-                <ArrowPathIcon className='mr-2 h-4 w-4' />
+                <ArrowPathIcon className='w-4 h-4 mr-2' />
                 Muat ulang
               </button>
-            )}
+            }
           />
         </Card>
       );
@@ -781,25 +857,25 @@ const Dashboard = () => {
             <StatCard
               title='Total Item'
               value={formatNumber(overview.totalItems || 0)}
-              icon={<CubeIcon className='h-8 w-8 text-blue-600' />}
+              icon={<CubeIcon className='w-8 h-8 text-blue-600' />}
               variant='primary'
             />
             <StatCard
               title='Stok Karton'
               value={formatNumber(overview.totalStockCartons || 0)}
-              icon={<Squares2X2Icon className='h-8 w-8 text-purple-600' />}
+              icon={<Squares2X2Icon className='w-8 h-8 text-purple-600' />}
               variant='warning'
             />
             <StatCard
               title='Stok Pieces'
               value={formatNumber(overview.totalStockPieces || 0)}
-              icon={<SquaresPlusIcon className='h-8 w-8 text-green-600' />}
+              icon={<SquaresPlusIcon className='w-8 h-8 text-green-600' />}
               variant='success'
             />
             <StatCard
               title='Nilai Inventory'
               value={formatCurrency(overview.totalInventoryValue)}
-              icon={<CurrencyDollarIcon className='h-8 w-8 text-emerald-600' />}
+              icon={<CurrencyDollarIcon className='w-8 h-8 text-emerald-600' />}
             />
           </div>
         </Card>
@@ -812,11 +888,29 @@ const Dashboard = () => {
             />
             <div className='space-y-4'>
               {[
-                { key: 'normalStock', label: 'Normal', color: 'bg-green-500', value: stockStatus.normalStock },
-                { key: 'lowStock', label: 'Low Stock', color: 'bg-amber-500', value: stockStatus.lowStock },
-                { key: 'zeroStock', label: 'Habis', color: 'bg-red-500', value: stockStatus.zeroStock },
+                {
+                  key: 'normalStock',
+                  label: 'Normal',
+                  color: 'bg-green-500',
+                  value: stockStatus.normalStock,
+                },
+                {
+                  key: 'lowStock',
+                  label: 'Low Stock',
+                  color: 'bg-amber-500',
+                  value: stockStatus.lowStock,
+                },
+                {
+                  key: 'zeroStock',
+                  label: 'Habis',
+                  color: 'bg-red-500',
+                  value: stockStatus.zeroStock,
+                },
               ].map((status) => {
-                const percentage = calculatePercentage(status.value, stockTotal);
+                const percentage = calculatePercentage(
+                  status.value,
+                  stockTotal
+                );
                 return (
                   <div key={status.key} className='space-y-2'>
                     <div className='flex items-center justify-between'>
@@ -824,10 +918,11 @@ const Dashboard = () => {
                         {status.label}
                       </p>
                       <span className='text-xs text-gray-500'>
-                        {formatNumber(status.value || 0)} item · {percentage.toFixed(1)}%
+                        {formatNumber(status.value || 0)} item ·{' '}
+                        {percentage.toFixed(1)}%
                       </span>
                     </div>
-                    <div className='h-2 w-full rounded-full bg-gray-200'>
+                    <div className='w-full h-2 bg-gray-200 rounded-full'>
                       <div
                         className={`h-2 rounded-full ${status.color}`}
                         style={{ width: `${percentage}%` }}
@@ -850,8 +945,8 @@ const Dashboard = () => {
 
             {lowStockAlerts.length > 0 ? (
               <div className='overflow-x-auto'>
-                <table className='min-w-full divide-y divide-gray-200 text-sm'>
-                  <thead className='bg-gray-50 text-xs uppercase tracking-wide text-gray-500'>
+                <table className='min-w-full text-sm divide-y divide-gray-200'>
+                  <thead className='text-xs tracking-wide text-gray-500 uppercase bg-gray-50'>
                     <tr>
                       <th className='px-4 py-2 text-left'>PLU</th>
                       <th className='px-4 py-2 text-left'>Nama Produk</th>
@@ -862,15 +957,17 @@ const Dashboard = () => {
                   </thead>
                   <tbody className='divide-y divide-gray-100'>
                     {lowStockAlerts.map((item) => (
-                      <tr key={item.id || item.plu} className='hover:bg-red-50/40'>
+                      <tr
+                        key={item.id || item.plu}
+                        className='hover:bg-red-50/40'
+                      >
                         <td className='px-4 py-2 font-medium text-gray-900'>
                           {item.plu}
                         </td>
+                        <td className='px-4 py-2 text-gray-700'>{item.name}</td>
                         <td className='px-4 py-2 text-gray-700'>
-                          {item.name}
-                        </td>
-                        <td className='px-4 py-2 text-gray-700'>
-                          {formatNumber(item.currentStockCartons)} karton / {formatNumber(item.currentStockPieces)} pcs
+                          {formatNumber(item.currentStockCartons)} karton /{' '}
+                          {formatNumber(item.currentStockPieces)} pcs
                         </td>
                         <td className='px-4 py-2 text-gray-700'>
                           {formatNumber(item.minimumStock)}
@@ -899,8 +996,8 @@ const Dashboard = () => {
 
           {recentMovements.length > 0 ? (
             <div className='overflow-x-auto'>
-              <table className='min-w-full divide-y divide-gray-200 text-sm'>
-                <thead className='bg-gray-50 text-xs uppercase tracking-wide text-gray-500'>
+              <table className='min-w-full text-sm divide-y divide-gray-200'>
+                <thead className='text-xs tracking-wide text-gray-500 uppercase bg-gray-50'>
                   <tr>
                     <th className='px-4 py-2 text-left'>PLU</th>
                     <th className='px-4 py-2 text-left'>Nama Produk</th>
@@ -912,7 +1009,10 @@ const Dashboard = () => {
                 </thead>
                 <tbody className='divide-y divide-gray-100'>
                   {recentMovements.map((movement) => (
-                    <tr key={movement.id || movement.plu} className='hover:bg-blue-50/40'>
+                    <tr
+                      key={movement.id || movement.plu}
+                      className='hover:bg-blue-50/40'
+                    >
                       <td className='px-4 py-2 font-medium text-gray-900'>
                         {movement.plu}
                       </td>
@@ -948,7 +1048,7 @@ const Dashboard = () => {
 
   if (!userData) {
     return (
-      <div className='flex flex-1 items-center justify-center'>
+      <div className='flex items-center justify-center flex-1'>
         <LoadingState message='Menyiapkan dashboard Anda...' />
       </div>
     );
@@ -959,22 +1059,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className='bg-white/80 p-6 shadow-sm backdrop-blur-sm'>
-        <div>
-          <h1 className='mb-1 flex items-center text-3xl font-bold text-gray-900'>
-            Halo, {displayName}!{' '}
-            <HeroIcon
-              name='sparkles'
-              className='ml-2 h-8 w-8 text-yellow-500'
-            />
-          </h1>
-          <p className='text-gray-600'>
-            Pantau performa operasional, finansial, dan inventory dalam satu tampilan.
-          </p>
-        </div>
-      </div>
-
-      <div className='space-y-6 p-6'>
+      <div className='p-6 space-y-6'>
         <Card padding='lg' className='bg-white/70 backdrop-blur'>
           <CardHeader
             title='Filter Dashboard'
@@ -983,13 +1068,13 @@ const Dashboard = () => {
 
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
             <div className='space-y-2'>
-              <label className='text-xs font-semibold uppercase tracking-wide text-gray-600'>
+              <label className='text-xs font-semibold tracking-wide text-gray-600 uppercase'>
                 Periode
               </label>
               <select
                 value={period}
                 onChange={(event) => setPeriod(event.target.value)}
-                className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
               >
                 {periodOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -1000,27 +1085,27 @@ const Dashboard = () => {
             </div>
 
             <div className='space-y-2'>
-              <label className='text-xs font-semibold uppercase tracking-wide text-gray-600'>
+              <label className='text-xs font-semibold tracking-wide text-gray-600 uppercase'>
                 Tanggal Mulai
               </label>
               <input
                 type='date'
                 value={startDate}
                 onChange={(event) => setStartDate(event.target.value)}
-                className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
                 max={endDate || undefined}
               />
             </div>
 
             <div className='space-y-2'>
-              <label className='text-xs font-semibold uppercase tracking-wide text-gray-600'>
+              <label className='text-xs font-semibold tracking-wide text-gray-600 uppercase'>
                 Tanggal Selesai
               </label>
               <input
                 type='date'
                 value={endDate}
                 onChange={(event) => setEndDate(event.target.value)}
-                className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
                 min={startDate || undefined}
               />
             </div>
@@ -1041,7 +1126,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className='mt-6 grid grid-cols-1 gap-3 md:grid-cols-3'>
+          <div className='grid grid-cols-1 gap-3 mt-6 md:grid-cols-3'>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -1069,5 +1154,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
-
