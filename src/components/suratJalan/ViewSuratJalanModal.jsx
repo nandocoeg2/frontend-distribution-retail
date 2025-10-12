@@ -29,7 +29,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
 
   if (!show || !suratJalan) return null;
 
-    const toggleSection = (section) => {
+  const toggleSection = (section) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -113,24 +113,26 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
     {
       id: 'overview',
       label: 'Overview',
-      icon: <DocumentTextIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <DocumentTextIcon className='w-5 h-5' aria-hidden='true' />,
     },
     {
       id: 'details',
       label: 'Surat Jalan Details',
-      icon: <ListBulletIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <ListBulletIcon className='w-5 h-5' aria-hidden='true' />,
       badge: suratJalan.suratJalanDetails?.length,
     },
     {
       id: 'checklist',
       label: 'Checklist Surat Jalan',
-      icon: <ClipboardDocumentCheckIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: (
+        <ClipboardDocumentCheckIcon className='w-5 h-5' aria-hidden='true' />
+      ),
       badge: normalizedChecklist.length || null,
     },
     {
       id: 'activity',
       label: 'Activity Timeline',
-      icon: <ClockIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <ClockIcon className='w-5 h-5' aria-hidden='true' />,
       badge: normalizedAuditTrails.length || null,
     },
   ];
@@ -142,7 +144,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-teal-100 rounded-lg'>
-              <TruckIcon className='h-8 w-8 text-teal-600' aria-hidden='true' />
+              <TruckIcon className='w-8 h-8 text-teal-600' aria-hidden='true' />
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -469,7 +471,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                             Box #{detail.no_box}
                           </h4>
                           <p className='text-sm text-gray-600'>
-                            Total Qty: {detail.total_quantity_in_box} â€¢ Boxes:{' '}
+                            Total Qty: {detail.total_quantity_in_box} • Boxes:{' '}
                             {detail.total_box}
                           </p>
                         </div>
@@ -571,7 +573,10 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               ) : (
                 <div className='py-12 text-center'>
                   <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                    <ArchiveBoxIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
+                    <ArchiveBoxIcon
+                      className='w-8 h-8 text-gray-400'
+                      aria-hidden='true'
+                    />
                   </div>
                   <h3 className='mb-2 text-lg font-medium text-gray-900'>
                     No Details Found
@@ -652,7 +657,10 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               ) : (
                 <div className='py-12 text-center'>
                   <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                    <ClipboardDocumentCheckIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
+                    <ClipboardDocumentCheckIcon
+                      className='w-8 h-8 text-gray-400'
+                      aria-hidden='true'
+                    />
                   </div>
                   <h3 className='mb-2 text-lg font-medium text-gray-900'>
                     No Checklist Found
@@ -692,4 +700,3 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
 };
 
 export default ViewSuratJalanModal;
-

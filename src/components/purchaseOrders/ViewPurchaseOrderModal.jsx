@@ -54,7 +54,7 @@ const ViewPurchaseOrderModal = ({
 
   if (!isOpen) return null;
 
-    const formatSuratJalanValue = (suratJalan) => {
+  const formatSuratJalanValue = (suratJalan) => {
     if (!suratJalan) return 'Not assigned';
 
     if (Array.isArray(suratJalan)) {
@@ -178,28 +178,28 @@ const ViewPurchaseOrderModal = ({
     {
       id: 'overview',
       label: 'Overview',
-      icon: <DocumentTextIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <DocumentTextIcon className='w-5 h-5' aria-hidden='true' />,
     },
     {
       id: 'details',
       label: 'Order Details',
-      icon: <ListBulletIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <ListBulletIcon className='w-5 h-5' aria-hidden='true' />,
     },
     {
       id: 'documents',
       label: 'Documents Information',
-      icon: <FolderIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <FolderIcon className='w-5 h-5' aria-hidden='true' />,
     },
     {
       id: 'files',
       label: 'Attached Files',
-      icon: <PaperClipIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <PaperClipIcon className='w-5 h-5' aria-hidden='true' />,
       badge: order?.files?.length,
     },
     {
       id: 'timeline',
       label: 'Timeline',
-      icon: <ClockIcon className='h-5 w-5' aria-hidden='true' />,
+      icon: <ClockIcon className='w-5 h-5' aria-hidden='true' />,
       badge: order?.auditTrails?.length,
     },
   ];
@@ -211,7 +211,10 @@ const ViewPurchaseOrderModal = ({
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 rounded-lg bg-emerald-100'>
-              <ShoppingCartIcon className='h-8 w-8 text-emerald-600' aria-hidden='true' />
+              <ShoppingCartIcon
+                className='w-8 h-8 text-emerald-600'
+                aria-hidden='true'
+              />
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -483,9 +486,9 @@ const ViewPurchaseOrderModal = ({
                                   </p>
                                   {order.packing && (
                                     <p className='text-xs text-gray-500'>
-                                      {order.packing.packing_number} â€¢ Printed:{' '}
+                                      {order.packing.packing_number} • Printed:{' '}
                                       {order.packing.is_printed ? 'Yes' : 'No'}{' '}
-                                      â€¢ Counter:{' '}
+                                      • Counter:{' '}
                                       {order.packing.print_counter || 0}
                                     </p>
                                   )}
@@ -530,9 +533,9 @@ const ViewPurchaseOrderModal = ({
                                   </p>
                                   {order.invoice && (
                                     <p className='text-xs text-gray-500'>
-                                      {order.invoice.no_invoice} â€¢ Printed:{' '}
+                                      {order.invoice.no_invoice} • Printed:{' '}
                                       {order.invoice.is_printed ? 'Yes' : 'No'}{' '}
-                                      â€¢ Counter:{' '}
+                                      • Counter:{' '}
                                       {order.invoice.print_counter || 0}
                                     </p>
                                   )}
@@ -577,12 +580,12 @@ const ViewPurchaseOrderModal = ({
                                   </p>
                                   {order.suratJalan && (
                                     <p className='text-xs text-gray-500'>
-                                      {order.suratJalan.no_surat_jalan} â€¢
+                                      {order.suratJalan.no_surat_jalan} •
                                       Printed:{' '}
                                       {order.suratJalan.is_printed
                                         ? 'Yes'
                                         : 'No'}{' '}
-                                      â€¢ Counter:{' '}
+                                      • Counter:{' '}
                                       {order.suratJalan.print_counter || 0}
                                     </p>
                                   )}
@@ -712,7 +715,10 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <TruckIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
+                          <TruckIcon
+                            className='w-8 h-8 text-gray-400'
+                            aria-hidden='true'
+                          />
                         </div>
                         <p>No Surat Jalan available</p>
                       </div>
@@ -794,7 +800,10 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <DocumentTextIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
+                          <DocumentTextIcon
+                            className='w-8 h-8 text-gray-400'
+                            aria-hidden='true'
+                          />
                         </div>
                         <p>No Invoice available</p>
                       </div>
@@ -846,7 +855,10 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <ArchiveBoxIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
+                          <ArchiveBoxIcon
+                            className='w-8 h-8 text-gray-400'
+                            aria-hidden='true'
+                          />
                         </div>
                         <p>No Packing List available</p>
                       </div>
@@ -876,7 +888,10 @@ const ViewPurchaseOrderModal = ({
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center space-x-3'>
                               <div className='flex-shrink-0'>
-                                <PaperClipIcon className='w-8 h-8 text-gray-400' aria-hidden='true' />
+                                <PaperClipIcon
+                                  className='w-8 h-8 text-gray-400'
+                                  aria-hidden='true'
+                                />
                               </div>
                               <div className='flex-1 min-w-0'>
                                 <p className='text-sm font-medium text-gray-900 truncate'>
@@ -904,7 +919,10 @@ const ViewPurchaseOrderModal = ({
                   ) : (
                     <div className='py-12 text-center'>
                       <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                        <PaperClipIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
+                        <PaperClipIcon
+                          className='w-8 h-8 text-gray-400'
+                          aria-hidden='true'
+                        />
                       </div>
                       <h3 className='mb-2 text-lg font-medium text-gray-900'>
                         No Files Attached
@@ -953,6 +971,3 @@ const ViewPurchaseOrderModal = ({
 };
 
 export default ViewPurchaseOrderModal;
-
-
-
