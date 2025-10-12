@@ -335,6 +335,31 @@ const purchaseOrderService = {
     }
 
     return response.json();
+  },
+
+  // Print documents
+  printDocuments: async (id, documents) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const response = await fetch(`${API_URL}/${id}/print-docs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ documents }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to print documents');
+    }
+
+    return response.json();
   }
 };
 

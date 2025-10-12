@@ -28,10 +28,19 @@ const ViewPurchaseOrderModal = ({
     customerSupplier: false,
     statusInfo: false,
     metaInfo: false,
-    documentsSuratJalan: true,
+    documentsSuratJalan: false,
     documentsInvoice: false,
     documentsPacking: false,
+    documentsPrint: true,
   });
+
+  const [selectedDocuments, setSelectedDocuments] = useState({
+    PACKING: false,
+    INVOICE_PENGIRIMAN: false,
+    SURAT_JALAN: false,
+  });
+
+  const [printing, setPrinting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -113,6 +122,66 @@ const ViewPurchaseOrderModal = ({
       showError(`Failed to process purchase order: ${error.message}`);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleDocumentCheckbox = (documentType) => {
+    setSelectedDocuments((prev) => ({
+      ...prev,
+      [documentType]: !prev[documentType],
+    }));
+  };
+
+  const handleSelectAll = () => {
+    const allSelected = Object.values(selectedDocuments).every((val) => val);
+    const newValue = !allSelected;
+    setSelectedDocuments({
+      PACKING: newValue,
+      INVOICE_PENGIRIMAN: newValue,
+      SURAT_JALAN: newValue,
+    });
+  };
+
+  const handlePrintDocuments = async () => {
+    if (!order?.id) return;
+
+    const selectedDocs = Object.keys(selectedDocuments).filter(
+      (key) => selectedDocuments[key]
+    );
+
+    if (selectedDocs.length === 0) {
+      showError('Please select at least one document to print');
+      return;
+    }
+
+    setPrinting(true);
+    try {
+      const result = await purchaseOrderService.printDocuments(
+        order.id,
+        selectedDocs
+      );
+
+      if (result.success) {
+        showSuccess(
+          `Successfully marked ${selectedDocs.length} document(s) as printed`
+        );
+        if (onProcessed) {
+          onProcessed();
+        }
+        // Reset checkboxes
+        setSelectedDocuments({
+          PACKING: false,
+          INVOICE_PENGIRIMAN: false,
+          SURAT_JALAN: false,
+        });
+      } else {
+        throw new Error('Failed to print documents');
+      }
+    } catch (error) {
+      console.error('Failed to print documents:', error);
+      showError(`Failed to print documents: ${error.message}`);
+    } finally {
+      setPrinting(false);
     }
   };
 
@@ -355,6 +424,235 @@ const ViewPurchaseOrderModal = ({
                       Documents Information
                     </h3>
                   </div>
+
+                  {/* Print Documents */}
+                  <AccordionItem
+                    title='Print Documents'
+                    isExpanded={expandedSections.documentsPrint}
+                    onToggle={() => toggleSection('documentsPrint')}
+                    bgColor='bg-gradient-to-r from-orange-50 to-orange-100'
+                  >
+                    <div className='py-8 space-y-4'>
+                      {/* Select All Checkbox */}
+                      <div className='flex items-center p-4 border border-gray-200 rounded-lg bg-gray-50'>
+                        <input
+                          type='checkbox'
+                          id='select-all'
+                          checked={Object.values(selectedDocuments).every(
+                            (val) => val
+                          )}
+                          onChange={handleSelectAll}
+                          className='w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
+                        />
+                        <label
+                          htmlFor='select-all'
+                          className='ml-3 text-base font-semibold text-gray-900'
+                        >
+                          Select All Documents
+                        </label>
+                      </div>
+
+                      {/* Document Checkboxes */}
+                      <div className='space-y-3'>
+                        {/* Packing */}
+                        <div
+                          className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                            order.packing
+                              ? 'bg-white border-gray-200 hover:bg-gray-50'
+                              : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className='flex items-center flex-1'>
+                            <input
+                              type='checkbox'
+                              id='packing-checkbox'
+                              checked={selectedDocuments.PACKING}
+                              onChange={() => handleDocumentCheckbox('PACKING')}
+                              disabled={!order.packing}
+                              className='w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
+                            />
+                            <label
+                              htmlFor='packing-checkbox'
+                              className='flex-1 ml-3'
+                            >
+                              <div className='flex items-center justify-between'>
+                                <div>
+                                  <p className='text-sm font-medium text-gray-900'>
+                                    Packing List
+                                  </p>
+                                  {order.packing && (
+                                    <p className='text-xs text-gray-500'>
+                                      {order.packing.packing_number} • Printed:{' '}
+                                      {order.packing.is_printed ? 'Yes' : 'No'}{' '}
+                                      • Counter:{' '}
+                                      {order.packing.print_counter || 0}
+                                    </p>
+                                  )}
+                                  {!order.packing && (
+                                    <p className='text-xs text-gray-500'>
+                                      Document not available
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Invoice Pengiriman */}
+                        <div
+                          className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                            order.invoice
+                              ? 'bg-white border-gray-200 hover:bg-gray-50'
+                              : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className='flex items-center flex-1'>
+                            <input
+                              type='checkbox'
+                              id='invoice-checkbox'
+                              checked={selectedDocuments.INVOICE_PENGIRIMAN}
+                              onChange={() =>
+                                handleDocumentCheckbox('INVOICE_PENGIRIMAN')
+                              }
+                              disabled={!order.invoice}
+                              className='w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
+                            />
+                            <label
+                              htmlFor='invoice-checkbox'
+                              className='flex-1 ml-3'
+                            >
+                              <div className='flex items-center justify-between'>
+                                <div>
+                                  <p className='text-sm font-medium text-gray-900'>
+                                    Invoice Pengiriman
+                                  </p>
+                                  {order.invoice && (
+                                    <p className='text-xs text-gray-500'>
+                                      {order.invoice.no_invoice} • Printed:{' '}
+                                      {order.invoice.is_printed ? 'Yes' : 'No'}{' '}
+                                      • Counter:{' '}
+                                      {order.invoice.print_counter || 0}
+                                    </p>
+                                  )}
+                                  {!order.invoice && (
+                                    <p className='text-xs text-gray-500'>
+                                      Document not available
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Surat Jalan */}
+                        <div
+                          className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                            order.suratJalan
+                              ? 'bg-white border-gray-200 hover:bg-gray-50'
+                              : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className='flex items-center flex-1'>
+                            <input
+                              type='checkbox'
+                              id='surat-jalan-checkbox'
+                              checked={selectedDocuments.SURAT_JALAN}
+                              onChange={() =>
+                                handleDocumentCheckbox('SURAT_JALAN')
+                              }
+                              disabled={!order.suratJalan}
+                              className='w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
+                            />
+                            <label
+                              htmlFor='surat-jalan-checkbox'
+                              className='flex-1 ml-3'
+                            >
+                              <div className='flex items-center justify-between'>
+                                <div>
+                                  <p className='text-sm font-medium text-gray-900'>
+                                    Surat Jalan
+                                  </p>
+                                  {order.suratJalan && (
+                                    <p className='text-xs text-gray-500'>
+                                      {order.suratJalan.no_surat_jalan} •
+                                      Printed:{' '}
+                                      {order.suratJalan.is_printed
+                                        ? 'Yes'
+                                        : 'No'}{' '}
+                                      • Counter:{' '}
+                                      {order.suratJalan.print_counter || 0}
+                                    </p>
+                                  )}
+                                  {!order.suratJalan && (
+                                    <p className='text-xs text-gray-500'>
+                                      Document not available
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Print Button */}
+                      <div className='flex justify-end pt-4'>
+                        <button
+                          onClick={handlePrintDocuments}
+                          disabled={
+                            printing ||
+                            !Object.values(selectedDocuments).some((val) => val)
+                          }
+                          className='inline-flex items-center px-6 py-3 text-sm font-medium text-white transition-colors bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          {printing ? (
+                            <>
+                              <svg
+                                className='w-5 h-5 mr-2 animate-spin'
+                                xmlns='http://www.w3.org/2000/svg'
+                                fill='none'
+                                viewBox='0 0 24 24'
+                              >
+                                <circle
+                                  className='opacity-25'
+                                  cx='12'
+                                  cy='12'
+                                  r='10'
+                                  stroke='currentColor'
+                                  strokeWidth='4'
+                                ></circle>
+                                <path
+                                  className='opacity-75'
+                                  fill='currentColor'
+                                  d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                ></path>
+                              </svg>
+                              Printing...
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                className='w-5 h-5 mr-2'
+                                fill='none'
+                                stroke='currentColor'
+                                viewBox='0 0 24 24'
+                              >
+                                <path
+                                  strokeLinecap='round'
+                                  strokeLinejoin='round'
+                                  strokeWidth={2}
+                                  d='M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z'
+                                />
+                              </svg>
+                              Mark as Printed
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </AccordionItem>
 
                   {/* Surat Jalan */}
                   <AccordionItem
