@@ -18,7 +18,6 @@ const TAB_STATUS_CONFIG = {
     label: 'Ready to Ship',
     statusCode: 'READY TO SHIP SURAT JALAN',
   },
-  shipped: { label: 'Shipped', statusCode: 'SHIPPED SURAT JALAN' },
   delivered: { label: 'Delivered', statusCode: 'DELIVERED SURAT JALAN' },
   cancelled: { label: 'Cancelled', statusCode: 'CANCELLED SURAT JALAN' },
 };
@@ -27,7 +26,6 @@ const TAB_ORDER = [
   'all',
   'draft',
   'readyToShip',
-  'shipped',
   'delivered',
   'cancelled',
 ];
