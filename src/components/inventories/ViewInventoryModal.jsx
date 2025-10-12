@@ -5,6 +5,7 @@ import {
   StatusBadge,
   InfoTable
 } from '../ui';
+import { formatCurrency, formatDateTime } from '../../utils/formatUtils';
 import useInventoryDetail from '../../hooks/useInventoryDetail';
 
 const ViewInventoryModal = ({ show, inventory, onClose }) => {
@@ -30,23 +31,6 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
   const resolvedInventory = useMemo(() => {
     return detailedInventory || inventory;
   }, [detailedInventory, inventory]);
-
-  const formatCurrency = (amount) => {
-    if (!amount) return 'N/A';
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',  
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -203,8 +187,8 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             >
               <InfoTable 
                 data={[
-                  { label: 'Created At', value: formatDate(resolvedInventory?.createdAt) },
-                  { label: 'Updated At', value: formatDate(resolvedInventory?.updatedAt) }
+                  { label: 'Created At', value: formatDateTime(resolvedInventory?.createdAt) },
+                  { label: 'Updated At', value: formatDateTime(resolvedInventory?.updatedAt) }
                 ]}
               />
             </AccordionItem>
@@ -243,4 +227,3 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
 };
 
 export default ViewInventoryModal;
-

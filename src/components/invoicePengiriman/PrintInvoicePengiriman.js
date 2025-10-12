@@ -1,11 +1,6 @@
-import jsPDF from 'jspdf';
+﻿import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-
-const currencyFormatter = new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  minimumFractionDigits: 0,
-});
+import { formatCurrency as baseFormatCurrency } from '../../utils/formatUtils';
 
 const numberFormatter = new Intl.NumberFormat('id-ID');
 
@@ -33,11 +28,8 @@ const formatNumber = (value) => {
 };
 
 const formatCurrency = (value) => {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return '-';
-  }
-  return currencyFormatter.format(numeric);
+  const formatted = baseFormatCurrency(value);
+  return formatted === 'N/A' ? '-' : formatted;
 };
 
 const formatDateDocument = (value, location = 'Jakarta') => {
@@ -406,3 +398,5 @@ export const printInvoicePengiriman = (invoice) => {
 };
 
 export default printInvoicePengiriman;
+
+

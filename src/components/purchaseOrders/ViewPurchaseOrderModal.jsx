@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import fileService from '../../services/fileService';
 import HeroIcon from '../atoms/HeroIcon';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 import purchaseOrderService from '../../services/purchaseOrderService';
 import ActivityTimeline from '../common/ActivityTimeline';
+import { formatDate, formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   AccordionItem,
@@ -44,28 +45,7 @@ const ViewPurchaseOrderModal = ({
 
   if (!isOpen) return null;
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const formatDateTime = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const formatSuratJalanValue = (suratJalan) => {
+    const formatSuratJalanValue = (suratJalan) => {
     if (!suratJalan) return 'Not assigned';
 
     if (Array.isArray(suratJalan)) {
@@ -186,19 +166,19 @@ const ViewPurchaseOrderModal = ({
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📋' },
-    { id: 'details', label: 'Order Details', icon: '📦' },
-    { id: 'documents', label: 'Documents Information', icon: '📄' },
+    { id: 'overview', label: 'Overview', icon: 'ðŸ“‹' },
+    { id: 'details', label: 'Order Details', icon: 'ðŸ“¦' },
+    { id: 'documents', label: 'Documents Information', icon: 'ðŸ“„' },
     {
       id: 'files',
       label: 'Attached Files',
-      icon: '📎',
+      icon: 'ðŸ“Ž',
       badge: order?.files?.length,
     },
     {
       id: 'timeline',
       label: 'Timeline',
-      icon: '⏱️',
+      icon: 'â±ï¸',
       badge: order?.auditTrails?.length,
     },
   ];
@@ -210,7 +190,7 @@ const ViewPurchaseOrderModal = ({
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 rounded-lg bg-emerald-100'>
-              <span className='text-2xl'>🛒</span>
+              <span className='text-2xl'>ðŸ›’</span>
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -482,9 +462,9 @@ const ViewPurchaseOrderModal = ({
                                   </p>
                                   {order.packing && (
                                     <p className='text-xs text-gray-500'>
-                                      {order.packing.packing_number} • Printed:{' '}
+                                      {order.packing.packing_number} â€¢ Printed:{' '}
                                       {order.packing.is_printed ? 'Yes' : 'No'}{' '}
-                                      • Counter:{' '}
+                                      â€¢ Counter:{' '}
                                       {order.packing.print_counter || 0}
                                     </p>
                                   )}
@@ -529,9 +509,9 @@ const ViewPurchaseOrderModal = ({
                                   </p>
                                   {order.invoice && (
                                     <p className='text-xs text-gray-500'>
-                                      {order.invoice.no_invoice} • Printed:{' '}
+                                      {order.invoice.no_invoice} â€¢ Printed:{' '}
                                       {order.invoice.is_printed ? 'Yes' : 'No'}{' '}
-                                      • Counter:{' '}
+                                      â€¢ Counter:{' '}
                                       {order.invoice.print_counter || 0}
                                     </p>
                                   )}
@@ -576,12 +556,12 @@ const ViewPurchaseOrderModal = ({
                                   </p>
                                   {order.suratJalan && (
                                     <p className='text-xs text-gray-500'>
-                                      {order.suratJalan.no_surat_jalan} •
+                                      {order.suratJalan.no_surat_jalan} â€¢
                                       Printed:{' '}
                                       {order.suratJalan.is_printed
                                         ? 'Yes'
                                         : 'No'}{' '}
-                                      • Counter:{' '}
+                                      â€¢ Counter:{' '}
                                       {order.suratJalan.print_counter || 0}
                                     </p>
                                   )}
@@ -711,7 +691,7 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <span className='text-2xl'>📄</span>
+                          <span className='text-2xl'>ðŸ“„</span>
                         </div>
                         <p>No Surat Jalan available</p>
                       </div>
@@ -793,7 +773,7 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <span className='text-2xl'>🧾</span>
+                          <span className='text-2xl'>ðŸ§¾</span>
                         </div>
                         <p>No Invoice available</p>
                       </div>
@@ -845,7 +825,7 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <span className='text-2xl'>📦</span>
+                          <span className='text-2xl'>ðŸ“¦</span>
                         </div>
                         <p>No Packing List available</p>
                       </div>
@@ -906,7 +886,7 @@ const ViewPurchaseOrderModal = ({
                   ) : (
                     <div className='py-12 text-center'>
                       <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                        <span className='text-2xl'>📎</span>
+                        <span className='text-2xl'>ðŸ“Ž</span>
                       </div>
                       <h3 className='mb-2 text-lg font-medium text-gray-900'>
                         No Files Attached
@@ -955,3 +935,6 @@ const ViewPurchaseOrderModal = ({
 };
 
 export default ViewPurchaseOrderModal;
+
+
+

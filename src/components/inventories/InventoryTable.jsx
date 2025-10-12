@@ -1,20 +1,16 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   EyeIcon,
   PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
+import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import { useConfirmationDialog } from '../ui';
 import Pagination from '../common/Pagination';
 
 const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, loading }) => {
   const [deleteId, setDeleteId] = React.useState(null);
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
-  
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
-  };
-
   const formatDecimal = (value, fractionDigits = 2) => {
     const numericValue = Number(value);
     if (Number.isNaN(numericValue)) {
@@ -26,21 +22,6 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
     }).format(numericValue);
   };
 
-  const formatDate = (value) => {
-    if (!value) {
-      return '–';
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return '–';
-    }
-    return date.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
   const resolveDimension = (inventory) => {
     const dimension = inventory.dimensiKardus || {};
     const berat = inventory.berat ?? dimension.berat ?? 0;
@@ -50,7 +31,7 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
 
     return {
       berat: `${formatDecimal(berat)} kg`,
-      formattedSize: `${formatDecimal(panjang, 1)}×${formatDecimal(lebar, 1)}×${formatDecimal(tinggi, 1)} cm`
+      formattedSize: `${formatDecimal(panjang, 1)}Ã—${formatDecimal(lebar, 1)}Ã—${formatDecimal(tinggi, 1)} cm`
     };
   };
 
@@ -163,3 +144,4 @@ const InventoryTable = ({ inventories, pagination, onPageChange, onLimitChange, 
 };
 
 export default InventoryTable;
+

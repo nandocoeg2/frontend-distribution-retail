@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
+import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable } from '../ui';
 import printInvoicePengiriman, {
   exportInvoicePengirimanToPDF,
@@ -21,35 +22,7 @@ const ViewInvoicePengirimanModal = ({
 
   if (!show) return null;
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatDateTime = (date) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const toggleSection = (section) => {
+        const toggleSection = (section) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -440,3 +413,5 @@ const ViewInvoicePengirimanModal = ({
 };
 
 export default ViewInvoicePengirimanModal;
+
+

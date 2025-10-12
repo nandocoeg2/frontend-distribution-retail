@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import { AccordionItem, StatusBadge, InfoTable } from '../ui';
+import { formatDateTime } from '../../utils/formatUtils';
 
 import ActivityTimeline from '../common/ActivityTimeline';
 import { exportSuratJalanToPDF } from './PrintSuratJalan';
@@ -19,19 +20,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
 
   if (!show || !suratJalan) return null;
 
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const toggleSection = (section) => {
+    const toggleSection = (section) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
@@ -140,7 +129,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-teal-100 rounded-lg'>
-              <span className='text-2xl'>🚚</span>
+              <span className='text-2xl'>ðŸšš</span>
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -333,11 +322,11 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                   data={[
                     {
                       label: 'Created At',
-                      value: formatDate(suratJalan.createdAt),
+                      value: formatDateTime(suratJalan.createdAt),
                     },
                     {
                       label: 'Updated At',
-                      value: formatDate(suratJalan.updatedAt),
+                      value: formatDateTime(suratJalan.updatedAt),
                     },
                     {
                       label: 'Supplier ID',
@@ -424,7 +413,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                           <p className='mt-1 text-xs text-gray-500'>
                             Created At:{' '}
                             <span className='font-medium text-gray-900'>
-                              {formatDate(historyItem.createdAt)}
+                              {formatDateTime(historyItem.createdAt)}
                             </span>
                           </p>
                         </div>
@@ -460,14 +449,14 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                     >
                       <div className='flex items-center space-x-4'>
                         <div className='p-2 bg-blue-100 rounded-lg'>
-                          <span>📦</span>
+                          <span>ðŸ“¦</span>
                         </div>
                         <div>
                           <h4 className='text-lg font-semibold text-gray-900'>
                             Box #{detail.no_box}
                           </h4>
                           <p className='text-sm text-gray-600'>
-                            Total Qty: {detail.total_quantity_in_box} • Boxes:{' '}
+                            Total Qty: {detail.total_quantity_in_box} â€¢ Boxes:{' '}
                             {detail.total_box}
                           </p>
                         </div>
@@ -569,7 +558,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               ) : (
                 <div className='py-12 text-center'>
                   <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                    <span className='text-2xl'>📦</span>
+                    <span className='text-2xl'>ðŸ“¦</span>
                   </div>
                   <h3 className='mb-2 text-lg font-medium text-gray-900'>
                     No Details Found
@@ -605,7 +594,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                           Checklist #{checklistIndex + 1}
                         </h4>
                         <p className='text-sm text-gray-600'>
-                          Tanggal: {formatDate(checklist.tanggal)}
+                          Tanggal: {formatDateTime(checklist.tanggal)}
                         </p>
                       </div>
                       <div className='text-sm text-right text-gray-500'>
@@ -628,7 +617,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                         data={[
                           {
                             label: 'Tanggal Checklist',
-                            value: formatDate(checklist.tanggal),
+                            value: formatDateTime(checklist.tanggal),
                           },
                           { label: 'Checker', value: checklist.checker },
                           { label: 'Driver', value: checklist.driver },
@@ -636,11 +625,11 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                           { label: 'Kota', value: checklist.kota },
                           {
                             label: 'Created At',
-                            value: formatDate(checklist.createdAt),
+                            value: formatDateTime(checklist.createdAt),
                           },
                           {
                             label: 'Updated At',
-                            value: formatDate(checklist.updatedAt),
+                            value: formatDateTime(checklist.updatedAt),
                           },
                         ]}
                       />
@@ -690,3 +679,4 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
 };
 
 export default ViewSuratJalanModal;
+

@@ -1,5 +1,6 @@
 import React from 'react';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import Pagination from '../common/Pagination';
 
 const InvoicePengirimanTable = ({
@@ -14,28 +15,6 @@ const InvoicePengirimanTable = ({
   onTogglePenagihan,
   creatingPenagihanId,
 }) => {
-  const formatCurrency = (amount) => {
-    // grand_total: '1000';
-    if (amount == null) {
-      return '-';
-    }
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return '-';
-    }
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>

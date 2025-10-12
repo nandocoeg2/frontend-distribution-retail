@@ -1,34 +1,6 @@
 ﻿import React, { useState } from 'react';
+import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable } from '../ui';
-
-const formatCurrency = (amount) => {
-  if (typeof amount !== 'number') return '-';
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-  }).format(amount);
-};
-
-const formatDate = (value) => {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const formatDateTime = (value) => {
-  if (!value) return '-';
-  return new Date(value).toLocaleString('id-ID', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
 
 const toBooleanLabel = (value, fallback = '-') => {
   if (typeof value === 'boolean') {
@@ -383,3 +355,5 @@ const ViewInvoicePenagihanModal = ({ show, onClose, invoice }) => {
 };
 
 export default ViewInvoicePenagihanModal;
+
+

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
+import { formatDateTime } from '../../utils/formatUtils';
 import {
   XMarkIcon,
   UserCircleIcon,
@@ -18,22 +19,6 @@ import {
   InfoTable,
   StatusBadge,
 } from '../ui';
-
-const formatDateTime = (value) => {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  } catch (error) {
-    return value;
-  }
-};
 
 const ViewUserModal = ({ show, onClose, user }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -211,3 +196,4 @@ const ViewUserModal = ({ show, onClose, user }) => {
 };
 
 export default ViewUserModal;
+

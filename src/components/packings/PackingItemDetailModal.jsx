@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { InfoCard, StatusBadge, InfoTable } from '../ui';
+import { formatDateTime } from '../../utils/formatUtils';
 import { getInventoryById } from '../../services/inventoryService';
 import toastService from '../../services/toastService';
 
@@ -37,19 +38,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
 
   if (!item) return null;
 
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',  
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
-  const getStatusVariant = (statusCode) => {
+    const getStatusVariant = (statusCode) => {
     if (!statusCode) return 'default';
     const status = statusCode.toUpperCase();
     if (status.includes('PENDING')) return 'warning';
@@ -66,7 +55,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
           <div className="flex items-center space-x-4">
             <div className="p-2 bg-green-100 rounded-lg">
-              <span className="text-2xl">📦</span>
+              <span className="text-2xl">ðŸ“¦</span>
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Detail Barang</h2>
@@ -97,7 +86,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
-                <div className="text-red-500 text-xl mr-2">⚠️</div>
+                <div className="text-red-500 text-xl mr-2">âš ï¸</div>
                 <div>
                   <h3 className="text-sm font-medium text-red-800">Error</h3>
                   <p className="text-sm text-red-700 mt-1">{error}</p>
@@ -120,8 +109,8 @@ const PackingItemDetailModal = ({ item, onClose }) => {
                     { label: 'Stok C', value: inventory.stok_c || 0 },
                     { label: 'Stok Q', value: inventory.stok_q || 0 },
                     { label: 'Min Stok', value: inventory.min_stok || 0 },
-                    { label: 'Created At', value: formatDate(inventory.createdAt) },
-                    { label: 'Updated At', value: formatDate(inventory.updatedAt) },
+                    { label: 'Created At', value: formatDateTime(inventory.createdAt) },
+                    { label: 'Updated At', value: formatDateTime(inventory.updatedAt) },
                     { label: 'Inventory ID', value: inventory.id, copyable: true },
                     { label: 'Created By', value: inventory.createdBy || 'N/A', copyable: true },
                     { label: 'Updated By', value: inventory.updatedBy || 'N/A', copyable: true }
@@ -167,8 +156,8 @@ const PackingItemDetailModal = ({ item, onClose }) => {
                   { label: 'Item ID', value: item.id, copyable: true },
                   { label: 'Packing ID', value: item.packingId, copyable: true },
                   { label: 'Status ID', value: item.statusId, copyable: true },
-                  { label: 'Created At', value: formatDate(item.createdAt) },
-                  { label: 'Updated At', value: formatDate(item.updatedAt) },
+                  { label: 'Created At', value: formatDateTime(item.createdAt) },
+                  { label: 'Updated At', value: formatDateTime(item.updatedAt) },
                   { label: 'Created By', value: item.createdBy, copyable: true },
                   { label: 'Updated By', value: item.updatedBy, copyable: true }
                 ]}
@@ -195,3 +184,4 @@ const PackingItemDetailModal = ({ item, onClose }) => {
 };
 
 export default PackingItemDetailModal;
+

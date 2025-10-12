@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import EditablePurchaseOrderDetailsTable from './EditablePurchaseOrderDetailsTable.jsx';
 import HeroIcon from '../atoms/HeroIcon.jsx';
 import fileService from '../../services/fileService.js';
 import authService from '../../services/authService.js';
 import axios from 'axios';
+import { formatDateTime } from '../../utils/formatUtils';
 
 const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
   const [formData, setFormData] = useState({
@@ -89,12 +90,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
     await fileService.downloadFile(fileId, fileName);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
@@ -162,12 +158,12 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Created At</h4>
-                <p className="mt-1 text-sm text-gray-900">{formatDate(order.createdAt)}</p>
+                <p className="mt-1 text-sm text-gray-900">{formatDateTime(order.createdAt)}</p>
               </div>
               
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Updated At</h4>
-                <p className="mt-1 text-sm text-gray-900">{formatDate(order.updatedAt)}</p>
+                <p className="mt-1 text-sm text-gray-900">{formatDateTime(order.updatedAt)}</p>
               </div>
             </div>
           )}
@@ -194,4 +190,5 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
 };
 
 export default EditPurchaseOrderModal;
+
 

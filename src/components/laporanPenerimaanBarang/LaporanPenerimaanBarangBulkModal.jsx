@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   StatusBadge,
@@ -9,23 +10,6 @@ import {
   TabContent,
   TabPanel,
 } from '../ui';
-
-const formatDateTime = (value) => {
-  if (!value) {
-    return '-';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-  return date.toLocaleString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
 
 const formatFileSize = (bytes) => {
   const value = Number(bytes);
@@ -615,3 +599,4 @@ const LaporanPenerimaanBarangBulkModal = ({
 };
 
 export default LaporanPenerimaanBarangBulkModal;
+

@@ -3,24 +3,8 @@ import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { PlayIcon, CheckIcon } from '@heroicons/react/24/solid';
 import Pagination from '../common/Pagination';
 import { StatusBadge } from '../ui/Badge';
+import { formatDate } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-
-  return date.toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
 
 const resolveReportId = (report) => {
   if (!report) {

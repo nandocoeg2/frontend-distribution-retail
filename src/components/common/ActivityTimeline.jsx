@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateTime as formatJakartaDateTime } from '../../utils/formatUtils';
 import { StatusBadge } from '../ui';
 import {
   PlusCircleIcon,
@@ -18,19 +19,7 @@ const ActivityTimeline = ({
   showCount = true,
   formatDate = null,
 }) => {
-  const defaultFormatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const formatDateTime = formatDate || defaultFormatDate;
+  const formatDateTime = formatDate || formatJakartaDateTime;
   const iconClasses = 'w-5 h-5';
 
   const iconMap = {

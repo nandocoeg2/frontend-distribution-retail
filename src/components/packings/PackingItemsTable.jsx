@@ -1,21 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { StatusBadge } from '../ui';
+import { formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const PackingItemsTable = ({ packingItems, onItemClick }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',  
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
 
   const resolveStatusVariant = (status) => {
     const value = typeof status === 'string' ? status.toLowerCase() : '';
@@ -55,7 +44,7 @@ const PackingItemsTable = ({ packingItems, onItemClick }) => {
   if (!packingItems || packingItems.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <div className="text-4xl mb-2">📦</div>
+        <div className="text-4xl mb-2">ðŸ“¦</div>
         <p>Tidak ada packing items</p>
       </div>
     );
@@ -110,7 +99,7 @@ const PackingItemsTable = ({ packingItems, onItemClick }) => {
                 onClick={() => onItemClick(item)}
               >
                 <div className="flex items-center space-x-2">
-                  <span>📦</span>
+                  <span>ðŸ“¦</span>
                   <span className="hover:underline">{item.nama_barang}</span>
                 </div>
               </td>
@@ -136,7 +125,7 @@ const PackingItemsTable = ({ packingItems, onItemClick }) => {
                 />
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 border-b">
-                {formatDate(item.updatedAt)}
+                {formatDateTime(item.updatedAt)}
               </td>
               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 border-b">
                 <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
@@ -152,3 +141,4 @@ const PackingItemsTable = ({ packingItems, onItemClick }) => {
 };
 
 export default PackingItemsTable;
+

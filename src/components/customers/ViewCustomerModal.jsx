@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
 import { ClipboardDocumentIcon, XMarkIcon, BuildingStorefrontIcon, MapPinIcon, DevicePhoneMobileIcon, AtSymbolIcon, IdentificationIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable } from '../ui';
 
 const ViewCustomerModal = ({ show, onClose, customer }) => {
@@ -44,17 +45,6 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
   if (!show) {
     return null;
   }
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'long', 
-      year: 'numeric',
-      hour: '2-digit',  
-      minute: '2-digit'
-    });
-  };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -156,8 +146,8 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                 </div>
                 <InfoTable 
                   data={[
-                    { label: 'Created', value: formatDate(fullCustomer?.createdAt || customer?.createdAt) },
-                    { label: 'Last Updated', value: formatDate(fullCustomer?.updatedAt || customer?.updatedAt) }
+                    { label: 'Created', value: formatDateTime(fullCustomer?.createdAt || customer?.createdAt) },
+                    { label: 'Last Updated', value: formatDateTime(fullCustomer?.updatedAt || customer?.updatedAt) }
                   ]}
                 />
               </div>

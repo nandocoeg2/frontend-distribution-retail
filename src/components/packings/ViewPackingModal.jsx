@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import ActivityTimeline from '../common/ActivityTimeline';
 import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
 import { exportStickerToPDF, printSticker } from './PrintPackingSticker';
 import { resolveStatusVariant } from '../../utils/modalUtils';
+import { formatDate, formatDateTime } from '../../utils/formatUtils';
 import {
   TabContainer,
   Tab,
@@ -38,7 +39,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
       <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50'>
         <div className='w-full max-w-md p-6 bg-white shadow-2xl rounded-xl'>
           <div className='text-center'>
-            <div className='mb-4 text-6xl text-red-500'>⚠️</div>
+            <div className='mb-4 text-6xl text-red-500'>âš ï¸</div>
             <h2 className='mb-2 text-xl font-bold text-gray-900'>
               Data Tidak Valid
             </h2>
@@ -56,27 +57,6 @@ const ViewPackingModal = ({ packing, onClose }) => {
       </div>
     );
   }
-
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
-  const formatDateOnly = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
 
   const toggleSection = (section) => {
     setExpandedSections((prev) => ({
@@ -147,14 +127,14 @@ const ViewPackingModal = ({ packing, onClose }) => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📋' },
+    { id: 'overview', label: 'Overview', icon: 'ðŸ“‹' },
     {
       id: 'items',
       label: 'Packing Items',
-      icon: '📦',
+      icon: 'ðŸ“¦',
       badge: packing.packingItems?.length,
     },
-    { id: 'timeline', label: 'Timeline', icon: '⏱️' },
+    { id: 'timeline', label: 'Timeline', icon: 'â±ï¸' },
   ];
 
   return (
@@ -164,7 +144,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-blue-100 rounded-lg'>
-              <span className='text-2xl'>📦</span>
+              <span className='text-2xl'>ðŸ“¦</span>
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -273,11 +253,11 @@ const ViewPackingModal = ({ packing, onClose }) => {
                       },
                       {
                         label: 'Created At',
-                        value: formatDate(packing.createdAt),
+                        value: formatDateTime(packing.createdAt),
                       },
                       {
                         label: 'Updated At',
-                        value: formatDate(packing.updatedAt),
+                        value: formatDateTime(packing.updatedAt),
                       },
                       {
                         label: 'Total Items',
@@ -304,13 +284,13 @@ const ViewPackingModal = ({ packing, onClose }) => {
                         },
                         {
                           label: 'Tanggal Masuk PO',
-                          value: formatDateOnly(
+                          value: formatDate(
                             packing.purchaseOrder.tanggal_masuk_po
                           ),
                         },
                         {
                           label: 'Tanggal Batas Kirim',
-                          value: formatDateOnly(
+                          value: formatDate(
                             packing.purchaseOrder.tanggal_batas_kirim
                           ),
                         },
@@ -463,3 +443,4 @@ const ViewPackingModal = ({ packing, onClose }) => {
 };
 
 export default ViewPackingModal;
+

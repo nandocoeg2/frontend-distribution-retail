@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import bulkPurchaseOrderService from '../services/bulkPurchaseOrderService';
-import { formatDateTime, truncateText, getStatusVariant } from '../utils/modalUtils';
+import { formatDateTime } from '../utils/formatUtils';
+import { truncateText, getStatusVariant } from '../utils/modalUtils';
 
 const StatusBadgeInline = ({ status }) => {
   const variant = getStatusVariant(status);

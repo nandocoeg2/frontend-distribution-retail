@@ -2,6 +2,7 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import InfoTable from '../ui/InfoTable';
 import ActivityTimeline from '../common/ActivityTimeline';
+import { formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   TabContainer,
@@ -11,26 +12,6 @@ import {
   StatusBadge,
   LoadingDots,
 } from '../ui';
-
-const formatDateTime = (value) => {
-  if (!value) {
-    return '-';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '-';
-  }
-
-  return date.toLocaleString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
 
 const formatFileSize = (bytes) => {
   if (bytes === null || bytes === undefined) {
@@ -312,3 +293,5 @@ const LaporanPenerimaanBarangDetailModal = ({
 };
 
 export default LaporanPenerimaanBarangDetailModal;
+
+

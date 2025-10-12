@@ -1,38 +1,14 @@
-/**
+﻿/**
  * Modal Utilities
  * Common utility functions used across modal components
  */
 
-/**
- * Format date for Indonesian locale with full date and time
- * @param {string|Date} date - Date to format
- * @returns {string} Formatted date string
- */
-export const formatDateTime = (date) => {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleString('id-ID', {
-    day: '2-digit',
-    month: '2-digit', 
-    year: 'numeric',
-    hour: '2-digit',  
-    minute: '2-digit',
-    second: '2-digit'
-  });
-};
+import { formatDate } from './formatUtils';
 
 /**
- * Format date for Indonesian locale (date only)
- * @param {string|Date} date - Date to format
- * @returns {string} Formatted date string
+ * Expose shared formatting helpers
  */
-export const formatDate = (date) => {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: '2-digit', 
-    year: 'numeric'
-  });
-};
+export { formatDateTime, formatDate, formatCurrency } from './formatUtils';
 
 /**
  * Format date for Indonesian locale (short format)
@@ -40,25 +16,7 @@ export const formatDate = (date) => {
  * @returns {string} Formatted date string
  */
 export const formatDateShort = (date) => {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
-/**
- * Format currency for Indonesian Rupiah
- * @param {number} amount - Amount to format
- * @returns {string} Formatted currency string
- */
-export const formatCurrency = (amount) => {
-  if (!amount && amount !== 0) return 'N/A';
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR'
-  }).format(amount);
+  return formatDate(date);
 };
 
 /**
@@ -181,43 +139,43 @@ export const modalThemes = {
     gradientFrom: 'from-green-50',
     gradientTo: 'to-emerald-50',
     iconBgColor: 'bg-green-100',
-    icon: '👤'
+    icon: 'ðŸ‘¤'
   },
   supplier: {
     gradientFrom: 'from-purple-50',
     gradientTo: 'to-indigo-50',
     iconBgColor: 'bg-purple-100',
-    icon: '🏢'
+    icon: 'ðŸ¢'
   },
   inventory: {
     gradientFrom: 'from-orange-50',
     gradientTo: 'to-amber-50',
     iconBgColor: 'bg-orange-100',
-    icon: '📦'
+    icon: 'ðŸ“¦'
   },
   invoice: {
     gradientFrom: 'from-indigo-50',
     gradientTo: 'to-blue-50',
     iconBgColor: 'bg-indigo-100',
-    icon: '🧾'
+    icon: 'ðŸ§¾'
   },
   suratJalan: {
     gradientFrom: 'from-teal-50',
     gradientTo: 'to-cyan-50',
     iconBgColor: 'bg-teal-100',
-    icon: '🚚'
+    icon: 'ðŸšš'
   },
   purchaseOrder: {
     gradientFrom: 'from-emerald-50',
     gradientTo: 'to-green-50',
     iconBgColor: 'bg-emerald-100',
-    icon: '🛒'
+    icon: 'ðŸ›’'
   },
   packing: {
     gradientFrom: 'from-blue-50',
     gradientTo: 'to-indigo-50',
     iconBgColor: 'bg-blue-100',
-    icon: '📦'
+    icon: 'ðŸ“¦'
   }
 };
 
@@ -262,15 +220,15 @@ export const createInitialSections = (sectionKeys, defaultExpanded = null) => {
  */
 export const getActionIcon = (action) => {
   const iconMap = {
-    'CREATE': '✨',
-    'UPDATE': '📝',
-    'DELETE': '🗑️',
-    'APPROVE': '✅',
-    'REJECT': '❌',
-    'SUBMIT': '📤',
-    'PROCESS': '⚙️',
-    'COMPLETE': '🎉',
-    'DEFAULT': '🔄'
+    'CREATE': 'âœ¨',
+    'UPDATE': 'ðŸ“',
+    'DELETE': 'ðŸ—‘ï¸',
+    'APPROVE': 'âœ…',
+    'REJECT': 'âŒ',
+    'SUBMIT': 'ðŸ“¤',
+    'PROCESS': 'âš™ï¸',
+    'COMPLETE': 'ðŸŽ‰',
+    'DEFAULT': 'ðŸ”„'
   };
   return iconMap[action?.toUpperCase()] || iconMap.DEFAULT;
 };
@@ -362,3 +320,4 @@ export const truncateText = (text, maxLength = 50) => {
   if (text.length <= maxLength) return text;
   return `${text.substring(0, maxLength)}...`;
 };
+

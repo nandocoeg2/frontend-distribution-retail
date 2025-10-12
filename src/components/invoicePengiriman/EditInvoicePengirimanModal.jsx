@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toastService from '../../services/toastService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
+import { formatCurrency } from '../../utils/formatUtils';
 
 const DEFAULT_FORM = {
   deliver_to: '',
@@ -36,13 +37,7 @@ const toNumberValue = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const formatCurrency = (value) => {
-  const amount = toNumberValue(value);
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR'
-  }).format(amount);
-};
+const formatCurrencyDisplay = (value) => formatCurrency(toNumberValue(value));
 
 const EditInvoicePengirimanModal = ({
   show,
@@ -253,15 +248,15 @@ const EditInvoicePengirimanModal = ({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Grand Total</p>
-              <p className="mt-2 text-xl font-bold text-blue-700">{formatCurrency(formData.grand_total)}</p>
+              <p className="mt-2 text-xl font-bold text-blue-700">{formatCurrencyDisplay(formData.grand_total)}</p>
             </div>
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Harga (setelah diskon)</p>
-              <p className="mt-2 text-lg font-semibold text-gray-800">{formatCurrency(derivedTotals.totalPrice)}</p>
+              <p className="mt-2 text-lg font-semibold text-gray-800">{formatCurrencyDisplay(derivedTotals.totalPrice)}</p>
             </div>
             <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">PPN</p>
-              <p className="mt-2 text-lg font-semibold text-gray-800">{formatCurrency(derivedTotals.ppnRupiah)} ({derivedTotals.ppnPercentage}% )</p>
+              <p className="mt-2 text-lg font-semibold text-gray-800">{formatCurrencyDisplay(derivedTotals.ppnRupiah)} ({derivedTotals.ppnPercentage}% )</p>
             </div>
           </div>
 
@@ -493,3 +488,5 @@ const EditInvoicePengirimanModal = ({
 };
 
 export default EditInvoicePengirimanModal;
+
+

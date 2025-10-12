@@ -1,5 +1,6 @@
 ﻿import React from 'react';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import Pagination from '../common/Pagination';
 
 const InvoicePenagihanTable = ({
@@ -13,27 +14,6 @@ const InvoicePenagihanTable = ({
   searchQuery,
 }) => {
   const data = Array.isArray(invoices) ? invoices : [];
-
-  const formatCurrency = (amount) => {
-    if (typeof amount !== 'number') {
-      return '-';
-    }
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return '-';
-    }
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   return (
     <div className='overflow-x-auto'>
@@ -137,3 +117,4 @@ const InvoicePenagihanTable = ({
 };
 
 export default InvoicePenagihanTable;
+
