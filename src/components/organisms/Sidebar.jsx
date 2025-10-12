@@ -71,9 +71,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 
   const defaultMenuItems = [
     {
-      id: 'dashboard',
-      name: 'Dashboard',
-      url: '/dashboard',
+      id: 'reporting',
+      name: 'Reporting',
+      url: '/reporting',
       icon: 'home',
     },
     {
@@ -387,3 +387,4 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 };
 
 export default Sidebar;
+

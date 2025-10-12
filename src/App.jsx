@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Reporting from './pages/Reporting.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Users from './pages/Users.jsx';
 import Settings from './pages/Settings.jsx';
@@ -49,13 +50,13 @@ const AppRoutes = () => {
       <Route
         path='/login'
         element={
-          isAuthenticated ? <Navigate to='/dashboard' replace /> : <Login />
+          isAuthenticated ? <Navigate to='/reporting' replace /> : <Login />
         }
       />
       <Route
         path='/register'
         element={
-          isAuthenticated ? <Navigate to='/dashboard' replace /> : <Register />
+          isAuthenticated ? <Navigate to='/reporting' replace /> : <Register />
         }
       />
 
@@ -65,6 +66,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/reporting'
+        element={
+          <ProtectedRoute>
+            <Reporting />
           </ProtectedRoute>
         }
       />
@@ -236,7 +245,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route path='/' element={<Navigate to='/dashboard' replace />} />
+      <Route path='/' element={<Navigate to='/reporting' replace />} />
       <Route path='*' element={<NotFound />} />
     </Routes>
   );
@@ -267,4 +276,5 @@ const App = () => {
 };
 
 export default App;
+
 

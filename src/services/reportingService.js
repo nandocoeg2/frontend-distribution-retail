@@ -1,8 +1,8 @@
 import { get } from './apiService';
 
-const OPERATIONAL_ENDPOINT = '/dashboard/operational';
-const FINANCIAL_ENDPOINT = '/dashboard/financial';
-const INVENTORY_ENDPOINT = '/dashboard/inventory';
+const OPERATIONAL_ENDPOINT = '/reporting/operational';
+const FINANCIAL_ENDPOINT = '/reporting/financial';
+const INVENTORY_ENDPOINT = '/reporting/inventory';
 
 const buildParams = ({ period, startDate, endDate }) => {
   const params = {};
@@ -18,20 +18,20 @@ const buildParams = ({ period, startDate, endDate }) => {
   return params;
 };
 
-export const getOperationalDashboard = (filters = {}) => {
+export const getOperationalReporting = (filters = {}) => {
   return get(OPERATIONAL_ENDPOINT, buildParams(filters));
 };
 
-export const getFinancialDashboard = (filters = {}) => {
+export const getFinancialReporting = (filters = {}) => {
   return get(FINANCIAL_ENDPOINT, buildParams(filters));
 };
 
-export const getInventoryDashboard = () => {
+export const getInventoryReporting = () => {
   return get(INVENTORY_ENDPOINT);
 };
 
 export default {
-  getOperationalDashboard,
-  getFinancialDashboard,
-  getInventoryDashboard,
+  getOperationalReporting,
+  getFinancialReporting,
+  getInventoryReporting,
 };
