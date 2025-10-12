@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaceSmileIcon, HomeIcon, KeyIcon, LightBulbIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
@@ -45,7 +46,7 @@ const NotFound = () => {
             <div className='p-4 bg-white/5 rounded-2xl border border-white/10'>
               <div className='flex items-center space-x-3 mb-2'>
                 <div className='w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center'>
-                  <span className='text-blue-400'>🏠</span>
+                  <HomeIcon className='h-5 w-5 text-blue-400' aria-hidden='true' />
                 </div>
                 <h3 className='text-white font-semibold'>Go Home</h3>
               </div>
@@ -57,7 +58,7 @@ const NotFound = () => {
             <div className='p-4 bg-white/5 rounded-2xl border border-white/10'>
               <div className='flex items-center space-x-3 mb-2'>
                 <div className='w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center'>
-                  <span className='text-green-400'>🔑</span>
+                  <KeyIcon className='h-5 w-5 text-green-400' aria-hidden='true' />
                 </div>
                 <h3 className='text-white font-semibold'>Sign In</h3>
               </div>
@@ -93,12 +94,16 @@ const NotFound = () => {
 
         {/* Fun fact section */}
         <div className='text-slate-400 text-sm'>
-          <p className='mb-2'>
-            💡 <strong>Did you know?</strong>
+          <p className='mb-2 flex items-center gap-2'>
+            <LightBulbIcon className='h-5 w-5 text-yellow-300' aria-hidden='true' />
+            <strong>Did you know?</strong>
           </p>
-          <p>
-            The HTTP 404 error was named after room 404 at CERN where the web
-            was invented. Well, not really, but it sounds cool! 😄
+          <p className='flex items-center gap-2'>
+            <span>
+              The HTTP 404 error was named after room 404 at CERN where the web
+              was invented. Well, not really, but it sounds cool!
+            </span>
+            <FaceSmileIcon className='h-5 w-5 text-indigo-200' aria-hidden='true' />
           </p>
         </div>
       </div>

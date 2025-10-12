@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { ArchiveBoxIcon } from '@heroicons/react/24/outline';
 import {
   AccordionItem,
   InfoCard,
@@ -67,7 +68,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-amber-50">
           <div className="flex items-center space-x-4">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <span className="text-2xl">📦</span>
+              <ArchiveBoxIcon className="h-8 w-8 text-orange-500" aria-hidden="true" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Inventory Details</h2>

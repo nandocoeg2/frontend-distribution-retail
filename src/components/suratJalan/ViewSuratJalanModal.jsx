@@ -1,5 +1,14 @@
 ﻿import React, { useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import {
+  ArchiveBoxIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClipboardDocumentCheckIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  ListBulletIcon,
+  TruckIcon,
+} from '@heroicons/react/24/outline';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import { AccordionItem, StatusBadge, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
@@ -101,23 +110,27 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
   const statusId = typeof statusData === 'string' ? null : statusData?.id;
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'OV' },
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: <DocumentTextIcon className='h-5 w-5' aria-hidden='true' />,
+    },
     {
       id: 'details',
       label: 'Surat Jalan Details',
-      icon: 'DT',
+      icon: <ListBulletIcon className='h-5 w-5' aria-hidden='true' />,
       badge: suratJalan.suratJalanDetails?.length,
     },
     {
       id: 'checklist',
       label: 'Checklist Surat Jalan',
-      icon: 'CL',
+      icon: <ClipboardDocumentCheckIcon className='h-5 w-5' aria-hidden='true' />,
       badge: normalizedChecklist.length || null,
     },
     {
       id: 'activity',
       label: 'Activity Timeline',
-      icon: 'AT',
+      icon: <ClockIcon className='h-5 w-5' aria-hidden='true' />,
       badge: normalizedAuditTrails.length || null,
     },
   ];
@@ -129,7 +142,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-teal-100 rounded-lg'>
-              <span className='text-2xl'>ðŸšš</span>
+              <TruckIcon className='h-8 w-8 text-teal-600' aria-hidden='true' />
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -558,7 +571,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               ) : (
                 <div className='py-12 text-center'>
                   <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                    <span className='text-2xl'>ðŸ“¦</span>
+                    <ArchiveBoxIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
                   </div>
                   <h3 className='mb-2 text-lg font-medium text-gray-900'>
                     No Details Found
@@ -639,7 +652,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               ) : (
                 <div className='py-12 text-center'>
                   <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                    <span className='text-2xl'>CL</span>
+                    <ClipboardDocumentCheckIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
                   </div>
                   <h3 className='mb-2 text-lg font-medium text-gray-900'>
                     No Checklist Found

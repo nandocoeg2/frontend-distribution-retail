@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { UserIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 
@@ -47,7 +48,10 @@ const SettingProfile = () => {
   return (
     <>
       <header className='bg-white/80 p-6'>
-        <h1 className='text-3xl font-bold'>Profile Settings 👤</h1>
+        <h1 className='text-3xl font-bold flex items-center gap-2'>
+          Profile Settings
+          <UserIcon className='h-8 w-8 text-indigo-500' aria-hidden='true' />
+        </h1>
       </header>
 
       <main className='flex-1 overflow-y-auto p-6'>

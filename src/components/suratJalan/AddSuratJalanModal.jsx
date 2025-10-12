@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ClipboardDocumentCheckIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import FormModal from '../common/FormModal';
 import toastService from '../../services/toastService';
 import suratJalanService from '../../services/suratJalanService';
@@ -72,7 +73,7 @@ const AddSuratJalanModal = ({ show, onClose, onSuratJalanAdded, handleAuthError 
   const renderBasicInfoSection = () => (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-        <span className="mr-2">📄</span>
+        <DocumentTextIcon className="mr-2 h-5 w-5 text-blue-600" aria-hidden="true" />
         Informasi Dasar
       </h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -164,7 +165,7 @@ const AddSuratJalanModal = ({ show, onClose, onSuratJalanAdded, handleAuthError 
   const renderChecklistSection = () => (
     <div className="mb-6">
       <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-        <span className="mr-2">✅</span>
+        <ClipboardDocumentCheckIcon className="mr-2 h-5 w-5 text-blue-600" aria-hidden="true" />
         Checklist Surat Jalan
       </h3>
       <div className="p-4 border border-blue-200 rounded-lg bg-blue-50/30">

@@ -1,6 +1,15 @@
 ﻿import React, { useState } from 'react';
+import {
+  ArchiveBoxIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  FolderIcon,
+  ListBulletIcon,
+  PaperClipIcon,
+  ShoppingCartIcon,
+  TruckIcon,
+} from '@heroicons/react/24/outline';
 import fileService from '../../services/fileService';
-import HeroIcon from '../atoms/HeroIcon';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 import purchaseOrderService from '../../services/purchaseOrderService';
 import ActivityTimeline from '../common/ActivityTimeline';
@@ -166,19 +175,31 @@ const ViewPurchaseOrderModal = ({
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'ðŸ“‹' },
-    { id: 'details', label: 'Order Details', icon: 'ðŸ“¦' },
-    { id: 'documents', label: 'Documents Information', icon: 'ðŸ“„' },
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: <DocumentTextIcon className='h-5 w-5' aria-hidden='true' />,
+    },
+    {
+      id: 'details',
+      label: 'Order Details',
+      icon: <ListBulletIcon className='h-5 w-5' aria-hidden='true' />,
+    },
+    {
+      id: 'documents',
+      label: 'Documents Information',
+      icon: <FolderIcon className='h-5 w-5' aria-hidden='true' />,
+    },
     {
       id: 'files',
       label: 'Attached Files',
-      icon: 'ðŸ“Ž',
+      icon: <PaperClipIcon className='h-5 w-5' aria-hidden='true' />,
       badge: order?.files?.length,
     },
     {
       id: 'timeline',
       label: 'Timeline',
-      icon: 'â±ï¸',
+      icon: <ClockIcon className='h-5 w-5' aria-hidden='true' />,
       badge: order?.auditTrails?.length,
     },
   ];
@@ -190,7 +211,7 @@ const ViewPurchaseOrderModal = ({
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 rounded-lg bg-emerald-100'>
-              <span className='text-2xl'>ðŸ›’</span>
+              <ShoppingCartIcon className='h-8 w-8 text-emerald-600' aria-hidden='true' />
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -691,7 +712,7 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <span className='text-2xl'>ðŸ“„</span>
+                          <TruckIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
                         </div>
                         <p>No Surat Jalan available</p>
                       </div>
@@ -773,7 +794,7 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <span className='text-2xl'>ðŸ§¾</span>
+                          <DocumentTextIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
                         </div>
                         <p>No Invoice available</p>
                       </div>
@@ -825,7 +846,7 @@ const ViewPurchaseOrderModal = ({
                     ) : (
                       <div className='py-8 text-center text-gray-500'>
                         <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                          <span className='text-2xl'>ðŸ“¦</span>
+                          <ArchiveBoxIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
                         </div>
                         <p>No Packing List available</p>
                       </div>
@@ -855,10 +876,7 @@ const ViewPurchaseOrderModal = ({
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center space-x-3'>
                               <div className='flex-shrink-0'>
-                                <HeroIcon
-                                  icon='PaperClipIcon'
-                                  className='w-8 h-8 text-gray-400'
-                                />
+                                <PaperClipIcon className='w-8 h-8 text-gray-400' aria-hidden='true' />
                               </div>
                               <div className='flex-1 min-w-0'>
                                 <p className='text-sm font-medium text-gray-900 truncate'>
@@ -886,7 +904,7 @@ const ViewPurchaseOrderModal = ({
                   ) : (
                     <div className='py-12 text-center'>
                       <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                        <span className='text-2xl'>ðŸ“Ž</span>
+                        <PaperClipIcon className='h-8 w-8 text-gray-400' aria-hidden='true' />
                       </div>
                       <h3 className='mb-2 text-lg font-medium text-gray-900'>
                         No Files Attached

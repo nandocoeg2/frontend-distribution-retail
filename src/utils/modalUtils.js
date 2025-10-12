@@ -139,43 +139,43 @@ export const modalThemes = {
     gradientFrom: 'from-green-50',
     gradientTo: 'to-emerald-50',
     iconBgColor: 'bg-green-100',
-    icon: 'ðŸ‘¤'
+    icon: 'UserIcon',
   },
   supplier: {
     gradientFrom: 'from-purple-50',
     gradientTo: 'to-indigo-50',
     iconBgColor: 'bg-purple-100',
-    icon: 'ðŸ¢'
+    icon: 'BuildingStorefrontIcon',
   },
   inventory: {
     gradientFrom: 'from-orange-50',
     gradientTo: 'to-amber-50',
     iconBgColor: 'bg-orange-100',
-    icon: 'ðŸ“¦'
+    icon: 'ArchiveBoxIcon',
   },
   invoice: {
     gradientFrom: 'from-indigo-50',
     gradientTo: 'to-blue-50',
     iconBgColor: 'bg-indigo-100',
-    icon: 'ðŸ§¾'
+    icon: 'DocumentTextIcon',
   },
   suratJalan: {
     gradientFrom: 'from-teal-50',
     gradientTo: 'to-cyan-50',
     iconBgColor: 'bg-teal-100',
-    icon: 'ðŸšš'
+    icon: 'TruckIcon',
   },
   purchaseOrder: {
     gradientFrom: 'from-emerald-50',
     gradientTo: 'to-green-50',
     iconBgColor: 'bg-emerald-100',
-    icon: 'ðŸ›’'
+    icon: 'ShoppingCartIcon',
   },
   packing: {
     gradientFrom: 'from-blue-50',
     gradientTo: 'to-indigo-50',
     iconBgColor: 'bg-blue-100',
-    icon: 'ðŸ“¦'
+    icon: 'CubeIcon',
   }
 };
 
@@ -216,21 +216,21 @@ export const createInitialSections = (sectionKeys, defaultExpanded = null) => {
 /**
  * Get action icon for audit trail
  * @param {string} action - Action type
- * @returns {string} Emoji icon
+ * @returns {string} Heroicon component name
  */
 export const getActionIcon = (action) => {
   const iconMap = {
-    'CREATE': 'âœ¨',
-    'UPDATE': 'ðŸ“',
-    'DELETE': 'ðŸ—‘ï¸',
-    'APPROVE': 'âœ…',
-    'REJECT': 'âŒ',
-    'SUBMIT': 'ðŸ“¤',
-    'PROCESS': 'âš™ï¸',
-    'COMPLETE': 'ðŸŽ‰',
-    'DEFAULT': 'ðŸ”„'
+    CREATE: 'PlusCircleIcon',
+    UPDATE: 'PencilSquareIcon',
+    DELETE: 'TrashIcon',
+    APPROVE: 'CheckBadgeIcon',
+    REJECT: 'XCircleIcon',
+    SUBMIT: 'PaperAirplaneIcon',
+    PROCESS: 'Cog6ToothIcon',
+    COMPLETE: 'CheckCircleIcon',
+    DEFAULT: 'InformationCircleIcon',
   };
-  return iconMap[action?.toUpperCase()] || iconMap.DEFAULT;
+  return iconMap[action?.toUpperCase?.()] || iconMap.DEFAULT;
 };
 
 /**

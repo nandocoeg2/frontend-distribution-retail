@@ -1,4 +1,5 @@
 import React from 'react';
+import { ArrowTrendingDownIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const Analytics = () => {
@@ -28,8 +29,9 @@ const Analytics = () => {
               <div className='text-3xl font-bold text-blue-600 mb-2'>
                 125,430
               </div>
-              <p className='text-sm text-green-600'>
-                ↗ +15.3% from last month
+              <p className='text-sm text-green-600 flex items-center gap-1'>
+                <ArrowTrendingUpIcon className='h-4 w-4' aria-hidden='true' />
+                <span>+15.3% from last month</span>
               </p>
             </div>
 
@@ -40,7 +42,10 @@ const Analytics = () => {
               <div className='text-3xl font-bold text-purple-600 mb-2'>
                 8,240
               </div>
-              <p className='text-sm text-green-600'>↗ +8.7% from last month</p>
+              <p className='text-sm text-green-600 flex items-center gap-1'>
+                <ArrowTrendingUpIcon className='h-4 w-4' aria-hidden='true' />
+                <span>+8.7% from last month</span>
+              </p>
             </div>
 
             <div className='bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/60 p-6'>
@@ -50,7 +55,10 @@ const Analytics = () => {
               <div className='text-3xl font-bold text-orange-600 mb-2'>
                 32.1%
               </div>
-              <p className='text-sm text-red-600'>↘ -2.4% from last month</p>
+              <p className='text-sm text-red-600 flex items-center gap-1'>
+                <ArrowTrendingDownIcon className='h-4 w-4' aria-hidden='true' />
+                <span>-2.4% from last month</span>
+              </p>
             </div>
           </div>
 

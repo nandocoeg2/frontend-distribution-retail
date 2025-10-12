@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
 import {
+  ArchiveBoxIcon,
+  ArrowUpTrayIcon,
+  BellAlertIcon,
+  ChartBarIcon,
+  CheckCircleIcon,
+  Cog6ToothIcon,
+  CurrencyDollarIcon,
+  EnvelopeIcon,
+  UserIcon,
+} from '@heroicons/react/24/outline';
+import {
   Card,
   InfoCard,
   StatCard,
@@ -59,7 +70,7 @@ function UIComponentsExample() {
           value={sampleData.revenue}
           change={sampleData.growth}
           changeType="positive"
-          icon="💰"
+          icon={<CurrencyDollarIcon className='w-8 h-8 text-green-600' aria-hidden='true' />}
           variant="success"
         />
         
@@ -68,14 +79,14 @@ function UIComponentsExample() {
           value={sampleData.orders}
           change="+5"
           changeType="positive"
-          icon="📦"
+          icon={<ArchiveBoxIcon className='w-8 h-8 text-blue-600' aria-hidden='true' />}
           variant="primary"
         />
         
         <StatCard
           title="Customer Status"
           value={sampleData.status}
-          icon="👤"
+          icon={<UserIcon className='w-8 h-8 text-cyan-600' aria-hidden='true' />}
           variant="info"
         />
       </div>
@@ -95,7 +106,7 @@ function UIComponentsExample() {
           <Tab 
             id="overview" 
             label="Overview" 
-            icon="📊" 
+            icon={<ChartBarIcon className='w-5 h-5' aria-hidden='true' />} 
           />
           <Tab 
             id="details" 
@@ -105,7 +116,7 @@ function UIComponentsExample() {
           <Tab 
             id="settings" 
             label="Settings" 
-            icon="⚙️" 
+            icon={<Cog6ToothIcon className='w-5 h-5' aria-hidden='true' />} 
           />
         </TabContainer>
 
@@ -120,25 +131,25 @@ function UIComponentsExample() {
                   label="Full Name"
                   value={sampleData.name}
                   variant="primary"
-                  icon="👤"
+                  icon={<UserIcon className='w-5 h-5 text-blue-600' aria-hidden='true' />}
                 />
                 <InfoCard
                   label="Email Address"
                   value={sampleData.email}
                   copyable={true}
-                  icon="📧"
+                  icon={<EnvelopeIcon className='w-5 h-5 text-indigo-600' aria-hidden='true' />}
                 />
                 <InfoCard
                   label="Status"
                   value={<StatusBadge status={sampleData.status} variant="success" />}
                   variant="success"
-                  icon="✅"
+                  icon={<CheckCircleIcon className='w-5 h-5 text-green-600' aria-hidden='true' />}
                 />
                 <InfoCard
                   label="Total Orders"
                   value={sampleData.orders}
                   variant="info"
-                  icon="📊"
+                  icon={<ChartBarIcon className='w-5 h-5 text-cyan-600' aria-hidden='true' />}
                 />
               </div>
             </div>
@@ -152,7 +163,7 @@ function UIComponentsExample() {
               <Accordion allowMultiple={true} defaultExpanded={[0]}>
                 <AccordionItem 
                   title="Personal Information"
-                  icon="👤"
+                  icon={<UserIcon className='w-5 h-5 text-blue-600' aria-hidden='true' />}
                   badge={<StatusBadge status="Complete" variant="success" size="sm" />}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -163,7 +174,7 @@ function UIComponentsExample() {
                 
                 <AccordionItem 
                   title="Order Statistics"
-                  icon="📊"
+                  icon={<ChartBarIcon className='w-5 h-5 text-indigo-600' aria-hidden='true' />}
                   badge={<NumberBadge count={sampleData.orders} variant="primary" size="sm" />}
                 >
                   <div className="space-y-4 mt-4">
@@ -193,7 +204,7 @@ function UIComponentsExample() {
                 <FeatureCard
                   title="Export Data"
                   description="Download customer data in various formats"
-                  icon="📤"
+                  icon={<ArrowUpTrayIcon className='w-6 h-6 text-blue-600' aria-hidden='true' />}
                   actions={[
                     { 
                       label: "Export CSV", 
@@ -211,7 +222,7 @@ function UIComponentsExample() {
                 <FeatureCard
                   title="Notification Settings"
                   description="Configure email and SMS notifications"
-                  icon="🔔"
+                  icon={<BellAlertIcon className='w-6 h-6 text-amber-500' aria-hidden='true' />}
                   actions={[
                     { 
                       label: "Configure", 

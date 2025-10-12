@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import InfoTable from '../ui/InfoTable';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { formatDateTime } from '../../utils/formatUtils';
@@ -188,11 +188,15 @@ const LaporanPenerimaanBarangDetailModal = ({
   const purchaseOrderLabel = isLoading ? 'Memuat...' : purchaseOrderNumber;
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📄' },
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: <DocumentTextIcon className='h-5 w-5' aria-hidden='true' />,
+    },
     {
       id: 'timeline',
       label: 'Timeline',
-      icon: '🕒',
+      icon: <ClockIcon className='h-5 w-5' aria-hidden='true' />,
       badge: isLoading ? undefined : auditTrailCount,
     },
   ];

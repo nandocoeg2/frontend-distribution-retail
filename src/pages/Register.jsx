@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CheckCircleIcon, RocketLaunchIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 import { Link } from 'react-router-dom';
 
@@ -83,7 +84,7 @@ const Register = () => {
         {/* Logo/Brand Section */}
         <div className='text-center mb-8'>
           <div className='inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl shadow-2xl shadow-purple-500/25 mb-6'>
-            <span className='text-2xl text-white'>✨</span>
+            <SparklesIcon className='w-8 h-8 text-white' aria-hidden='true' />
           </div>
           <h1 className='text-4xl font-bold bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent mb-2'>
             Join Our Platform
@@ -329,8 +330,9 @@ const Register = () => {
                 )}
               {formData.confirmPassword &&
                 formData.password === formData.confirmPassword && (
-                  <p className='mt-1 text-xs text-green-400'>
-                    Passwords match ✓
+                  <p className='mt-1 text-xs text-green-400 flex items-center gap-1'>
+                    <CheckCircleIcon className='h-4 w-4' aria-hidden='true' />
+                    <span>Passwords match</span>
                   </p>
                 )}
             </div>
@@ -373,7 +375,7 @@ const Register = () => {
                 to='/login'
                 className='inline-flex items-center justify-center w-full py-3 px-4 border border-white/20 rounded-2xl text-sm font-medium text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all duration-200'
               >
-                <span className='mr-2'>🚀</span>
+                <RocketLaunchIcon className='mr-2 h-5 w-5' aria-hidden='true' />
                 Sign in to your account
               </Link>
             </div>

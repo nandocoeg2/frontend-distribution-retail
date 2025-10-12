@@ -1,4 +1,10 @@
 ﻿import React, { useState } from 'react';
+import {
+  ArchiveBoxIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 import ActivityTimeline from '../common/ActivityTimeline';
 import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
@@ -11,9 +17,7 @@ import {
   TabContent,
   TabPanel,
   AccordionItem,
-  InfoCard,
   StatusBadge,
-  DotBadge,
   InfoTable,
 } from '../ui';
 
@@ -39,7 +43,9 @@ const ViewPackingModal = ({ packing, onClose }) => {
       <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50'>
         <div className='w-full max-w-md p-6 bg-white shadow-2xl rounded-xl'>
           <div className='text-center'>
-            <div className='mb-4 text-6xl text-red-500'>âš ï¸</div>
+            <div className='mb-4 flex items-center justify-center'>
+              <ExclamationTriangleIcon className='h-16 w-16 text-red-500' aria-hidden='true' />
+            </div>
             <h2 className='mb-2 text-xl font-bold text-gray-900'>
               Data Tidak Valid
             </h2>
@@ -127,14 +133,22 @@ const ViewPackingModal = ({ packing, onClose }) => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'ðŸ“‹' },
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: <DocumentTextIcon className='h-5 w-5' aria-hidden='true' />,
+    },
     {
       id: 'items',
       label: 'Packing Items',
-      icon: 'ðŸ“¦',
+      icon: <ArchiveBoxIcon className='h-5 w-5' aria-hidden='true' />,
       badge: packing.packingItems?.length,
     },
-    { id: 'timeline', label: 'Timeline', icon: 'â±ï¸' },
+    {
+      id: 'timeline',
+      label: 'Timeline',
+      icon: <ClockIcon className='h-5 w-5' aria-hidden='true' />,
+    },
   ];
 
   return (
@@ -144,7 +158,7 @@ const ViewPackingModal = ({ packing, onClose }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-blue-100 rounded-lg'>
-              <span className='text-2xl'>ðŸ“¦</span>
+              <ArchiveBoxIcon className='h-8 w-8 text-blue-600' aria-hidden='true' />
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>

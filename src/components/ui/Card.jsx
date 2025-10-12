@@ -1,4 +1,5 @@
 import React from 'react';
+import { ArrowTrendingDownIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 
 /**
  * Info Card Component
@@ -107,10 +108,14 @@ export const StatCard = ({
             {value}
           </p>
           {change && (
-            <p className={`text-sm mt-1 ${getChangeColor()}`}>
-              {changeType === 'positive' && '↗'} 
-              {changeType === 'negative' && '↘'}
-              {change}
+            <p className={`text-sm mt-1 flex items-center gap-1 ${getChangeColor()}`}>
+              {changeType === 'positive' && (
+                <ArrowTrendingUpIcon className='h-4 w-4' aria-hidden='true' />
+              )}
+              {changeType === 'negative' && (
+                <ArrowTrendingDownIcon className='h-4 w-4' aria-hidden='true' />
+              )}
+              <span>{change}</span>
             </p>
           )}
         </div>

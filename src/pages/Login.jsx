@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BoltIcon } from '@heroicons/react/24/outline';
 
 import { Link } from 'react-router-dom';
 
@@ -29,7 +30,7 @@ const Login = () => {
         {/* Logo/Brand Section */}
         <div className='text-center mb-8'>
           <div className='inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl shadow-2xl shadow-blue-500/25 mb-6'>
-            <span className='text-2xl text-white'>⚡</span>
+            <BoltIcon className='w-8 h-8 text-white' aria-hidden='true' />
           </div>
           <h1 className='text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent mb-2'>
             Welcome Back
