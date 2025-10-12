@@ -640,15 +640,6 @@ const ViewPurchaseOrderModal = ({
         {/* Footer */}
         <div className='p-6 border-t border-gray-200 bg-gray-50'>
           <div className='flex justify-end space-x-3'>
-            {order?.status?.status_name !== 'Processed' && (
-              <button
-                onClick={handleProcess}
-                disabled={processing}
-                className='px-6 py-2 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-300'
-              >
-                {processing ? 'Processing...' : 'Process'}
-              </button>
-            )}
             <button
               onClick={onClose}
               className='px-6 py-2 font-medium text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600'
