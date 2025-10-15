@@ -39,6 +39,7 @@ import Regions from './pages/Regions.jsx';
 import Companies from './pages/Companies.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import CheckingList from './pages/CheckingList.jsx';
 
 // Component untuk routes yang menggunakan useAuth
 const AppRoutes = () => {
@@ -162,6 +163,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <SuratJalan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/po/checking-list'
+        element={
+          <ProtectedRoute>
+            <CheckingList />
           </ProtectedRoute>
         }
       />
