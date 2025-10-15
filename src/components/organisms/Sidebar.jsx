@@ -1,17 +1,32 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ArchiveBoxIcon,
+  BanknotesIcon,
   Bars3Icon,
+  BuildingOfficeIcon,
   BuildingStorefrontIcon,
-  ChevronRightIcon,
+  CircleStackIcon,
+  ClipboardDocumentCheckIcon,
   ClipboardDocumentListIcon,
   ClockIcon,
   Cog6ToothIcon,
+  CubeIcon,
+  DocumentChartBarIcon,
+  DocumentCurrencyDollarIcon,
   DocumentTextIcon,
   HomeIcon,
+  MapPinIcon,
+  ReceiptPercentIcon,
+  ReceiptRefundIcon,
+  ShieldCheckIcon,
+  ShoppingCartIcon,
+  Square3Stack3DIcon,
+  TruckIcon,
   UserCircleIcon,
   UserGroupIcon,
+  UserIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 import { ChevronDoubleRightIcon } from '@heroicons/react/20/solid';
 
@@ -31,11 +46,35 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 
   const iconComponents = {
     default: HomeIcon,
+    HomeIcon,
+    UsersIcon,
+    UserIcon,
+    ShieldCheckIcon,
+    CircleStackIcon,
+    UserGroupIcon,
+    TruckIcon,
+    CubeIcon,
+    Square3Stack3DIcon,
+    ClockIcon,
+    MapPinIcon,
+    BuildingOfficeIcon,
+    ShoppingCartIcon,
+    DocumentTextIcon,
+    ClipboardDocumentCheckIcon,
+    DocumentChartBarIcon,
+    ArchiveBoxIcon,
+    ClipboardDocumentListIcon,
+    ReceiptPercentIcon,
+    DocumentCurrencyDollarIcon,
+    ReceiptRefundIcon,
+    BanknotesIcon,
+    Bars3Icon,
+    Cog6ToothIcon,
     home: HomeIcon,
     dashboard: HomeIcon,
     bars: Bars3Icon,
     user: UserGroupIcon,
-    users: UserGroupIcon,
+    users: UsersIcon,
     'clipboard-document-list': ClipboardDocumentListIcon,
     clipboard: ClipboardDocumentListIcon,
     cog: Cog6ToothIcon,
@@ -43,25 +82,61 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
     archive: ArchiveBoxIcon,
     document: DocumentTextIcon,
     clock: ClockIcon,
+    'shopping-cart': ShoppingCartIcon,
   };
 
   const emojiToIconMap = {
-    '\u{1F3E0}': 'home',
-    '\u{1F465}': 'user',
-    '\u{1F4CB}': 'clipboard-document-list',
-    '\u{1F4E6}': 'archive',
-    '\u{2699}\u{FE0F}': 'cog',
-    '\u{1F552}': 'clock',
+    '\u{1F3E0}': 'HomeIcon',
+    '\u{1F465}': 'UsersIcon',
+    '\u{1F4CB}': 'ClipboardDocumentListIcon',
+    '\u{1F4E6}': 'ArchiveBoxIcon',
+    '\u{2699}\u{FE0F}': 'Cog6ToothIcon',
+    '\u{1F552}': 'ClockIcon',
   };
 
   const getIcon = (iconName = 'default', className = 'w-5 h-5') => {
-    const IconComponent = iconComponents[iconName] || iconComponents.default;
+    const normalizedName = typeof iconName === 'string' ? iconName : 'default';
+    const lowerName = normalizedName.toLowerCase();
+    const withoutSuffix = lowerName.endsWith('icon')
+      ? lowerName.slice(0, -4)
+      : lowerName;
+
+    const IconComponent =
+      iconComponents[normalizedName] ||
+      iconComponents[lowerName] ||
+      iconComponents[withoutSuffix] ||
+      iconComponents.default;
+
     return <IconComponent className={className} aria-hidden='true' />;
   };
 
   const normalizeIconName = (menu) => {
     if (menu.icon && typeof menu.icon === 'string') {
-      return menu.icon.toLowerCase();
+      const rawIcon = menu.icon.trim();
+
+      if (iconComponents[rawIcon]) {
+        return rawIcon;
+      }
+
+      const camelCandidate =
+        rawIcon.endsWith('Icon') || rawIcon.endsWith('icon')
+          ? `${rawIcon.slice(0, -4)}Icon`
+          : `${rawIcon.charAt(0).toUpperCase()}${rawIcon.slice(1)}Icon`;
+      if (iconComponents[camelCandidate]) {
+        return camelCandidate;
+      }
+
+      const lowercaseIcon = rawIcon.toLowerCase();
+      if (iconComponents[lowercaseIcon]) {
+        return lowercaseIcon;
+      }
+
+      const strippedIcon = lowercaseIcon.endsWith('icon')
+        ? lowercaseIcon.slice(0, -4)
+        : lowercaseIcon;
+      if (iconComponents[strippedIcon]) {
+        return strippedIcon;
+      }
     }
     if (menu.iconEmoji && emojiToIconMap[menu.iconEmoji]) {
       return emojiToIconMap[menu.iconEmoji];
@@ -71,89 +146,98 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 
   const defaultMenuItems = [
     {
-      id: 'reporting',
-      name: 'Reporting',
-      url: '/reporting',
-      icon: 'home',
-    },
-    {
-      id: 'users',
-      name: 'Users',
-      url: '/users',
-      icon: 'user',
-    },
-    {
-      id: 'po',
-      name: 'Purchase Order',
-      icon: 'clipboard-document-list',
-      children: [
-        {
-          id: 'po-purchase-orders',
-          name: 'Purchase Orders',
-          url: '/po/purchase-orders',
-        },
-        {
-          id: 'po-invoices',
-          name: 'Invoice Pengiriman',
-          url: '/po/invoice-pengiriman',
-        },
-        {
-          id: 'po-invoice-penagihan',
-          name: 'Invoice Penagihan',
-          url: '/po/invoice-penagihan',
-        },
-        { id: 'po-surat-jalan', name: 'Surat Jalan', url: '/po/surat-jalan' },
-        { id: 'po-packings', name: 'Packings', url: '/po/packings' },
-        {
-          id: 'po-purchase-orders-history',
-          name: 'Purchase Order History',
-          url: '/po/purchase-orders-history',
-        },
-      ],
-    },
-    {
-      id: 'master',
-      name: 'Master Data',
-      icon: 'cog',
-      children: [
-        { id: 'master-customers', name: 'Customers', url: '/master/customers' },
-        { id: 'master-suppliers', name: 'Suppliers', url: '/master/suppliers' },
-        {
-          id: 'master-inventories',
-          name: 'Inventories',
-          url: '/master/inventories',
-        },
-        {
-          id: 'master-term-of-payment',
-          name: 'Term of Payments',
-          url: '/master/term-of-payment',
-        },
-        {
-          id: 'master-group-customers',
-          name: 'Group Customers',
-          url: '/master/group-customers',
-        },
-        { id: 'master-regions', name: 'Regions', url: '/master/regions' },
-        { id: 'master-company', name: 'Companies', url: '/master/company' },
-      ],
+      id: 'dashboard',
+      name: 'Dashboard',
+      url: '/dashboard',
+      icon: 'HomeIcon',
     },
   ];
 
   const allMenus = menus.length > 0 ? menus : defaultMenuItems;
 
+  const isPathMatch = (targetUrl) => {
+    if (!targetUrl || targetUrl === '#') {
+      return false;
+    }
+
+    if (targetUrl === '/') {
+      return location.pathname === '/';
+    }
+
+    return (
+      location.pathname === targetUrl ||
+      location.pathname.startsWith(`${targetUrl}/`)
+    );
+  };
+
+  useEffect(() => {
+    const menuSource = menus.length > 0 ? menus : defaultMenuItems;
+
+    const findAncestors = (items, parents = []) => {
+      for (const item of items) {
+        const nextParents = [...parents, item.id];
+
+        if (isPathMatch(item.url)) {
+          return parents;
+        }
+
+        if (Array.isArray(item.children) && item.children.length > 0) {
+          const match = findAncestors(item.children, nextParents);
+          if (match) {
+            return match;
+          }
+        }
+      }
+      return null;
+    };
+
+    const ancestorsToExpand = findAncestors(menuSource) || [];
+
+    if (ancestorsToExpand.length === 0) {
+      return;
+    }
+
+    setExpandedMenus((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+
+      ancestorsToExpand.forEach((id) => {
+        if (!next.has(id)) {
+          next.add(id);
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [menus, location.pathname]);
+
   const renderMenuItem = (menu, level = 0) => {
     const hasChildren =
       Array.isArray(menu.children) && menu.children.length > 0;
-    const isActive = menu.url ? location.pathname === menu.url : false;
-    const isExpanded = expandedMenus.has(menu.id);
+    const isChildActive =
+      hasChildren && menu.children.some((child) => isPathMatch(child.url));
+    const isActive = isPathMatch(menu.url) || isChildActive;
+    const isExpanded =
+      expandedMenus.has(menu.id) || (isChildActive && !isCollapsed);
     const iconName = normalizeIconName(menu);
-    const iconWrapperClasses = `p-2 rounded-lg ${isActive ? 'bg-white/20' : 'bg-white/10 group-hover:bg-white/20'}`;
+    const iconWrapperClasses = `${
+      level > 0 ? 'p-1.5' : 'p-2'
+    } rounded-lg ${
+      isActive
+        ? 'bg-white/20'
+        : level > 0
+        ? 'bg-white/5 group-hover:bg-white/10'
+        : 'bg-white/10 group-hover:bg-white/20'
+    }`;
 
     const iconElement = (
       <div
         className={`flex-shrink-0 ${isCollapsed && level === 0 ? '' : 'mr-3'} relative`}
       >
-        <div className={iconWrapperClasses}>{getIcon(iconName)}</div>
+        <div className={iconWrapperClasses}>
+          {getIcon(iconName, level > 0 ? 'w-4 h-4' : 'w-5 h-5')}
+        </div>
       </div>
     );
 
@@ -233,18 +317,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 
         {hasChildren && isExpanded && !isCollapsed && (
           <div className='mt-2 space-y-1'>
-            {menu.children.map((child) => (
-              <Link key={child.id} to={child.url || '#'}>
-                <div className='px-3 py-2 mx-6 text-sm transition-all duration-200 rounded-lg cursor-pointer text-slate-400 hover:text-white hover:bg-white/5'>
-                  <div className='flex items-center space-x-2'>
-                    <div className='w-2 h-2 bg-current rounded-full opacity-50'>
-                      <span className='sr-only'>{child.name}</span>
-                    </div>
-                    <span>{child.name}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+            {menu.children.map((child) => renderMenuItem(child, level + 1))}
           </div>
         )}
       </div>
@@ -387,4 +460,5 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 };
 
 export default Sidebar;
+
 
