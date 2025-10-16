@@ -25,6 +25,7 @@ export * from './invoices';
 export * from './invoicePenagihan';
 export * from './fakturPajak';
 export * from './kwitansi';
+export * from './tandaTerimaFaktur';
 
 // Packing components
 export * from './packings';

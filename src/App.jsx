@@ -34,6 +34,7 @@ import InvoicePengiriman from './pages/InvoicePengiriman.jsx';
 import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
 import FakturPajak from './pages/FakturPajak.jsx';
 import Kwitansi from './pages/Kwitansi.jsx';
+import TandaTerimaFaktur from './pages/TandaTerimaFaktur.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
@@ -173,6 +174,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Kwitansi />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/invoice/ttf'
+        element={
+          <ProtectedRoute>
+            <TandaTerimaFaktur />
           </ProtectedRoute>
         }
       />
