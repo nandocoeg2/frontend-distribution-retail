@@ -23,6 +23,7 @@ export * from './laporanPenerimaanBarang';
 // Invoice components
 export * from './invoices';
 export * from './invoicePenagihan';
+export * from './kwitansi';
 
 // Packing components
 export * from './packings';

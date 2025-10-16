@@ -24,3 +24,4 @@ export { default as GroupCustomers } from './GroupCustomers';
 export { default as Companies } from './Companies';
 export { default as LaporanPenerimaanBarang } from './LaporanPenerimaanBarang';
 export { default as CheckingList } from './CheckingList';
+export { default as Kwitansi } from './Kwitansi';

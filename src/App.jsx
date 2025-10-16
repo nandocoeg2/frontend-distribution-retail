@@ -32,6 +32,7 @@ import Packings from './pages/Packings.jsx';
 import LaporanPenerimaanBarang from './pages/LaporanPenerimaanBarang.jsx';
 import InvoicePengiriman from './pages/InvoicePengiriman.jsx';
 import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
+import Kwitansi from './pages/Kwitansi.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
@@ -155,6 +156,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <InvoicePenagihan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/invoice/kwitansi'
+        element={
+          <ProtectedRoute>
+            <Kwitansi />
           </ProtectedRoute>
         }
       />
