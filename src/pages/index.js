@@ -16,6 +16,7 @@ export { default as Suppliers } from './Suppliers';
 export { default as Packings } from './Packings';
 export { default as InvoicePengiriman } from './InvoicePengiriman';
 export { default as InvoicePenagihan } from './InvoicePenagihan';
+export { default as FakturPajak } from './FakturPajak';
 export { default as SuratJalan } from './SuratJalan';
 export { default as TermOfPayments } from './TermOfPayments';
 export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';

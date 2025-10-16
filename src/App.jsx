@@ -32,6 +32,7 @@ import Packings from './pages/Packings.jsx';
 import LaporanPenerimaanBarang from './pages/LaporanPenerimaanBarang.jsx';
 import InvoicePengiriman from './pages/InvoicePengiriman.jsx';
 import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
+import FakturPajak from './pages/FakturPajak.jsx';
 import Kwitansi from './pages/Kwitansi.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
@@ -156,6 +157,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <InvoicePenagihan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/invoice/faktur-pajak'
+        element={
+          <ProtectedRoute>
+            <FakturPajak />
           </ProtectedRoute>
         }
       />
