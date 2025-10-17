@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import FormModal from '../common/FormModal';
 
 const defaultValues = {
-  suratJalanId: '',
   statusId: '',
   tanggal: '',
   checker: '',
@@ -44,7 +43,6 @@ const normalizeInitialValues = (initialValues) => {
   }
 
   return {
-    suratJalanId: initialValues.suratJalanId || initialValues.suratJalan?.id || '',
     statusId: initialValues.statusId || initialValues.status?.id || '',
     tanggal: toDateTimeLocalValue(initialValues.tanggal),
     checker: initialValues.checker || '',
@@ -106,7 +104,6 @@ const CheckingListModal = ({
     setIsSubmitting(true);
     try {
       const payload = {
-        suratJalanId: formData.suratJalanId?.trim(),
         statusId: formData.statusId?.trim(),
         checker: formData.checker?.trim(),
         driver: formData.driver?.trim(),
@@ -140,25 +137,6 @@ const CheckingListModal = ({
       entityName='Checklist Surat Jalan'
     >
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-        <div className='md:col-span-2'>
-          <label
-            htmlFor='suratJalanId'
-            className='mb-1 block text-sm font-medium text-gray-700'
-          >
-            ID Surat Jalan <span className='text-red-500'>*</span>
-          </label>
-          <input
-            id='suratJalanId'
-            name='suratJalanId'
-            type='text'
-            value={formData.suratJalanId}
-            onChange={handleChange}
-            required
-            placeholder='Masukkan ID surat jalan'
-            className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        </div>
-
         <div className='md:col-span-2'>
           <label
             htmlFor='statusId'

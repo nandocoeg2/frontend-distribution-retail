@@ -21,6 +21,11 @@ const CheckingListDetailModal = ({
         copyable: Boolean(checklist?.id || checklist?.checklistId),
       },
       {
+        label: 'Surat Jalan ID',
+        value: checklist?.suratJalanId || '-',
+        copyable: Boolean(checklist?.suratJalanId),
+      },
+      {
         label: 'Tanggal Checklist',
         value: formatDateTime(checklist?.tanggal),
       },
@@ -80,107 +85,125 @@ const CheckingListDetailModal = ({
   }, [checklist]);
 
   const suratJalanInfo = useMemo(() => {
-    const suratJalan = checklist?.suratJalan;
-    if (!suratJalan) {
+    const suratJalanData = Array.isArray(checklist?.suratJalan)
+      ? checklist.suratJalan
+      : checklist?.suratJalan
+        ? [checklist.suratJalan]
+        : [];
+
+    if (suratJalanData.length === 0) {
       return [];
     }
 
-    return [
+    const primarySuratJalan = suratJalanData[0];
+    const additionalSuratJalanCount =
+      suratJalanData.length > 1 ? suratJalanData.length - 1 : 0;
+
+    const info = [
       {
         label: 'ID Surat Jalan',
-        value: suratJalan.id || checklist.suratJalanId || '-',
-        copyable: Boolean(suratJalan?.id || checklist?.suratJalanId),
+        value: primarySuratJalan.id || checklist.suratJalanId || '-',
+        copyable: Boolean(primarySuratJalan?.id || checklist?.suratJalanId),
       },
       {
         label: 'Nomor Surat Jalan',
-        value: suratJalan.no_surat_jalan || '-',
+        value: primarySuratJalan.no_surat_jalan || '-',
       },
       {
         label: 'Deliver To',
-        value: suratJalan.deliver_to || '-',
+        value: primarySuratJalan.deliver_to || '-',
       },
       {
         label: 'PIC',
-        value: suratJalan.PIC || '-',
+        value: primarySuratJalan.PIC || '-',
       },
       {
         label: 'Alamat Tujuan',
-        value: suratJalan.alamat_tujuan || '-',
+        value: primarySuratJalan.alamat_tujuan || '-',
       },
       {
         label: 'Status Surat Jalan',
         value:
-          suratJalan?.status?.status_code ||
-          suratJalan?.status?.status_name ||
+          primarySuratJalan?.status?.status_code ||
+          primarySuratJalan?.status?.status_name ||
           '-',
       },
       {
         label: 'Purchase Order ID',
-        value: suratJalan?.purchaseOrder?.id || '-',
-        copyable: Boolean(suratJalan?.purchaseOrder?.id),
+        value: primarySuratJalan?.purchaseOrder?.id || '-',
+        copyable: Boolean(primarySuratJalan?.purchaseOrder?.id),
       },
       {
         label: 'Nomor PO',
-        value: suratJalan?.purchaseOrder?.po_number || '-',
+        value: primarySuratJalan?.purchaseOrder?.po_number || '-',
       },
       {
         label: 'Customer ID',
-        value: suratJalan?.purchaseOrder?.customer?.id || '-',
-        copyable: Boolean(suratJalan?.purchaseOrder?.customer?.id),
+        value: primarySuratJalan?.purchaseOrder?.customer?.id || '-',
+        copyable: Boolean(primarySuratJalan?.purchaseOrder?.customer?.id),
       },
       {
         label: 'Nama Customer',
         value:
-          suratJalan?.purchaseOrder?.customer?.nama_customer ||
-          suratJalan?.customer?.nama_customer ||
+          primarySuratJalan?.purchaseOrder?.customer?.nama_customer ||
+          primarySuratJalan?.customer?.nama_customer ||
           '-',
       },
       {
         label: 'Kode Customer',
         value:
-          suratJalan?.purchaseOrder?.customer?.kode_customer ||
-          suratJalan?.customer?.kode_customer ||
+          primarySuratJalan?.purchaseOrder?.customer?.kode_customer ||
+          primarySuratJalan?.customer?.kode_customer ||
           '-',
       },
       {
         label: 'Supplier ID',
         value:
-          suratJalan?.purchaseOrder?.supplier?.id ||
-          suratJalan?.supplier?.id ||
+          primarySuratJalan?.purchaseOrder?.supplier?.id ||
+          primarySuratJalan?.supplier?.id ||
           '-',
         copyable: Boolean(
-          suratJalan?.purchaseOrder?.supplier?.id ||
-            suratJalan?.supplier?.id
+          primarySuratJalan?.purchaseOrder?.supplier?.id ||
+            primarySuratJalan?.supplier?.id
         ),
       },
       {
         label: 'Nama Supplier',
         value:
-          suratJalan?.purchaseOrder?.supplier?.nama_supplier ||
-          suratJalan?.supplier?.nama_supplier ||
+          primarySuratJalan?.purchaseOrder?.supplier?.nama_supplier ||
+          primarySuratJalan?.supplier?.nama_supplier ||
           '-',
       },
       {
         label: 'Kode Supplier',
         value:
-          suratJalan?.purchaseOrder?.supplier?.code ||
-          suratJalan?.supplier?.code ||
+          primarySuratJalan?.purchaseOrder?.supplier?.code ||
+          primarySuratJalan?.supplier?.code ||
           '-',
       },
       {
         label: 'Invoice ID',
-        value: suratJalan?.invoice?.id || '-',
-        copyable: Boolean(suratJalan?.invoice?.id),
+        value: primarySuratJalan?.invoice?.id || '-',
+        copyable: Boolean(primarySuratJalan?.invoice?.id),
       },
       {
         label: 'Nomor Invoice',
-        value: suratJalan?.invoice?.no_invoice || '-',
+        value: primarySuratJalan?.invoice?.no_invoice || '-',
       },
       {
         label: 'Total Invoice',
-        value: suratJalan?.invoice?.total_price || '-',
+        value: primarySuratJalan?.invoice?.total_price || '-',
       },
     ];
+
+    if (additionalSuratJalanCount > 0) {
+      info.push({
+        label: 'Surat Jalan Lainnya',
+        value: `${additionalSuratJalanCount} dokumen terkait lainnya`,
+      });
+    }
+
+    return info;
   }, [checklist]);
 
   const auditTrailEntries = useMemo(() => {

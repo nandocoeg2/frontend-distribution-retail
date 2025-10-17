@@ -93,7 +93,14 @@ const CheckingListTable = ({
             ) : (
               data.map((checklist, index) => {
                 const checklistId = resolveChecklistId(checklist);
-                const suratJalan = checklist?.suratJalan;
+                const suratJalanList = Array.isArray(checklist?.suratJalan)
+                  ? checklist.suratJalan
+                  : checklist?.suratJalan
+                    ? [checklist.suratJalan]
+                    : [];
+                const primarySuratJalan = suratJalanList[0];
+                const additionalSuratJalanCount =
+                  suratJalanList.length > 1 ? suratJalanList.length - 1 : 0;
 
                 return (
                   <tr
@@ -121,11 +128,18 @@ const CheckingListTable = ({
                     <td className='px-6 py-4'>
                       <div className='text-sm text-gray-600'>
                         <p className='font-medium text-gray-900'>
-                          {suratJalan?.no_surat_jalan || checklist?.suratJalanId || '-'}
+                          {primarySuratJalan?.no_surat_jalan ||
+                            checklist?.suratJalanId ||
+                            '-'}
                         </p>
-                        {suratJalan?.deliver_to && (
+                        {primarySuratJalan?.deliver_to && (
                           <p className='text-xs text-gray-500'>
-                            {suratJalan.deliver_to}
+                            {primarySuratJalan.deliver_to}
+                          </p>
+                        )}
+                        {additionalSuratJalanCount > 0 && (
+                          <p className='text-xs text-gray-400'>
+                            +{additionalSuratJalanCount} surat jalan lainnya
                           </p>
                         )}
                       </div>

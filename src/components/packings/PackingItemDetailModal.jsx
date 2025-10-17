@@ -17,13 +17,13 @@ const PackingItemDetailModal = ({ item, onClose }) => {
 
   const fetchInventoryData = async () => {
     if (!item?.inventoryId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
       const response = await getInventoryById(item.inventoryId);
       console.log('Inventory response:', response); // Debug log
-      
+
       // Handle API response structure: { success: true, data: {...} }
       const inventoryData = response?.success ? response.data : response;
       setInventory(inventoryData);
@@ -38,7 +38,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
 
   if (!item) return null;
 
-    const getStatusVariant = (statusCode) => {
+  const getStatusVariant = (statusCode) => {
     if (!statusCode) return 'default';
     const status = statusCode.toUpperCase();
     if (status.includes('PENDING')) return 'warning';
@@ -49,130 +49,205 @@ const PackingItemDetailModal = ({ item, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50'>
+      <div className='bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col'>
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-          <div className="flex items-center space-x-4">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <span className="text-2xl">ðŸ“¦</span>
+        <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50'>
+          <div className='flex items-center space-x-4'>
+            <div className='p-2 bg-green-100 rounded-lg'>
+              <span className='text-2xl'>📦</span>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Detail Barang</h2>
-              <p className="text-sm text-gray-600">{item.nama_barang}</p>
+              <h2 className='text-2xl font-bold text-gray-900'>
+                Detail Barang
+              </h2>
+              <p className='text-sm text-gray-600'>{item.nama_barang}</p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          <button
+            onClick={onClose}
+            className='p-2 transition-colors rounded-lg hover:bg-gray-100'
           >
-            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className='w-6 h-6 text-gray-500'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M6 18L18 6M6 6l12 12'
+              />
             </svg>
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className='flex-1 p-6 overflow-y-auto'>
           {loading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <span className="text-gray-600">Memuat data inventory...</span>
+            <div className='flex items-center justify-center py-8'>
+              <div className='flex items-center space-x-2'>
+                <div className='w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin'></div>
+                <span className='text-gray-600'>Memuat data inventory...</span>
               </div>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center">
-                <div className="text-red-500 text-xl mr-2">âš ï¸</div>
+            <div className='p-4 mb-6 border border-red-200 rounded-lg bg-red-50'>
+              <div className='flex items-center'>
+                <div className='mr-2 text-xl text-red-500'>âš ï¸</div>
                 <div>
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
-                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                  <h3 className='text-sm font-medium text-red-800'>Error</h3>
+                  <p className='mt-1 text-sm text-red-700'>{error}</p>
                 </div>
               </div>
             </div>
           )}
 
           {!loading && !error && (
-            <div className="space-y-6">
-            {/* Inventory Information */}
-            {inventory && (
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Inventory</h3>
-                <InfoTable 
+            <div className='space-y-6'>
+              {/* Inventory Information */}
+              {inventory && (
+                <div className='p-6 rounded-lg bg-blue-50'>
+                  <h3 className='mb-4 text-lg font-semibold text-gray-900'>
+                    Informasi Inventory
+                  </h3>
+                  <InfoTable
+                    data={[
+                      {
+                        label: 'Nama Barang',
+                        value: inventory.nama_barang || 'N/A',
+                      },
+                      { label: 'PLU', value: inventory.plu || 'N/A' },
+                      {
+                        label: 'Harga Barang',
+                        value: inventory.harga_barang
+                          ? `Rp ${inventory.harga_barang.toLocaleString('id-ID')}`
+                          : 'N/A',
+                      },
+                      { label: 'Stok C', value: inventory.stok_c || 0 },
+                      { label: 'Stok Q', value: inventory.stok_q || 0 },
+                      { label: 'Min Stok', value: inventory.min_stok || 0 },
+                      {
+                        label: 'Created At',
+                        value: formatDateTime(inventory.createdAt),
+                      },
+                      {
+                        label: 'Updated At',
+                        value: formatDateTime(inventory.updatedAt),
+                      },
+                      {
+                        label: 'Inventory ID',
+                        value: inventory.id,
+                        copyable: true,
+                      },
+                      {
+                        label: 'Created By',
+                        value: inventory.createdBy || 'N/A',
+                        copyable: true,
+                      },
+                      {
+                        label: 'Updated By',
+                        value: inventory.updatedBy || 'N/A',
+                        copyable: true,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Packing Item Information */}
+              <div className='p-6 rounded-lg bg-gray-50'>
+                <h3 className='mb-4 text-lg font-semibold text-gray-900'>
+                  Informasi Packing Item
+                </h3>
+                <InfoTable
                   data={[
-                    { label: 'Nama Barang', value: inventory.nama_barang || 'N/A' },
-                    { label: 'PLU', value: inventory.plu || 'N/A' },
-                    { label: 'Harga Barang', value: inventory.harga_barang ? `Rp ${inventory.harga_barang.toLocaleString('id-ID')}` : 'N/A' },
-                    { label: 'Stok C', value: inventory.stok_c || 0 },
-                    { label: 'Stok Q', value: inventory.stok_q || 0 },
-                    { label: 'Min Stok', value: inventory.min_stok || 0 },
-                    { label: 'Created At', value: formatDateTime(inventory.createdAt) },
-                    { label: 'Updated At', value: formatDateTime(inventory.updatedAt) },
-                    { label: 'Inventory ID', value: inventory.id, copyable: true },
-                    { label: 'Created By', value: inventory.createdBy || 'N/A', copyable: true },
-                    { label: 'Updated By', value: inventory.updatedBy || 'N/A', copyable: true }
+                    { label: 'Nama Barang (Packing)', value: item.nama_barang },
+                    { label: 'Total Qty', value: item.total_qty },
+                    { label: 'Jumlah Carton', value: item.jumlah_carton },
+                    { label: 'Isi per Carton', value: item.isi_per_carton },
+                    { label: 'No Box', value: item.no_box || 'Not assigned' },
+                    {
+                      label: 'Inventory ID',
+                      value: item.inventoryId,
+                      copyable: true,
+                    },
                   ]}
                 />
               </div>
-            )}
 
-            {/* Packing Item Information */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Packing Item</h3>
-              <InfoTable 
-                data={[
-                  { label: 'Nama Barang (Packing)', value: item.nama_barang },
-                  { label: 'Total Qty', value: item.total_qty },
-                  { label: 'Jumlah Carton', value: item.jumlah_carton },
-                  { label: 'Isi per Carton', value: item.isi_per_carton },
-                  { label: 'No Box', value: item.no_box || 'Not assigned' },
-                  { label: 'Inventory ID', value: item.inventoryId, copyable: true }
-                ]}
-              />
-            </div>
+              {/* Status Information */}
+              {item.status && (
+                <div className='p-6 rounded-lg bg-yellow-50'>
+                  <h3 className='mb-4 text-lg font-semibold text-gray-900'>
+                    Status Information
+                  </h3>
+                  <InfoTable
+                    data={[
+                      { label: 'Status Code', value: item.status.status_code },
+                      { label: 'Status Name', value: item.status.status_name },
+                      {
+                        label: 'Description',
+                        value: item.status.status_description,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
 
-            {/* Status Information */}
-            {item.status && (
-              <div className="bg-yellow-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Information</h3>
-                <InfoTable 
+              {/* System Information */}
+              <div className='p-6 rounded-lg bg-purple-50'>
+                <h3 className='mb-4 text-lg font-semibold text-gray-900'>
+                  System Information
+                </h3>
+                <InfoTable
                   data={[
-                    { label: 'Status Code', value: item.status.status_code },
-                    { label: 'Status Name', value: item.status.status_name },
-                    { label: 'Description', value: item.status.status_description }
+                    { label: 'Item ID', value: item.id, copyable: true },
+                    {
+                      label: 'Packing ID',
+                      value: item.packingId,
+                      copyable: true,
+                    },
+                    {
+                      label: 'Status ID',
+                      value: item.statusId,
+                      copyable: true,
+                    },
+                    {
+                      label: 'Created At',
+                      value: formatDateTime(item.createdAt),
+                    },
+                    {
+                      label: 'Updated At',
+                      value: formatDateTime(item.updatedAt),
+                    },
+                    {
+                      label: 'Created By',
+                      value: item.createdBy,
+                      copyable: true,
+                    },
+                    {
+                      label: 'Updated By',
+                      value: item.updatedBy,
+                      copyable: true,
+                    },
                   ]}
                 />
               </div>
-            )}
-
-            {/* System Information */}
-            <div className="bg-purple-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
-              <InfoTable 
-                data={[
-                  { label: 'Item ID', value: item.id, copyable: true },
-                  { label: 'Packing ID', value: item.packingId, copyable: true },
-                  { label: 'Status ID', value: item.statusId, copyable: true },
-                  { label: 'Created At', value: formatDateTime(item.createdAt) },
-                  { label: 'Updated At', value: formatDateTime(item.updatedAt) },
-                  { label: 'Created By', value: item.createdBy, copyable: true },
-                  { label: 'Updated By', value: item.updatedBy, copyable: true }
-                ]}
-              />
-            </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-6 bg-gray-50">
-          <div className="flex justify-end space-x-3">
+        <div className='p-6 border-t border-gray-200 bg-gray-50'>
+          <div className='flex justify-end space-x-3'>
             <button
               onClick={onClose}
-              className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              className='px-6 py-2 font-medium text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600'
             >
               Tutup
             </button>
@@ -184,4 +259,3 @@ const PackingItemDetailModal = ({ item, onClose }) => {
 };
 
 export default PackingItemDetailModal;
-

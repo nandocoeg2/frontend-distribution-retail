@@ -464,7 +464,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                     >
                       <div className='flex items-center space-x-4'>
                         <div className='p-2 bg-blue-100 rounded-lg'>
-                          <span>ðŸ“¦</span>
+                          <span>📦</span>
                         </div>
                         <div>
                           <h4 className='text-lg font-semibold text-gray-900'>

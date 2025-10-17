@@ -201,50 +201,119 @@ const useSuratJalanPage = () => {
     performSearch(currentSearchValue, currentPage, resolveLimit());
   }, [currentSearchValue, pagination, performSearch, resolveLimit]);
 
-  const handleProcessSuratJalan = useCallback(async (ids) => {
-    const targetIds = Array.isArray(ids) && ids.length > 0 ? ids : selectedSuratJalan;
-    const validIds = Array.from(new Set((targetIds || []).filter(Boolean)));
+  const handleProcessSuratJalan = useCallback(
+    async (payload) => {
+      let targetIds = [];
+      let checklistPayload = null;
 
-    if (validIds.length === 0) {
-      toastService.error('Pilih minimal satu surat jalan untuk diproses');
-      return;
-    }
+      if (Array.isArray(payload)) {
+        targetIds = payload;
+      } else if (payload && typeof payload === 'object') {
+        if (Array.isArray(payload.ids)) {
+          targetIds = payload.ids;
+        } else {
+          targetIds = selectedSuratJalan;
+        }
 
-    setIsProcessingSuratJalan(true);
-
-    try {
-      const response = await suratJalanService.processSuratJalan(validIds);
-
-      if (response?.success === false) {
-        const errorMessage =
-          response?.message ||
-          response?.error?.message ||
-          'Gagal memproses surat jalan';
-        toastService.error(errorMessage);
-        return response;
+        if (payload.checklist && typeof payload.checklist === 'object') {
+          checklistPayload = payload.checklist;
+        }
+      } else {
+        targetIds = selectedSuratJalan;
       }
 
-      const successMessage =
-        response?.data?.message ||
-        `Surat jalan berhasil diproses (${validIds.length})`;
-      toastService.success(successMessage);
-      setSelectedSuratJalan([]);
-      await refreshData();
-      return response;
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
+      const validIds = Array.from(
+        new Set((targetIds || []).filter(Boolean))
+      );
+
+      if (validIds.length === 0) {
+        toastService.error('Pilih minimal satu surat jalan untuk diproses');
         return;
       }
-      const message =
-        err?.response?.data?.error?.message ||
-        err?.message ||
-        'Gagal memproses surat jalan';
-      toastService.error(message);
-    } finally {
-      setIsProcessingSuratJalan(false);
-    }
-  }, [authHandler, refreshData, selectedSuratJalan]);
+
+      if (checklistPayload) {
+        const requiredChecklistFields = [
+          'status_code',
+          'tanggal',
+          'checker',
+          'driver',
+          'mobil',
+          'kota',
+        ];
+        const missingFields = requiredChecklistFields.filter((field) => {
+          const value = checklistPayload[field];
+          if (typeof value === 'string') {
+            return value.trim() === '';
+          }
+          return value === null || value === undefined;
+        });
+
+        if (missingFields.length > 0) {
+          toastService.error(
+            `Checklist belum lengkap: ${missingFields.join(', ')}`
+          );
+          return;
+        }
+
+        if (checklistPayload.tanggal) {
+          const dateValue = new Date(checklistPayload.tanggal);
+
+          if (Number.isNaN(dateValue.getTime())) {
+            toastService.error('Format tanggal checklist tidak valid');
+            return;
+          }
+
+          checklistPayload = {
+            ...checklistPayload,
+            tanggal: dateValue.toISOString(),
+          };
+        }
+      }
+
+      setIsProcessingSuratJalan(true);
+
+      try {
+        const requestBody = {
+          ids: validIds,
+          ...(checklistPayload ? { checklist: checklistPayload } : {}),
+        };
+
+        const response =
+          await suratJalanService.processSuratJalan(requestBody);
+
+        if (response?.success === false) {
+          const errorMessage =
+            response?.message ||
+            response?.error?.message ||
+            'Gagal memproses surat jalan';
+          toastService.error(errorMessage);
+          return response;
+        }
+
+        const successMessage =
+          response?.data?.message ||
+          `Surat jalan berhasil diproses (${validIds.length})`;
+        toastService.success(successMessage);
+        setSelectedSuratJalan([]);
+        await refreshData();
+        return response;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Gagal memproses surat jalan';
+        toastService.error(message);
+        throw err;
+      } finally {
+        setIsProcessingSuratJalan(false);
+      }
+    },
+    [authHandler, refreshData, selectedSuratJalan]
+  );
 
   return {
     suratJalan,

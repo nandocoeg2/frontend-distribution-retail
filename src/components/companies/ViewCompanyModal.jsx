@@ -1,5 +1,15 @@
 import React from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  BuildingOfficeIcon,
+  BanknotesIcon,
+  MapPinIcon,
+  DevicePhoneMobileIcon,
+  IdentificationIcon,
+  CalendarDaysIcon,
+} from '@heroicons/react/24/outline';
+import { formatDateTime } from '../../utils/formatUtils';
+import { InfoTable } from '../ui';
 
 const ViewCompanyModal = ({ show, onClose, company }) => {
   if (!show) {
@@ -7,98 +17,130 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
   }
 
   return (
-    <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-4xl mx-4'>
-        <div className='flex justify-between items-center mb-4'>
-          <h3 className='text-lg font-medium text-gray-900'>
-            Company Details
-          </h3>
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Company Details</h2>
+            <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+              <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+              {company?.nama_perusahaan || 'No company name available'}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className='text-gray-400 hover:text-gray-500'
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <XMarkIcon className='h-5 w-5' />
+            <XMarkIcon className="w-6 h-6 text-gray-500" />
           </button>
         </div>
 
-        {company && (
-          <div className='space-y-4'>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Company Code</label>
-                <p className='text-sm text-gray-900'>{company.kode_company}</p>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          {company ? (
+            <div className="space-y-6">
+              {/* Company Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <BuildingOfficeIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Company Information</h3>
+                </div>
+                <InfoTable
+                  data={[
+                    { label: 'Company Name', value: company?.nama_perusahaan },
+                    { label: 'Company Code', value: company?.kode_company, copyable: true },
+                    { label: 'Main Director', value: company?.direktur_utama },
+                    {
+                      label: 'Address',
+                      component: (
+                        <span className="flex items-center gap-2">
+                          <MapPinIcon className="h-4 w-4 text-gray-400" />
+                          {company?.alamat || 'N/A'}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
               </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Company Name</label>
-                <p className='text-sm text-gray-900'>{company.nama_perusahaan}</p>
+
+              {/* Bank Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <BanknotesIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Bank Information</h3>
+                </div>
+                <InfoTable
+                  data={[
+                    { label: 'Bank Name', value: company?.bank },
+                    { label: 'Account Number', value: company?.no_rekening, copyable: true },
+                    { label: 'Account Name', value: company?.bank_account_name },
+                    { label: 'Branch', value: company?.bank_cabang },
+                  ]}
+                />
               </div>
-              <div className="md:col-span-2">
-                <label className='block text-sm font-medium text-gray-700'>Address</label>
-                <p className='text-sm text-gray-900'>{company.alamat}</p>
+
+              {/* Contact Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <DevicePhoneMobileIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+                </div>
+                <InfoTable
+                  data={[
+                    { label: 'Phone', value: company?.telp, copyable: true },
+                    { label: 'Fax', value: company?.fax },
+                    { label: 'Email', value: company?.email, copyable: true },
+                  ]}
+                />
               </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Account Number</label>
-                <p className='text-sm text-gray-900'>{company.no_rekening}</p>
+
+              {/* Tax Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <IdentificationIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">Tax Information</h3>
+                </div>
+                <InfoTable
+                  data={[
+                    { label: 'NPWP', value: company?.npwp, copyable: true },
+                  ]}
+                />
               </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Bank</label>
-                <p className='text-sm text-gray-900'>{company.bank}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Bank Account Name</label>
-                <p className='text-sm text-gray-900'>{company.bank_account_name}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Bank Branch</label>
-                <p className='text-sm text-gray-900'>{company.bank_cabang}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Phone</label>
-                <p className='text-sm text-gray-900'>{company.telp || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Fax</label>
-                <p className='text-sm text-gray-900'>{company.fax || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Email</label>
-                <p className='text-sm text-gray-900'>{company.email || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Main Director</label>
-                <p className='text-sm text-gray-900'>{company.direktur_utama || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>NPWP</label>
-                <p className='text-sm text-gray-900'>{company.npwp || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Created By</label>
-                <p className='text-sm text-gray-900'>{company.createdBy || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Created At</label>
-                <p className='text-sm text-gray-900'>{company.createdAt ? new Date(company.createdAt).toLocaleDateString() : 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Updated By</label>
-                <p className='text-sm text-gray-900'>{company.updatedBy || 'N/A'}</p>
-              </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700'>Updated At</label>
-                <p className='text-sm text-gray-900'>{company.updatedAt ? new Date(company.updatedAt).toLocaleDateString() : 'N/A'}</p>
+
+              {/* System Information */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <CalendarDaysIcon className="h-5 w-5 text-gray-500 mr-2" />
+                  <h3 className="text-lg font-semibold text-gray-900">System Information</h3>
+                </div>
+                <InfoTable
+                  data={[
+                    { label: 'Created By', value: company?.createdBy },
+                    { label: 'Created At', value: formatDateTime(company?.createdAt) },
+                    { label: 'Updated By', value: company?.updatedBy },
+                    { label: 'Updated At', value: formatDateTime(company?.updatedAt) },
+                  ]}
+                />
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-10 text-gray-500">
+              Company data is not available.
+            </div>
+          )}
+        </div>
 
-        <div className='mt-6 flex justify-end'>
-          <button
-            onClick={onClose}
-            className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
-          >
-            Close
-          </button>
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-4 bg-white">
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -5,21 +5,22 @@ import SuratJalanSearch from '../components/suratJalan/SuratJalanSearch';
 import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
 import EditSuratJalanModal from '../components/suratJalan/EditSuratJalanModal';
 import ViewSuratJalanModal from '../components/suratJalan/ViewSuratJalanModal';
+import ProcessSuratJalanModal from '../components/suratJalan/ProcessSuratJalanModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { TabContainer, Tab } from '../components/ui/Tabs';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
-import { useConfirmationDialog, ConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 
 const TAB_STATUS_CONFIG = {
   all: { label: 'All', statusCode: null },
-  draft: { label: 'Draft', statusCode: 'DRAFT' },
+  draft: { label: 'Draft', statusCode: 'DRAFT SURAT JALAN' },
   readyToShip: {
     label: 'Ready to Ship',
-    statusCode: 'READY_TO_SHIP',
+    statusCode: 'READY TO SHIP SURAT JALAN',
   },
-  delivered: { label: 'Delivered', statusCode: 'DELIVERED' },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED' },
+  delivered: { label: 'Delivered', statusCode: 'DELIVERED SURAT JALAN' },
+  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED SURAT JALAN' },
 };
 
 const TAB_ORDER = [
@@ -108,13 +109,7 @@ const SuratJalan = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingSuratJalan, setEditingSuratJalan] = useState(null);
   const [viewingSuratJalan, setViewingSuratJalan] = useState(null);
-
-  const {
-    showDialog: showProcessDialog,
-    hideDialog: hideProcessDialog,
-    setLoading: setProcessDialogLoading,
-    ConfirmationDialog: ProcessConfirmationDialog,
-  } = useConfirmationDialog();
+  const [showProcessModal, setShowProcessModal] = useState(false);
 
   const [activeTab, setActiveTab] = useState('all');
   const [tabLoading, setTabLoading] = useState(false);
@@ -153,6 +148,33 @@ const SuratJalan = () => {
     }
     return tabLoading;
   }, [activeTab, isSearchActive, loading, tabLoading]);
+
+  const selectedSuratJalanDetails = useMemo(() => {
+    if (!Array.isArray(selectedSuratJalan) || selectedSuratJalan.length === 0) {
+      return [];
+    }
+
+    const sources = [
+      Array.isArray(suratJalan) ? suratJalan : [],
+      Array.isArray(tabData) ? tabData : [],
+    ];
+
+    const detailMap = new Map();
+
+    sources.forEach((collection) => {
+      collection.forEach((item) => {
+        if (
+          item?.id &&
+          selectedSuratJalan.includes(item.id) &&
+          !detailMap.has(item.id)
+        ) {
+          detailMap.set(item.id, item);
+        }
+      });
+    });
+
+    return Array.from(detailMap.values());
+  }, [selectedSuratJalan, suratJalan, tabData]);
 
   const getStatusCodeForTab = useCallback(
     (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode || null,
@@ -312,17 +334,16 @@ const SuratJalan = () => {
 
   const handleProcessSelected = useCallback(() => {
     if (!hasSelectedSuratJalan) {
+      toastService.error('Pilih minimal satu surat jalan untuk diproses');
       return;
     }
 
-    showProcessDialog({
-      title: 'Konfirmasi Proses Surat Jalan',
-      message: `Apakah Anda yakin ingin memproses ${selectedSuratJalan.length} surat jalan yang dipilih? Status akan berubah dari "${TAB_STATUS_CONFIG.draft.label}" (${TAB_STATUS_CONFIG.draft.statusCode}) menjadi "${TAB_STATUS_CONFIG.readyToShip.label}" (${TAB_STATUS_CONFIG.readyToShip.statusCode}).`,
-      confirmText: 'Ya, Proses',
-      cancelText: 'Batal',
-      type: 'warning',
-    });
-  }, [hasSelectedSuratJalan, selectedSuratJalan, showProcessDialog]);
+    setShowProcessModal(true);
+  }, [hasSelectedSuratJalan]);
+
+  const closeProcessModal = useCallback(() => {
+    setShowProcessModal(false);
+  }, []);
 
   const refreshActiveTab = useCallback(async () => {
     setSelectedSuratJalan([]);
@@ -356,23 +377,39 @@ const SuratJalan = () => {
     setSelectedSuratJalan,
   ]);
 
-  const handleConfirmProcess = useCallback(async () => {
-    setProcessDialogLoading(true);
-    try {
-      await handleProcessSuratJalan();
-      await refreshActiveTab();
-      hideProcessDialog();
-    } catch (processError) {
-      console.error('Error processing surat jalan:', processError);
-    } finally {
-      setProcessDialogLoading(false);
-    }
-  }, [
-    handleProcessSuratJalan,
-    hideProcessDialog,
-    refreshActiveTab,
-    setProcessDialogLoading,
-  ]);
+  const handleProcessModalSubmit = useCallback(
+    async (checklistData) => {
+      if (
+        !Array.isArray(selectedSuratJalan) ||
+        selectedSuratJalan.length === 0
+      ) {
+        toastService.error('Pilih minimal satu surat jalan untuk diproses');
+        return;
+      }
+
+      try {
+        const response = await handleProcessSuratJalan({
+          ids: selectedSuratJalan,
+          checklist: checklistData,
+        });
+
+        if (response?.success === false) {
+          return;
+        }
+
+        closeProcessModal();
+        await refreshActiveTab();
+      } catch (processError) {
+        console.error('Error processing surat jalan:', processError);
+      }
+    },
+    [
+      closeProcessModal,
+      handleProcessSuratJalan,
+      refreshActiveTab,
+      selectedSuratJalan,
+    ]
+  );
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
@@ -574,7 +611,14 @@ const SuratJalan = () => {
         suratJalan={viewingSuratJalan}
       />
 
-      <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
+      <ProcessSuratJalanModal
+        show={showProcessModal}
+        onClose={closeProcessModal}
+        onSubmit={handleProcessModalSubmit}
+        isSubmitting={isProcessingSuratJalan}
+        selectedItems={selectedSuratJalanDetails}
+        selectedIds={selectedSuratJalan}
+      />
 
       <ConfirmationDialog
         show={deleteSuratJalanConfirmation.showConfirm}
