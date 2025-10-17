@@ -154,7 +154,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path='/po/invoice-penagihan'
+        path='/invoice/invoice-penagihan'
         element={
           <ProtectedRoute>
             <InvoicePenagihan />
@@ -312,5 +312,3 @@ const App = () => {
 };
 
 export default App;
-
-
