@@ -6,10 +6,7 @@ import {
   CheckingListModal,
   CheckingListDetailModal,
 } from '@/components/checkingList';
-import {
-  ConfirmationDialog,
-  useConfirmationDialog,
-} from '@/components/ui/ConfirmationDialog';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const resolveChecklistId = (checklist) => {
@@ -54,17 +51,14 @@ const CheckingList = () => {
   const [editingChecklist, setEditingChecklist] = useState(null);
   const [detailChecklist, setDetailChecklist] = useState(null);
 
-  const {
-    showDialog: showRefreshDialog,
-    hideDialog: hideRefreshDialog,
-    ConfirmationDialog: RefreshConfirmationDialog,
-    setLoading: setRefreshDialogLoading,
-    dialogState: refreshDialogState,
-  } = useConfirmationDialog();
-
   const pageSubtitle = useMemo(
     () =>
       'Kelola checklist surat jalan untuk memastikan proses pengecekan sebelum pengiriman berjalan sesuai prosedur.',
+    []
+  );
+
+  const pageTitle = useMemo(
+    () => 'Manajemen Checklist Surat Jalan',
     []
   );
 
@@ -157,62 +151,27 @@ const CheckingList = () => {
     fetchChecklists();
   };
 
-  const handleRefreshTable = () => {
-    showRefreshDialog({
-      title: 'Muat Ulang Checklist',
-      message:
-        'Perbaharui data checklist surat jalan terbaru dari server? Perubahan yang belum disimpan akan hilang.',
-      confirmText: 'Muat Ulang',
-      cancelText: 'Batal',
-      type: 'info',
-      onConfirm: async () => {
-        try {
-          setRefreshDialogLoading(true);
-          await fetchChecklists();
-        } finally {
-          setRefreshDialogLoading(false);
-          hideRefreshDialog();
-        }
-      },
-    });
-  };
-
   return (
     <div className='p-6'>
-      <div className='overflow-hidden rounded-2xl bg-white shadow-lg'>
-        <div className='border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6 text-white'>
-          <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-            <div className='flex items-center gap-3'>
-              <div className='flex h-12 w-12 items-center justify-center rounded-xl bg-white/15'>
-                <HeroIcon name='check-circle' className='h-6 w-6' />
-              </div>
-              <div>
-                <h1 className='text-2xl font-semibold'>Checking List</h1>
-                <p className='text-sm text-white/80'>{pageSubtitle}</p>
-              </div>
+      <div className='overflow-hidden bg-white rounded-lg shadow'>
+        <div className='px-4 py-5 sm:p-6'>
+          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
+            <div>
+              <h3 className='text-lg font-medium text-gray-900'>{pageTitle}</h3>
+              <p className='text-sm text-gray-500'>{pageSubtitle}</p>
             </div>
-            <div className='flex flex-col gap-2 sm:flex-row'>
-              <button
-                type='button'
-                onClick={handleRefreshTable}
-                className='inline-flex items-center justify-center rounded-md border border-white/40 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur hover:bg-white/20'
-              >
-                <HeroIcon name='arrow-path' className='mr-2 h-4 w-4' />
-                Muat Ulang
-              </button>
+            <div className='flex items-center gap-2'>
               <button
                 type='button'
                 onClick={openCreateModal}
-                className='inline-flex items-center justify-center rounded-md bg-white px-5 py-2 text-sm font-semibold text-blue-600 shadow-sm transition hover:bg-blue-50'
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
               >
-                <HeroIcon name='plus' className='mr-2 h-4 w-4' />
+                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
                 Tambah Checklist
               </button>
             </div>
           </div>
-        </div>
 
-        <div className='px-6 py-6'>
           <CheckingListSearch
             searchQuery={searchQuery}
             searchField={searchField}
@@ -221,20 +180,25 @@ const CheckingList = () => {
             searchLoading={searchLoading}
           />
 
+          {loading && (
+            <div className='flex items-center mb-4 text-sm text-gray-500'>
+              <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
+              Memuat data checklist surat jalan...
+            </div>
+          )}
+
           {error ? (
-            <div className='rounded-xl border border-red-200 bg-red-50 p-4'>
-              <p className='text-sm text-red-700'>
+            <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
+              <p className='mb-3 text-sm text-red-800'>
                 Terjadi kesalahan saat memuat checklist: {error}
               </p>
-              <div className='mt-3 flex items-center gap-3'>
-                <button
-                  type='button'
-                  onClick={handleRetry}
-                  className='inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-red-700'
-                >
-                  Coba Lagi
-                </button>
-              </div>
+              <button
+                type='button'
+                onClick={handleRetry}
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700'
+              >
+                Coba Lagi
+              </button>
             </div>
           ) : (
             <CheckingListTable
@@ -272,10 +236,6 @@ const CheckingList = () => {
         onClose={closeDetailModal}
         checklist={detailChecklist}
         isLoading={detailLoading}
-      />
-
-      <RefreshConfirmationDialog
-        onConfirm={() => refreshDialogState?.onConfirm?.()}
       />
 
       <ConfirmationDialog

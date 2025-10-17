@@ -41,6 +41,34 @@ const CheckingListDetailModal = ({
         value: checklist?.kota || '-',
       },
       {
+        label: 'Status ID',
+        value: checklist?.statusId || checklist?.status?.id || '-',
+        copyable: Boolean(checklist?.statusId || checklist?.status?.id),
+      },
+      {
+        label: 'Status Checklist',
+        value:
+          checklist?.status?.status_name ||
+          checklist?.status?.status_code ||
+          '-',
+      },
+      {
+        label: 'Kode Status Checklist',
+        value: checklist?.status?.status_code || '-',
+      },
+      {
+        label: 'Kategori Status Checklist',
+        value: checklist?.status?.category || '-',
+      },
+      {
+        label: 'Dibuat Oleh',
+        value: checklist?.createdBy || '-',
+      },
+      {
+        label: 'Diperbarui Oleh',
+        value: checklist?.updatedBy || '-',
+      },
+      {
         label: 'Dibuat Pada',
         value: formatDateTime(checklist?.createdAt),
       },
@@ -80,33 +108,77 @@ const CheckingListDetailModal = ({
         value: suratJalan.alamat_tujuan || '-',
       },
       {
-        label: 'Status',
+        label: 'Status Surat Jalan',
         value:
           suratJalan?.status?.status_code ||
           suratJalan?.status?.status_name ||
           '-',
       },
       {
+        label: 'Purchase Order ID',
+        value: suratJalan?.purchaseOrder?.id || '-',
+        copyable: Boolean(suratJalan?.purchaseOrder?.id),
+      },
+      {
         label: 'Nomor PO',
         value: suratJalan?.purchaseOrder?.po_number || '-',
       },
       {
-        label: 'Customer',
+        label: 'Customer ID',
+        value: suratJalan?.purchaseOrder?.customer?.id || '-',
+        copyable: Boolean(suratJalan?.purchaseOrder?.customer?.id),
+      },
+      {
+        label: 'Nama Customer',
         value:
           suratJalan?.purchaseOrder?.customer?.nama_customer ||
           suratJalan?.customer?.nama_customer ||
           '-',
       },
       {
-        label: 'Supplier',
+        label: 'Kode Customer',
+        value:
+          suratJalan?.purchaseOrder?.customer?.kode_customer ||
+          suratJalan?.customer?.kode_customer ||
+          '-',
+      },
+      {
+        label: 'Supplier ID',
+        value:
+          suratJalan?.purchaseOrder?.supplier?.id ||
+          suratJalan?.supplier?.id ||
+          '-',
+        copyable: Boolean(
+          suratJalan?.purchaseOrder?.supplier?.id ||
+            suratJalan?.supplier?.id
+        ),
+      },
+      {
+        label: 'Nama Supplier',
         value:
           suratJalan?.purchaseOrder?.supplier?.nama_supplier ||
           suratJalan?.supplier?.nama_supplier ||
           '-',
       },
       {
-        label: 'Invoice',
+        label: 'Kode Supplier',
+        value:
+          suratJalan?.purchaseOrder?.supplier?.code ||
+          suratJalan?.supplier?.code ||
+          '-',
+      },
+      {
+        label: 'Invoice ID',
+        value: suratJalan?.invoice?.id || '-',
+        copyable: Boolean(suratJalan?.invoice?.id),
+      },
+      {
+        label: 'Nomor Invoice',
         value: suratJalan?.invoice?.no_invoice || '-',
+      },
+      {
+        label: 'Total Invoice',
+        value: suratJalan?.invoice?.total_price || '-',
       },
     ];
   }, [checklist]);

@@ -62,6 +62,9 @@ const CheckingListTable = ({
                 Surat Jalan
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'>
+                Status Checklist
+              </th>
+              <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'>
                 Aksi
               </th>
             </tr>
@@ -70,7 +73,7 @@ const CheckingListTable = ({
             {loading ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className='px-6 py-6 text-center text-sm text-gray-500'
                 >
                   Memuat data checklist surat jalan...
@@ -79,7 +82,7 @@ const CheckingListTable = ({
             ) : !hasData ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className='px-6 py-6 text-center text-sm text-gray-500'
                 >
                   {hasSearch
@@ -123,6 +126,21 @@ const CheckingListTable = ({
                         {suratJalan?.deliver_to && (
                           <p className='text-xs text-gray-500'>
                             {suratJalan.deliver_to}
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                    <td className='px-6 py-4'>
+                      <div className='text-sm text-gray-600'>
+                        <p className='font-medium text-gray-900'>
+                          {checklist?.status?.status_name ||
+                            checklist?.status?.status_code ||
+                            '-'}
+                        </p>
+                        {(checklist?.status?.status_code ||
+                          checklist?.statusId) && (
+                          <p className='text-xs text-gray-500'>
+                            {checklist?.status?.status_code || checklist?.statusId}
                           </p>
                         )}
                       </div>

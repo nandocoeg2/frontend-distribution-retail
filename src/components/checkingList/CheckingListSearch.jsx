@@ -6,6 +6,7 @@ const fieldOptions = [
   { value: 'mobil', label: 'Nomor Kendaraan' },
   { value: 'kota', label: 'Kota Tujuan' },
   { value: 'suratJalanId', label: 'ID Surat Jalan' },
+  { value: 'statusId', label: 'Status ID' },
 ];
 
 const placeholderMap = {
@@ -14,6 +15,7 @@ const placeholderMap = {
   mobil: 'Cari berdasarkan nomor kendaraan...',
   kota: 'Cari berdasarkan kota tujuan...',
   suratJalanId: 'Cari berdasarkan ID surat jalan...',
+  statusId: 'Cari berdasarkan status ID checklist...',
 };
 
 const CheckingListSearch = ({

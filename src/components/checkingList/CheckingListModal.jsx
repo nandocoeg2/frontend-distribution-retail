@@ -3,6 +3,7 @@ import FormModal from '../common/FormModal';
 
 const defaultValues = {
   suratJalanId: '',
+  statusId: '',
   tanggal: '',
   checker: '',
   driver: '',
@@ -44,6 +45,7 @@ const normalizeInitialValues = (initialValues) => {
 
   return {
     suratJalanId: initialValues.suratJalanId || initialValues.suratJalan?.id || '',
+    statusId: initialValues.statusId || initialValues.status?.id || '',
     tanggal: toDateTimeLocalValue(initialValues.tanggal),
     checker: initialValues.checker || '',
     driver: initialValues.driver || '',
@@ -105,6 +107,7 @@ const CheckingListModal = ({
     try {
       const payload = {
         suratJalanId: formData.suratJalanId?.trim(),
+        statusId: formData.statusId?.trim(),
         checker: formData.checker?.trim(),
         driver: formData.driver?.trim(),
         mobil: formData.mobil?.trim(),
@@ -152,6 +155,25 @@ const CheckingListModal = ({
             onChange={handleChange}
             required
             placeholder='Masukkan ID surat jalan'
+            className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div className='md:col-span-2'>
+          <label
+            htmlFor='statusId'
+            className='mb-1 block text-sm font-medium text-gray-700'
+          >
+            Status ID <span className='text-red-500'>*</span>
+          </label>
+          <input
+            id='statusId'
+            name='statusId'
+            type='text'
+            value={formData.statusId}
+            onChange={handleChange}
+            required
+            placeholder='Masukkan ID status checklist'
             className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
