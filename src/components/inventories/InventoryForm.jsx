@@ -9,23 +9,37 @@ const DEFAULT_FORM_STATE = {
   stok_q: '',
   harga_barang: '',
   min_stok: '10',
+  allow_mixed_carton: true,
   berat: '0',
   panjang: '0',
   lebar: '0',
-  tinggi: '0'
+  tinggi: '0',
+  qty_per_carton: '0',
+  pcs_berat: '0',
+  pcs_panjang: '0',
+  pcs_lebar: '0',
+  pcs_tinggi: '0'
 };
 
-const getDimensionValue = (source, field) => {
+const getDimensionValue = (source, field, options = {}) => {
   if (source == null) {
     return '0';
   }
+
+  const { type = 'KARTON' } = options;
 
   const directValue = source[field];
   if (directValue !== undefined && directValue !== null) {
     return String(directValue);
   }
 
-  const nestedValue = source.dimensiKardus?.[field];
+  const dimensionList = Array.isArray(source.dimensiBarang) ? source.dimensiBarang : [];
+  const resolvedDimension =
+    type === 'KARTON'
+      ? source.dimensiKarton || source.dimensiKardus || dimensionList.find((dimension) => dimension?.type === 'KARTON')
+      : source.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
+
+  const nestedValue = resolvedDimension?.[field];
   if (nestedValue !== undefined && nestedValue !== null) {
     return String(nestedValue);
   }
@@ -52,23 +66,7 @@ const parseDecimal = (value, fallback = 0) => {
 const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
   const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
 
-  const memoizedInitialData = useMemo(() => initialData, [
-    initialData?.id,
-    initialData?.plu,
-    initialData?.nama_barang,
-    initialData?.stok_c,
-    initialData?.stok_q,
-    initialData?.harga_barang,
-    initialData?.min_stok,
-    initialData?.berat,
-    initialData?.panjang,
-    initialData?.lebar,
-    initialData?.tinggi,
-    initialData?.dimensiKardus?.berat,
-    initialData?.dimensiKardus?.panjang,
-    initialData?.dimensiKardus?.lebar,
-    initialData?.dimensiKardus?.tinggi
-  ]);
+  const memoizedInitialData = useMemo(() => initialData, [initialData]);
 
   useEffect(() => {
     if (!memoizedInitialData || Object.keys(memoizedInitialData).length === 0) {
@@ -91,18 +89,26 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
       min_stok: memoizedInitialData.min_stok !== undefined && memoizedInitialData.min_stok !== null
         ? String(memoizedInitialData.min_stok)
         : '10',
+      allow_mixed_carton: Boolean(
+        memoizedInitialData.allow_mixed_carton ?? true
+      ),
       berat: getDimensionValue(memoizedInitialData, 'berat'),
       panjang: getDimensionValue(memoizedInitialData, 'panjang'),
       lebar: getDimensionValue(memoizedInitialData, 'lebar'),
-      tinggi: getDimensionValue(memoizedInitialData, 'tinggi')
+      tinggi: getDimensionValue(memoizedInitialData, 'tinggi'),
+      qty_per_carton: getDimensionValue(memoizedInitialData, 'qty_per_carton'),
+      pcs_berat: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'berat', { type: 'PCS' }),
+      pcs_panjang: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'panjang', { type: 'PCS' }),
+      pcs_lebar: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'lebar', { type: 'PCS' }),
+      pcs_tinggi: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'tinggi', { type: 'PCS' })
     });
   }, [memoizedInitialData]);
 
   const handleChange = ({ target }) => {
-    const { name, value } = target;
+    const { name, value, type, checked } = target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -115,10 +121,20 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
       stok_q: parseInteger(formData.stok_q),
       harga_barang: parseDecimal(formData.harga_barang),
       min_stok: parseInteger(formData.min_stok, 10),
-      berat: parseDecimal(formData.berat),
-      panjang: parseDecimal(formData.panjang),
-      lebar: parseDecimal(formData.lebar),
-      tinggi: parseDecimal(formData.tinggi)
+      allow_mixed_carton: Boolean(formData.allow_mixed_carton),
+      dimensiKarton: {
+        berat: parseDecimal(formData.berat),
+        panjang: parseDecimal(formData.panjang),
+        lebar: parseDecimal(formData.lebar),
+        tinggi: parseDecimal(formData.tinggi),
+        qty_per_carton: parseInteger(formData.qty_per_carton)
+      },
+      dimensiPcs: {
+        berat: parseDecimal(formData.pcs_berat),
+        panjang: parseDecimal(formData.pcs_panjang),
+        lebar: parseDecimal(formData.pcs_lebar),
+        tinggi: parseDecimal(formData.pcs_tinggi)
+      }
     };
     onSubmit(dataToSubmit);
   };
@@ -154,6 +170,24 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
           required
           placeholder="Contoh: Tas Belanja Premium"
         />
+        <div className="flex items-start gap-2 pt-2">
+          <input
+            id="allow_mixed_carton"
+            name="allow_mixed_carton"
+            type="checkbox"
+            checked={Boolean(formData.allow_mixed_carton)}
+            onChange={handleChange}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <div>
+            <label htmlFor="allow_mixed_carton" className="text-sm font-medium text-gray-700">
+              Perbolehkan Mixed Carton
+            </label>
+            <p className="text-xs text-gray-500">
+              Centang jika barang boleh dicampur dalam mixed carton (default: aktif).
+            </p>
+          </div>
+        </div>
       </FormSection>
 
       <FormSection
@@ -217,8 +251,8 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
       </FormSection>
 
       <FormSection
-        title="Dimensi Kardus"
-        description="Opsional. Isi berat dan ukuran fisik kardus untuk perhitungan logistik."
+        title="Dimensi Karton"
+        description="Isi detail dimensi karton sesuai struktur payload API."
       >
         <FormField
           label="Berat (kg)"
@@ -255,6 +289,63 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
           name="tinggi"
           type="number"
           value={formData.tinggi}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Qty per Carton"
+          name="qty_per_carton"
+          type="number"
+          value={formData.qty_per_carton}
+          onChange={handleChange}
+          min={0}
+          step={1}
+          inputMode="numeric"
+          helperText="Jumlah isi dalam satu karton (opsional, default 0)."
+        />
+      </FormSection>
+
+      <FormSection
+        title="Dimensi PCS"
+        description="Wajib diisi saat membuat inventory baru sesuai dokumentasi API."
+      >
+        <FormField
+          label="Berat (kg)"
+          name="pcs_berat"
+          type="number"
+          value={formData.pcs_berat}
+          onChange={handleChange}
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Panjang (cm)"
+          name="pcs_panjang"
+          type="number"
+          value={formData.pcs_panjang}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Lebar (cm)"
+          name="pcs_lebar"
+          type="number"
+          value={formData.pcs_lebar}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Tinggi (cm)"
+          name="pcs_tinggi"
+          type="number"
+          value={formData.pcs_tinggi}
           onChange={handleChange}
           min={0}
           step="0.1"

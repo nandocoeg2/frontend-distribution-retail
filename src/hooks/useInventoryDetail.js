@@ -26,13 +26,22 @@ const useInventoryDetail = (inventoryId) => {
       
       if (response.success) {
         const detail = response.data || {};
-        const dimension = detail.dimensiKardus || {};
+        const dimensionList = Array.isArray(detail.dimensiBarang) ? detail.dimensiBarang : [];
+        const dimensiKartonEntry = detail.dimensiKarton || dimensionList.find((dimension) => dimension?.type === 'KARTON');
+        const dimensiPcsEntry = detail.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
+        const legacyDimension = detail.dimensiKardus || {};
+        const dimensionSource = dimensiKartonEntry || legacyDimension;
+
         setInventory({
           ...detail,
-          berat: detail.berat ?? dimension.berat ?? 0,
-          panjang: detail.panjang ?? dimension.panjang ?? 0,
-          lebar: detail.lebar ?? dimension.lebar ?? 0,
-          tinggi: detail.tinggi ?? dimension.tinggi ?? 0
+          allow_mixed_carton: Boolean(detail.allow_mixed_carton ?? true),
+          dimensiKarton: dimensiKartonEntry || null,
+          dimensiPcs: dimensiPcsEntry || null,
+          berat: detail.berat ?? dimensionSource?.berat ?? 0,
+          panjang: detail.panjang ?? dimensionSource?.panjang ?? 0,
+          lebar: detail.lebar ?? dimensionSource?.lebar ?? 0,
+          tinggi: detail.tinggi ?? dimensionSource?.tinggi ?? 0,
+          qty_per_carton: detail.qty_per_carton ?? dimensionSource?.qty_per_carton ?? 0
         });
       } else {
         throw new Error(response.error?.message || 'Failed to load inventory');

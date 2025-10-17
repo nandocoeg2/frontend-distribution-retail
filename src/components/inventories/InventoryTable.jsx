@@ -33,11 +33,16 @@ const InventoryTable = ({
   };
 
   const resolveDimension = (inventory) => {
-    const dimension = inventory.dimensiKardus || {};
-    const berat = inventory.berat ?? dimension.berat ?? 0;
-    const panjang = inventory.panjang ?? dimension.panjang ?? 0;
-    const lebar = inventory.lebar ?? dimension.lebar ?? 0;
-    const tinggi = inventory.tinggi ?? dimension.tinggi ?? 0;
+    const dimensionList = Array.isArray(inventory.dimensiBarang) ? inventory.dimensiBarang : [];
+    const dimensiKarton =
+      inventory.dimensiKarton ||
+      dimensionList.find((dimension) => dimension?.type === 'KARTON') ||
+      inventory.dimensiKardus ||
+      {};
+    const berat = inventory.berat ?? dimensiKarton?.berat ?? 0;
+    const panjang = inventory.panjang ?? dimensiKarton?.panjang ?? 0;
+    const lebar = inventory.lebar ?? dimensiKarton?.lebar ?? 0;
+    const tinggi = inventory.tinggi ?? dimensiKarton?.tinggi ?? 0;
 
     return {
       berat: `${formatDecimal(berat)} kg`,

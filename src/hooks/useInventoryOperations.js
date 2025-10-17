@@ -144,17 +144,31 @@ const useInventoryOperations = () => {
       errors.min_stok = 'Minimum stok must be a valid number';
     }
 
-    const dimensionFields = ['berat', 'panjang', 'lebar', 'tinggi'];
-    dimensionFields.forEach((field) => {
-      const value = data[field];
-      if (value === undefined || value === null || value === '') {
+    if (typeof data.allow_mixed_carton !== 'boolean') {
+      errors.allow_mixed_carton = 'Allow mixed carton must be true or false';
+    }
+
+    const validateDimensionGroup = (group, label, fields) => {
+      if (!group || typeof group !== 'object') {
+        errors[label] = `${label} payload is required`;
         return;
       }
 
-      if (Number.isNaN(value) || value < 0) {
-        errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} must be zero or greater`;
-      }
-    });
+      fields.forEach((field) => {
+        const value = group[field];
+        if (value === undefined || value === null || value === '') {
+          return;
+        }
+
+        if (Number.isNaN(value) || value < 0) {
+          const capitalized = field.charAt(0).toUpperCase() + field.slice(1);
+          errors[`${label}.${field}`] = `${capitalized} must be zero or greater`;
+        }
+      });
+    };
+
+    validateDimensionGroup(data.dimensiKarton, 'dimensiKarton', ['berat', 'panjang', 'lebar', 'tinggi', 'qty_per_carton']);
+    validateDimensionGroup(data.dimensiPcs, 'dimensiPcs', ['berat', 'panjang', 'lebar', 'tinggi']);
 
     return errors;
   }, []);

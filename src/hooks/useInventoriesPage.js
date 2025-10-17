@@ -30,14 +30,22 @@ const parseInventoriesResponse = (response) => {
       return item;
     }
 
-    const dimension = item.dimensiKardus || {};
+    const dimensionList = Array.isArray(item.dimensiBarang) ? item.dimensiBarang : [];
+    const dimensiKartonEntry = item.dimensiKarton || dimensionList.find((dimension) => dimension?.type === 'KARTON');
+    const dimensiPcsEntry = item.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
+    const legacyDimension = item.dimensiKardus || {};
+    const dimensionSource = dimensiKartonEntry || legacyDimension;
 
     return {
       ...item,
-      berat: item.berat ?? dimension.berat ?? 0,
-      panjang: item.panjang ?? dimension.panjang ?? 0,
-      lebar: item.lebar ?? dimension.lebar ?? 0,
-      tinggi: item.tinggi ?? dimension.tinggi ?? 0
+      allow_mixed_carton: Boolean(item.allow_mixed_carton ?? true),
+      dimensiKarton: dimensiKartonEntry || null,
+      dimensiPcs: dimensiPcsEntry || null,
+      berat: item.berat ?? dimensionSource?.berat ?? 0,
+      panjang: item.panjang ?? dimensionSource?.panjang ?? 0,
+      lebar: item.lebar ?? dimensionSource?.lebar ?? 0,
+      tinggi: item.tinggi ?? dimensionSource?.tinggi ?? 0,
+      qty_per_carton: item.qty_per_carton ?? dimensionSource?.qty_per_carton ?? 0
     };
   };
 

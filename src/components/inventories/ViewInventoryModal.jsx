@@ -55,11 +55,35 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
   const totalStock = totalCartons + totalPieces;
   const stockStatus = resolveStockStatusVariant(totalStock, minimumStock);
 
-  const weight = resolvedInventory?.berat ?? resolvedInventory?.dimensiKardus?.berat;
-  const length = resolvedInventory?.panjang ?? resolvedInventory?.dimensiKardus?.panjang;
-  const width = resolvedInventory?.lebar ?? resolvedInventory?.dimensiKardus?.lebar;
-  const height = resolvedInventory?.tinggi ?? resolvedInventory?.dimensiKardus?.tinggi;
-  const dimensionExists = [weight, length, width, height].some((value) => value !== null && value !== undefined);
+  const dimensionList = Array.isArray(resolvedInventory?.dimensiBarang) ? resolvedInventory.dimensiBarang : [];
+  const dimensiKarton =
+    resolvedInventory?.dimensiKarton ||
+    dimensionList.find((dimension) => dimension?.type === 'KARTON') ||
+    resolvedInventory?.dimensiKardus ||
+    null;
+  const dimensiPcs =
+    resolvedInventory?.dimensiPcs ||
+    dimensionList.find((dimension) => dimension?.type === 'PCS') ||
+    null;
+
+  const cartonWeight = dimensiKarton?.berat ?? resolvedInventory?.berat;
+  const cartonLength = dimensiKarton?.panjang ?? resolvedInventory?.panjang;
+  const cartonWidth = dimensiKarton?.lebar ?? resolvedInventory?.lebar;
+  const cartonHeight = dimensiKarton?.tinggi ?? resolvedInventory?.tinggi;
+  const cartonQtyPerCarton = dimensiKarton?.qty_per_carton ?? resolvedInventory?.qty_per_carton;
+
+  const pcsWeight = dimensiPcs?.berat;
+  const pcsLength = dimensiPcs?.panjang;
+  const pcsWidth = dimensiPcs?.lebar;
+  const pcsHeight = dimensiPcs?.tinggi;
+
+  const hasCartonDimension = [cartonWeight, cartonLength, cartonWidth, cartonHeight, cartonQtyPerCarton].some(
+    (value) => value !== null && value !== undefined
+  );
+  const hasPcsDimension = [pcsWeight, pcsLength, pcsWidth, pcsHeight].some(
+    (value) => value !== null && value !== undefined
+  );
+  const dimensionExists = hasCartonDimension || hasPcsDimension;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -113,7 +137,8 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                 data={[
                   { label: 'PLU', value: resolvedInventory?.plu, copyable: true },
                   { label: 'Nama Barang', value: resolvedInventory?.nama_barang },
-                  { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true }
+                  { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true },
+                  { label: 'Allow Mixed Carton', value: resolvedInventory?.allow_mixed_carton ? 'Ya' : 'Tidak' }
                 ]}
               />
             </AccordionItem>
@@ -164,10 +189,23 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
               {dimensionExists ? (
                 <InfoTable
                   data={[
-                    { label: 'Berat', value: `${weight || 0} kg` },
-                    { label: 'Panjang', value: `${length || 0} cm` },
-                    { label: 'Lebar', value: `${width || 0} cm` },
-                    { label: 'Tinggi', value: `${height || 0} cm` }
+                    ...(hasCartonDimension
+                      ? [
+                          { label: 'Karton - Berat', value: `${cartonWeight || 0} kg` },
+                          { label: 'Karton - Panjang', value: `${cartonLength || 0} cm` },
+                          { label: 'Karton - Lebar', value: `${cartonWidth || 0} cm` },
+                          { label: 'Karton - Tinggi', value: `${cartonHeight || 0} cm` },
+                          { label: 'Karton - Qty per Carton', value: `${cartonQtyPerCarton || 0} pcs` }
+                        ]
+                      : []),
+                    ...(hasPcsDimension
+                      ? [
+                          { label: 'PCS - Berat', value: `${pcsWeight || 0} kg` },
+                          { label: 'PCS - Panjang', value: `${pcsLength || 0} cm` },
+                          { label: 'PCS - Lebar', value: `${pcsWidth || 0} cm` },
+                          { label: 'PCS - Tinggi', value: `${pcsHeight || 0} cm` }
+                        ]
+                      : [])
                   ]}
                 />
               ) : (
