@@ -126,6 +126,7 @@ const useKwitansiPage = () => {
   const filtersRef = useRef(DEFAULT_FILTERS);
   const activeFiltersRef = useRef({});
   const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
+  const paginationRef = useRef(INITIAL_PAGINATION);
 
   const handleAuthError = useCallback(() => {
     localStorage.clear();
@@ -133,28 +134,27 @@ const useKwitansiPage = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const resolveLimit = useCallback(
-    (limit) => {
-      if (typeof limit === 'number' && !Number.isNaN(limit) && limit > 0) {
-        return limit;
-      }
+  const resolveLimit = useCallback((limit) => {
+    if (typeof limit === 'number' && !Number.isNaN(limit) && limit > 0) {
+      return limit;
+    }
 
-      return (
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_PAGINATION.itemsPerPage ||
-        INITIAL_PAGINATION.limit ||
-        10
-      );
-    },
-    [pagination]
-  );
+    const state = paginationRef.current || INITIAL_PAGINATION;
+    return (
+      state.itemsPerPage ||
+      state.limit ||
+      INITIAL_PAGINATION.itemsPerPage ||
+      INITIAL_PAGINATION.limit ||
+      10
+    );
+  }, []);
 
   const setDataFromResponse = useCallback((response) => {
     const { results, pagination: nextPagination } =
       parseKwitansiResponse(response);
     setKwitansis(results);
     setPagination(nextPagination);
+    paginationRef.current = nextPagination;
   }, []);
 
   const handleError = useCallback(
@@ -261,7 +261,12 @@ const useKwitansiPage = () => {
   );
 
   const refreshAfterMutation = useCallback(async () => {
-    const currentPage = pagination?.currentPage || pagination?.page || 1;
+    const currentPage =
+      paginationRef.current?.currentPage ||
+      paginationRef.current?.page ||
+      pagination?.currentPage ||
+      pagination?.page ||
+      1;
     await performFetch({ page: currentPage });
   }, [pagination, performFetch]);
 
@@ -398,6 +403,34 @@ const useKwitansiPage = () => {
     );
   }, [hasActiveFilters, activeFiltersVersion]);
 
+  const searchKwitansiWithFilters = useCallback(
+    async (rawFilters = {}, page = 1, limit = resolveLimit()) => {
+      const sanitized = sanitizeFilters(rawFilters);
+      try {
+        const response = await kwitansiService.searchKwitansi(
+          sanitized,
+          page,
+          limit
+        );
+        return parseKwitansiResponse(response);
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+          return {
+            results: [],
+            pagination: {
+              ...INITIAL_PAGINATION,
+              itemsPerPage: limit,
+              limit,
+            },
+          };
+        }
+        throw err;
+      }
+    },
+    [handleAuthError, resolveLimit]
+  );
+
   return {
     kwitansis,
     setKwitansis,
@@ -421,6 +454,7 @@ const useKwitansiPage = () => {
     fetchKwitansi: performFetch,
     fetchKwitansiById,
     handleAuthError,
+    searchKwitansiWithFilters,
   };
 };
 
