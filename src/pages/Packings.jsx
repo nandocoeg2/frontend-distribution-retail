@@ -141,15 +141,35 @@ const PackingsPage = () => {
     [fetchPackings, searchPackingsWithFilters, setSelectedPackings]
   );
 
+  const normalizeFilters = useCallback((filters = {}) => {
+    return Object.entries(filters).reduce((acc, [key, value]) => {
+      if (value === undefined || value === null) {
+        return acc;
+      }
+
+      if (typeof value === 'string') {
+        const trimmedValue = value.trim();
+        if (trimmedValue === '') {
+          return acc;
+        }
+        acc[key] = trimmedValue;
+        return acc;
+      }
+
+      acc[key] = value;
+      return acc;
+    }, {});
+  }, []);
+
   const handleFilterChangeWithReset = useCallback(
     (filters) => {
       if (activeTab !== 'all') {
         setActiveTab('all');
       }
       setSelectedPackings([]);
-      handleFilterChange(filters);
+      handleFilterChange(normalizeFilters(filters));
     },
-    [activeTab, handleFilterChange, setSelectedPackings]
+    [activeTab, handleFilterChange, normalizeFilters, setSelectedPackings]
   );
 
   const handleClearFilters = useCallback(() => {

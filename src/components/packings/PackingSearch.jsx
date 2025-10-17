@@ -16,14 +16,17 @@ const PackingSearch = ({ searchLoading, searchFilters, handleFilterChange, clear
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
           <select
-            value={searchFilters.statusId || ''}
-            onChange={(e) => handleFilterChange({ ...searchFilters, statusId: e.target.value })}
+            value={searchFilters.status_code || ''}
+            onChange={(e) => handleFilterChange({ ...searchFilters, status_code: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Status</option>
             {Array.isArray(packingStatuses) && packingStatuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.status_name}
+              <option
+                key={status.id || status.status_code}
+                value={status.status_code || status.status_name || status.id}
+              >
+                {status.status_name || status.status_code}
               </option>
             ))}
           </select>

@@ -13,13 +13,13 @@ import { useConfirmationDialog, ConfirmationDialog } from '../components/ui/Conf
 
 const TAB_STATUS_CONFIG = {
   all: { label: 'All', statusCode: null },
-  draft: { label: 'Draft', statusCode: 'DRAFT SURAT JALAN' },
+  draft: { label: 'Draft', statusCode: 'DRAFT' },
   readyToShip: {
     label: 'Ready to Ship',
-    statusCode: 'READY TO SHIP SURAT JALAN',
+    statusCode: 'READY_TO_SHIP',
   },
-  delivered: { label: 'Delivered', statusCode: 'DELIVERED SURAT JALAN' },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED SURAT JALAN' },
+  delivered: { label: 'Delivered', statusCode: 'DELIVERED' },
+  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED' },
 };
 
 const TAB_ORDER = [
@@ -317,7 +317,7 @@ const SuratJalan = () => {
 
     showProcessDialog({
       title: 'Konfirmasi Proses Surat Jalan',
-      message: `Apakah Anda yakin ingin memproses ${selectedSuratJalan.length} surat jalan yang dipilih? Status akan berubah dari "DRAFT SURAT JALAN" menjadi "READY TO SHIP SURAT JALAN".`,
+      message: `Apakah Anda yakin ingin memproses ${selectedSuratJalan.length} surat jalan yang dipilih? Status akan berubah dari "${TAB_STATUS_CONFIG.draft.label}" (${TAB_STATUS_CONFIG.draft.statusCode}) menjadi "${TAB_STATUS_CONFIG.readyToShip.label}" (${TAB_STATUS_CONFIG.readyToShip.statusCode}).`,
       confirmText: 'Ya, Proses',
       cancelText: 'Batal',
       type: 'warning',
