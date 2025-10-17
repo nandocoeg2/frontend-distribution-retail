@@ -7,7 +7,46 @@ import {
   TandaTerimaFakturDetailModal,
 } from '@/components/tandaTerimaFaktur';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { TabContainer, Tab } from '@/components/ui/Tabs';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+
+const TAB_STATUS_CONFIG = {
+  all: { label: 'All', statusCode: null },
+  pending: {
+    label: 'Pending',
+    statusCode: 'PENDING TANDA TERIMA FAKTUR',
+  },
+  processing: {
+    label: 'Processing',
+    statusCode: 'PROCESSING TANDA TERIMA FAKTUR',
+  },
+  delivered: {
+    label: 'Delivered',
+    statusCode: 'DELIVERED TANDA TERIMA FAKTUR',
+  },
+  received: {
+    label: 'Received',
+    statusCode: 'RECEIVED TANDA TERIMA FAKTUR',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    statusCode: 'CANCELLED TANDA TERIMA FAKTUR',
+  },
+  completed: {
+    label: 'Completed',
+    statusCode: 'COMPLETED TANDA TERIMA FAKTUR',
+  },
+};
+
+const TAB_ORDER = [
+  'all',
+  'pending',
+  'processing',
+  'delivered',
+  'received',
+  'cancelled',
+  'completed',
+];
 
 const TandaTerimaFakturPage = () => {
   const {
@@ -37,6 +76,78 @@ const TandaTerimaFakturPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+
+  const dataSource = Array.isArray(tandaTerimaFakturs)
+    ? tandaTerimaFakturs
+    : [];
+
+  const statusCounts = React.useMemo(() => {
+    const counts = {
+      all: dataSource.length,
+    };
+
+    TAB_ORDER.forEach((tabId) => {
+      if (tabId === 'all') {
+        return;
+      }
+      const statusCode = TAB_STATUS_CONFIG[tabId]?.statusCode;
+      if (!statusCode) {
+        counts[tabId] = 0;
+        return;
+      }
+      counts[tabId] = dataSource.filter(
+        (item) => item?.status?.status_code === statusCode
+      ).length;
+    });
+
+    return counts;
+  }, [dataSource]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+  };
+
+  const filteredTandaTerimaFakturs = React.useMemo(() => {
+    if (activeTab === 'all') {
+      return dataSource;
+    }
+
+    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
+    if (!statusCode) {
+      return dataSource;
+    }
+
+    return dataSource.filter(
+      (item) => item?.status?.status_code === statusCode
+    );
+  }, [activeTab, dataSource]);
+
+  const resolvedPagination = React.useMemo(() => {
+    if (activeTab === 'all') {
+      return pagination;
+    }
+
+    const base = pagination || {};
+    const itemsPerPage =
+      base.itemsPerPage || base.limit || filteredTandaTerimaFakturs.length || 10;
+    const totalItems = filteredTandaTerimaFakturs.length;
+    const totalPages = Math.max(
+      Math.ceil((totalItems || 1) / (itemsPerPage || 1)),
+      1
+    );
+
+    return {
+      ...base,
+      currentPage: 1,
+      page: 1,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage,
+      totalPages,
+    };
+  }, [activeTab, filteredTandaTerimaFakturs, pagination]);
 
   const openCreateModal = () => {
     setSelectedTtf(null);
@@ -112,12 +223,14 @@ const TandaTerimaFakturPage = () => {
     fetchTandaTerimaFaktur({ page: currentPage });
   };
 
+  const tableLoading = Boolean(loading) && !error;
+
   return (
     <div className='p-6'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-4 py-5 sm:p-6'>
           <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
-            <div>
+            <div className='space-y-1'>
               <h3 className='text-lg font-medium text-gray-900'>
                 Tanda Terima Faktur
               </h3>
@@ -126,7 +239,7 @@ const TandaTerimaFakturPage = () => {
                 dan customer.
               </p>
             </div>
-            <div className='flex justify-end'>
+            <div className='flex items-center justify-end gap-3'>
               <button
                 onClick={openCreateModal}
                 className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
@@ -145,6 +258,23 @@ const TandaTerimaFakturPage = () => {
             loading={searchLoading || loading}
           />
 
+          <div className='mb-4 overflow-x-auto'>
+            <TabContainer
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              variant='underline'
+            >
+              {TAB_ORDER.map((tabId) => (
+                <Tab
+                  key={tabId}
+                  id={tabId}
+                  label={TAB_STATUS_CONFIG[tabId]?.label || tabId}
+                  badge={statusCounts[tabId] ?? 0}
+                />
+              ))}
+            </TabContainer>
+          </div>
+
           {error ? (
             <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
               <p className='mb-3 text-sm text-red-800'>
@@ -158,18 +288,26 @@ const TandaTerimaFakturPage = () => {
               </button>
             </div>
           ) : (
-            <TandaTerimaFakturTable
-              tandaTerimaFakturs={tandaTerimaFakturs}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
-              onEdit={openEditModal}
-              onDelete={handleDelete}
-              onView={openDetailModal}
-              loading={loading}
-              searchQuery={searchQuery}
-              hasActiveFilters={hasActiveFilters}
-            />
+            <>
+              {tableLoading && (
+                <div className='flex items-center mb-4 text-sm text-gray-500'>
+                  <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
+                  Memuat data tanda terima faktur...
+                </div>
+              )}
+              <TandaTerimaFakturTable
+                tandaTerimaFakturs={filteredTandaTerimaFakturs}
+                pagination={resolvedPagination}
+                onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
+                onEdit={openEditModal}
+                onDelete={handleDelete}
+                onView={openDetailModal}
+                loading={loading}
+                searchQuery={searchQuery}
+                hasActiveFilters={hasActiveFilters}
+              />
+            </>
           )}
         </div>
       </div>

@@ -125,6 +125,7 @@ const useTandaTerimaFakturPage = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const filtersRef = useRef(DEFAULT_FILTERS);
   const activeFiltersRef = useRef({});
+  const paginationRef = useRef(INITIAL_PAGINATION);
   const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
 
   const handleAuthError = useCallback(() => {
@@ -133,29 +134,33 @@ const useTandaTerimaFakturPage = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const resolveLimit = useCallback(
-    (limit) => {
-      if (typeof limit === 'number' && !Number.isNaN(limit) && limit > 0) {
-        return limit;
-      }
+  const resolveLimit = useCallback((limit) => {
+    if (typeof limit === 'number' && !Number.isNaN(limit) && limit > 0) {
+      return limit;
+    }
 
-      return (
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_PAGINATION.itemsPerPage ||
-        INITIAL_PAGINATION.limit ||
-        10
-      );
-    },
-    [pagination]
-  );
+    const source = paginationRef.current || INITIAL_PAGINATION;
+
+    return (
+      source.itemsPerPage ||
+      source.limit ||
+      INITIAL_PAGINATION.itemsPerPage ||
+      INITIAL_PAGINATION.limit ||
+      10
+    );
+  }, []);
 
   const setDataFromResponse = useCallback((response) => {
     const { results, pagination: nextPagination } =
       parseTandaTerimaFakturResponse(response);
     setTandaTerimaFakturs(results);
     setPagination(nextPagination);
+    paginationRef.current = nextPagination;
   }, []);
+
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
 
   const handleError = useCallback(
     (err, fallbackMessage) => {
@@ -269,12 +274,14 @@ const useTandaTerimaFakturPage = () => {
 
   const refreshAfterMutation = useCallback(async () => {
     const itemsPerPage = resolveLimit();
-    const currentPage = pagination.currentPage || pagination.page || 1;
+    const currentPagination = paginationRef.current || pagination;
+    const currentPage =
+      currentPagination.currentPage || currentPagination.page || 1;
     await performFetch({
       page: currentPage,
       limit: itemsPerPage,
     });
-  }, [pagination, performFetch, resolveLimit]);
+  }, [performFetch, resolveLimit, pagination]);
 
   const createTandaTerimaFaktur = useCallback(
     async (payload) => {
