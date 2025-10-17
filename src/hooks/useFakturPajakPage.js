@@ -120,6 +120,7 @@ const useFakturPajakPage = () => {
   const navigate = useNavigate();
   const [fakturPajaks, setFakturPajaks] = useState([]);
   const [pagination, setPagination] = useState(INITIAL_PAGINATION);
+  const paginationRef = useRef(INITIAL_PAGINATION);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -134,28 +135,27 @@ const useFakturPajakPage = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const resolveLimit = useCallback(
-    (limit) => {
-      if (typeof limit === 'number' && !Number.isNaN(limit) && limit > 0) {
-        return limit;
-      }
+  const resolveLimit = useCallback((limit) => {
+    if (typeof limit === 'number' && !Number.isNaN(limit) && limit > 0) {
+      return limit;
+    }
 
-      return (
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_PAGINATION.itemsPerPage ||
-        INITIAL_PAGINATION.limit ||
-        10
-      );
-    },
-    [pagination],
-  );
+    const current = paginationRef.current;
+    return (
+      current?.itemsPerPage ||
+      current?.limit ||
+      INITIAL_PAGINATION.itemsPerPage ||
+      INITIAL_PAGINATION.limit ||
+      10
+    );
+  }, []);
 
   const setDataFromResponse = useCallback((response) => {
     const { results, pagination: nextPagination } =
       parseFakturPajakResponse(response);
     setFakturPajaks(results);
     setPagination(nextPagination);
+    paginationRef.current = nextPagination;
   }, []);
 
   const handleError = useCallback(
