@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import useTandaTerimaFakturPage from '@/hooks/useTandaTerimaFakturPage';
 import {
   TandaTerimaFakturSearch,
@@ -8,6 +8,7 @@ import {
 } from '@/components/tandaTerimaFaktur';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
+import tandaTerimaFakturService from '@/services/tandaTerimaFakturService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TAB_STATUS_CONFIG = {
@@ -48,6 +49,70 @@ const TAB_ORDER = [
   'completed',
 ];
 
+const INITIAL_TAB_PAGINATION = {
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  itemsPerPage: 10,
+  page: 1,
+  limit: 10,
+  total: 0,
+};
+
+const parseTandaTerimaFakturByStatusResponse = (response = {}) => {
+  const responseData = response?.data || response;
+  const rawData =
+    responseData?.tandaTerimaFakturs ??
+    responseData?.data ??
+    responseData?.results ??
+    responseData ??
+    [];
+
+  const paginationSource =
+    responseData?.pagination ??
+    responseData?.meta ??
+    responseData?.data?.pagination ??
+    response?.pagination ??
+    {};
+
+  const currentPage =
+    paginationSource.currentPage ??
+    paginationSource.page ??
+    INITIAL_TAB_PAGINATION.currentPage;
+  const itemsPerPage =
+    paginationSource.itemsPerPage ??
+    paginationSource.limit ??
+    INITIAL_TAB_PAGINATION.itemsPerPage;
+  const totalItems =
+    paginationSource.totalItems ??
+    paginationSource.total ??
+    (Array.isArray(rawData) ? rawData.length : 0);
+  const totalPages =
+    paginationSource.totalPages ??
+    Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1);
+
+  const results = Array.isArray(rawData)
+    ? rawData
+    : Array.isArray(rawData?.tandaTerimaFakturs)
+      ? rawData.tandaTerimaFakturs
+      : Array.isArray(rawData?.data)
+        ? rawData.data
+        : [];
+
+  return {
+    results,
+    pagination: {
+      currentPage,
+      page: currentPage,
+      totalPages,
+      totalItems,
+      total: totalItems,
+      itemsPerPage,
+      limit: itemsPerPage,
+    },
+  };
+};
+
 const TandaTerimaFakturPage = () => {
   const {
     tandaTerimaFakturs,
@@ -69,6 +134,7 @@ const TandaTerimaFakturPage = () => {
     deleteTandaTerimaFakturConfirmation,
     fetchTandaTerimaFaktur,
     fetchTandaTerimaFakturById,
+    handleAuthError,
   } = useTandaTerimaFakturPage();
 
   const [selectedTtf, setSelectedTtf] = useState(null);
@@ -77,77 +143,237 @@ const TandaTerimaFakturPage = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabTandaTerimaFakturs, setTabTandaTerimaFakturs] = useState([]);
+  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
 
-  const dataSource = Array.isArray(tandaTerimaFakturs)
-    ? tandaTerimaFakturs
-    : [];
+  const isSearchActive = useMemo(() => {
+    if (hasActiveFilters) {
+      return true;
+    }
+    if (searchQuery == null) {
+      return false;
+    }
+    if (typeof searchQuery === 'string') {
+      return searchQuery.trim() !== '';
+    }
+    return Boolean(searchQuery);
+  }, [hasActiveFilters, searchQuery]);
 
-  const statusCounts = React.useMemo(() => {
-    const counts = {
-      all: dataSource.length,
-    };
+  const statusIdMap = useMemo(() => {
+    const map = {};
+    if (Array.isArray(tandaTerimaFakturs)) {
+      tandaTerimaFakturs.forEach((item) => {
+        const code = item?.status?.status_code;
+        const statusId = item?.statusId || item?.status?.id;
+        if (code && statusId && map[code] == null) {
+          map[code] = statusId;
+        }
+      });
+    }
+    return map;
+  }, [tandaTerimaFakturs]);
 
-    TAB_ORDER.forEach((tabId) => {
-      if (tabId === 'all') {
+  const getStatusCodeForTab = useCallback(
+    (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode || null,
+    []
+  );
+
+  const fetchDataByTab = useCallback(
+    async (tab = activeTab, page = 1, limit) => {
+      const effectiveLimit =
+        typeof limit === 'number'
+          ? limit
+          : tabPagination.itemsPerPage ||
+            tabPagination.limit ||
+            INITIAL_TAB_PAGINATION.itemsPerPage;
+
+      if (tab === 'all') {
+        await fetchTandaTerimaFaktur({ page, limit: effectiveLimit });
         return;
       }
-      const statusCode = TAB_STATUS_CONFIG[tabId]?.statusCode;
+
+      const statusCode = getStatusCodeForTab(tab);
       if (!statusCode) {
-        counts[tabId] = 0;
+        setTabTandaTerimaFakturs([]);
+        setTabPagination((prev) => ({
+          ...prev,
+          currentPage: 1,
+          page: 1,
+          totalItems: 0,
+          total: 0,
+          totalPages: 1,
+        }));
         return;
       }
-      counts[tabId] = dataSource.filter(
-        (item) => item?.status?.status_code === statusCode
-      ).length;
-    });
 
-    return counts;
-  }, [dataSource]);
+      setTabLoading(true);
+      try {
+        const searchParams = statusIdMap[statusCode]
+          ? { statusId: statusIdMap[statusCode] }
+          : { status_code: statusCode };
+        const response = await tandaTerimaFakturService.search(
+          searchParams,
+          page,
+          effectiveLimit
+        );
+        const { results, pagination: parsedPagination } =
+          parseTandaTerimaFakturByStatusResponse(response);
+        setTabTandaTerimaFakturs(results);
+        setTabPagination(parsedPagination);
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+        }
+        console.error('Failed to fetch tanda terima faktur by status:', err);
+        setTabTandaTerimaFakturs([]);
+        setTabPagination((prev) => ({
+          ...prev,
+          currentPage: 1,
+          page: 1,
+          totalItems: 0,
+          total: 0,
+          totalPages: 1,
+        }));
+      } finally {
+        setTabLoading(false);
+      }
+    },
+    [
+      activeTab,
+      fetchTandaTerimaFaktur,
+      getStatusCodeForTab,
+      handleAuthError,
+      statusIdMap,
+      tabPagination.itemsPerPage,
+      tabPagination.limit,
+    ]
+  );
 
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-  };
-
-  const filteredTandaTerimaFakturs = React.useMemo(() => {
-    if (activeTab === 'all') {
-      return dataSource;
+  const tableTandaTerimaFakturs = useMemo(() => {
+    if (isSearchActive || activeTab === 'all') {
+      return tandaTerimaFakturs;
     }
+    return tabTandaTerimaFakturs;
+  }, [activeTab, isSearchActive, tabTandaTerimaFakturs, tandaTerimaFakturs]);
 
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode) {
-      return dataSource;
-    }
-
-    return dataSource.filter(
-      (item) => item?.status?.status_code === statusCode
-    );
-  }, [activeTab, dataSource]);
-
-  const resolvedPagination = React.useMemo(() => {
-    if (activeTab === 'all') {
+  const tablePagination = useMemo(() => {
+    if (isSearchActive || activeTab === 'all') {
       return pagination;
     }
+    return tabPagination;
+  }, [activeTab, isSearchActive, pagination, tabPagination]);
 
-    const base = pagination || {};
-    const itemsPerPage =
-      base.itemsPerPage || base.limit || filteredTandaTerimaFakturs.length || 10;
-    const totalItems = filteredTandaTerimaFakturs.length;
-    const totalPages = Math.max(
-      Math.ceil((totalItems || 1) / (itemsPerPage || 1)),
-      1
-    );
+  const tableLoading = useMemo(() => {
+    if (isSearchActive || activeTab === 'all') {
+      return loading;
+    }
+    return tabLoading;
+  }, [activeTab, isSearchActive, loading, tabLoading]);
 
-    return {
-      ...base,
-      currentPage: 1,
-      page: 1,
-      totalItems,
-      total: totalItems,
-      itemsPerPage,
-      limit: itemsPerPage,
-      totalPages,
-    };
-  }, [activeTab, filteredTandaTerimaFakturs, pagination]);
+  const handleTabChange = useCallback(
+    (newTab) => {
+      setActiveTab(newTab);
+
+      if (newTab === 'all') {
+        const currentPage = pagination?.currentPage || pagination?.page || 1;
+        const currentLimit =
+          pagination?.itemsPerPage ||
+          pagination?.limit ||
+          INITIAL_TAB_PAGINATION.itemsPerPage;
+        fetchTandaTerimaFaktur({ page: currentPage, limit: currentLimit });
+      } else {
+        setTabPagination((prev) => ({
+          ...prev,
+          currentPage: 1,
+          page: 1,
+        }));
+        const currentLimit =
+          tabPagination.itemsPerPage ||
+          tabPagination.limit ||
+          INITIAL_TAB_PAGINATION.itemsPerPage;
+        fetchDataByTab(newTab, 1, currentLimit);
+      }
+    },
+    [
+      fetchDataByTab,
+      fetchTandaTerimaFaktur,
+      pagination,
+      tabPagination.itemsPerPage,
+      tabPagination.limit,
+    ]
+  );
+
+  const handleTabPageChange = useCallback(
+    (page) => {
+      fetchDataByTab(activeTab, page);
+    },
+    [activeTab, fetchDataByTab]
+  );
+
+  const handleTabLimitChange = useCallback(
+    (limit) => {
+      fetchDataByTab(activeTab, 1, limit);
+    },
+    [activeTab, fetchDataByTab]
+  );
+
+  const handleTablePageChange = useCallback(
+    (page) => {
+      if (isSearchActive || activeTab === 'all') {
+        handlePageChange(page);
+      } else {
+        handleTabPageChange(page);
+      }
+    },
+    [activeTab, handlePageChange, handleTabPageChange, isSearchActive]
+  );
+
+  const handleTableLimitChange = useCallback(
+    (limit) => {
+      if (isSearchActive || activeTab === 'all') {
+        handleLimitChange(limit);
+      } else {
+        handleTabLimitChange(limit);
+      }
+    },
+    [activeTab, handleLimitChange, handleTabLimitChange, isSearchActive]
+  );
+
+  const refreshActiveTab = useCallback(async () => {
+    if (isSearchActive) {
+      return;
+    }
+
+    if (activeTab === 'all') {
+      const currentPage = pagination?.currentPage || pagination?.page || 1;
+      const currentLimit =
+        pagination?.itemsPerPage ||
+        pagination?.limit ||
+        INITIAL_TAB_PAGINATION.itemsPerPage;
+      await fetchTandaTerimaFaktur({ page: currentPage, limit: currentLimit });
+      return;
+    }
+
+    const currentPage = tabPagination.currentPage || tabPagination.page || 1;
+    const currentLimit =
+      tabPagination.itemsPerPage ||
+      tabPagination.limit ||
+      INITIAL_TAB_PAGINATION.itemsPerPage;
+    await fetchDataByTab(activeTab, currentPage, currentLimit);
+  }, [
+    activeTab,
+    fetchDataByTab,
+    fetchTandaTerimaFaktur,
+    isSearchActive,
+    pagination,
+    tabPagination,
+  ]);
+
+  const resolvedPagination =
+    tablePagination || tabPagination || INITIAL_TAB_PAGINATION;
+  const activeTabBadge =
+    resolvedPagination?.totalItems ?? resolvedPagination?.total ?? 0;
 
   const openCreateModal = () => {
     setSelectedTtf(null);
@@ -197,6 +423,7 @@ const TandaTerimaFakturPage = () => {
     const result = await createTandaTerimaFaktur(payload);
     if (result) {
       setIsCreateModalOpen(false);
+      await refreshActiveTab();
     }
   };
 
@@ -208,6 +435,7 @@ const TandaTerimaFakturPage = () => {
     if (result) {
       setIsEditModalOpen(false);
       setSelectedTtf(null);
+      await refreshActiveTab();
     }
   };
 
@@ -218,12 +446,41 @@ const TandaTerimaFakturPage = () => {
     triggerDeleteTandaTerimaFaktur(id);
   };
 
-  const handleRetry = () => {
-    const currentPage = pagination?.currentPage || pagination?.page || 1;
-    fetchTandaTerimaFaktur({ page: currentPage });
+  const handleRetry = async () => {
+    await refreshActiveTab();
   };
 
-  const tableLoading = Boolean(loading) && !error;
+  const handleDeleteConfirm = useCallback(async () => {
+    await deleteTandaTerimaFakturConfirmation.confirmDelete();
+    await refreshActiveTab();
+  }, [deleteTandaTerimaFakturConfirmation, refreshActiveTab]);
+
+  const tableHasActiveFilters = isSearchActive;
+
+  const statusTabs = useMemo(
+    () =>
+      TAB_ORDER.map((tabId) => ({
+        id: tabId,
+        label: TAB_STATUS_CONFIG[tabId]?.label || tabId,
+      })),
+    []
+  );
+
+  const deleteConfirmationProps = deleteTandaTerimaFakturConfirmation;
+  const isTableLoading = Boolean(tableLoading) && !error;
+
+  const currentSearchQuery =
+    typeof searchQuery === 'string'
+      ? searchQuery
+      : isSearchActive
+        ? 'filter aktif'
+        : undefined;
+
+  const effectivePagination = resolvedPagination || INITIAL_TAB_PAGINATION;
+  const tabHeaderBadge = activeTabBadge;
+  const tableData = Array.isArray(tableTandaTerimaFakturs)
+    ? tableTandaTerimaFakturs
+    : [];
 
   return (
     <div className='p-6'>
@@ -264,12 +521,12 @@ const TandaTerimaFakturPage = () => {
               onTabChange={handleTabChange}
               variant='underline'
             >
-              {TAB_ORDER.map((tabId) => (
+              {statusTabs.map((tab) => (
                 <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId]?.label || tabId}
-                  badge={statusCounts[tabId] ?? 0}
+                  key={tab.id}
+                  id={tab.id}
+                  label={tab.label}
+                  badge={activeTab === tab.id ? tabHeaderBadge : null}
                 />
               ))}
             </TabContainer>
@@ -289,23 +546,23 @@ const TandaTerimaFakturPage = () => {
             </div>
           ) : (
             <>
-              {tableLoading && (
+              {isTableLoading && (
                 <div className='flex items-center mb-4 text-sm text-gray-500'>
                   <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
                   Memuat data tanda terima faktur...
                 </div>
               )}
               <TandaTerimaFakturTable
-                tandaTerimaFakturs={filteredTandaTerimaFakturs}
-                pagination={resolvedPagination}
-                onPageChange={handlePageChange}
-                onLimitChange={handleLimitChange}
+                tandaTerimaFakturs={tableData}
+                pagination={effectivePagination}
+                onPageChange={handleTablePageChange}
+                onLimitChange={handleTableLimitChange}
                 onEdit={openEditModal}
                 onDelete={handleDelete}
                 onView={openDetailModal}
-                loading={loading}
-                searchQuery={searchQuery}
-                hasActiveFilters={hasActiveFilters}
+                loading={Boolean(tableLoading)}
+                searchQuery={currentSearchQuery}
+                hasActiveFilters={tableHasActiveFilters}
               />
             </>
           )}
@@ -335,15 +592,15 @@ const TandaTerimaFakturPage = () => {
       />
 
       <ConfirmationDialog
-        show={deleteTandaTerimaFakturConfirmation.showConfirm}
-        onClose={deleteTandaTerimaFakturConfirmation.hideDeleteConfirmation}
-        onConfirm={deleteTandaTerimaFakturConfirmation.confirmDelete}
-        title={deleteTandaTerimaFakturConfirmation.title}
-        message={deleteTandaTerimaFakturConfirmation.message}
+        show={deleteConfirmationProps.showConfirm}
+        onClose={deleteConfirmationProps.hideDeleteConfirmation}
+        onConfirm={handleDeleteConfirm}
+        title={deleteConfirmationProps.title}
+        message={deleteConfirmationProps.message}
         type='danger'
         confirmText='Hapus'
         cancelText='Batal'
-        loading={deleteTandaTerimaFakturConfirmation.loading}
+        loading={deleteConfirmationProps.loading}
       />
     </div>
   );
