@@ -111,11 +111,13 @@ const InvoicePenagihanPage = () => {
     pagination,
     loading,
     error,
+    filters,
     searchQuery,
-    searchField,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
+    hasActiveFilters,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange,
     handleLimitChange,
     deleteInvoiceConfirmation,
@@ -216,14 +218,7 @@ const InvoicePenagihanPage = () => {
     Boolean(generateFakturDialogInvoice) &&
     generatingFakturInvoiceId === generateFakturDialogInvoice.id;
 
-  const isSearchActive = useMemo(() => {
-    if (typeof searchQuery === 'string') {
-      return searchQuery.trim().length > 0;
-    }
-    return (
-      searchQuery !== undefined && searchQuery !== null && searchQuery !== ''
-    );
-  }, [searchQuery]);
+  const isSearchActive = hasActiveFilters;
 
   const tableInvoices = useMemo(() => {
     const dataSource =
@@ -362,6 +357,20 @@ const InvoicePenagihanPage = () => {
     pagination,
     tabPagination,
   ]);
+
+  const handleSearch = useCallback(async () => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleSearchSubmit();
+  }, [activeTab, handleSearchSubmit]);
+
+  const handleReset = useCallback(async () => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleResetFilters();
+  }, [activeTab, handleResetFilters]);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
@@ -743,11 +752,11 @@ const InvoicePenagihanPage = () => {
           </div>
 
           <InvoicePenagihanSearch
-            searchQuery={searchQuery}
-            searchField={searchField}
-            handleSearchChange={handleSearchChange}
-            handleSearchFieldChange={handleSearchFieldChange}
-            searchLoading={searchLoading}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearch}
+            onReset={handleReset}
+            loading={Boolean(searchLoading || tableLoading)}
           />
 
           <div className='mb-4 overflow-x-auto'>

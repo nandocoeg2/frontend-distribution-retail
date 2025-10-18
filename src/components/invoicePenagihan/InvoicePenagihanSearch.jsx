@@ -1,109 +1,167 @@
-﻿import React, { useMemo } from 'react';
-
-const SELECT_OPTIONS = {
-  kw: [
-    { value: '', label: 'Semua KW' },
-    { value: 'true', label: 'KW - Ya' },
-    { value: 'false', label: 'KW - Tidak' },
-  ],
-  fp: [
-    { value: '', label: 'Semua FP' },
-    { value: 'true', label: 'FP - Ya' },
-    { value: 'false', label: 'FP - Tidak' },
-  ],
-};
-
-const DATE_FIELDS = new Set(['tanggal_start', 'tanggal_end']);
+import React from 'react';
 
 const InvoicePenagihanSearch = ({
-  searchQuery,
-  searchField,
-  handleSearchChange,
-  handleSearchFieldChange,
-  searchLoading,
+  filters,
+  onFiltersChange,
+  onSearch,
+  onReset,
+  loading,
 }) => {
-  const inputType = useMemo(() => {
-    if (DATE_FIELDS.has(searchField)) {
-      return 'date';
-    }
-    if (SELECT_OPTIONS[searchField]) {
-      return 'select';
-    }
-    return 'text';
-  }, [searchField]);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSearch?.();
+  };
 
-  const placeholder = useMemo(() => {
-    const label = searchField
-      ? searchField
-          .replace(/([A-Z])/g, ' ')
-          .replace(/_/g, ' ')
-          .trim()
-      : 'field';
-    return `Cari berdasarkan ${label}`;
-  }, [searchField]);
+  const handleReset = () => {
+    onReset?.();
+  };
+
+  const handleChange = (field) => (event) => {
+    onFiltersChange?.(field, event.target.value);
+  };
+
+  const isLoading = Boolean(loading);
 
   return (
-    <div className='grid grid-cols-1 gap-4 mb-4 md:grid-cols-3'>
-      <div>
-        <select
-          value={searchField}
-          onChange={(e) => handleSearchFieldChange(e.target.value)}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-        >
-          <option value='no_invoice_penagihan'>Nomor Invoice</option>
-          <option value='kepada'>Kepada</option>
-          <option value='statusId'>Status ID</option>
-          <option value='purchaseOrderId'>Purchase Order ID</option>
-          <option value='termOfPaymentId'>Term of Payment ID</option>
-          <option value='kw'>Status KW</option>
-          <option value='fp'>Status FP</option>
-          <option value='tanggal_start'>Tanggal Mulai</option>
-          <option value='tanggal_end'>Tanggal Akhir</option>
-        </select>
-      </div>
-      <div className='relative md:col-span-2'>
-        {inputType === 'select' ? (
-          <select
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            {SELECT_OPTIONS[searchField].map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        ) : (
+    <form
+      onSubmit={handleSubmit}
+      className='p-4 mb-6 bg-gray-50 border border-gray-200 rounded-lg'
+    >
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Nomor Invoice Penagihan
+          </label>
           <input
-            type={inputType}
-            placeholder={inputType === 'date' ? undefined : placeholder}
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            type='text'
+            value={filters.no_invoice_penagihan || ''}
+            onChange={handleChange('no_invoice_penagihan')}
+            placeholder='Contoh: IPN-2024-001'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
-        )}
-        <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
-          <svg
-            className='w-5 h-5 text-gray-400'
-            fill='none'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            strokeWidth='2'
-            viewBox='0 0 24 24'
-            stroke='currentColor'
-          >
-            <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
-          </svg>
         </div>
-        {searchLoading && (
-          <div className='flex items-center mt-2 text-sm text-gray-600'>
-            <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-            Mencari data...
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Nama Penerima
+          </label>
+          <input
+            type='text'
+            value={filters.kepada || ''}
+            onChange={handleChange('kepada')}
+            placeholder='Contoh: Customer ABC'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Status ID
+          </label>
+          <input
+            type='text'
+            value={filters.statusId || ''}
+            onChange={handleChange('statusId')}
+            placeholder='Masukkan ID status invoice'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Purchase Order ID
+          </label>
+          <input
+            type='text'
+            value={filters.purchaseOrderId || ''}
+            onChange={handleChange('purchaseOrderId')}
+            placeholder='Masukkan ID purchase order'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Term of Payment ID
+          </label>
+          <input
+            type='text'
+            value={filters.termOfPaymentId || ''}
+            onChange={handleChange('termOfPaymentId')}
+            placeholder='Masukkan ID term of payment'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Kwitansi ID
+          </label>
+          <input
+            type='text'
+            value={filters.kwitansiId || ''}
+            onChange={handleChange('kwitansiId')}
+            placeholder='Masukkan ID kwitansi'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Faktur Pajak ID
+          </label>
+          <input
+            type='text'
+            value={filters.fakturPajakId || ''}
+            onChange={handleChange('fakturPajakId')}
+            placeholder='Masukkan ID faktur pajak'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 md:col-span-2'>
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Tanggal Mulai
+            </label>
+            <input
+              type='date'
+              value={filters.tanggal_start || ''}
+              onChange={handleChange('tanggal_start')}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
           </div>
-        )}
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Tanggal Akhir
+            </label>
+            <input
+              type='date'
+              value={filters.tanggal_end || ''}
+              onChange={handleChange('tanggal_end')}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
+          </div>
+        </div>
       </div>
-    </div>
+
+      <div className='flex flex-col gap-3 mt-6 sm:flex-row sm:items-center sm:justify-end'>
+        <button
+          type='button'
+          onClick={handleReset}
+          className='inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+        >
+          Atur Ulang
+        </button>
+        <button
+          type='submit'
+          disabled={isLoading}
+          className='inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed'
+        >
+          {isLoading ? 'Mencari...' : 'Cari Invoice'}
+        </button>
+      </div>
+    </form>
   );
 };
 
