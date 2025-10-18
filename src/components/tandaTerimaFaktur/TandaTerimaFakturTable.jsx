@@ -1,7 +1,11 @@
 import React from 'react';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
-import { formatCurrency, formatDate } from '@/utils/formatUtils';
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+} from '@/utils/formatUtils';
 
 const TandaTerimaFakturTable = ({
   tandaTerimaFakturs,
@@ -32,25 +36,31 @@ const TandaTerimaFakturTable = ({
         <thead className='bg-gray-50'>
           <tr>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Kode Supplier
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Tanggal
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Customer
+              TOP
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Company
+              Nama Customer
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Kode Customer
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Nama Company
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Kode Supplier
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Grand Total
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Status
+              Created
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Term of Payment
+              Updated
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Aksi
@@ -61,7 +71,7 @@ const TandaTerimaFakturTable = ({
           {showEmptyState ? (
             <tr>
               <td
-                colSpan={8}
+                colSpan={10}
                 className='px-6 py-6 text-center text-sm text-gray-500'
               >
                 {emptyMessage}
@@ -71,27 +81,29 @@ const TandaTerimaFakturTable = ({
             data.map((item) => (
               <tr key={item.id} className='hover:bg-gray-50'>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm font-medium text-gray-900'>
-                    {item.code_supplier || '-'}
-                  </div>
-                  <div className='text-xs text-gray-500'>
-                    ID: {item.id || '-'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatDate(item.tanggal)}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.customer?.nama_customer || '-'}
+                    {item?.termOfPayment?.name || '-'}
                   </div>
-                  {item?.customer?.kode_customer && (
+                  {item?.termOfPayment?.days != null && (
                     <div className='text-xs text-gray-500'>
-                      {item.customer.kode_customer}
+                      {item.termOfPayment.days} hari
                     </div>
                   )}
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
+                    {item?.customer?.nama_customer || '-'}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
+                    {item?.customer?.kode_customer || '-'}
+                  </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
@@ -104,24 +116,27 @@ const TandaTerimaFakturTable = ({
                   )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm font-medium text-gray-900'>
+                    {item.code_supplier || '-'}
+                  </div>
+                  <div className='text-xs text-gray-500'>
+                    ID: {item.id || '-'}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatCurrency(item.grand_total)}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <span className='inline-flex px-2 text-xs font-semibold leading-5 rounded-full bg-green-100 text-green-800'>
-                    {item?.status?.status_code || 'Belum Ditentukan'}
-                  </span>
+                  <div className='text-sm text-gray-900'>
+                    {formatDateTime(item.createdAt)}
+                  </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.termOfPayment?.name || '-'}
+                    {formatDateTime(item.updatedAt)}
                   </div>
-                  {item?.termOfPayment?.days != null && (
-                    <div className='text-xs text-gray-500'>
-                      {item.termOfPayment.days} hari
-                    </div>
-                  )}
                 </td>
                 <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
                   <div className='flex justify-end space-x-2'>
@@ -157,7 +172,7 @@ const TandaTerimaFakturTable = ({
           {loading && (
             <tr>
               <td
-                colSpan={8}
+                colSpan={10}
                 className='px-6 py-6 text-center text-sm text-gray-500'
               >
                 <div className='flex items-center justify-center space-x-2'>

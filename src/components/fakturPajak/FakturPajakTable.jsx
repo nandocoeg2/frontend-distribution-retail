@@ -33,28 +33,31 @@ const FakturPajakTable = ({
               Nomor Faktur
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Nomor Invoice
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Tanggal Invoice
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Customer
+              Nomor LPB
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Nama Customer
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
-              DPP
+              Total Harga Jual
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
-              PPN
+              Potongan Harga
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
+              Dasar Pengenaan Pajak
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
+              PPN Rupiah
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Status
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Term of Payment
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Invoice Penagihan
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              LPB
+              TOP
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Aksi
@@ -65,7 +68,7 @@ const FakturPajakTable = ({
           {showEmptyState ? (
             <tr>
               <td
-                colSpan={10}
+                colSpan={11}
                 className='px-6 py-6 text-center text-sm text-gray-500'
               >
                 {emptyMessage}
@@ -86,8 +89,25 @@ const FakturPajakTable = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
+                    {item?.invoicePenagihan?.no_invoice || '-'}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
                     {formatDate(item.tanggal_invoice)}
                   </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
+                    {item?.laporanPenerimaanBarang?.no_lpb || '-'}
+                  </div>
+                  {item?.laporanPenerimaanBarang?.tanggal_terima && (
+                    <div className='text-xs text-gray-500'>
+                      {formatDate(
+                        item.laporanPenerimaanBarang.tanggal_terima,
+                      )}
+                    </div>
+                  )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
@@ -98,6 +118,16 @@ const FakturPajakTable = ({
                       {item.customer.kode_customer}
                     </div>
                   )}
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap text-right'>
+                  <div className='text-sm text-gray-900'>
+                    {formatCurrency(item.total_harga_jual)}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap text-right'>
+                  <div className='text-sm text-gray-900'>
+                    {formatCurrency(item.potongan_harga)}
+                  </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right'>
                   <div className='text-sm text-gray-900'>
@@ -115,39 +145,12 @@ const FakturPajakTable = ({
                   )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <span className='inline-flex px-2 text-xs font-semibold leading-5 rounded-full bg-indigo-100 text-indigo-800'>
-                    {item?.status?.status_code || 'Belum Ditentukan'}
-                  </span>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {item?.termOfPayment?.name || '-'}
                   </div>
                   {item?.termOfPayment?.days != null && (
                     <div className='text-xs text-gray-500'>
                       {item.termOfPayment.days} hari
-                    </div>
-                  )}
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {item?.invoicePenagihan?.no_invoice || '-'}
-                  </div>
-                  {item?.invoicePenagihan?.total_price && (
-                    <div className='text-xs text-gray-500'>
-                      {formatCurrency(item.invoicePenagihan.total_price)}
-                    </div>
-                  )}
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {item?.laporanPenerimaanBarang?.no_lpb || '-'}
-                  </div>
-                  {item?.laporanPenerimaanBarang?.tanggal_terima && (
-                    <div className='text-xs text-gray-500'>
-                      {formatDate(
-                        item.laporanPenerimaanBarang.tanggal_terima,
-                      )}
                     </div>
                   )}
                 </td>
@@ -185,7 +188,7 @@ const FakturPajakTable = ({
           {loading && (
             <tr>
               <td
-                colSpan={10}
+                colSpan={11}
                 className='px-6 py-6 text-center text-sm text-gray-500'
               >
                 <div className='flex items-center justify-center space-x-2'>
