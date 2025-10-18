@@ -1,6 +1,9 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
+const devServerPort =
+  Number(process.env.PORT || process.env.DEV_SERVER_PORT) || 1212;
+
 module.exports = {
   packagerConfig: {
     asar: true,
@@ -46,6 +49,7 @@ module.exports = {
             },
           ],
         },
+        port: devServerPort,
         devServer: {
           hot: true,
           liveReload: false,
