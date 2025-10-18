@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useInvoicePenagihan from '@/hooks/useInvoicePenagihanPage';
 import InvoicePenagihanTable from '@/components/invoicePenagihan/InvoicePenagihanTable';
 import InvoicePenagihanSearch from '@/components/invoicePenagihan/InvoicePenagihanSearch';
@@ -8,32 +8,34 @@ import ViewInvoicePenagihanModal from '@/components/invoicePenagihan/ViewInvoice
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import invoicePenagihanService from '@/services/invoicePenagihanService';
+import toastService from '@/services/toastService';
+import useStatuses from '@/hooks/useStatuses';
 
 const TAB_STATUS_CONFIG = {
-  all: { label: 'All', filters: null },
+  all: { label: 'All', statusCode: null },
   pending: {
     label: 'Pending',
-    filters: { status_code: 'PENDING INVOICE PENAGIHAN' },
+    statusCode: 'PENDING INVOICE PENAGIHAN',
   },
   processing: {
     label: 'Processing',
-    filters: { status_code: 'PROCESSING INVOICE PENAGIHAN' },
+    statusCode: 'PROCESSING INVOICE PENAGIHAN',
   },
   paid: {
     label: 'Paid',
-    filters: { status_code: 'PAID INVOICE PENAGIHAN' },
+    statusCode: 'PAID INVOICE PENAGIHAN',
   },
   overdue: {
     label: 'Overdue',
-    filters: { status_code: 'OVERDUE INVOICE PENAGIHAN' },
+    statusCode: 'OVERDUE INVOICE PENAGIHAN',
   },
   completed: {
     label: 'Completed',
-    filters: { status_code: 'COMPLETED INVOICE PENAGIHAN' },
+    statusCode: 'COMPLETED INVOICE PENAGIHAN',
   },
   cancelled: {
     label: 'Cancelled',
-    filters: { status_code: 'CANCELLED INVOICE PENAGIHAN' },
+    statusCode: 'CANCELLED INVOICE PENAGIHAN',
   },
 };
 
@@ -123,6 +125,52 @@ const InvoicePenagihanPage = () => {
     handleAuthError,
   } = useInvoicePenagihan();
 
+  const { invoiceStatuses, fetchInvoiceStatuses } = useStatuses();
+
+  useEffect(() => {
+    fetchInvoiceStatuses();
+  }, [fetchInvoiceStatuses]);
+
+  const invoiceStatusList = useMemo(() => {
+    if (Array.isArray(invoiceStatuses)) {
+      return invoiceStatuses;
+    }
+    if (Array.isArray(invoiceStatuses?.data)) {
+      return invoiceStatuses.data;
+    }
+    if (Array.isArray(invoiceStatuses?.data?.data)) {
+      return invoiceStatuses.data.data;
+    }
+    return [];
+  }, [invoiceStatuses]);
+
+  const statusCodeToIdMap = useMemo(() => {
+    return invoiceStatusList.reduce((acc, status) => {
+      if (status?.status_code && status?.id) {
+        acc[status.status_code] = status.id;
+      }
+      return acc;
+    }, {});
+  }, [invoiceStatusList]);
+
+  const resolveTabFilters = useCallback(
+    (tabId) => {
+      if (!tabId || tabId === 'all') {
+        return null;
+      }
+      const statusCode = TAB_STATUS_CONFIG[tabId]?.statusCode;
+      if (!statusCode) {
+        return null;
+      }
+      const statusId = statusCodeToIdMap[statusCode];
+      if (statusId) {
+        return { statusId };
+      }
+      return { status_code: statusCode };
+    },
+    [statusCodeToIdMap]
+  );
+
   const {
     showConfirm: showDeleteDialog,
     hideDeleteConfirmation,
@@ -133,16 +181,40 @@ const InvoicePenagihanPage = () => {
     loading: deleteDialogLoading,
   } = deleteInvoiceConfirmation;
 
+  const viewDetailRequestRef = useRef(null);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [viewingInvoice, setViewingInvoice] = useState(null);
+  const [viewDetailLoading, setViewDetailLoading] = useState(false);
+  const [generateKwitansiConfirmation, setGenerateKwitansiConfirmation] =
+    useState({
+      show: false,
+      invoice: null,
+    });
+  const [generatingInvoiceId, setGeneratingInvoiceId] = useState(null);
+  const [generateFakturConfirmation, setGenerateFakturConfirmation] = useState({
+    show: false,
+    invoice: null,
+  });
+  const [generatingFakturInvoiceId, setGeneratingFakturInvoiceId] =
+    useState(null);
   const [activeTab, setActiveTab] = useState('all');
   const [tabInvoices, setTabInvoices] = useState([]);
   const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
   const [tabLoading, setTabLoading] = useState(false);
   const [tabError, setTabError] = useState(null);
+
+  const generateKwitansiDialogInvoice = generateKwitansiConfirmation.invoice;
+  const generateKwitansiDialogLoading =
+    Boolean(generateKwitansiDialogInvoice) &&
+    generatingInvoiceId === generateKwitansiDialogInvoice.id;
+  const generateFakturDialogInvoice = generateFakturConfirmation.invoice;
+  const generateFakturDialogLoading =
+    Boolean(generateFakturDialogInvoice) &&
+    generatingFakturInvoiceId === generateFakturDialogInvoice.id;
 
   const isSearchActive = useMemo(() => {
     if (typeof searchQuery === 'string') {
@@ -191,8 +263,8 @@ const InvoicePenagihanPage = () => {
         return;
       }
 
-      const filters = TAB_STATUS_CONFIG[tab]?.filters;
-      if (!filters) {
+      const tabFilters = resolveTabFilters(tab);
+      if (!tabFilters) {
         setTabInvoices([]);
         setTabPagination({
           ...INITIAL_TAB_PAGINATION,
@@ -207,7 +279,7 @@ const InvoicePenagihanPage = () => {
       setTabError(null);
       try {
         const response = await invoicePenagihanService.searchInvoicePenagihan(
-          filters,
+          tabFilters,
           page,
           effectiveLimit
         );
@@ -251,6 +323,7 @@ const InvoicePenagihanPage = () => {
       handleAuthError,
       tabPagination.itemsPerPage,
       tabPagination.limit,
+      resolveTabFilters,
     ]
   );
 
@@ -302,14 +375,238 @@ const InvoicePenagihanPage = () => {
     setShowEditModal(false);
   };
 
-  const openViewModal = (invoice) => {
-    setViewingInvoice(invoice);
-    setShowViewModal(true);
-  };
-  const closeViewModal = () => {
+  const openGenerateKwitansiDialog = useCallback((invoice) => {
+    if (!invoice || invoice?.kwitansiId || invoice?.kwitansi?.id) {
+      return;
+    }
+    setGenerateKwitansiConfirmation({
+      show: true,
+      invoice,
+    });
+  }, []);
+
+  const closeGenerateKwitansiDialog = useCallback(() => {
+    setGenerateKwitansiConfirmation({
+      show: false,
+      invoice: null,
+    });
+  }, []);
+
+  const handleGenerateKwitansiConfirm = useCallback(async () => {
+    const targetInvoice = generateKwitansiDialogInvoice;
+    const invoiceId = targetInvoice?.id;
+
+    if (!invoiceId) {
+      closeGenerateKwitansiDialog();
+      return;
+    }
+
+    setGeneratingInvoiceId(invoiceId);
+    try {
+      const response = await invoicePenagihanService.generateKwitansi(
+        invoiceId
+      );
+      const payload = response ?? {};
+      if (payload?.success === false) {
+        throw new Error(
+          payload?.error?.message || 'Gagal membuat kwitansi dari invoice.'
+        );
+      }
+
+      const kwitansiData = payload?.data ?? payload;
+      toastService.success(
+        kwitansiData?.no_kwitansi
+          ? `Kwitansi ${kwitansiData.no_kwitansi} berhasil dibuat.`
+          : 'Kwitansi berhasil dibuat.'
+      );
+
+      closeGenerateKwitansiDialog();
+
+      setViewingInvoice((prev) => {
+        if (prev?.id !== invoiceId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          kwitansiId: kwitansiData?.id || kwitansiData?.kwitansiId || prev?.kwitansiId,
+          kwitansi: kwitansiData || prev?.kwitansi,
+        };
+      });
+
+      await refreshActiveTab();
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+      } else {
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Gagal membuat kwitansi dari invoice penagihan.';
+        toastService.error(message);
+      }
+      console.error('Failed to generate kwitansi from invoice penagihan:', err);
+    } finally {
+      setGeneratingInvoiceId((current) =>
+        current === invoiceId ? null : current
+      );
+    }
+  }, [
+    closeGenerateKwitansiDialog,
+    generateKwitansiDialogInvoice,
+    handleAuthError,
+    refreshActiveTab,
+  ]);
+
+  const openGenerateFakturDialog = useCallback((invoice) => {
+    if (!invoice || invoice?.fakturPajakId || invoice?.fakturPajak?.id) {
+      return;
+    }
+    setGenerateFakturConfirmation({
+      show: true,
+      invoice,
+    });
+  }, []);
+
+  const closeGenerateFakturDialog = useCallback(() => {
+    setGenerateFakturConfirmation({
+      show: false,
+      invoice: null,
+    });
+  }, []);
+
+  const handleGenerateFakturConfirm = useCallback(async () => {
+    const targetInvoice = generateFakturDialogInvoice;
+    const invoiceId = targetInvoice?.id;
+
+    if (!invoiceId) {
+      closeGenerateFakturDialog();
+      return;
+    }
+
+    setGeneratingFakturInvoiceId(invoiceId);
+    try {
+      const response = await invoicePenagihanService.generateFakturPajak(
+        invoiceId
+      );
+      const payload = response ?? {};
+      if (payload?.success === false) {
+        throw new Error(
+          payload?.error?.message || 'Gagal membuat faktur pajak.'
+        );
+      }
+
+      const fakturData = payload?.data ?? payload;
+      toastService.success(
+        fakturData?.no_pajak
+          ? `Faktur pajak ${fakturData.no_pajak} berhasil dibuat.`
+          : 'Faktur pajak berhasil dibuat.'
+      );
+
+      closeGenerateFakturDialog();
+
+      setViewingInvoice((prev) => {
+        if (prev?.id !== invoiceId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          fakturPajakId:
+            fakturData?.id || fakturData?.fakturPajakId || prev?.fakturPajakId,
+          fakturPajak: fakturData || prev?.fakturPajak,
+        };
+      });
+
+      await refreshActiveTab();
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+      } else {
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Gagal membuat faktur pajak dari invoice penagihan.';
+        toastService.error(message);
+      }
+      console.error('Failed to generate faktur pajak from invoice penagihan:', err);
+    } finally {
+      setGeneratingFakturInvoiceId((current) =>
+        current === invoiceId ? null : current
+      );
+    }
+  }, [
+    closeGenerateFakturDialog,
+    generateFakturDialogInvoice,
+    handleAuthError,
+    refreshActiveTab,
+  ]);
+
+  const openViewModal = useCallback(
+    async (selectedInvoice) => {
+      if (!selectedInvoice) {
+        return;
+      }
+
+      setViewingInvoice(selectedInvoice);
+      setShowViewModal(true);
+
+      const invoiceId = selectedInvoice.id;
+      if (!invoiceId) {
+        return;
+      }
+
+      setViewDetailLoading(true);
+      try {
+        viewDetailRequestRef.current = invoiceId;
+        const response = await invoicePenagihanService.getInvoicePenagihanById(
+          invoiceId
+        );
+        const detailPayload = response?.data ?? response;
+        const detailedInvoice =
+          detailPayload?.data && !Array.isArray(detailPayload.data)
+            ? detailPayload.data
+            : detailPayload;
+
+        if (detailedInvoice) {
+          setViewingInvoice((prev) => {
+            if (viewDetailRequestRef.current !== invoiceId) {
+              return prev;
+            }
+            if (!prev) {
+              return prev;
+            }
+            if (invoiceId && prev.id && prev.id !== invoiceId) {
+              return prev;
+            }
+            return detailedInvoice;
+          });
+        }
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+        } else {
+          const message =
+            err?.response?.data?.error?.message ||
+            err?.message ||
+            'Gagal memuat detail invoice penagihan.';
+          toastService.error(message);
+        }
+        console.error('Failed to fetch invoice penagihan detail:', err);
+      } finally {
+        if (viewDetailRequestRef.current === invoiceId) {
+          viewDetailRequestRef.current = null;
+          setViewDetailLoading(false);
+        }
+      }
+    },
+    [handleAuthError]
+  );
+
+  const closeViewModal = useCallback(() => {
+    viewDetailRequestRef.current = null;
     setViewingInvoice(null);
     setShowViewModal(false);
-  };
+    setViewDetailLoading(false);
+  }, []);
 
   const handleTabChange = useCallback(
     (newTab) => {
@@ -505,6 +802,10 @@ const InvoicePenagihanPage = () => {
               onEdit={openEditModal}
               onDelete={showDeleteConfirmation}
               onView={openViewModal}
+              onGenerateKwitansi={openGenerateKwitansiDialog}
+              generatingInvoiceId={generatingInvoiceId}
+              onGenerateFakturPajak={openGenerateFakturDialog}
+              generatingFakturInvoiceId={generatingFakturInvoiceId}
               searchQuery={searchQuery}
             />
           )}
@@ -528,6 +829,39 @@ const InvoicePenagihanPage = () => {
         show={showViewModal}
         onClose={closeViewModal}
         invoice={viewingInvoice}
+        isLoading={viewDetailLoading}
+      />
+
+      <ConfirmationDialog
+        show={generateKwitansiConfirmation.show}
+        onClose={closeGenerateKwitansiDialog}
+        onConfirm={handleGenerateKwitansiConfirm}
+        title='Generate Kwitansi'
+        message={
+          generateKwitansiDialogInvoice
+            ? `Apakah Anda yakin ingin membuat kwitansi untuk invoice ${generateKwitansiDialogInvoice.no_invoice_penagihan || generateKwitansiDialogInvoice.id || ''}?`
+            : 'Apakah Anda yakin ingin membuat kwitansi untuk invoice ini?'
+        }
+        confirmText='Ya, buat kwitansi'
+        cancelText='Batal'
+        type='warning'
+        loading={generateKwitansiDialogLoading}
+      />
+
+      <ConfirmationDialog
+        show={generateFakturConfirmation.show}
+        onClose={closeGenerateFakturDialog}
+        onConfirm={handleGenerateFakturConfirm}
+        title='Generate Faktur Pajak'
+        message={
+          generateFakturDialogInvoice
+            ? `Apakah Anda yakin ingin membuat faktur pajak untuk invoice ${generateFakturDialogInvoice.no_invoice_penagihan || generateFakturDialogInvoice.id || ''}?`
+            : 'Apakah Anda yakin ingin membuat faktur pajak untuk invoice ini?'
+        }
+        confirmText='Ya, buat faktur pajak'
+        cancelText='Batal'
+        type='warning'
+        loading={generateFakturDialogLoading}
       />
 
       <ConfirmationDialog
@@ -546,4 +880,3 @@ const InvoicePenagihanPage = () => {
 };
 
 export default InvoicePenagihanPage;
-

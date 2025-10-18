@@ -14,7 +14,12 @@ const toBooleanLabel = (value, fallback = '-') => {
   return fallback;
 };
 
-const ViewInvoicePenagihanModal = ({ show, onClose, invoice }) => {
+const ViewInvoicePenagihanModal = ({
+  show,
+  onClose,
+  invoice,
+  isLoading = false,
+}) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
@@ -105,7 +110,17 @@ const ViewInvoicePenagihanModal = ({ show, onClose, invoice }) => {
           </nav>
         </div>
 
-        <div className='flex-1 p-6 overflow-y-auto'>
+        <div className='relative flex-1 p-6 overflow-y-auto'>
+          {isLoading ? (
+            <div className='absolute inset-0 z-10 flex items-center justify-center bg-white/75'>
+              <div className='flex flex-col items-center gap-3'>
+                <div className='w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin'></div>
+                <p className='text-sm font-medium text-gray-700'>
+                  Memuat detail invoice...
+                </p>
+              </div>
+            </div>
+          ) : null}
           {activeTab === 'overview' && (
             <div className='space-y-6'>
               <AccordionItem

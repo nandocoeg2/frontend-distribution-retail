@@ -11,6 +11,10 @@ const InvoicePenagihanTable = ({
   onEdit,
   onDelete,
   onView,
+  onGenerateKwitansi,
+  generatingInvoiceId,
+  onGenerateFakturPajak,
+  generatingFakturInvoiceId,
   searchQuery,
 }) => {
   const data = Array.isArray(invoices) ? invoices : [];
@@ -35,6 +39,12 @@ const InvoicePenagihanTable = ({
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Status
             </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
+              Generate Kwitansi
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
+              Generate Faktur Pajak
+            </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Aksi
             </th>
@@ -43,7 +53,7 @@ const InvoicePenagihanTable = ({
         <tbody className='bg-white divide-y divide-gray-200'>
           {data.length === 0 ? (
             <tr>
-              <td colSpan='6' className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan='8' className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery
                   ? 'Invoice penagihan tidak ditemukan.'
                   : 'Belum ada data invoice penagihan.'}
@@ -76,6 +86,69 @@ const InvoicePenagihanTable = ({
                   <span className='inline-flex px-2 text-xs font-semibold leading-5 rounded-full bg-blue-100 text-blue-800'>
                     {invoice?.status?.status_name || 'Belum Ditentukan'}
                   </span>
+                </td>
+                <td className='px-6 py-4 text-center whitespace-nowrap'>
+                  <div className='flex flex-col items-center justify-center space-y-1'>
+                    <div className='flex items-center space-x-2'>
+                      {generatingInvoiceId === invoice.id ? (
+                        <span className='w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin'></span>
+                      ) : null}
+                      <input
+                        type='checkbox'
+                        className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
+                        checked={Boolean(
+                          invoice?.kwitansiId || invoice?.kwitansi?.id
+                        )}
+                        onChange={(event) => {
+                          if (event.target.checked && onGenerateKwitansi) {
+                            onGenerateKwitansi(invoice);
+                          }
+                        }}
+                        disabled={
+                          Boolean(invoice?.kwitansiId || invoice?.kwitansi?.id) ||
+                          generatingInvoiceId === invoice.id
+                        }
+                        aria-label='Generate kwitansi untuk invoice ini'
+                      />
+                    </div>
+                    {invoice?.kwitansi?.no_kwitansi || invoice?.kwitansiId ? (
+                      <span className='text-xs text-gray-500'>
+                        {invoice?.kwitansi?.no_kwitansi || invoice?.kwitansiId}
+                      </span>
+                    ) : null}
+                  </div>
+                </td>
+                <td className='px-6 py-4 text-center whitespace-nowrap'>
+                  <div className='flex flex-col items-center justify-center space-y-1'>
+                    <div className='flex items-center space-x-2'>
+                      {generatingFakturInvoiceId === invoice.id ? (
+                        <span className='w-4 h-4 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin'></span>
+                      ) : null}
+                      <input
+                        type='checkbox'
+                        className='w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 disabled:opacity-50'
+                        checked={Boolean(
+                          invoice?.fakturPajakId || invoice?.fakturPajak?.id
+                        )}
+                        onChange={(event) => {
+                          if (event.target.checked && onGenerateFakturPajak) {
+                            onGenerateFakturPajak(invoice);
+                          }
+                        }}
+                        disabled={
+                          Boolean(
+                            invoice?.fakturPajakId || invoice?.fakturPajak?.id
+                          ) || generatingFakturInvoiceId === invoice.id
+                        }
+                        aria-label='Generate faktur pajak untuk invoice ini'
+                      />
+                    </div>
+                    {invoice?.fakturPajak?.no_pajak || invoice?.fakturPajakId ? (
+                      <span className='text-xs text-gray-500'>
+                        {invoice?.fakturPajak?.no_pajak || invoice?.fakturPajakId}
+                      </span>
+                    ) : null}
+                  </div>
                 </td>
                 <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
                   <div className='flex justify-end space-x-2'>
