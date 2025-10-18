@@ -69,7 +69,7 @@ const FakturPajakTable = ({
             <tr>
               <td
                 colSpan={11}
-                className='px-6 py-6 text-center text-sm text-gray-500'
+                className='px-6 py-6 text-sm text-center text-gray-500'
               >
                 {emptyMessage}
               </td>
@@ -89,7 +89,7 @@ const FakturPajakTable = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.invoicePenagihan?.no_invoice || '-'}
+                    {item?.invoicePenagihan?.no_invoice_penagihan || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
@@ -103,38 +103,36 @@ const FakturPajakTable = ({
                   </div>
                   {item?.laporanPenerimaanBarang?.tanggal_terima && (
                     <div className='text-xs text-gray-500'>
-                      {formatDate(
-                        item.laporanPenerimaanBarang.tanggal_terima,
-                      )}
+                      {formatDate(item.laporanPenerimaanBarang.tanggal_terima)}
                     </div>
                   )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.customer?.nama_customer || '-'}
+                    {item?.customer?.namaCustomer || '-'}
                   </div>
-                  {item?.customer?.kode_customer && (
+                  {item?.customer?.kodeCustomer && (
                     <div className='text-xs text-gray-500'>
-                      {item.customer.kode_customer}
+                      {item.customer.kodeCustomer}
                     </div>
                   )}
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap text-right'>
+                <td className='px-6 py-4 text-right whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatCurrency(item.total_harga_jual)}
                   </div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap text-right'>
+                <td className='px-6 py-4 text-right whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatCurrency(item.potongan_harga)}
                   </div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap text-right'>
+                <td className='px-6 py-4 text-right whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatCurrency(item.dasar_pengenaan_pajak)}
                   </div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap text-right'>
+                <td className='px-6 py-4 text-right whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {formatCurrency(item.ppn_rp)}
                   </div>
@@ -146,11 +144,11 @@ const FakturPajakTable = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.termOfPayment?.name || '-'}
+                    {item?.termOfPayment?.kode_top || '-'}
                   </div>
-                  {item?.termOfPayment?.days != null && (
+                  {item?.termOfPayment?.batas_hari != null && (
                     <div className='text-xs text-gray-500'>
-                      {item.termOfPayment.days} hari
+                      {item.termOfPayment.batas_hari} hari
                     </div>
                   )}
                 </td>
@@ -189,7 +187,7 @@ const FakturPajakTable = ({
             <tr>
               <td
                 colSpan={11}
-                className='px-6 py-6 text-center text-sm text-gray-500'
+                className='px-6 py-6 text-sm text-center text-gray-500'
               >
                 <div className='flex items-center justify-center space-x-2'>
                   <div className='w-4 h-4 border-b-2 border-blue-600 rounded-full animate-spin'></div>
