@@ -12,9 +12,19 @@ const InvoicePengirimanTable = ({
   onDelete,
   onView,
   searchQuery,
+  hasActiveFilters,
   onTogglePenagihan,
   creatingPenagihanId,
 }) => {
+  const data = Array.isArray(invoices) ? invoices : [];
+  const isEmpty = data.length === 0;
+  const hasQuery =
+    searchQuery && String(searchQuery).trim().length > 0;
+  const emptyMessage =
+    hasActiveFilters || hasQuery
+      ? 'Invoice pengiriman tidak ditemukan.'
+      : 'Belum ada data invoice pengiriman.';
+
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -41,16 +51,14 @@ const InvoicePengirimanTable = ({
           </tr>
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
-          {invoices.length === 0 ? (
+          {isEmpty ? (
             <tr>
               <td colSpan='6' className='px-6 py-4 text-center text-gray-500'>
-                {searchQuery
-                  ? 'Invoice pengiriman tidak ditemukan.'
-                  : 'Belum ada data invoice pengiriman.'}
+                {emptyMessage}
               </td>
             </tr>
           ) : (
-            invoices.map((invoice) => (
+            data.map((invoice) => (
               <tr key={invoice.id} className='hover:bg-gray-50'>
                 <td className='px-4 py-4 text-center whitespace-nowrap'>
                   <div className='flex items-center justify-center'>

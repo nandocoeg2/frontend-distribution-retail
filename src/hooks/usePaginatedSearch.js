@@ -198,9 +198,9 @@ const usePaginatedSearch = ({
       if (toastOnError && message) {
         toastService.error(message);
       }
-      setIsSearching(false);
       return null;
     } finally {
+      setIsSearching(false);
       setLoading(false);
     }
   }, [clearDebounce, initialPagination, resetState, resolveLimit, setPagination, shouldSkipSearch, toastOnError]);

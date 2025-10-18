@@ -12,42 +12,136 @@ const INITIAL_PAGINATION = {
   itemsPerPage: 10,
   page: 1,
   limit: 10,
-  total: 0
+  total: 0,
 };
 
-const parseInvoicePengirimanResponse = (response) => {
-  if (response?.success === false) {
-    throw new Error(response?.error?.message || 'Failed to fetch invoice pengiriman');
+const DEFAULT_FILTERS = {
+  no_invoice: '',
+  deliver_to: '',
+  type: '',
+  status_code: '',
+  purchaseOrderId: '',
+  tanggal_start: '',
+  tanggal_end: '',
+  is_printed: '',
+};
+
+const createEmptyFilters = () => ({ ...DEFAULT_FILTERS });
+
+const sanitizeFilters = (filters = {}) => {
+  const sanitized = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed === '') {
+        return;
+      }
+
+      if (key === 'is_printed') {
+        const lowered = trimmed.toLowerCase();
+        if (lowered === 'true') {
+          sanitized[key] = true;
+          return;
+        }
+        if (lowered === 'false') {
+          sanitized[key] = false;
+          return;
+        }
+        return;
+      }
+
+      if (key === 'type') {
+        sanitized[key] = trimmed.toUpperCase();
+        return;
+      }
+
+      sanitized[key] = trimmed;
+      return;
+    }
+
+    if (key === 'is_printed') {
+      sanitized[key] = Boolean(value);
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
+
+const areFiltersEqual = (a = {}, b = {}) => {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) {
+    return false;
   }
 
-  const rawData = response?.data?.data || response?.data || [];
-  const paginationData = response?.data?.pagination || {};
-  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
-  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
-  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+  return keysA.every((key) => a[key] === b[key]);
+};
+
+const parseInvoicePengirimanResponse = (response = {}) => {
+  if (response?.success === false) {
+    throw new Error(
+      response?.error?.message || 'Failed to fetch invoice pengiriman'
+    );
+  }
+
+  const rawData = response?.data?.data ?? response?.data ?? [];
+  const paginationData = response?.data?.pagination ?? {};
+  const currentPage =
+    paginationData.currentPage ??
+    paginationData.page ??
+    INITIAL_PAGINATION.currentPage;
+  const itemsPerPage =
+    paginationData.itemsPerPage ??
+    paginationData.limit ??
+    INITIAL_PAGINATION.itemsPerPage;
+  const totalItems =
+    paginationData.totalItems ??
+    paginationData.total ??
+    INITIAL_PAGINATION.totalItems;
 
   return {
-    results: Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [],
+    results: Array.isArray(rawData)
+      ? rawData
+      : Array.isArray(rawData?.data)
+        ? rawData.data
+        : [],
     pagination: {
       currentPage,
       page: currentPage,
-      totalPages: paginationData.totalPages || INITIAL_PAGINATION.totalPages,
+      totalPages:
+        paginationData.totalPages ?? INITIAL_PAGINATION.totalPages,
       totalItems,
       total: totalItems,
       itemsPerPage,
-      limit: itemsPerPage
-    }
+      limit: itemsPerPage,
+    },
   };
 };
 
 const resolveInvoicePengirimanError = (error) => {
-  return error?.response?.data?.error?.message || error?.message || 'Failed to load invoice pengiriman';
+  return (
+    error?.response?.data?.error?.message ||
+    error?.message ||
+    'Failed to load invoice pengiriman'
+  );
 };
 
 const useInvoicePengiriman = () => {
   const navigate = useNavigate();
-  const [searchField, setSearchField] = useState('no_invoice');
-  const searchFieldRef = useRef('no_invoice');
+  const [filters, setFilters] = useState(() => createEmptyFilters());
+  const filtersRef = useRef(createEmptyFilters());
+  const activeFiltersRef = useRef({});
+  const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
+  const [searchLoadingState, setSearchLoadingState] = useState(false);
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -56,8 +150,6 @@ const useInvoicePengiriman = () => {
   }, [navigate]);
 
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
     searchResults: invoicePengiriman,
     setSearchResults: setInvoicePengiriman,
     pagination,
@@ -66,160 +158,261 @@ const useInvoicePengiriman = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleAuthError: authHandler,
-    resolveLimit
+    resolveLimit,
   } = usePaginatedSearch({
+    initialInput: createEmptyFilters(),
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => {
-      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
-      const field = searchFieldRef.current || 'no_invoice';
-      if (!trimmedQuery) {
+    searchFn: (rawFilters = {}, page, limit) => {
+      const sanitized = sanitizeFilters(rawFilters);
+      if (Object.keys(sanitized).length === 0) {
         return invoicePengirimanService.getAllInvoicePengiriman(page, limit);
       }
-      const searchParams = { [field]: trimmedQuery };
-      return invoicePengirimanService.searchInvoicePengiriman(searchParams, page, limit);
+      return invoicePengirimanService.searchInvoicePengiriman(
+        sanitized,
+        page,
+        limit
+      );
     },
     parseResponse: parseInvoicePengirimanResponse,
     resolveErrorMessage: resolveInvoicePengirimanError,
-    onAuthError: handleAuthRedirect
+    onAuthError: handleAuthRedirect,
   });
 
-  const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
-      return false;
+  const updateActiveFilters = useCallback((nextFilters) => {
+    const previous = activeFiltersRef.current || {};
+    const isSame = areFiltersEqual(previous, nextFilters);
+    activeFiltersRef.current = nextFilters;
+    if (!isSame) {
+      setActiveFiltersVersion((version) => version + 1);
     }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+  }, []);
 
-  const fetchInvoicePengiriman = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
-  }, [performSearch, resolveLimit]);
+  const runSearch = useCallback(
+    async (rawFilters = {}, page = 1, limit, options = {}) => {
+      const { trackLoading = true } = options;
+      const effectiveLimit =
+        typeof limit === 'number' ? limit : resolveLimit();
+      const sanitized = sanitizeFilters(rawFilters);
 
-  const searchInvoicePengiriman = useCallback((query, field = searchFieldRef.current, page = 1, limit = resolveLimit()) => {
-    if (field && field !== searchFieldRef.current) {
-      searchFieldRef.current = field;
-      setSearchField(field);
-    }
-    setSearchQuery(query);
-    return performSearch(query, page, limit);
-  }, [performSearch, resolveLimit, setSearchQuery]);
+      updateActiveFilters(sanitized);
 
-  const handleSearchChange = useCallback((event) => {
-    const query = event?.target ? event.target.value : event;
-    setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+      if (trackLoading) {
+        setSearchLoadingState(true);
+      }
 
-  const handleSearchFieldChange = useCallback((field) => {
-    searchFieldRef.current = field;
-    setSearchField(field);
-    if (typeof searchQuery === 'string' && searchQuery.trim()) {
-      performSearch(searchQuery, 1, resolveLimit());
-    } else {
-      performSearch('', 1, resolveLimit());
-    }
-  }, [performSearch, resolveLimit, searchQuery]);
+      try {
+        await performSearch(sanitized, page, effectiveLimit);
+      } finally {
+        if (trackLoading) {
+          setSearchLoadingState(false);
+        }
+      }
+    },
+    [performSearch, resolveLimit, updateActiveFilters]
+  );
+
+  const fetchInvoicePengiriman = useCallback(
+    (page = 1, limit = resolveLimit()) =>
+      runSearch({}, page, limit, { trackLoading: false }),
+    [resolveLimit, runSearch]
+  );
+
+  const handleFiltersChange = useCallback((field, value) => {
+    setFilters((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      };
+      filtersRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleSearchSubmit = useCallback(async () => {
+    await runSearch(filtersRef.current, 1, resolveLimit(), {
+      trackLoading: true,
+    });
+  }, [resolveLimit, runSearch]);
+
+  const handleResetFilters = useCallback(async () => {
+    const reset = createEmptyFilters();
+    filtersRef.current = reset;
+    setFilters(reset);
+    await runSearch({}, 1, resolveLimit(), { trackLoading: true });
+  }, [resolveLimit, runSearch]);
 
   const refreshAfterMutation = useCallback(async () => {
     const itemsPerPage = resolveLimit();
     const currentPage = pagination.currentPage || pagination.page || 1;
-    const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
-    await performSearch(trimmedQuery, currentPage, itemsPerPage);
-  }, [pagination, performSearch, resolveLimit, searchQuery]);
+    await runSearch(activeFiltersRef.current, currentPage, itemsPerPage, {
+      trackLoading: false,
+    });
+  }, [pagination, resolveLimit, runSearch]);
 
-  const createInvoicePengiriman = useCallback(async (invoiceData) => {
-    try {
-      const result = await invoicePengirimanService.createInvoicePengiriman(invoiceData);
-      if (result?.success === false) {
-        throw new Error(result?.error?.message || 'Failed to create invoice pengiriman');
+  const createInvoicePengiriman = useCallback(
+    async (invoiceData) => {
+      try {
+        const result =
+          await invoicePengirimanService.createInvoicePengiriman(
+            invoiceData
+          );
+        if (result?.success === false) {
+          throw new Error(
+            result?.error?.message ||
+              'Failed to create invoice pengiriman'
+          );
+        }
+        toastService.success('Invoice pengiriman created successfully');
+        await refreshAfterMutation();
+        return result?.data;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return undefined;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to create invoice pengiriman';
+        toastService.error(message);
+        throw err;
       }
-      toastService.success('Invoice pengiriman created successfully');
-      await refreshAfterMutation();
-      return result?.data;
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
-        return undefined;
-      }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to create invoice pengiriman';
-      toastService.error(message);
-      throw err;
-    }
-  }, [authHandler, refreshAfterMutation]);
+    },
+    [authHandler, refreshAfterMutation]
+  );
 
-  const createInvoicePenagihan = useCallback(async (id, payload = {}) => {
-    try {
-      const result = await invoicePengirimanService.createInvoicePenagihan(id, payload);
-      if (result?.success === false) {
-        throw new Error(result?.error?.message || 'Failed to create invoice penagihan');
+  const createInvoicePenagihan = useCallback(
+    async (id, payload = {}) => {
+      try {
+        const result =
+          await invoicePengirimanService.createInvoicePenagihan(
+            id,
+            payload
+          );
+        if (result?.success === false) {
+          throw new Error(
+            result?.error?.message ||
+              'Failed to create invoice penagihan'
+          );
+        }
+        toastService.success('Invoice penagihan berhasil dibuat');
+        await refreshAfterMutation();
+        return result?.data;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return undefined;
+        }
+        const apiMessage =
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message;
+        const message =
+          apiMessage ||
+          err?.message ||
+          'Failed to create invoice penagihan';
+        toastService.error(message);
+        throw err;
       }
-      toastService.success('Invoice penagihan berhasil dibuat');
-      await refreshAfterMutation();
-      return result?.data;
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
-        return undefined;
-      }
-      const apiMessage =
-        err?.response?.data?.error?.message ||
-        err?.response?.data?.message;
-      const message = apiMessage || err?.message || 'Failed to create invoice penagihan';
-      toastService.error(message);
-      throw err;
-    }
-  }, [authHandler, refreshAfterMutation]);
+    },
+    [authHandler, refreshAfterMutation]
+  );
 
-  const updateInvoicePengiriman = useCallback(async (id, updateData) => {
-    try {
-      const result = await invoicePengirimanService.updateInvoicePengiriman(id, updateData);
-      if (result?.success === false) {
-        throw new Error(result?.error?.message || 'Failed to update invoice pengiriman');
+  const updateInvoicePengiriman = useCallback(
+    async (id, updateData) => {
+      try {
+        const result =
+          await invoicePengirimanService.updateInvoicePengiriman(
+            id,
+            updateData
+          );
+        if (result?.success === false) {
+          throw new Error(
+            result?.error?.message ||
+              'Failed to update invoice pengiriman'
+          );
+        }
+        toastService.success('Invoice pengiriman updated successfully');
+        await refreshAfterMutation();
+        return result?.data;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return undefined;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to update invoice pengiriman';
+        toastService.error(message);
+        throw err;
       }
-      toastService.success('Invoice pengiriman updated successfully');
-      await refreshAfterMutation();
-      return result?.data;
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
-        return undefined;
-      }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to update invoice pengiriman';
-      toastService.error(message);
-      throw err;
-    }
-  }, [authHandler, refreshAfterMutation]);
+    },
+    [authHandler, refreshAfterMutation]
+  );
 
-  const deleteInvoicePengirimanFn = useCallback(async (id) => {
-    try {
-      const result = await invoicePengirimanService.deleteInvoicePengiriman(id);
-      if (!(result?.success || result === '' || result === undefined)) {
-        throw new Error(result?.error?.message || 'Failed to delete invoice pengiriman');
-      }
-      toastService.success('Invoice pengiriman berhasil dihapus');
+  const deleteInvoicePengirimanFn = useCallback(
+    async (id) => {
+      try {
+        const result =
+          await invoicePengirimanService.deleteInvoicePengiriman(id);
+        if (
+          !(
+            result?.success ||
+            result === '' ||
+            result === undefined
+          )
+        ) {
+          throw new Error(
+            result?.error?.message ||
+              'Failed to delete invoice pengiriman'
+          );
+        }
+        toastService.success('Invoice pengiriman berhasil dihapus');
 
-      const itemsPerPage = resolveLimit();
-      const currentPage = pagination.currentPage || pagination.page || 1;
-      const totalItems = pagination.totalItems || pagination.total || invoicePengiriman.length;
-      const newTotalItems = Math.max(totalItems - 1, 0);
-      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
-      const nextPage = Math.min(currentPage, newTotalPages);
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+        const itemsPerPage = resolveLimit();
+        const currentPage = pagination.currentPage || pagination.page || 1;
+        const totalItems =
+          pagination.totalItems ||
+          pagination.total ||
+          invoicePengiriman.length;
+        const newTotalItems = Math.max(totalItems - 1, 0);
+        const newTotalPages = Math.max(
+          Math.ceil(newTotalItems / itemsPerPage),
+          1
+        );
+        const nextPage = Math.min(currentPage, newTotalPages);
 
-      await performSearch(trimmedQuery, nextPage, itemsPerPage);
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
-        return;
+        await runSearch(
+          activeFiltersRef.current,
+          nextPage,
+          itemsPerPage,
+          { trackLoading: false }
+        );
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to delete invoice pengiriman';
+        setError(message);
+        toastService.error(message);
       }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to delete invoice pengiriman';
-      setError(message);
-      toastService.error(message);
-    }
-  }, [authHandler, invoicePengiriman.length, pagination, performSearch, resolveLimit, searchQuery, setError]);
+    },
+    [
+      authHandler,
+      invoicePengiriman.length,
+      pagination,
+      resolveLimit,
+      runSearch,
+      setError,
+    ]
+  );
 
   const deleteInvoicePengirimanConfirmation = useDeleteConfirmation(
     deleteInvoicePengirimanFn,
@@ -231,6 +424,51 @@ const useInvoicePengiriman = () => {
     fetchInvoicePengiriman(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchInvoicePengiriman]);
 
+  const hasActiveFilters = useMemo(() => {
+    const active = activeFiltersRef.current || {};
+    return Object.keys(active).length > 0;
+  }, [activeFiltersVersion]);
+
+  const searchQuery = useMemo(() => {
+    if (!hasActiveFilters) {
+      return '';
+    }
+
+    const active = activeFiltersRef.current || {};
+
+    if (active.no_invoice) {
+      return active.no_invoice;
+    }
+    if (active.deliver_to) {
+      return active.deliver_to;
+    }
+    if (active.purchaseOrderId) {
+      return active.purchaseOrderId;
+    }
+    if (active.status_code) {
+      return active.status_code;
+    }
+    if (active.type) {
+      return active.type;
+    }
+    if (typeof active.is_printed === 'boolean') {
+      return active.is_printed ? 'sudah dicetak' : 'belum dicetak';
+    }
+    if (active.tanggal_start && active.tanggal_end) {
+      return `${active.tanggal_start} - ${active.tanggal_end}`;
+    }
+    if (active.tanggal_start) {
+      return active.tanggal_start;
+    }
+    if (active.tanggal_end) {
+      return active.tanggal_end;
+    }
+
+    return 'filter aktif';
+  }, [hasActiveFilters, activeFiltersVersion]);
+
+  const searchLoading = searchLoadingState;
+
   return {
     invoicePengiriman,
     setInvoicePengiriman,
@@ -238,19 +476,23 @@ const useInvoicePengiriman = () => {
     setPagination,
     loading,
     error,
-    searchQuery,
-    searchField,
+    filters,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
+    hasActiveFilters,
+    searchQuery,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     createInvoice: createInvoicePengiriman,
+    createInvoicePengiriman,
     createInvoicePenagihan,
     updateInvoice: updateInvoicePengiriman,
+    updateInvoicePengiriman,
     deleteInvoiceConfirmation: deleteInvoicePengirimanConfirmation,
     fetchInvoicePengiriman,
-    handleAuthError: authHandler
+    handleAuthError: authHandler,
   };
 };
 

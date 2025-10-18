@@ -29,10 +29,13 @@ const CheckingListTable = ({
   onView,
   loading = false,
   searchQuery,
+  hasActiveFilters = false,
 }) => {
   const data = Array.isArray(checklists) ? checklists : [];
   const hasData = data.length > 0;
-  const hasSearch = typeof searchQuery === 'string' && searchQuery.trim() !== '';
+  const hasSearch =
+    hasActiveFilters ||
+    (typeof searchQuery === 'string' && searchQuery.trim() !== '');
 
   return (
     <div className='space-y-4'>

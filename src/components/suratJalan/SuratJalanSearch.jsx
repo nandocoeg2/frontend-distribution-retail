@@ -1,51 +1,190 @@
 import React from 'react';
 
-const SuratJalanSearch = ({ searchQuery, searchField, handleSearchChange, handleSearchFieldChange, searchLoading }) => {
-  const getPlaceholder = () => {
-    return `Search by ${searchField ? searchField.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) : 'field'}...`;
+const STATUS_OPTIONS = [
+  { value: '', label: 'Semua Status' },
+  { value: 'DRAFT SURAT JALAN', label: 'Draft Surat Jalan' },
+  { value: 'READY TO SHIP SURAT JALAN', label: 'Ready to Ship' },
+  { value: 'SHIPPED SURAT JALAN', label: 'Shipped' },
+  { value: 'DELIVERED SURAT JALAN', label: 'Delivered' },
+  { value: 'CANCELLED SURAT JALAN', label: 'Cancelled' },
+];
+
+const PRINT_STATUS_OPTIONS = [
+  { value: '', label: 'Semua Status Cetak' },
+  { value: 'true', label: 'Sudah Dicetak' },
+  { value: 'false', label: 'Belum Dicetak' },
+];
+
+const SuratJalanSearch = ({
+  filters,
+  onFiltersChange,
+  onSearch,
+  onReset,
+  loading,
+}) => {
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSearch?.();
   };
 
+  const handleReset = () => {
+    onReset?.();
+  };
+
+  const handleInputChange = (field) => (event) => {
+    onFiltersChange?.(field, event.target.value);
+  };
+
+  const handleSelectChange = (field) => (event) => {
+    const value = event.target.value;
+    onFiltersChange?.(field, value);
+  };
+
+  const isLoading = Boolean(loading);
+
   return (
-    <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <select
-          value={searchField}
-          onChange={(e) => handleSearchFieldChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="no_surat_jalan">No Surat Jalan</option>
-          <option value="deliver_to">Deliver To</option>
-        </select>
-      </div>
-      <div className="relative md:col-span-2">
-        <input
-          type="text"
-          placeholder={getPlaceholder()}
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-          <svg
-            className="h-5 w-5 text-gray-400"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
+    <form
+      onSubmit={handleSubmit}
+      className='p-4 mb-6 bg-gray-50 border border-gray-200 rounded-lg'
+    >
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Nomor Surat Jalan
+          </label>
+          <input
+            type='text'
+            value={filters.no_surat_jalan || ''}
+            onChange={handleInputChange('no_surat_jalan')}
+            placeholder='Contoh: SJ-2024-001'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
         </div>
-        {searchLoading && (
-          <div className="flex items-center mt-2 text-sm text-gray-600">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-            Searching...
-          </div>
-        )}
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Nama Penerima
+          </label>
+          <input
+            type='text'
+            value={filters.deliver_to || ''}
+            onChange={handleInputChange('deliver_to')}
+            placeholder='Contoh: Customer ABC'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            PIC
+          </label>
+          <input
+            type='text'
+            value={filters.PIC || ''}
+            onChange={handleInputChange('PIC')}
+            placeholder='Contoh: John Doe'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Invoice ID
+          </label>
+          <input
+            type='text'
+            value={filters.invoiceId || ''}
+            onChange={handleInputChange('invoiceId')}
+            placeholder='Masukkan ID invoice terkait'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Purchase Order ID
+          </label>
+          <input
+            type='text'
+            value={filters.purchaseOrderId || ''}
+            onChange={handleInputChange('purchaseOrderId')}
+            placeholder='Masukkan ID purchase order'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Status Surat Jalan
+          </label>
+          <select
+            value={filters.status_code || ''}
+            onChange={handleSelectChange('status_code')}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value || 'all'} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Checklist Surat Jalan ID
+          </label>
+          <input
+            type='text'
+            value={filters.checklistSuratJalanId || ''}
+            onChange={handleInputChange('checklistSuratJalanId')}
+            placeholder='Masukkan ID checklist terkait'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+          <p className='mt-1 text-xs text-gray-500'>
+            Gunakan ID checklist untuk mencari surat jalan yang sudah ditugaskan
+            ke checklist tertentu.
+          </p>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Status Cetak
+          </label>
+          <select
+            value={filters.is_printed ?? ''}
+            onChange={handleSelectChange('is_printed')}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            {PRINT_STATUS_OPTIONS.map((option) => (
+              <option key={option.value || 'print-all'} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <p className='mt-1 text-xs text-gray-500'>
+            Lacak apakah surat jalan sudah pernah dicetak.
+          </p>
+        </div>
       </div>
-    </div>
+
+      <div className='flex flex-col gap-3 mt-6 sm:flex-row sm:items-center sm:justify-end'>
+        <button
+          type='button'
+          onClick={handleReset}
+          className='inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+        >
+          Atur Ulang
+        </button>
+        <button
+          type='submit'
+          disabled={isLoading}
+          className='inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed'
+        >
+          {isLoading ? 'Mencari...' : 'Cari Surat Jalan'}
+        </button>
+      </div>
+    </form>
   );
 };
 

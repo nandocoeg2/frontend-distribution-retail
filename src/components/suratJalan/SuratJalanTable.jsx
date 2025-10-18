@@ -17,7 +17,7 @@ const SuratJalanTable = ({
   onEdit,
   onDelete,
   onView,
-  searchQuery,
+  hasActiveFilters = false,
   loading = false,
   selectedSuratJalan = [],
   onSelectSuratJalan,
@@ -117,8 +117,8 @@ const SuratJalanTable = ({
                   colSpan='7'
                   className='px-6 py-4 text-center text-gray-500'
                 >
-                  {searchQuery
-                    ? 'Tidak ada surat jalan yang sesuai dengan pencarian.'
+                  {hasActiveFilters
+                    ? 'Tidak ada surat jalan yang sesuai dengan filter pencarian.'
                     : 'Belum ada surat jalan.'}
                 </td>
               </tr>

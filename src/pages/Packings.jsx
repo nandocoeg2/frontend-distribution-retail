@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import usePackingsPage from '@/hooks/usePackingsPage';
 import {
   PackingTable,
@@ -34,6 +34,14 @@ const INITIAL_PAGINATION = {
   total: 0,
 };
 
+const DEFAULT_FILTERS = {
+  packing_number: '',
+  tanggal_packing: '',
+  status_code: '',
+  purchaseOrderId: '',
+  is_printed: '',
+};
+
 const PackingsPage = () => {
   const {
     packings,
@@ -56,7 +64,6 @@ const PackingsPage = () => {
     closeViewModal,
     handleProcessPackings,
     handleCompletePackings,
-    handleFilterChange,
     clearFilters,
     handleSelectPacking,
     handleSelectAllPackings,
@@ -136,14 +143,45 @@ const PackingsPage = () => {
         return;
       }
 
-      searchPackingsWithFilters({ status_code: statusCode }, 1);
+    searchPackingsWithFilters({ status_code: statusCode }, 1);
     },
     [fetchPackings, searchPackingsWithFilters, setSelectedPackings]
   );
 
-  const normalizeFilters = useCallback((filters = {}) => {
-    return Object.entries(filters).reduce((acc, [key, value]) => {
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS }));
+
+  const normalizeFilters = useCallback((rawFilters = {}) => {
+    return Object.entries(rawFilters).reduce((acc, [key, value]) => {
       if (value === undefined || value === null) {
+        return acc;
+      }
+
+      if (key === 'is_printed') {
+        if (value === '' || value === 'all') {
+          return acc;
+        }
+
+        if (value === true || value === false) {
+          acc[key] = value;
+          return acc;
+        }
+
+        if (typeof value === 'string') {
+          const normalized = value.trim().toLowerCase();
+          if (normalized === 'true') {
+            acc[key] = true;
+            return acc;
+          }
+          if (normalized === 'false') {
+            acc[key] = false;
+            return acc;
+          }
+          if (normalized === '') {
+            return acc;
+          }
+        }
+
+        acc[key] = Boolean(value);
         return acc;
       }
 
@@ -161,22 +199,73 @@ const PackingsPage = () => {
     }, {});
   }, []);
 
-  const handleFilterChangeWithReset = useCallback(
-    (filters) => {
-      if (activeTab !== 'all') {
-        setActiveTab('all');
-      }
-      setSelectedPackings([]);
-      handleFilterChange(normalizeFilters(filters));
-    },
-    [activeTab, handleFilterChange, normalizeFilters, setSelectedPackings]
-  );
+  useEffect(() => {
+    if (!searchFilters || Object.keys(searchFilters).length === 0) {
+      setFilters((prev) => {
+        const next = { ...DEFAULT_FILTERS };
+        const isSame = Object.keys(next).every((key) => prev[key] === next[key]);
+        return isSame ? prev : next;
+      });
+      return;
+    }
 
-  const handleClearFilters = useCallback(() => {
+    const nextFilters = { ...DEFAULT_FILTERS };
+    Object.entries(searchFilters).forEach(([key, value]) => {
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      if (key === 'is_printed') {
+        if (value === true) {
+          nextFilters[key] = 'true';
+          return;
+        }
+        if (value === false) {
+          nextFilters[key] = 'false';
+          return;
+        }
+        nextFilters[key] = '';
+        return;
+      }
+
+      nextFilters[key] = typeof value === 'string' ? value : String(value);
+    });
+
+    setFilters((prev) => {
+      const keys = Object.keys(nextFilters);
+      const isSame = keys.every((key) => prev[key] === nextFilters[key]);
+      return isSame ? prev : nextFilters;
+    });
+  }, [searchFilters]);
+
+  const handleFiltersChange = useCallback((field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+
+  const handleSearch = useCallback(() => {
     if (activeTab !== 'all') {
       setActiveTab('all');
     }
     setSelectedPackings([]);
+    const sanitizedFilters = normalizeFilters(filters);
+    searchPackingsWithFilters(sanitizedFilters, 1);
+  }, [
+    activeTab,
+    filters,
+    normalizeFilters,
+    searchPackingsWithFilters,
+    setSelectedPackings,
+  ]);
+
+  const handleResetFilters = useCallback(() => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    setSelectedPackings([]);
+    setFilters({ ...DEFAULT_FILTERS });
     clearFilters();
   }, [activeTab, clearFilters, setSelectedPackings]);
 
@@ -267,9 +356,10 @@ const PackingsPage = () => {
 
           <PackingSearch
             searchLoading={searchLoading}
-            searchFilters={searchFilters}
-            handleFilterChange={handleFilterChangeWithReset}
-            clearFilters={handleClearFilters}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearch}
+            onReset={handleResetFilters}
           />
 
           <div className='mb-4 overflow-x-auto'>

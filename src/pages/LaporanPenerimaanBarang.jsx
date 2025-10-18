@@ -88,11 +88,13 @@ const LaporanPenerimaanBarang = () => {
     pagination,
     loading,
     error,
+    filters,
     searchQuery,
-    searchField,
+    hasActiveFilters,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange,
     handleLimitChange,
     createReport,
@@ -136,17 +138,7 @@ const LaporanPenerimaanBarang = () => {
     ConfirmationDialog: CompleteConfirmationDialog,
   } = useConfirmationDialog();
 
-  const isSearchActive = useMemo(() => {
-    if (searchQuery == null) {
-      return false;
-    }
-
-    if (typeof searchQuery === 'string') {
-      return searchQuery.trim() !== '';
-    }
-
-    return Boolean(searchQuery);
-  }, [searchQuery]);
+  const isSearchActive = hasActiveFilters;
 
   const tableReports = useMemo(() => {
     if (isSearchActive || activeTab === 'all') {
@@ -401,6 +393,20 @@ const LaporanPenerimaanBarang = () => {
     await refreshActiveTab();
   }, [deleteReportConfirmation, refreshActiveTab]);
 
+  const handleSearch = useCallback(async () => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleSearchSubmit();
+  }, [activeTab, handleSearchSubmit]);
+
+  const handleReset = useCallback(async () => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleResetFilters();
+  }, [activeTab, handleResetFilters]);
+
   const selectionDisabled =
     tableLoading || isProcessingReports || isCompletingReports;
   const hasSelectedReports = selectedReportIds.length > 0;
@@ -603,11 +609,11 @@ const LaporanPenerimaanBarang = () => {
           </div>
 
           <LaporanPenerimaanBarangSearch
-            searchQuery={searchQuery}
-            searchField={searchField}
-            handleSearchChange={handleSearchChange}
-            handleSearchFieldChange={handleSearchFieldChange}
-            searchLoading={searchLoading}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearch}
+            onReset={handleReset}
+            loading={Boolean(searchLoading || tableLoading)}
           />
 
           <div className='mb-4 overflow-x-auto'>

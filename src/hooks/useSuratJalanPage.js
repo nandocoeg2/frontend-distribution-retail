@@ -12,7 +12,40 @@ const INITIAL_PAGINATION = {
   itemsPerPage: 10,
   page: 1,
   limit: 10,
-  total: 0
+  total: 0,
+};
+
+const DEFAULT_FILTERS = {
+  no_surat_jalan: '',
+  deliver_to: '',
+  PIC: '',
+  invoiceId: '',
+  purchaseOrderId: '',
+  status_code: '',
+  checklistSuratJalanId: '',
+  is_printed: '',
+};
+
+const sanitizeFilters = (filters = {}) => {
+  const sanitized = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== '') {
+        sanitized[key] = trimmed;
+      }
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
 };
 
 const parseSuratJalanResponse = (response) => {
@@ -20,11 +53,21 @@ const parseSuratJalanResponse = (response) => {
     throw new Error(response?.message || 'Failed to fetch surat jalan');
   }
 
-  const rawData = response?.data?.data || response?.data?.suratJalan || response?.data || [];
+  const rawData =
+    response?.data?.data || response?.data?.suratJalan || response?.data || [];
   const paginationData = response?.data?.pagination || {};
-  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
-  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
-  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+  const currentPage =
+    paginationData.currentPage ||
+    paginationData.page ||
+    INITIAL_PAGINATION.currentPage;
+  const itemsPerPage =
+    paginationData.itemsPerPage ||
+    paginationData.limit ||
+    INITIAL_PAGINATION.itemsPerPage;
+  const totalItems =
+    paginationData.totalItems ||
+    paginationData.total ||
+    INITIAL_PAGINATION.totalItems;
 
   const results = Array.isArray(rawData)
     ? rawData
@@ -41,20 +84,25 @@ const parseSuratJalanResponse = (response) => {
       totalItems,
       total: totalItems,
       itemsPerPage,
-      limit: itemsPerPage
-    }
+      limit: itemsPerPage,
+    },
   };
 };
 
 const resolveSuratJalanError = (error) => {
-  return error?.response?.data?.error?.message || error?.message || 'Gagal memuat data surat jalan';
+  return (
+    error?.response?.data?.error?.message ||
+    error?.message ||
+    'Gagal memuat data surat jalan'
+  );
 };
 
 const useSuratJalanPage = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchField, setSearchField] = useState('no_surat_jalan');
-  const searchFieldRef = useRef('no_surat_jalan');
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const filtersRef = useRef(DEFAULT_FILTERS);
+  const activeFiltersRef = useRef({});
+  const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessingSuratJalan, setIsProcessingSuratJalan] = useState(false);
 
@@ -65,7 +113,7 @@ const useSuratJalanPage = () => {
   }, [navigate]);
 
   const {
-    input: currentSearchValue,
+    input: currentFilters,
     setInput: setSearchInput,
     searchResults: suratJalan,
     setSearchResults: setSuratJalan,
@@ -75,91 +123,127 @@ const useSuratJalanPage = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleAuthError: authHandler,
-    resolveLimit
+    resolveLimit,
+    isSearching,
   } = usePaginatedSearch({
+    initialInput: DEFAULT_FILTERS,
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => {
-      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
-      const field = searchFieldRef.current || 'no_surat_jalan';
-      if (!trimmedQuery) {
+    searchFn: (queryFilters = {}, page, limit) => {
+      const sanitized = sanitizeFilters(queryFilters);
+
+      if (Object.keys(sanitized).length === 0) {
         return suratJalanService.getAllSuratJalan(page, limit);
       }
-      const searchParams = { [field]: trimmedQuery };
-      return suratJalanService.searchSuratJalan(searchParams, page, limit);
+
+      return suratJalanService.searchSuratJalan(sanitized, page, limit);
     },
     parseResponse: parseSuratJalanResponse,
     resolveErrorMessage: resolveSuratJalanError,
-    onAuthError: handleAuthRedirect
+    onAuthError: handleAuthRedirect,
   });
 
   const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
-      return false;
-    }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+    return (
+      isSearching && Object.keys(activeFiltersRef.current || {}).length > 0
+    );
+  }, [isSearching, activeFiltersVersion]);
 
-  const fetchSuratJalan = useCallback((page = 1, limit = resolveLimit()) => {
-    setSearchInput('');
-    setSearchQuery('');
-    return performSearch('', page, limit);
+  const hasActiveFilters = useMemo(() => {
+    return Object.keys(activeFiltersRef.current || {}).length > 0;
+  }, [activeFiltersVersion]);
+
+  const fetchSuratJalan = useCallback(
+    (page = 1, limit = resolveLimit()) => {
+      const nextFilters = { ...DEFAULT_FILTERS };
+      filtersRef.current = nextFilters;
+      activeFiltersRef.current = {};
+      setActiveFiltersVersion((prev) => prev + 1);
+      setFilters(nextFilters);
+      setSearchInput(nextFilters);
+      return performSearch(nextFilters, page, limit);
+    },
+    [performSearch, resolveLimit, setSearchInput]
+  );
+
+  const handleFiltersChange = useCallback((field, value) => {
+    setFilters((prev) => {
+      const next = { ...prev, [field]: value };
+      filtersRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleSearchSubmit = useCallback(async () => {
+    const effectiveFilters = {
+      ...DEFAULT_FILTERS,
+      ...(filtersRef.current || {}),
+    };
+    const sanitized = sanitizeFilters(effectiveFilters);
+
+    activeFiltersRef.current = sanitized;
+    setActiveFiltersVersion((prev) => prev + 1);
+    setSearchInput(effectiveFilters);
+
+    await performSearch(effectiveFilters, 1, resolveLimit());
   }, [performSearch, resolveLimit, setSearchInput]);
 
-  const searchSuratJalan = useCallback((query, field = searchFieldRef.current, page = 1, limit = resolveLimit()) => {
-    searchFieldRef.current = field;
-    setSearchField(field);
-    setSearchQuery(query);
-    setSearchInput(query);
-    return performSearch(query, page, limit);
+  const handleResetFilters = useCallback(async () => {
+    const nextFilters = { ...DEFAULT_FILTERS };
+    filtersRef.current = nextFilters;
+    activeFiltersRef.current = {};
+    setActiveFiltersVersion((prev) => prev + 1);
+    setFilters(nextFilters);
+    setSearchInput(nextFilters);
+    await performSearch(nextFilters, 1, resolveLimit());
   }, [performSearch, resolveLimit, setSearchInput]);
 
-  const handleSearchChange = useCallback((event) => {
-    const query = event?.target ? event.target.value : event;
-    setSearchQuery(query);
-    setSearchInput(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchInput]);
+  const deleteSuratJalanFunction = useCallback(
+    async (id) => {
+      try {
+        const result = await suratJalanService.deleteSuratJalan(id);
+        if (result?.success === false) {
+          throw new Error(result?.message || 'Failed to delete surat jalan');
+        }
+        toastService.success('Surat jalan berhasil dihapus');
 
-  const handleSearchFieldChange = useCallback((field) => {
-    searchFieldRef.current = field;
-    setSearchField(field);
-    if (searchQuery.trim()) {
-      performSearch(searchQuery, 1, resolveLimit());
-    } else {
-      performSearch('', 1, resolveLimit());
-    }
-  }, [performSearch, resolveLimit, searchQuery]);
+        const itemsPerPage = resolveLimit();
+        const currentPage = pagination.currentPage || pagination.page || 1;
+        const totalItems =
+          pagination.totalItems || pagination.total || suratJalan.length;
+        const newTotalItems = Math.max(totalItems - 1, 0);
+        const newTotalPages = Math.max(
+          Math.ceil(newTotalItems / itemsPerPage),
+          1
+        );
+        const nextPage = Math.min(currentPage, newTotalPages);
 
-  const deleteSuratJalanFunction = useCallback(async (id) => {
-    try {
-      const result = await suratJalanService.deleteSuratJalan(id);
-      if (result?.success === false) {
-        throw new Error(result?.message || 'Failed to delete surat jalan');
+        await performSearch(currentFilters, nextPage, itemsPerPage);
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Gagal menghapus surat jalan';
+        setError(message);
+        toastService.error(message);
       }
-      toastService.success('Surat jalan berhasil dihapus');
-
-      const itemsPerPage = resolveLimit();
-      const currentPage = pagination.currentPage || pagination.page || 1;
-      const totalItems = pagination.totalItems || pagination.total || suratJalan.length;
-      const newTotalItems = Math.max(totalItems - 1, 0);
-      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
-      const nextPage = Math.min(currentPage, newTotalPages);
-
-      await performSearch(currentSearchValue, nextPage, itemsPerPage);
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        authHandler();
-        return;
-      }
-      const message = err?.response?.data?.error?.message || err?.message || 'Gagal menghapus surat jalan';
-      setError(message);
-      toastService.error(message);
-    }
-  }, [authHandler, currentSearchValue, pagination, performSearch, resolveLimit, setError, suratJalan.length]);
+    },
+    [
+      authHandler,
+      currentFilters,
+      pagination,
+      performSearch,
+      resolveLimit,
+      setError,
+      suratJalan.length,
+    ]
+  );
 
   const deleteSuratJalanConfirmation = useDeleteConfirmation(
     deleteSuratJalanFunction,
@@ -176,21 +260,24 @@ const useSuratJalanPage = () => {
     });
   }, []);
 
-  const handleSelectAllSuratJalan = useCallback((items = []) => {
-    if (!Array.isArray(items) || items.length === 0) {
-      setSelectedSuratJalan([]);
-      return;
-    }
+  const handleSelectAllSuratJalan = useCallback(
+    (items = []) => {
+      if (!Array.isArray(items) || items.length === 0) {
+        setSelectedSuratJalan([]);
+        return;
+      }
 
-    const ids = items.map((item) => item?.id).filter(Boolean);
-    if (ids.length === 0) {
-      setSelectedSuratJalan([]);
-      return;
-    }
+      const ids = items.map((item) => item?.id).filter(Boolean);
+      if (ids.length === 0) {
+        setSelectedSuratJalan([]);
+        return;
+      }
 
-    const isAllSelected = ids.every((id) => selectedSuratJalan.includes(id));
-    setSelectedSuratJalan(isAllSelected ? [] : ids);
-  }, [selectedSuratJalan]);
+      const isAllSelected = ids.every((id) => selectedSuratJalan.includes(id));
+      setSelectedSuratJalan(isAllSelected ? [] : ids);
+    },
+    [selectedSuratJalan]
+  );
 
   useEffect(() => {
     fetchSuratJalan(1, INITIAL_PAGINATION.itemsPerPage);
@@ -198,8 +285,8 @@ const useSuratJalanPage = () => {
 
   const refreshData = useCallback(() => {
     const currentPage = pagination.currentPage || pagination.page || 1;
-    performSearch(currentSearchValue, currentPage, resolveLimit());
-  }, [currentSearchValue, pagination, performSearch, resolveLimit]);
+    performSearch(currentFilters, currentPage, resolveLimit());
+  }, [currentFilters, pagination, performSearch, resolveLimit]);
 
   const handleProcessSuratJalan = useCallback(
     async (payload) => {
@@ -322,15 +409,16 @@ const useSuratJalanPage = () => {
     setPagination,
     loading,
     error,
-    searchQuery,
-    searchField,
+    filters,
     searchLoading,
+    hasActiveFilters,
     selectedSuratJalan,
     setSelectedSuratJalan,
     hasSelectedSuratJalan: selectedSuratJalan.length > 0,
     isProcessingSuratJalan,
-    handleSearchChange,
-    handleSearchFieldChange,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleSelectSuratJalan,
@@ -340,7 +428,7 @@ const useSuratJalanPage = () => {
     deleteSuratJalanConfirmation,
     fetchSuratJalan,
     refreshData,
-    handleAuthError: authHandler
+    handleAuthError: authHandler,
   };
 };
 

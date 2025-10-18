@@ -15,6 +15,36 @@ const INITIAL_PAGINATION = {
   total: 0,
 };
 
+const DEFAULT_FILTERS = {
+  status_code: '',
+  purchaseOrderId: '',
+  customerId: '',
+  termin_bayar: '',
+  q: '',
+};
+
+const sanitizeFilters = (filters = {}) => {
+  const sanitized = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== '') {
+        sanitized[key] = trimmed;
+      }
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
+
 const parseReportsResponse = (response) => {
   if (response?.success === false) {
     throw new Error(response?.error?.message || 'Failed to fetch laporan penerimaan barang');
@@ -47,8 +77,11 @@ const resolveReportsError = (error) => {
 
 const useLaporanPenerimaanBarangPage = () => {
   const navigate = useNavigate();
-  const [searchField, setSearchField] = useState('q');
-  const searchFieldRef = useRef('q');
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_FILTERS }));
+  const filtersRef = useRef({ ...DEFAULT_FILTERS });
+  const activeFiltersRef = useRef({});
+  const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
+  const [searchPending, setSearchPending] = useState(false);
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -57,8 +90,6 @@ const useLaporanPenerimaanBarangPage = () => {
   }, [navigate]);
 
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
     searchResults: reports,
     setSearchResults: setReports,
     pagination,
@@ -67,62 +98,112 @@ const useLaporanPenerimaanBarangPage = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleAuthError: authHandler,
     resolveLimit,
+    isSearching,
   } = usePaginatedSearch({
+    initialInput: DEFAULT_FILTERS,
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => {
-      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
-      if (!trimmedQuery) {
+    searchFn: (criteria, page, limit) => {
+      let rawCriteria = criteria;
+      if (typeof rawCriteria === 'string') {
+        rawCriteria = { q: rawCriteria };
+      }
+
+      const sanitized = sanitizeFilters(rawCriteria);
+      if (!sanitized || Object.keys(sanitized).length === 0) {
         return laporanPenerimaanBarangService.getAllReports(page, limit);
       }
-      return laporanPenerimaanBarangService.searchReports(trimmedQuery, page, limit);
+      return laporanPenerimaanBarangService.searchReports(sanitized, page, limit);
     },
     parseResponse: parseReportsResponse,
     resolveErrorMessage: resolveReportsError,
     onAuthError: handleAuthRedirect,
   });
 
-  const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
-      return false;
-    }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+  const searchLoading = useMemo(
+    () => searchPending || isSearching,
+    [isSearching, searchPending]
+  );
 
-  const fetchReports = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
-  }, [performSearch, resolveLimit]);
+  const fetchReports = useCallback(
+    (page = 1, limit = resolveLimit()) => {
+      const activeFilters = activeFiltersRef.current || {};
+      return performSearch({ ...activeFilters }, page, limit);
+    },
+    [performSearch, resolveLimit]
+  );
 
   useEffect(() => {
     fetchReports(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchReports]);
 
-  const handleSearchChange = useCallback((event) => {
-    const query = event?.target ? event.target.value : event;
-    setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+  const handleFiltersChange = useCallback((field, value) => {
+    setFilters((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      };
+      filtersRef.current = next;
+      return next;
+    });
+  }, []);
 
-  const handleSearchFieldChange = useCallback((field) => {
-    searchFieldRef.current = field;
-    setSearchField(field);
-    if (typeof searchQuery === 'string' && searchQuery.trim()) {
-      performSearch(searchQuery, 1, resolveLimit());
-    } else {
-      performSearch('', 1, resolveLimit());
+  const handleSearchSubmit = useCallback(async () => {
+    const sanitized = sanitizeFilters(filtersRef.current);
+    activeFiltersRef.current = sanitized;
+    setActiveFiltersVersion((version) => version + 1);
+    setSearchPending(true);
+    try {
+      await performSearch(sanitized, 1, resolveLimit());
+    } finally {
+      setSearchPending(false);
     }
-  }, [performSearch, resolveLimit, searchQuery]);
+  }, [performSearch, resolveLimit]);
+
+  const handleResetFilters = useCallback(async () => {
+    const resetFilters = { ...DEFAULT_FILTERS };
+    filtersRef.current = resetFilters;
+    activeFiltersRef.current = {};
+    setFilters(resetFilters);
+    setActiveFiltersVersion((version) => version + 1);
+    setSearchPending(true);
+    try {
+      await performSearch({}, 1, resolveLimit());
+    } finally {
+      setSearchPending(false);
+    }
+  }, [performSearch, resolveLimit]);
 
   const refreshAfterMutation = useCallback(async () => {
     const itemsPerPage = resolveLimit();
     const currentPage = pagination.currentPage || pagination.page || 1;
-    const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
-    await performSearch(trimmedQuery, currentPage, itemsPerPage);
-  }, [pagination, performSearch, resolveLimit, searchQuery]);
+    const activeFilters = activeFiltersRef.current || {};
+    await performSearch({ ...activeFilters }, currentPage, itemsPerPage);
+  }, [pagination, performSearch, resolveLimit]);
+
+  const hasActiveFilters = useMemo(() => {
+    const active = activeFiltersRef.current || {};
+    return Object.keys(active).length > 0;
+  }, [activeFiltersVersion]);
+
+  const searchQuery = useMemo(() => {
+    if (!hasActiveFilters) {
+      return '';
+    }
+
+    const active = activeFiltersRef.current || {};
+    return (
+      active.q ||
+      active.purchaseOrderId ||
+      active.customerId ||
+      active.status_code ||
+      active.termin_bayar ||
+      'filter aktif'
+    );
+  }, [activeFiltersVersion, hasActiveFilters]);
 
   const createReport = useCallback(async (reportData) => {
     try {
@@ -449,11 +530,13 @@ const useLaporanPenerimaanBarangPage = () => {
     setPagination,
     loading,
     error,
+    filters,
     searchQuery,
-    searchField,
+    hasActiveFilters,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     createReport,

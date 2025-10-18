@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import checkingListService from '../services/checkingListService';
-import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const INITIAL_PAGINATION = {
@@ -15,7 +14,40 @@ const INITIAL_PAGINATION = {
   total: 0,
 };
 
-const DEFAULT_SEARCH_FIELD = 'checker';
+const DEFAULT_FILTERS = {
+  statusId: '',
+  no_surat_jalan: '',
+  deliver_to: '',
+  PIC: '',
+  checker: '',
+  driver: '',
+  mobil: '',
+  kota: '',
+  tanggal_from: '',
+  tanggal_to: '',
+};
+
+const sanitizeFilters = (filters = {}) => {
+  const sanitized = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== '') {
+        sanitized[key] = trimmed;
+      }
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
 
 const parseChecklistsResponse = (response = {}) => {
   if (response?.success === false) {
@@ -76,37 +108,18 @@ const resolveChecklistsError = (error) => {
   );
 };
 
-const buildSearchInput = (field = DEFAULT_SEARCH_FIELD, term = '') => ({
-  field: field || DEFAULT_SEARCH_FIELD,
-  term: typeof term === 'string' ? term : '',
-});
-
-const normalizeSearchInput = (input) => {
-  if (input && typeof input === 'object') {
-    return {
-      field: input.field || DEFAULT_SEARCH_FIELD,
-      term:
-        typeof input.term === 'string'
-          ? input.term
-          : typeof input.query === 'string'
-            ? input.query
-            : '',
-    };
-  }
-
-  if (typeof input === 'string') {
-    return { field: DEFAULT_SEARCH_FIELD, term: input };
-  }
-
-  return { field: DEFAULT_SEARCH_FIELD, term: '' };
-};
-
 const useCheckingListPage = () => {
   const navigate = useNavigate();
-  const [searchField, setSearchField] = useState(DEFAULT_SEARCH_FIELD);
-  const [searchTerm, setSearchTerm] = useState('');
-  const searchFieldRef = useRef(DEFAULT_SEARCH_FIELD);
-  const searchTermRef = useRef('');
+  const [checklists, setChecklists] = useState([]);
+  const [pagination, setPagination] = useState(INITIAL_PAGINATION);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const filtersRef = useRef(DEFAULT_FILTERS);
+  const activeFiltersRef = useRef({});
+  const paginationRef = useRef(INITIAL_PAGINATION);
+  const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -114,127 +127,163 @@ const useCheckingListPage = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const {
-    input,
-    setInput: setSearchInput,
-    searchResults: checklists,
-    setSearchResults: setChecklists,
-    pagination,
-    setPagination,
-    loading,
-    error,
-    setError,
-    performSearch,
-    debouncedSearch,
-    handlePageChange: handlePageChangeInternal,
-    handleLimitChange: handleLimitChangeInternal,
-    handleAuthError: authHandler,
-    resolveLimit,
-  } = usePaginatedSearch({
-    initialInput: buildSearchInput(DEFAULT_SEARCH_FIELD, ''),
-    initialPagination: INITIAL_PAGINATION,
-    searchFn: (value, page, limit) => {
-      const { field, term } = normalizeSearchInput(value);
-      const trimmedTerm = typeof term === 'string' ? term.trim() : '';
+  const resolveLimit = useCallback((pageState) => {
+    const state =
+      pageState ||
+      paginationRef.current ||
+      INITIAL_PAGINATION;
 
-      if (!trimmedTerm) {
-        return checkingListService.getAllChecklists(page, limit);
+    return (
+      state.itemsPerPage ||
+      state.limit ||
+      INITIAL_PAGINATION.itemsPerPage ||
+      10
+    );
+  }, []);
+
+  const performFetch = useCallback(
+    async ({
+      page = 1,
+      limit = resolveLimit(),
+      filters: overrideFilters,
+    } = {}) => {
+      const sanitizedFilters = sanitizeFilters(
+        overrideFilters ?? activeFiltersRef.current
+      );
+      const hasFilters = Object.keys(sanitizedFilters).length > 0;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = hasFilters
+          ? await checkingListService.searchChecklists(
+              sanitizedFilters,
+              page,
+              limit
+            )
+          : await checkingListService.getAllChecklists(page, limit);
+
+        const { results, pagination: nextPagination } =
+          parseChecklistsResponse(response);
+
+        const mergedPagination = {
+          ...INITIAL_PAGINATION,
+          ...nextPagination,
+          currentPage: nextPagination.currentPage ?? page,
+          page: nextPagination.page ?? page,
+          itemsPerPage: nextPagination.itemsPerPage ?? limit,
+          limit: nextPagination.limit ?? limit,
+        };
+
+        setChecklists(results || []);
+        setPagination(mergedPagination);
+        paginationRef.current = mergedPagination;
+
+        if (hasFilters) {
+          activeFiltersRef.current = sanitizedFilters;
+        }
+
+        return response;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthRedirect();
+          return null;
+        }
+
+        const message = resolveChecklistsError(err);
+        setError(message);
+        if (message) {
+          toastService.error(message);
+        }
+
+        return null;
+      } finally {
+        setLoading(false);
       }
-
-      return checkingListService.searchChecklists(
-        { [field || DEFAULT_SEARCH_FIELD]: trimmedTerm },
-        page,
-        limit
-      );
     },
-    parseResponse: parseChecklistsResponse,
-    resolveErrorMessage: resolveChecklistsError,
-    onAuthError: handleAuthRedirect,
-  });
-
-  useEffect(() => {
-    const { field, term } = normalizeSearchInput(input);
-    if (field !== searchFieldRef.current) {
-      searchFieldRef.current = field;
-      setSearchField(field);
-    }
-    if (term !== searchTermRef.current) {
-      searchTermRef.current = term;
-      setSearchTerm(term);
-    }
-  }, [input]);
-
-  const searchLoading = useMemo(() => {
-    if (typeof searchTerm !== 'string') {
-      return false;
-    }
-    return loading && Boolean(searchTerm.trim());
-  }, [loading, searchTerm]);
-
-  const fetchChecklists = useCallback(
-    (page = 1, limit = resolveLimit()) => {
-      return performSearch(
-        buildSearchInput(searchFieldRef.current, searchTermRef.current),
-        page,
-        limit
-      );
-    },
-    [performSearch, resolveLimit]
+    [handleAuthRedirect, resolveLimit]
   );
 
   useEffect(() => {
-    fetchChecklists(1, INITIAL_PAGINATION.itemsPerPage);
-  }, [fetchChecklists]);
+    performFetch({ page: 1 });
+  }, [performFetch]);
 
-  const handleSearchChange = useCallback(
-    (event) => {
-      const value = event?.target ? event.target.value : event;
-      searchTermRef.current = value;
-      setSearchTerm(value);
-      const searchInput = buildSearchInput(searchFieldRef.current, value);
-      setSearchInput(searchInput);
-      debouncedSearch(searchInput, 1, resolveLimit());
+  const handleFiltersChange = useCallback((field, value) => {
+    setFilters((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      };
+      filtersRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const handleSearchSubmit = useCallback(async () => {
+    const sanitized = sanitizeFilters(filtersRef.current);
+    activeFiltersRef.current = sanitized;
+    setActiveFiltersVersion((version) => version + 1);
+    setSearchLoading(true);
+
+    try {
+      await performFetch({
+        page: 1,
+        filters: sanitized,
+      });
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [performFetch]);
+
+  const handleResetFilters = useCallback(async () => {
+    filtersRef.current = DEFAULT_FILTERS;
+    activeFiltersRef.current = {};
+    setFilters(DEFAULT_FILTERS);
+    setActiveFiltersVersion((version) => version + 1);
+    setSearchLoading(false);
+
+    await performFetch({
+      page: 1,
+      filters: {},
+    });
+  }, [performFetch]);
+
+  const handlePageChange = useCallback(
+    (page) => {
+      performFetch({ page });
     },
-    [debouncedSearch, resolveLimit, setSearchInput]
+    [performFetch]
   );
 
-  const handleSearchFieldChange = useCallback(
-    (field) => {
-      const nextField =
-        typeof field === 'string' && field.trim()
-          ? field.trim()
-          : DEFAULT_SEARCH_FIELD;
-
-      searchFieldRef.current = nextField;
-      setSearchField(nextField);
-
-      const currentTerm = searchTermRef.current || '';
-      const trimmed = currentTerm.trim();
-      const searchInput = buildSearchInput(nextField, currentTerm);
-      setSearchInput(searchInput);
-
-      if (trimmed) {
-        performSearch(searchInput, 1, resolveLimit());
-      } else {
-        performSearch(
-          buildSearchInput(nextField, ''),
-          1,
-          resolveLimit()
-        );
-      }
+  const handleLimitChange = useCallback(
+    (limit) => {
+      performFetch({ page: 1, limit });
     },
-    [performSearch, resolveLimit, setSearchInput]
+    [performFetch]
   );
 
   const refreshAfterMutation = useCallback(async () => {
-    const itemsPerPage = resolveLimit();
-    const currentPage = pagination.currentPage || pagination.page || 1;
-    const searchInput = buildSearchInput(
-      searchFieldRef.current,
-      searchTermRef.current
-    );
-    await performSearch(searchInput, currentPage, itemsPerPage);
-  }, [pagination, performSearch, resolveLimit]);
+    const currentPagination =
+      paginationRef.current || pagination || INITIAL_PAGINATION;
+
+    const currentPage =
+      currentPagination.currentPage ||
+      currentPagination.page ||
+      INITIAL_PAGINATION.currentPage;
+
+    const limit = resolveLimit(currentPagination);
+
+    await performFetch({
+      page: currentPage,
+      limit,
+      filters: activeFiltersRef.current,
+    });
+  }, [pagination, performFetch, resolveLimit]);
+
+  const authHandler = useCallback(() => {
+    handleAuthRedirect();
+  }, [handleAuthRedirect]);
 
   const createChecklist = useCallback(
     async (payload) => {
@@ -294,6 +343,67 @@ const useCheckingListPage = () => {
     [authHandler, refreshAfterMutation]
   );
 
+  const deleteChecklistFunction = useCallback(
+    async (id) => {
+      try {
+        const result = await checkingListService.deleteChecklist(id);
+        if (!(result?.success || result == null || result === '')) {
+          throw new Error(
+            result?.error?.message || 'Failed to delete checklist surat jalan'
+          );
+        }
+        toastService.success('Checklist surat jalan berhasil dihapus');
+
+        const currentPagination =
+          paginationRef.current || pagination || INITIAL_PAGINATION;
+        const itemsPerPage =
+          currentPagination.itemsPerPage ||
+          currentPagination.limit ||
+          INITIAL_PAGINATION.itemsPerPage;
+        const currentPage =
+          currentPagination.currentPage ||
+          currentPagination.page ||
+          INITIAL_PAGINATION.currentPage;
+        const totalItems =
+          currentPagination.totalItems ||
+          currentPagination.total ||
+          checklists.length;
+
+        const newTotalItems = Math.max(totalItems - 1, 0);
+        const newTotalPages = Math.max(
+          Math.ceil(newTotalItems / itemsPerPage),
+          1
+        );
+        const nextPage = Math.min(currentPage, newTotalPages);
+
+        await performFetch({
+          page: nextPage,
+          limit: itemsPerPage,
+          filters: activeFiltersRef.current,
+        });
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to delete checklist surat jalan';
+        toastService.error(message);
+        throw err;
+      }
+    },
+    [authHandler, checklists.length, pagination, performFetch]
+  );
+
+  const deleteChecklistConfirmation = useDeleteConfirmation(
+    deleteChecklistFunction,
+    'Apakah Anda yakin ingin menghapus checklist surat jalan ini?',
+    'Hapus Checklist Surat Jalan'
+  );
+
   const fetchChecklistById = useCallback(
     async (id) => {
       if (!id) {
@@ -324,64 +434,39 @@ const useCheckingListPage = () => {
     [authHandler]
   );
 
-  const deleteChecklistFunction = useCallback(
-    async (id) => {
-      try {
-        const result = await checkingListService.deleteChecklist(id);
-        if (!(result?.success || result == null || result === '')) {
-          throw new Error(
-            result?.error?.message || 'Failed to delete checklist surat jalan'
-          );
-        }
-        toastService.success('Checklist surat jalan berhasil dihapus');
+  const hasActiveFilters = useMemo(() => {
+    const active = activeFiltersRef.current || {};
+    return Object.keys(active).length > 0;
+  }, [activeFiltersVersion]);
 
-        const itemsPerPage = resolveLimit();
-        const currentPage = pagination.currentPage || pagination.page || 1;
-        const totalItems =
-          pagination.totalItems || pagination.total || checklists.length;
-        const newTotalItems = Math.max(totalItems - 1, 0);
-        const newTotalPages = Math.max(
-          Math.ceil(newTotalItems / itemsPerPage),
-          1
-        );
-        const nextPage = Math.min(currentPage, newTotalPages);
-        const searchInput = buildSearchInput(
-          searchFieldRef.current,
-          searchTermRef.current
-        );
+  const searchQuery = useMemo(() => {
+    if (!hasActiveFilters) {
+      return '';
+    }
+    const active = activeFiltersRef.current || {};
+    return (
+      active.no_surat_jalan ||
+      active.deliver_to ||
+      active.PIC ||
+      active.checker ||
+      active.driver ||
+      active.mobil ||
+      active.kota ||
+      active.statusId ||
+      'filter aktif'
+    );
+  }, [hasActiveFilters, activeFiltersVersion]);
 
-        await performSearch(searchInput, nextPage, itemsPerPage);
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          authHandler();
-          return;
-        }
-        const message =
-          err?.response?.data?.error?.message ||
-          err?.response?.data?.message ||
-          err?.message ||
-          'Failed to delete checklist surat jalan';
-        toastService.error(message);
-        throw err;
-      }
-    },
-    [
-      authHandler,
-      checklists.length,
-      pagination.currentPage,
-      pagination.page,
-      pagination.total,
-      pagination.totalItems,
-      performSearch,
-      resolveLimit,
-    ]
-  );
-
-  const deleteChecklistConfirmation = useDeleteConfirmation(
-    deleteChecklistFunction,
-    'Apakah Anda yakin ingin menghapus checklist surat jalan ini?',
-    'Hapus Checklist Surat Jalan'
-  );
+  const handleRetryFetch = useCallback(() => {
+    performFetch({
+      page:
+        paginationRef.current?.currentPage ||
+        paginationRef.current?.page ||
+        INITIAL_PAGINATION.currentPage,
+      limit: resolveLimit(),
+      filters: activeFiltersRef.current,
+    });
+  }, [performFetch, resolveLimit]);
 
   return {
     checklists,
@@ -390,20 +475,23 @@ const useCheckingListPage = () => {
     setPagination,
     loading,
     error,
-    searchQuery: searchTerm,
-    searchField,
+    filters,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
-    handlePageChange: handlePageChangeInternal,
-    handleLimitChange: handleLimitChangeInternal,
+    hasActiveFilters,
+    searchQuery,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
+    handlePageChange,
+    handleLimitChange,
     createChecklist,
     updateChecklist,
     deleteChecklist: deleteChecklistConfirmation.showDeleteConfirmation,
     deleteChecklistConfirmation,
-    fetchChecklists,
+    fetchChecklists: performFetch,
     fetchChecklistById,
     handleAuthError: authHandler,
+    handleRetryFetch,
   };
 };
 

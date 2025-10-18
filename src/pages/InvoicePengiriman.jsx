@@ -70,11 +70,13 @@ const InvoicePengirimanPage = () => {
     pagination,
     loading,
     error,
+    filters,
     searchQuery,
-    searchField,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
+    hasActiveFilters,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange,
     handleLimitChange,
     createInvoicePenagihan,
@@ -107,12 +109,10 @@ const InvoicePengirimanPage = () => {
     loading: false,
   });
 
-  const isSearchActive = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
-      return false;
-    }
-    return searchQuery.trim().length > 0;
-  }, [searchQuery]);
+  const isSearchActive = useMemo(
+    () => Boolean(hasActiveFilters),
+    [hasActiveFilters]
+  );
 
   const tableInvoices = useMemo(() => {
     if (isSearchActive || activeTab === 'all') {
@@ -312,6 +312,20 @@ const InvoicePengirimanPage = () => {
     },
     [activeTab, fetchDataByTab, handleLimitChange, isSearchActive]
   );
+
+  const handleSearch = useCallback(async () => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleSearchSubmit();
+  }, [activeTab, handleSearchSubmit]);
+
+  const handleReset = useCallback(async () => {
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleResetFilters();
+  }, [activeTab, handleResetFilters]);
 
   const refreshActiveTab = useCallback(() => {
     if (isSearchActive) {
@@ -569,11 +583,11 @@ const InvoicePengirimanPage = () => {
           </div>
 
           <InvoicePengirimanSearch
-            searchQuery={searchQuery}
-            searchField={searchField}
-            handleSearchChange={handleSearchChange}
-            handleSearchFieldChange={handleSearchFieldChange}
-            searchLoading={searchLoading}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearch}
+            onReset={handleReset}
+            loading={Boolean(searchLoading || tableLoading)}
           />
 
           <div className='mb-4 overflow-x-auto'>
@@ -611,6 +625,7 @@ const InvoicePengirimanPage = () => {
               onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
               onView={openViewModal}
               searchQuery={searchQuery}
+              hasActiveFilters={hasActiveFilters}
               onTogglePenagihan={handleInvoicePenagihanToggle}
               creatingPenagihanId={creatingInvoicePenagihanId}
             />

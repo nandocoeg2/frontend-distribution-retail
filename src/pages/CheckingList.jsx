@@ -29,19 +29,21 @@ const CheckingList = () => {
     pagination,
     loading,
     error,
+    filters,
     searchQuery,
-    searchField,
     searchLoading,
-    handleSearchChange,
-    handleSearchFieldChange,
+    hasActiveFilters,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange,
     handleLimitChange,
     createChecklist,
     updateChecklist,
     deleteChecklist: showDeleteChecklistDialog,
     deleteChecklistConfirmation,
-    fetchChecklists,
     fetchChecklistById,
+    handleRetryFetch,
   } = useCheckingListPage();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -148,7 +150,7 @@ const CheckingList = () => {
   };
 
   const handleRetry = () => {
-    fetchChecklists();
+    handleRetryFetch();
   };
 
   return (
@@ -173,11 +175,11 @@ const CheckingList = () => {
           </div>
 
           <CheckingListSearch
-            searchQuery={searchQuery}
-            searchField={searchField}
-            handleSearchChange={handleSearchChange}
-            handleSearchFieldChange={handleSearchFieldChange}
-            searchLoading={searchLoading}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearchSubmit}
+            onReset={handleResetFilters}
+            loading={Boolean(searchLoading || loading)}
           />
 
           {loading && (
@@ -211,6 +213,7 @@ const CheckingList = () => {
               onView={openDetailModal}
               loading={loading}
               searchQuery={searchQuery}
+              hasActiveFilters={hasActiveFilters}
             />
           )}
         </div>

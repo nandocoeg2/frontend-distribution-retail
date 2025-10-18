@@ -1,105 +1,174 @@
 import React from 'react';
 
 const InvoicePengirimanSearch = ({
-  searchQuery,
-  searchField,
-  handleSearchChange,
-  handleSearchFieldChange,
-  searchLoading,
+  filters,
+  onFiltersChange,
+  onSearch,
+  onReset,
+  loading,
 }) => {
-  const getInputType = () => {
-    if (searchField === 'tanggal_start' || searchField === 'tanggal_end') {
-      return 'date';
-    }
-    if (searchField === 'type') {
-      return 'type-select';
-    }
-    if (searchField === 'status_code') {
-      return 'status-select';
-    }
-    return 'text';
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSearch?.();
   };
 
-  const getPlaceholder = () => {
-    const label = searchField
-      ? searchField
-          .replace(/([A-Z])/g, ' ')
-          .replace(/_/g, ' ')
-          .trim()
-      : 'field';
-    return `Cari berdasarkan ${label}`;
+  const handleReset = () => {
+    onReset?.();
+  };
+
+  const handleChange = (field) => (event) => {
+    onFiltersChange?.(field, event.target.value);
+  };
+
+  const values = filters || {};
+  const isLoading = Boolean(loading);
+
+  const resolvePrintedValue = () => {
+    if (values.is_printed === true) {
+      return 'true';
+    }
+    if (values.is_printed === false) {
+      return 'false';
+    }
+    return values.is_printed || '';
   };
 
   return (
-    <div className='grid grid-cols-1 gap-4 mb-4 md:grid-cols-3'>
-      <div>
-        <select
-          value={searchField}
-          onChange={(e) => handleSearchFieldChange(e.target.value)}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-        >
-          <option value='no_invoice'>Nomor Invoice</option>
-          <option value='deliver_to'>Tujuan Pengiriman</option>
-          <option value='type'>Tipe Invoice</option>
-          <option value='status_code'>Status Invoice</option>
-          <option value='purchaseOrderId'>Purchase Order ID</option>
-          <option value='tanggal_start'>Tanggal Mulai</option>
-          <option value='tanggal_end'>Tanggal Akhir</option>
-        </select>
-      </div>
-      <div className='relative md:col-span-2'>
-        {getInputType() === 'type-select' ? (
+    <form
+      onSubmit={handleSubmit}
+      className='p-4 mb-6 bg-gray-50 border border-gray-200 rounded-lg'
+    >
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Nomor Invoice
+          </label>
+          <input
+            type='text'
+            value={values.no_invoice || ''}
+            onChange={handleChange('no_invoice')}
+            placeholder='Contoh: INV-2024-001'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Tujuan Pengiriman
+          </label>
+          <input
+            type='text'
+            value={values.deliver_to || ''}
+            onChange={handleChange('deliver_to')}
+            placeholder='Masukkan nama penerima'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Purchase Order ID
+          </label>
+          <input
+            type='text'
+            value={values.purchaseOrderId || ''}
+            onChange={handleChange('purchaseOrderId')}
+            placeholder='Masukkan ID Purchase Order'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Tipe Invoice
+          </label>
           <select
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            value={values.type || ''}
+            onChange={handleChange('type')}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           >
             <option value=''>Semua Tipe</option>
             <option value='PENGIRIMAN'>PENGIRIMAN</option>
             <option value='PEMBAYARAN'>PEMBAYARAN</option>
           </select>
-        ) : getInputType() === 'status-select' ? (
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Status Invoice
+          </label>
           <select
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            value={values.status_code || ''}
+            onChange={handleChange('status_code')}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           >
             <option value=''>Semua Status</option>
             <option value='PENDING INVOICE'>PENDING INVOICE</option>
             <option value='PAID INVOICE'>PAID INVOICE</option>
             <option value='OVERDUE INVOICE'>OVERDUE INVOICE</option>
             <option value='CANCELLED INVOICE'>CANCELLED INVOICE</option>
+            <option value='PAYMENT_PENDING'>PAYMENT_PENDING</option>
           </select>
-        ) : (
-          <input
-            type={getInputType()}
-            placeholder={getPlaceholder()}
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className='w-full px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
-        )}
-        <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
-          <svg
-            className='w-5 h-5 text-gray-400'
-            fill='none'
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            strokeWidth='2'
-            viewBox='0 0 24 24'
-            stroke='currentColor'
-          >
-            <path d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'></path>
-          </svg>
         </div>
-        {searchLoading && (
-          <div className='flex items-center mt-2 text-sm text-gray-600'>
-            <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-            Mencari data...
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Status Cetak
+          </label>
+          <select
+            value={resolvePrintedValue()}
+            onChange={handleChange('is_printed')}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          >
+            <option value=''>Semua Status</option>
+            <option value='true'>Sudah Dicetak</option>
+            <option value='false'>Belum Dicetak</option>
+          </select>
+        </div>
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 md:col-span-2'>
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Tanggal Mulai
+            </label>
+            <input
+              type='date'
+              value={values.tanggal_start || ''}
+              onChange={handleChange('tanggal_start')}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
           </div>
-        )}
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              Tanggal Akhir
+            </label>
+            <input
+              type='date'
+              value={values.tanggal_end || ''}
+              onChange={handleChange('tanggal_end')}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
+          </div>
+        </div>
       </div>
-    </div>
+
+      <div className='flex flex-col gap-3 mt-6 sm:flex-row sm:items-center sm:justify-end'>
+        <button
+          type='button'
+          onClick={handleReset}
+          className='inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'
+        >
+          Atur Ulang
+        </button>
+        <button
+          type='submit'
+          disabled={isLoading}
+          className='inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed'
+        >
+          {isLoading ? 'Mencari...' : 'Cari Invoice'}
+        </button>
+      </div>
+    </form>
   );
 };
 

@@ -84,15 +84,16 @@ const SuratJalan = () => {
     pagination,
     loading,
     error,
-    searchQuery,
-    searchField,
+    filters,
     searchLoading,
+    hasActiveFilters,
     selectedSuratJalan,
     setSelectedSuratJalan,
     hasSelectedSuratJalan,
     isProcessingSuratJalan,
-    handleSearchChange,
-    handleSearchFieldChange,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     handlePageChange,
     handleLimitChange,
     handleSelectSuratJalan,
@@ -116,17 +117,7 @@ const SuratJalan = () => {
   const [tabData, setTabData] = useState([]);
   const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
 
-  const isSearchActive = useMemo(() => {
-    if (searchQuery == null) {
-      return false;
-    }
-
-    if (typeof searchQuery === 'string') {
-      return searchQuery.trim() !== '';
-    }
-
-    return Boolean(searchQuery);
-  }, [searchQuery]);
+  const isSearchActive = hasActiveFilters;
 
   const tableSuratJalan = useMemo(() => {
     if (isSearchActive || activeTab === 'all') {
@@ -148,6 +139,8 @@ const SuratJalan = () => {
     }
     return tabLoading;
   }, [activeTab, isSearchActive, loading, tabLoading]);
+
+  const searchSectionLoading = Boolean(searchLoading || tableLoading);
 
   const selectedSuratJalanDetails = useMemo(() => {
     if (!Array.isArray(selectedSuratJalan) || selectedSuratJalan.length === 0) {
@@ -282,15 +275,21 @@ const SuratJalan = () => {
     ]
   );
 
-  const handleSearchChangeWithReset = useCallback((event) => {
+  const handleSearch = useCallback(async () => {
     setSelectedSuratJalan([]);
-    handleSearchChange(event);
-  }, [handleSearchChange, setSelectedSuratJalan]);
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleSearchSubmit();
+  }, [activeTab, handleSearchSubmit]);
 
-  const handleSearchFieldChangeWithReset = useCallback((field) => {
+  const handleReset = useCallback(async () => {
     setSelectedSuratJalan([]);
-    handleSearchFieldChange(field);
-  }, [handleSearchFieldChange, setSelectedSuratJalan]);
+    if (activeTab !== 'all') {
+      setActiveTab('all');
+    }
+    await handleResetFilters();
+  }, [activeTab, handleResetFilters]);
 
   const handleTabPageChange = useCallback(
     (page) => {
@@ -542,11 +541,11 @@ const SuratJalan = () => {
           </div>
 
           <SuratJalanSearch
-            searchQuery={searchQuery}
-            searchField={searchField}
-            handleSearchChange={handleSearchChangeWithReset}
-            handleSearchFieldChange={handleSearchFieldChangeWithReset}
-            searchLoading={searchLoading}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearch}
+            onReset={handleReset}
+            loading={searchSectionLoading}
           />
 
           <div className='mb-4 overflow-x-auto'>
@@ -578,7 +577,7 @@ const SuratJalan = () => {
             onEdit={openEditModal}
             onDelete={deleteSuratJalan}
             onView={openViewModal}
-            searchQuery={searchQuery}
+            hasActiveFilters={hasActiveFilters}
             loading={tableLoading}
             selectedSuratJalan={selectedSuratJalan}
             onSelectSuratJalan={handleSelectSuratJalan}
