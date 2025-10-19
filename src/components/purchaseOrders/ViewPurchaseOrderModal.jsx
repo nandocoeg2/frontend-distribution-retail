@@ -22,6 +22,12 @@ import {
   InfoTable,
   useAlert,
 } from '../ui';
+import { exportStickerToPDF } from '../packings/PrintPackingSticker';
+import { exportInvoicePengirimanToPDF } from '../invoicePengiriman/PrintInvoicePengiriman';
+import { exportSuratJalanToPDF } from '../suratJalan/PrintSuratJalan';
+import { getPackingById } from '../../services/packingService';
+import invoicePengirimanService from '../../services/invoicePengirimanService';
+import suratJalanService from '../../services/suratJalanService';
 
 const ViewPurchaseOrderModal = ({
   isOpen,
@@ -131,6 +137,31 @@ const ViewPurchaseOrderModal = ({
     });
   };
 
+  const resolveEntityId = (entity, fallbackKeys = []) => {
+    if (!entity || typeof entity !== 'object') {
+      return null;
+    }
+    if (entity.id) {
+      return entity.id;
+    }
+    if (entity._id) {
+      return entity._id;
+    }
+    for (const key of fallbackKeys) {
+      if (entity[key]) {
+        return entity[key];
+      }
+    }
+    return null;
+  };
+
+  const unwrapServiceResponse = (result) => {
+    if (result && typeof result === 'object' && 'data' in result) {
+      return result.data;
+    }
+    return result;
+  };
+
   const handlePrintDocuments = async () => {
     if (!order?.id) return;
 
@@ -143,8 +174,130 @@ const ViewPurchaseOrderModal = ({
       return;
     }
 
+    const exportTasks = [];
+    let packingTaskCreated = false;
+    let invoiceTaskCreated = false;
+    let suratJalanTaskCreated = false;
+
+    if (selectedDocuments.PACKING && order?.packing) {
+      const packingId =
+        resolveEntityId(order.packing, [
+          'packingId',
+          'packing_id',
+          'id_packing',
+        ]) ||
+        order.packingId ||
+        order.packing_id;
+
+      if (!packingId) {
+        showError('Packing ID is not available for printing');
+        return;
+      }
+
+      exportTasks.push(async () => {
+        const response = await getPackingById(packingId);
+        const packingData = unwrapServiceResponse(response);
+
+        if (!packingData) {
+          throw new Error('Failed to fetch packing data');
+        }
+
+        const items = Array.isArray(packingData.packingItems)
+          ? packingData.packingItems
+          : [];
+
+        if (!items.length) {
+          throw new Error('Packing items data is empty');
+        }
+
+        exportStickerToPDF(packingData, items);
+      });
+      packingTaskCreated = true;
+    }
+
+    if (selectedDocuments.INVOICE_PENGIRIMAN && order?.invoice) {
+      const invoiceId =
+        resolveEntityId(order.invoice, [
+          'invoiceId',
+          'invoice_id',
+          'id_invoice',
+        ]) ||
+        order.invoiceId ||
+        order.invoice_id;
+
+      if (!invoiceId) {
+        showError('Invoice ID is not available for printing');
+        return;
+      }
+
+      exportTasks.push(async () => {
+        const response =
+          await invoicePengirimanService.getInvoicePengirimanById(invoiceId);
+        const invoiceData = unwrapServiceResponse(response);
+
+        if (!invoiceData) {
+          throw new Error('Failed to fetch invoice pengiriman data');
+        }
+
+        await exportInvoicePengirimanToPDF(invoiceData);
+      });
+      invoiceTaskCreated = true;
+    }
+
+    if (selectedDocuments.SURAT_JALAN && order?.suratJalan) {
+      const suratJalanEntity = Array.isArray(order.suratJalan)
+        ? order.suratJalan[0]
+        : order.suratJalan;
+
+      const suratJalanId =
+        resolveEntityId(suratJalanEntity, [
+          'suratJalanId',
+          'surat_jalan_id',
+          'id_surat_jalan',
+        ]) ||
+        order.suratJalanId ||
+        order.surat_jalan_id;
+
+      if (!suratJalanId) {
+        showError('Surat jalan ID is not available for printing');
+        return;
+      }
+
+      exportTasks.push(async () => {
+        const response = await suratJalanService.getSuratJalanById(
+          suratJalanId
+        );
+        const suratJalanData = unwrapServiceResponse(response);
+
+        if (!suratJalanData) {
+          throw new Error('Failed to fetch surat jalan data');
+        }
+
+        await exportSuratJalanToPDF(suratJalanData);
+      });
+      suratJalanTaskCreated = true;
+    }
+
+    if (exportTasks.length === 0) {
+      const specificMessage =
+        (selectedDocuments.PACKING && !packingTaskCreated)
+          ? 'Packing data is not available to print'
+          : (selectedDocuments.INVOICE_PENGIRIMAN && !invoiceTaskCreated)
+            ? 'Invoice pengiriman data is not available to print'
+            : (selectedDocuments.SURAT_JALAN && !suratJalanTaskCreated)
+              ? 'Surat jalan data is not available to print'
+              : 'Selected documents are not available to print';
+
+      showError(specificMessage);
+      return;
+    }
+
     setPrinting(true);
     try {
+      for (const task of exportTasks) {
+        await Promise.resolve(task());
+      }
+
       const result = await purchaseOrderService.printDocuments(
         order.id,
         selectedDocs
@@ -157,7 +310,6 @@ const ViewPurchaseOrderModal = ({
         if (onProcessed) {
           onProcessed();
         }
-        // Reset checkboxes
         setSelectedDocuments({
           PACKING: false,
           INVOICE_PENGIRIMAN: false,
