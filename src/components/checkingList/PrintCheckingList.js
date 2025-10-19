@@ -1,27 +1,22 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import {
+  createPDFDocument,
+  drawText,
+  drawMultilineText,
+  drawTable,
+  drawLine,
+  drawSignatureArea,
+  checkAndAddPage,
+  generateFileName,
+} from '../../utils/pdfUtils';
+import {
+  PDF_FONT_SIZES,
+  PDF_FONT_STYLES,
+  PDF_MARGINS,
+  PDF_PAGE,
+} from '../../utils/pdfConfig';
+import { toast } from 'react-toastify';
 
 const numberFormatter = new Intl.NumberFormat('id-ID');
-
-const escapeHtml = (value = '') =>
-  String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
-const formatMultiline = (value) => {
-  if (!value && value !== 0) {
-    return '';
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((line) => escapeHtml(line)).join('<br />');
-  }
-
-  return escapeHtml(String(value)).replace(/\r?\n/g, '<br />');
-};
 
 const parseNumber = (value) => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -33,6 +28,7 @@ const parseNumber = (value) => {
     if (!trimmed) {
       return null;
     }
+
     const normalized = trimmed.replace(/\./g, '').replace(/,/g, '.');
     const numeric = Number(normalized);
     return Number.isFinite(numeric) ? numeric : null;
@@ -46,10 +42,10 @@ const buildQuantityString = (numeric, unit) => {
   const normalizedUnit = unit ? String(unit).trim() : '';
 
   if (normalizedUnit) {
-    return `${escapeHtml(formattedNumber)} ${escapeHtml(normalizedUnit.toUpperCase())}`;
+    return `${formattedNumber} ${normalizedUnit.toUpperCase()}`;
   }
 
-  return escapeHtml(formattedNumber);
+  return formattedNumber;
 };
 
 const formatQuantity = (primaryValue, primaryUnit, fallbackValue, fallbackUnit) => {
@@ -64,14 +60,30 @@ const formatQuantity = (primaryValue, primaryUnit, fallbackValue, fallbackUnit) 
   }
 
   if (primaryValue && String(primaryValue).trim()) {
-    return escapeHtml(primaryValue);
+    return String(primaryValue).trim();
   }
 
   if (fallbackValue && String(fallbackValue).trim()) {
-    return escapeHtml(fallbackValue);
+    return String(fallbackValue).trim();
   }
 
   return '-';
+};
+
+const formatMultilineText = (value) => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((line) => String(line).trim())
+      .filter((line) => Boolean(line))
+      .join('\n');
+  }
+
+  const text = String(value).trim();
+  return text.replace(/\r?\n/g, '\n');
 };
 
 const formatDateLong = (value) => {
@@ -84,19 +96,11 @@ const formatDateLong = (value) => {
     return '-';
   }
 
-  const formatted = parsed.toLocaleDateString('id-ID', {
+  return parsed.toLocaleDateString('id-ID', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
   });
-
-  return escapeHtml(formatted);
-};
-
-const sanitizeFileName = (value) => {
-  const fallback = 'Checklist_Surat_Jalan';
-  const base = value && String(value).trim() ? value.trim() : fallback;
-  return base.replace(/[^A-Za-z0-9_\-]+/g, '_');
 };
 
 const extractField = (source, fields = []) => {
@@ -205,7 +209,7 @@ const buildPackingKeterangan = (item) => {
   }
 
   if (item?.keterangan) {
-    notes.push(item.keterangan);
+    notes.push(String(item.keterangan));
   }
 
   return notes.join(' | ');
@@ -225,14 +229,6 @@ const calculateTotals = (suratJalan) => {
     if (detailBox !== null) {
       totalBoxes += detailBox;
       hasBox = true;
-    } else {
-      getDetailItems(detail).forEach((item) => {
-        const itemBox = parseNumber(item?.total_box);
-        if (itemBox !== null) {
-          totalBoxes += itemBox;
-          hasBox = true;
-        }
-      });
     }
 
     const detailQuantity = parseNumber(detail?.total_quantity_in_box);
@@ -270,7 +266,7 @@ const calculateTotals = (suratJalan) => {
   };
 };
 
-const buildDestinationHeader = (suratJalan, index) => {
+const buildDestinationHeaderText = (suratJalan, index) => {
   if (!suratJalan) {
     return '';
   }
@@ -295,37 +291,33 @@ const buildDestinationHeader = (suratJalan, index) => {
       'kode_customer',
     ]) || '';
 
-  const safeName = escapeHtml(destinationName);
-  const safeCode = destinationCode ? `&nbsp;&nbsp;(${escapeHtml(destinationCode)})` : '';
-
-  return `${index + 1}. ${safeName}${safeCode}`;
+  const suffix = destinationCode ? ` (${destinationCode})` : '';
+  return `${index + 1}. ${destinationName}${suffix}`;
 };
 
-const buildDestinationSummary = (suratJalanList) => {
+const buildDestinationSummaryLines = (suratJalanList) => {
   if (!suratJalanList.length) {
-    return null;
+    return [];
   }
 
-  const lines = suratJalanList.map((suratJalan, index) => {
-    const header = buildDestinationHeader(suratJalan, index);
+  return suratJalanList.map((suratJalan, index) => {
+    const header = buildDestinationHeaderText(suratJalan, index);
     const { totalBoxes, totalQuantity } = calculateTotals(suratJalan);
 
     const parts = [];
     if (totalBoxes !== null) {
-      parts.push(`${escapeHtml(numberFormatter.format(totalBoxes))} Box`);
+      parts.push(`${numberFormatter.format(totalBoxes)} Box`);
     }
     if (totalQuantity !== null) {
-      parts.push(`${escapeHtml(numberFormatter.format(totalQuantity))} Qty`);
+      parts.push(`${numberFormatter.format(totalQuantity)} Qty`);
     }
 
     const suffix = parts.length ? ` = ${parts.join(' / ')}` : '';
     return `${header}${suffix}`;
   });
-
-  return lines.join('<br />');
 };
 
-const buildTableRows = (suratJalanList) => {
+const collectChecklistRows = (suratJalanList) => {
   const rows = [];
   let counter = 0;
 
@@ -341,7 +333,7 @@ const buildTableRows = (suratJalanList) => {
       if (items.length === 0) {
         counter += 1;
         rows.push({
-          no: counter,
+          no: String(counter),
           noBox: detail?.no_box || '-',
           namaBarang: detail?.nama_barang || '-',
           jumlah: formatQuantity(detail?.total_box, 'Box', detail?.total_quantity_in_box, 'Qty'),
@@ -351,7 +343,7 @@ const buildTableRows = (suratJalanList) => {
             detail?.total_box,
             'Box'
           ),
-          keterangan: detail?.keterangan || '',
+          keterangan: formatMultilineText(detail?.keterangan || ''),
         });
         return;
       }
@@ -359,7 +351,7 @@ const buildTableRows = (suratJalanList) => {
       items.forEach((item) => {
         counter += 1;
         rows.push({
-          no: counter,
+          no: String(counter),
           noBox: detail?.no_box || item?.no_box || '-',
           namaBarang: item?.nama_barang || detail?.nama_barang || '-',
           jumlah: formatQuantity(
@@ -374,7 +366,7 @@ const buildTableRows = (suratJalanList) => {
             item?.total_box ?? item?.quantity,
             item?.satuan || 'Qty'
           ),
-          keterangan: item?.keterangan || detail?.keterangan || '',
+          keterangan: formatMultilineText(item?.keterangan || detail?.keterangan || ''),
         });
       });
     });
@@ -385,7 +377,7 @@ const buildTableRows = (suratJalanList) => {
       packingItems.forEach((item) => {
         counter += 1;
         rows.push({
-          no: counter,
+          no: String(counter),
           noBox: item?.no_box || '-',
           namaBarang: item?.nama_barang || '-',
           jumlah: formatQuantity(
@@ -400,52 +392,28 @@ const buildTableRows = (suratJalanList) => {
             item?.jumlah_carton ?? item?.total_box,
             'Box'
           ),
-          keterangan: buildPackingKeterangan(item),
+          keterangan: formatMultilineText(buildPackingKeterangan(item)),
         });
       });
     }
   });
 
-  if (!rows.length) {
-    return `
-      <tr>
-        <td class="center" colspan="6">Data detail checklist tidak tersedia.</td>
-      </tr>
-    `;
-  }
-
-  return rows
-    .map(
-      (row) => `
-        <tr>
-          <td class="center">${escapeHtml(row.no)}</td>
-          <td class="center">${escapeHtml(row.noBox || '-')}</td>
-          <td>${escapeHtml(row.namaBarang || '-')}</td>
-          <td class="center">${row.jumlah}</td>
-          <td>${row.totalQuantity}</td>
-          <td>${row.keterangan ? formatMultiline(row.keterangan) : ''}</td>
-        </tr>
-      `
-    )
-    .join('');
+  return rows;
 };
 
-const buildDocumentHtml = (checklist) => {
-  const suratJalanList = getSuratJalanList(checklist);
+const createInfoRows = (checklist, suratJalanList) => {
   const primarySuratJalan = suratJalanList[0] || null;
-
-  const destinationSummary = buildDestinationSummary(suratJalanList);
-  const destinationHeader = buildDestinationHeader(primarySuratJalan, 0);
-  const tableRows = buildTableRows(suratJalanList);
+  const destinationSummaryLines = buildDestinationSummaryLines(suratJalanList);
+  const destinationSummary =
+    destinationSummaryLines.length > 0
+      ? destinationSummaryLines.join('\n')
+      : 'Belum ada tujuan terkait';
 
   const origin =
     extractField(checklist, ['origin', 'asal', 'companyName', 'company', 'dari']) ||
     extractField(primarySuratJalan, ['deliver_from', 'asal', 'warehouseName']) ||
     'PT Doven Tradeco';
-  const locationName =
-    extractField(checklist, ['kota', 'lokasi', 'destinationCity']) ||
-    extractField(primarySuratJalan, ['kota', 'city', 'destinationCity']) ||
-    'Jakarta';
+
   const formattedDate =
     formatDateLong(
       checklist?.tanggal ||
@@ -454,236 +422,255 @@ const buildDocumentHtml = (checklist) => {
         primarySuratJalan?.createdAt
     ) || '-';
 
-  const infoRows = [
-    { label: 'Dari', valueHtml: escapeHtml(origin) },
-    { label: 'Tanggal', valueHtml: formattedDate || '-' },
-    { label: 'Mobil', valueHtml: escapeHtml(checklist?.mobil || '-') },
-    { label: 'Driver', valueHtml: escapeHtml(checklist?.driver || '-') },
-    { label: 'Checker', valueHtml: escapeHtml(checklist?.checker || '-') },
-    {
-      label: 'Tujuan',
-      valueHtml: destinationSummary || escapeHtml('Belum ada tujuan terkait'),
-    },
+  const rows = [
+    { label: 'Dari', value: origin },
+    { label: 'Tanggal', value: formattedDate },
+    { label: 'Mobil', value: checklist?.mobil || '-' },
+    { label: 'Driver', value: checklist?.driver || '-' },
+    { label: 'Checker', value: checklist?.checker || '-' },
+    { label: 'Tujuan', value: destinationSummary },
   ];
 
-  const infoRowsHtml = infoRows
-    .map(
-      (row) => `
-        <div class="cl-info-row">
-          <div class="cl-info-label">${escapeHtml(row.label)}</div>
-          <div class="cl-info-colon">:</div>
-          <div class="cl-info-value">${row.valueHtml}</div>
-        </div>
-      `
-    )
-    .join('');
+  return { rows, origin, formattedDate };
+};
 
-  const dateLocation = `${escapeHtml(locationName)}, ${formattedDate}`;
+const getDateLocation = (checklist, primarySuratJalan, fallbackDate) => {
+  const locationName =
+    extractField(checklist, ['kota', 'lokasi', 'destinationCity']) ||
+    extractField(primarySuratJalan, ['kota', 'city', 'destinationCity']) ||
+    'Jakarta';
 
-  return `
-    <div class="cl-document">
-      <style>
-        .cl-document {
-          font-family: Arial, sans-serif;
-          width: 900px;
-          margin: 0 auto;
-          padding: 40px;
-          background-color: #ffffff;
-          color: #000000;
-        }
-        .cl-title {
-          text-align: center;
-          font-size: 24px;
-          font-weight: bold;
-          margin-bottom: 30px;
-          letter-spacing: 2px;
-        }
-        .cl-info-section {
-          margin-bottom: 30px;
-          font-size: 14px;
-          line-height: 1.8;
-        }
-        .cl-info-row {
-          display: grid;
-          grid-template-columns: 100px 20px auto;
-          margin-bottom: 5px;
-        }
-        .cl-info-label {
-          font-weight: normal;
-        }
-        .cl-info-colon {
-          text-align: left;
-        }
-        .cl-info-value {
-          font-weight: normal;
-        }
-        .cl-destination-header {
-          margin: 25px 0 15px 0;
-          font-size: 14px;
-          font-weight: bold;
-        }
-        .cl-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 20px 0;
-          font-size: 13px;
-        }
-        .cl-table th {
-          background-color: white;
-          border: 1px solid #000;
-          padding: 10px 8px;
-          text-align: center;
-          font-weight: bold;
-        }
-        .cl-table td {
-          border: 1px solid #000;
-          padding: 10px 8px;
-          vertical-align: middle;
-        }
-        .cl-table td.center {
-          text-align: center;
-        }
-        .cl-date-location {
-          text-align: right;
-          margin: 40px 0 80px 0;
-          font-size: 14px;
-        }
-        .cl-signature-section {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 100px;
-          margin-top: 100px;
-          margin-bottom: 80px;
-        }
-        .cl-signature-box {
-          text-align: center;
-        }
-        .cl-signature-line {
-          margin-bottom: 10px;
-          font-size: 14px;
-        }
-        .cl-signature-title {
-          font-size: 14px;
-        }
-        .cl-footer {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 60px;
-          font-size: 13px;
-          border-top: 1px solid #ccc;
-          padding-top: 10px;
-        }
-      </style>
+  const formattedDate =
+    formatDateLong(
+      checklist?.tanggal ||
+        checklist?.createdAt ||
+        primarySuratJalan?.tanggal ||
+        primarySuratJalan?.createdAt
+    ) || fallbackDate;
 
-      <div class="cl-title">BUKTI UNLOADING BARANG</div>
+  return `${locationName}, ${formattedDate}`;
+};
 
-      <div class="cl-info-section">
-        ${infoRowsHtml}
-      </div>
+const getChecklistIdentifier = (checklist) => {
+  return (
+    checklist?.id ||
+    checklist?.checklistId ||
+    checklist?.suratJalanId ||
+    extractField(checklist, ['kode', 'kodeChecklist']) ||
+    'Checklist'
+  );
+};
 
-      ${
-        destinationHeader
-          ? `<div class="cl-destination-header">${destinationHeader}</div>`
-          : ''
-      }
+const drawCheckingListHeader = (pdf, infoRows) => {
+  let yPosition = PDF_MARGINS.top;
 
-      <table class="cl-table">
-        <thead>
-          <tr>
-            <th style="width: 5%;">No</th>
-            <th style="width: 10%;">No. Box</th>
-            <th style="width: 35%;">NAMA BARANG</th>
-            <th style="width: 12%;">Jumlah</th>
-            <th style="width: 28%;">Total Quantity</th>
-            <th style="width: 10%;">Keterangan</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
+  drawText(pdf, 'BUKTI UNLOADING BARANG', PDF_PAGE.width / 2, yPosition, {
+    fontSize: PDF_FONT_SIZES.title,
+    fontStyle: PDF_FONT_STYLES.bold,
+    align: 'center',
+  });
 
-      <div class="cl-date-location">${dateLocation}</div>
+  yPosition += 12;
 
-      <div class="cl-signature-section">
-        <div class="cl-signature-box">
-          <div class="cl-signature-line">(..............................)</div>
-          <div class="cl-signature-title">Checker Doven</div>
-        </div>
-        <div class="cl-signature-box">
-          <div class="cl-signature-line">(..............................)</div>
-          <div class="cl-signature-title">Checker Ekspedisi</div>
-        </div>
-      </div>
+  const labelWidth = 30;
+  const colonX = PDF_MARGINS.left + labelWidth + 2;
+  const valueStartX = colonX + 4;
+  const valueWidth = PDF_PAGE.width - PDF_MARGINS.right - valueStartX;
 
-      <div class="cl-footer">
-        <div>${escapeHtml(origin)}</div>
-        <div>Page 1</div>
-      </div>
-    </div>
-  `;
+  infoRows.forEach((row) => {
+    drawText(pdf, row.label, PDF_MARGINS.left, yPosition, {
+      fontSize: PDF_FONT_SIZES.body,
+      fontStyle: PDF_FONT_STYLES.bold,
+    });
+
+    drawText(pdf, ':', colonX, yPosition, {
+      fontSize: PDF_FONT_SIZES.body,
+    });
+
+    const nextY = drawMultilineText(
+      pdf,
+      row.value,
+      valueStartX,
+      yPosition,
+      valueWidth,
+      { fontSize: PDF_FONT_SIZES.body },
+    );
+
+    yPosition = Math.max(nextY, yPosition + 6);
+  });
+
+  yPosition += 6;
+
+  drawLine(
+    pdf,
+    PDF_MARGINS.left,
+    yPosition,
+    PDF_PAGE.width - PDF_MARGINS.right,
+    yPosition,
+  );
+
+  yPosition += 6;
+
+  return yPosition;
+};
+
+const drawDestinationHeader = (pdf, headerText, startY) => {
+  if (!headerText) {
+    return startY;
+  }
+
+  drawText(pdf, headerText, PDF_MARGINS.left, startY, {
+    fontSize: PDF_FONT_SIZES.sectionHeader,
+    fontStyle: PDF_FONT_STYLES.bold,
+  });
+
+  return startY + 8;
+};
+
+const drawChecklistTable = (pdf, tableRows, startY) => {
+  const headers = [
+    'No',
+    'No. Box',
+    'Nama Barang',
+    'Jumlah',
+    'Total Quantity',
+    'Keterangan',
+  ];
+
+  const columnWidths = [10, 20, 60, 22, 40, 18];
+  const alignments = ['center', 'center', 'left', 'center', 'left', 'left'];
+
+  const rows = tableRows.map((row) => [
+    row.no,
+    row.noBox || '-',
+    row.namaBarang || '-',
+    row.jumlah || '-',
+    row.totalQuantity || '-',
+    row.keterangan || '',
+  ]);
+
+  return drawTable(
+    pdf,
+    headers,
+    rows,
+    PDF_MARGINS.left,
+    startY,
+    {
+      columnWidths,
+      alignments,
+      headerAlignments: ['center', 'center', 'left', 'center', 'left', 'left'],
+      fontSize: PDF_FONT_SIZES.tableBody,
+      headerFontSize: PDF_FONT_SIZES.tableHeader,
+    },
+  );
+};
+
+const drawDateLocation = (pdf, dateLocation, startY) => {
+  const yPosition = startY + 12;
+  drawText(
+    pdf,
+    dateLocation,
+    PDF_PAGE.width - PDF_MARGINS.right,
+    yPosition,
+    {
+      fontSize: PDF_FONT_SIZES.body,
+      align: 'right',
+    },
+  );
+
+  return yPosition + 6;
+};
+
+const applyFooter = (pdf, origin) => {
+  const pageCount = pdf.getNumberOfPages();
+  for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+    pdf.setPage(pageNumber);
+
+    const footerY = PDF_PAGE.height - 10;
+
+    drawLine(
+      pdf,
+      PDF_MARGINS.left,
+      footerY - 4,
+      PDF_PAGE.width - PDF_MARGINS.right,
+      footerY - 4,
+    );
+
+    drawText(
+      pdf,
+      origin,
+      PDF_MARGINS.left,
+      footerY,
+      { fontSize: PDF_FONT_SIZES.small },
+    );
+
+    drawText(
+      pdf,
+      `Page ${pageNumber} of ${pageCount}`,
+      PDF_PAGE.width - PDF_MARGINS.right,
+      footerY,
+      { fontSize: PDF_FONT_SIZES.small, align: 'right' },
+    );
+  }
 };
 
 export const exportCheckingListToPDF = async (checklist) => {
-  if (!checklist) {
-    alert('Data checklist surat jalan tidak tersedia.');
-    return;
-  }
-
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '-10000px';
-  container.style.top = '0';
-  container.style.width = '900px';
-  container.style.backgroundColor = '#ffffff';
-  container.innerHTML = buildDocumentHtml(checklist);
-
-  document.body.appendChild(container);
-
   try {
-    const pdfElement = container.querySelector('.cl-document') || container;
+    if (!checklist) {
+      throw new Error('Data checklist surat jalan tidak tersedia');
+    }
 
-    const canvas = await html2canvas(pdfElement, {
-      scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
+    const suratJalanList = getSuratJalanList(checklist);
+    if (!suratJalanList.length) {
+      throw new Error('Tidak ada surat jalan terkait checklist');
+    }
+
+    const tableRows = collectChecklistRows(suratJalanList);
+    if (!tableRows.length) {
+      throw new Error('Tidak ada detail checklist untuk dicetak');
+    }
+
+    const { rows: infoRows, origin, formattedDate } = createInfoRows(
+      checklist,
+      suratJalanList,
+    );
+
+    const primarySuratJalan = suratJalanList[0] || null;
+    const destinationHeader = buildDestinationHeaderText(primarySuratJalan, 0);
+    const dateLocation = getDateLocation(checklist, primarySuratJalan, formattedDate);
+
+    const pdf = createPDFDocument();
+    let yPosition = drawCheckingListHeader(pdf, infoRows);
+
+    yPosition = drawDestinationHeader(pdf, destinationHeader, yPosition);
+
+    yPosition = checkAndAddPage(pdf, yPosition, 40);
+    yPosition = drawChecklistTable(pdf, tableRows, yPosition);
+
+    yPosition = checkAndAddPage(pdf, yPosition, 40);
+    yPosition = drawDateLocation(pdf, dateLocation, yPosition);
+
+    yPosition = checkAndAddPage(pdf, yPosition, 60);
+    drawSignatureArea(pdf, yPosition, ['Checker Doven', 'Checker Ekspedisi'], {
+      columns: 2,
+      spacing: 45,
     });
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    applyFooter(pdf, origin);
 
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-    }
-
-    const fileName = `${sanitizeFileName(
-      checklist?.id ||
-        checklist?.checklistId ||
-        checklist?.suratJalanId ||
-        extractField(checklist, ['kode', 'kodeChecklist']) ||
-        'Checklist_Surat_Jalan'
-    )}.pdf`;
+    const fileName = generateFileName('CHECKING_LIST', getChecklistIdentifier(checklist));
     pdf.save(fileName);
+
+    toast.success('Checking List berhasil di-export ke PDF', {
+      position: 'top-right',
+      autoClose: 3000,
+    });
   } catch (error) {
-    console.error('Gagal mengekspor checklist surat jalan ke PDF:', error);
-    alert('Gagal mengekspor checklist surat jalan ke PDF. Silakan coba lagi.');
-  } finally {
-    if (container && container.parentNode) {
-      container.parentNode.removeChild(container);
-    }
+    console.error('Error exporting checking list:', error);
+    toast.error(`Gagal export: ${error.message}`, {
+      position: 'top-right',
+      autoClose: 5000,
+    });
   }
 };
 

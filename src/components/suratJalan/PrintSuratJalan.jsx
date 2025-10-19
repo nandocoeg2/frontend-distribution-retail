@@ -1,26 +1,35 @@
-﻿import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
-const escapeHtml = (value = '') => {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-};
+import {
+  createPDFDocument,
+  drawText,
+  drawMultilineText,
+  drawTable,
+  drawLine,
+  drawSignatureArea,
+  checkAndAddPage,
+  generateFileName,
+} from '../../utils/pdfUtils';
+import {
+  PDF_COLORS,
+  PDF_FONT_SIZES,
+  PDF_FONT_STYLES,
+  PDF_MARGINS,
+  PDF_PAGE,
+} from '../../utils/pdfConfig';
+import { toast } from 'react-toastify';
 
 const formatMultilineText = (value) => {
   if (!value) {
     return '-';
   }
-  return escapeHtml(value).replace(/\r?\n/g, '<br>');
+
+  return String(value).trim().replace(/\r?\n/g, '\n') || '-';
 };
 
 const toNumber = (value) => {
   if (typeof value === 'number' && !Number.isNaN(value)) {
     return value;
   }
+
   if (typeof value === 'string') {
     const trimmed = value.trim();
     if (!trimmed) {
@@ -30,16 +39,19 @@ const toNumber = (value) => {
     const numeric = Number(normalized);
     return Number.isNaN(numeric) ? null : numeric;
   }
+
   return null;
 };
 
 const formatNumeric = (numeric) => {
-  if (numeric === null) {
+  if (numeric === null || numeric === undefined || Number.isNaN(numeric)) {
     return null;
   }
+
   if (Number.isInteger(numeric)) {
     return numeric.toLocaleString('id-ID');
   }
+
   return numeric.toLocaleString('id-ID', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -52,23 +64,22 @@ const formatValueWithUnit = (value, unit) => {
   }
 
   const numericValue = toNumber(value);
-  const safeUnit = unit ? escapeHtml(unit) : '';
+  const safeUnit = unit ? String(unit).trim() : '';
 
   if (numericValue !== null) {
     const formattedNumber = formatNumeric(numericValue);
-    if (formattedNumber === null) {
+    if (!formattedNumber) {
       return '-';
     }
-    const safeNumber = escapeHtml(formattedNumber);
-    return safeUnit ? `${safeNumber} ${safeUnit}` : safeNumber;
+    return safeUnit ? `${formattedNumber} ${safeUnit}` : formattedNumber;
   }
 
-  const text = String(value).trim();
-  if (!text) {
+  const textValue = String(value).trim();
+  if (!textValue) {
     return '-';
   }
 
-  return escapeHtml(text);
+  return safeUnit ? `${textValue} ${safeUnit}` : textValue;
 };
 
 const formatDateLong = (date) => {
@@ -89,422 +100,276 @@ const formatDateLong = (date) => {
   });
 };
 
-const sanitizeFileName = (value) => {
-  const base = value && String(value).trim() ? value.trim() : 'Surat_Jalan';
-  return base.replace(/[^\w\-]+/g, '_');
-};
-
-const buildDetailRows = (details) => {
-  if (!details.length) {
-    return `
-      <tr>
-        <td colspan="6" class="sj-empty-row">Tidak ada data surat jalan.</td>
-      </tr>
-    `;
+const buildDetailRows = (details = []) => {
+  if (!Array.isArray(details)) {
+    return [];
   }
 
-  return details
-    .map((detail, index) => {
-      const items = Array.isArray(detail?.items) && detail.items.length
-        ? detail.items
-        : Array.isArray(detail?.suratJalanDetailItems) && detail.suratJalanDetailItems.length
-          ? detail.suratJalanDetailItems
-          : [];
+  return details.map((detail, index) => {
+    const items = Array.isArray(detail?.items) && detail.items.length
+      ? detail.items
+      : Array.isArray(detail?.suratJalanDetailItems) && detail.suratJalanDetailItems.length
+        ? detail.suratJalanDetailItems
+        : [];
 
-      const primaryItem = items[0] || {};
+    const primaryItem = items[0] || {};
 
-      const namaBarang =
-        detail?.nama_barang ??
-        primaryItem?.nama_barang ??
-        '-';
+    const namaBarang =
+      detail?.nama_barang ??
+      primaryItem?.nama_barang ??
+      '-';
 
-      const unit =
-        detail?.satuan ??
-        primaryItem?.satuan ??
-        '';
+    const unit =
+      detail?.satuan ??
+      primaryItem?.satuan ??
+      '';
 
-      const jumlahPerCartonSource =
-        detail?.isi_box ??
-        primaryItem?.isi_box ??
-        primaryItem?.quantity_per_carton ??
-        primaryItem?.qty_per_carton ??
-        null;
+    const jumlahPerCartonSource =
+      detail?.isi_box ??
+      primaryItem?.isi_box ??
+      primaryItem?.quantity_per_carton ??
+      primaryItem?.qty_per_carton ??
+      null;
 
-      let totalQuantitySource =
-        detail?.total_quantity_in_box ??
-        detail?.total_quantity ??
-        primaryItem?.total_quantity ??
-        primaryItem?.quantity ??
-        null;
+    let totalQuantitySource =
+      detail?.total_quantity_in_box ??
+      detail?.total_quantity ??
+      primaryItem?.total_quantity ??
+      primaryItem?.quantity ??
+      null;
 
-      if (
-        (totalQuantitySource === null || totalQuantitySource === undefined || totalQuantitySource === '') &&
-        (detail?.total_box !== null && detail?.total_box !== undefined) &&
-        (jumlahPerCartonSource !== null && jumlahPerCartonSource !== undefined && jumlahPerCartonSource !== '')
-      ) {
-        const numericIsi = toNumber(jumlahPerCartonSource);
-        const numericBox = toNumber(detail?.total_box);
-        if (numericIsi !== null && numericBox !== null) {
-          totalQuantitySource = numericIsi * numericBox;
-        }
+    if (
+      (totalQuantitySource === null || totalQuantitySource === undefined || totalQuantitySource === '') &&
+      (detail?.total_box !== null && detail?.total_box !== undefined) &&
+      (jumlahPerCartonSource !== null && jumlahPerCartonSource !== undefined && jumlahPerCartonSource !== '')
+    ) {
+      const numericIsi = toNumber(jumlahPerCartonSource);
+      const numericBox = toNumber(detail?.total_box);
+      if (numericIsi !== null && numericBox !== null) {
+        totalQuantitySource = numericIsi * numericBox;
       }
+    }
 
-      const jumlahPerCarton = formatValueWithUnit(jumlahPerCartonSource, unit);
-      const totalQuantity = formatValueWithUnit(totalQuantitySource, unit);
+    const jumlahPerCarton = formatValueWithUnit(jumlahPerCartonSource, unit);
+    const totalQuantity = formatValueWithUnit(totalQuantitySource, unit);
+    const keterangan =
+      detail?.keterangan ??
+      primaryItem?.keterangan ??
+      '';
 
-      const keterangan =
-        detail?.keterangan ??
-        primaryItem?.keterangan ??
-        '';
-
-      return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${escapeHtml(detail?.no_box ?? primaryItem?.no_box ?? '-')}</td>
-          <td class="text-left">${escapeHtml(namaBarang || '-')}</td>
-          <td>${jumlahPerCarton}</td>
-          <td>${totalQuantity}</td>
-          <td>${formatMultilineText(keterangan)}</td>
-        </tr>
-      `;
-    })
-    .join('');
+    return [
+      String(index + 1),
+      String(detail?.no_box ?? primaryItem?.no_box ?? '-'),
+      namaBarang || '-',
+      jumlahPerCarton,
+      totalQuantity,
+      formatMultilineText(keterangan),
+    ];
+  });
 };
 
-const buildDocumentHtml = ({
-  tanggalSuratJalan,
-  nomorSuratJalan,
-  alamatKirim,
-  pic,
-  poNumber,
-  detailRows,
-}) => {
-  const styles = `
-    .sj-document {
-      font-family: Arial, sans-serif;
-      width: 794px;
-      min-height: 1123px;
-      background-color: #ffffff;
-      color: #000;
-      margin: 0 auto;
-      padding: 56px;
-      box-sizing: border-box;
-      position: relative;
-      font-size: 12px;
-    }
+const drawSuratJalanHeader = (pdf, suratJalan) => {
+  let yPosition = PDF_MARGINS.top;
 
-    .sj-content-wrapper {
-      min-height: calc(1123px - 160px);
-      position: relative;
-      padding-bottom: 140px;
-    }
+  drawText(pdf, 'SURAT JALAN', PDF_MARGINS.left, yPosition, {
+    fontSize: PDF_FONT_SIZES.title,
+    fontStyle: PDF_FONT_STYLES.bold,
+  });
 
-    .sj-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #000;
-      margin-bottom: 20px;
-    }
+  drawText(pdf, 'PT DOVEN TRADECO', PDF_PAGE.width - PDF_MARGINS.right, yPosition, {
+    fontSize: PDF_FONT_SIZES.sectionHeader,
+    fontStyle: PDF_FONT_STYLES.bold,
+    align: 'right',
+  });
 
-    .sj-header-left {
-      font-size: 16px;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
+  yPosition += 8;
 
-    .sj-header-right {
-      font-size: 14px;
-      font-weight: bold;
-    }
+  drawLine(
+    pdf,
+    PDF_MARGINS.left,
+    yPosition,
+    PDF_PAGE.width - PDF_MARGINS.right,
+    yPosition,
+    { color: PDF_COLORS.lightGray, lineWidth: 0.4 },
+  );
 
-    .sj-info-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 12px;
-    }
+  yPosition += 5;
 
-    .sj-info-table td {
-      padding: 8px 4px;
-      border: none;
-      vertical-align: top;
-      text-align: left;
-    }
+  const infoEntries = [
+    {
+      label: 'Tanggal Surat Jalan',
+      value: formatDateLong(suratJalan?.createdAt),
+    },
+    {
+      label: 'Nomor Surat Jalan',
+      value: suratJalan?.no_surat_jalan || '-',
+    },
+    {
+      label: 'Alamat Kirim',
+      value: formatMultilineText(suratJalan?.alamat_tujuan),
+    },
+    {
+      label: 'PIC',
+      value: suratJalan?.PIC || '-',
+    },
+    {
+      label: 'No. PO',
+      value: suratJalan?.purchaseOrder?.po_number || '-',
+    },
+  ];
 
-    .sj-info-label {
-      width: 180px;
-      font-weight: normal;
-    }
+  const labelColumnWidth = 52;
+  const valueStartX = PDF_MARGINS.left + labelColumnWidth;
+  const valueWidth =
+    PDF_PAGE.width - PDF_MARGINS.right - valueStartX;
 
-    .sj-info-separator {
-      width: 20px;
-    }
+  infoEntries.forEach((entry) => {
+    drawText(pdf, entry.label, PDF_MARGINS.left, yPosition, {
+      fontSize: PDF_FONT_SIZES.body,
+      fontStyle: PDF_FONT_STYLES.bold,
+    });
 
-    .sj-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-    }
+    const nextY = drawMultilineText(
+      pdf,
+      entry.value,
+      valueStartX,
+      yPosition,
+      valueWidth,
+      { fontSize: PDF_FONT_SIZES.body },
+    );
 
-    .sj-table th,
-    .sj-table td {
-      border: 1px solid #000;
-      padding: 8px;
-      text-align: center;
-    }
+    yPosition = Math.max(nextY, yPosition + 6);
+  });
 
-    .sj-table th {
-      background-color: #f0f0f0;
-      font-weight: bold;
-    }
+  yPosition += 6;
 
-    .sj-table td.text-left {
-      text-align: left;
-    }
+  return yPosition;
+};
 
-    .sj-signature-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin: 40px 0;
-    }
+const drawSuratJalanDetailsTable = (pdf, details, startY) => {
+  const headers = [
+    'No',
+    'No. Box',
+    'Nama Barang',
+    'Jumlah / Carton',
+    'Total Quantity',
+    'Keterangan',
+  ];
 
-    .sj-signature-box {
-      text-align: center;
-    }
+  const columnWidths = [10, 25, 55, 30, 25, 25];
+  const alignments = ['center', 'center', 'left', 'right', 'right', 'left'];
 
-    .sj-signature-title {
-      font-weight: normal;
-      margin-bottom: 10px;
-    }
+  return drawTable(
+    pdf,
+    headers,
+    buildDetailRows(details),
+    PDF_MARGINS.left,
+    startY,
+    {
+      columnWidths,
+      alignments,
+      headerAlignments: ['center', 'center', 'left', 'center', 'center', 'left'],
+      fontSize: PDF_FONT_SIZES.tableBody,
+      headerFontSize: PDF_FONT_SIZES.tableHeader,
+    },
+  );
+};
 
-    .sj-signature-space {
-      height: 80px;
-      margin: 10px 0;
-    }
+const drawSuratJalanFooter = (pdf, suratJalan, startY) => {
+  let yPosition = startY + 10;
 
-    .sj-signature-name {
-      font-weight: normal;
-      margin: 5px 0;
-    }
+  const remarks = formatMultilineText(suratJalan?.remarks);
+  if (remarks && remarks !== '-') {
+    drawText(pdf, 'Catatan:', PDF_MARGINS.left, yPosition, {
+      fontSize: PDF_FONT_SIZES.body,
+      fontStyle: PDF_FONT_STYLES.bold,
+    });
+    yPosition += 5;
 
-    .sj-signature-note {
-      font-size: 11px;
-    }
+    yPosition = drawMultilineText(
+      pdf,
+      remarks,
+      PDF_MARGINS.left,
+      yPosition,
+      PDF_PAGE.contentWidth,
+      { fontSize: PDF_FONT_SIZES.body },
+    );
 
-    .sj-document-receiver {
-      text-align: center;
-      margin: 30px auto;
-      max-width: 300px;
-    }
+    yPosition += 8;
+  }
 
-    .sj-notes {
-      position: absolute;
-      left: 56px;
-      right: 56px;
-      bottom: 56px;
-      font-size: 11px;
-      line-height: 1.6;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
+  drawText(pdf, 'Note:', PDF_MARGINS.left, yPosition, {
+    fontSize: PDF_FONT_SIZES.body,
+    fontStyle: PDF_FONT_STYLES.bold,
+  });
+  yPosition += 5;
 
-    .sj-notes-content {
-      flex: 1;
-    }
+  const notes = [
+    '* Dokumen kembali ke Jakarta',
+    '* Stempel DC',
+  ];
 
-    .sj-notes-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
+  notes.forEach((note) => {
+    yPosition = drawMultilineText(
+      pdf,
+      note,
+      PDF_MARGINS.left,
+      yPosition,
+      PDF_PAGE.contentWidth,
+      { fontSize: PDF_FONT_SIZES.body },
+    );
+  });
 
-    .sj-footer {
-      text-align: right;
-      font-size: 11px;
-      min-width: 120px;
-    }
+  yPosition += 10;
 
-    .sj-empty-row {
-      padding: 20px 8px;
-      text-align: center;
-      font-style: italic;
-    }
-  `;
+  yPosition = checkAndAddPage(pdf, yPosition, 60);
 
-  return `
-    <style>${styles}</style>
-    <div class="sj-document">
-      <div class="sj-content-wrapper">
-        <div class="sj-header">
-          <div class="sj-header-left">SURAT JALAN</div>
-          <div class="sj-header-right">PT DOVEN TRADECO</div>
-        </div>
-
-        <table class="sj-info-table">
-          <tr>
-            <td class="sj-info-label">Tanggal Surat Jalan</td>
-            <td class="sj-info-separator">:</td>
-            <td>${tanggalSuratJalan}</td>
-          </tr>
-          <tr>
-            <td class="sj-info-label">Nomor Surat Jalan</td>
-            <td class="sj-info-separator">:</td>
-            <td>${nomorSuratJalan}</td>
-          </tr>
-          <tr>
-            <td class="sj-info-label">Alamat Kirim</td>
-            <td class="sj-info-separator">:</td>
-            <td>${alamatKirim}</td>
-          </tr>
-          <tr>
-            <td class="sj-info-label">PIC</td>
-            <td class="sj-info-separator">:</td>
-            <td>${pic}</td>
-          </tr>
-          <tr>
-            <td class="sj-info-label">No. PO</td>
-            <td class="sj-info-separator">:</td>
-            <td>${poNumber}</td>
-          </tr>
-        </table>
-
-        <table class="sj-table">
-          <thead>
-            <tr>
-              <th style="width: 5%;">No</th>
-              <th style="width: 12%;">No. Box</th>
-              <th style="width: 35%;">Nama Barang</th>
-              <th style="width: 18%;">Jumlah Per Carton</th>
-              <th style="width: 18%;">Total Quantity</th>
-              <th style="width: 12%;">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${detailRows}
-          </tbody>
-        </table>
-
-        <div class="sj-signature-section">
-          <div class="sj-signature-box">
-            <div class="sj-signature-title">Hormat Kami,</div>
-            <div class="sj-signature-space"></div>
-            <div class="sj-signature-name">Mayang</div>
-            <div class="sj-signature-note">(Nama, Ttd dan Cap)</div>
-          </div>
-          <div class="sj-signature-box">
-            <div class="sj-signature-title">Penerima</div>
-            <div class="sj-signature-space"></div>
-            <div class="sj-signature-note">(Nama, Ttd dan Cap)</div>
-          </div>
-        </div>
-
-        <div class="sj-document-receiver">
-          <div class="sj-signature-title">Penerima Dokumen</div>
-          <div class="sj-signature-space"></div>
-          <div class="sj-signature-note">(Nama, Ttd dan Cap)</div>
-        </div>
-      </div>
-
-      <div class="sj-notes">
-        <div class="sj-notes-content">
-          <div class="sj-notes-title">Note:</div>
-          <div>* Dokumen kembali ke Jakarta</div>
-          <div>* Stempel DC</div>
-        </div>
-        <div class="sj-footer">
-          Page 1 Lembar 2
-        </div>
-      </div>
-    </div>
-  `;
+  drawSignatureArea(
+    pdf,
+    yPosition,
+    ['Hormat Kami', 'Penerima', 'Penerima Dokumen'],
+    { columns: 3, spacing: 40 },
+  );
 };
 
 export const exportSuratJalanToPDF = async (suratJalan) => {
-  if (!suratJalan) {
-    alert('Data surat jalan tidak tersedia.');
-    return;
-  }
-
-  const details = Array.isArray(suratJalan.suratJalanDetails)
-    ? suratJalan.suratJalanDetails
-    : suratJalan.suratJalanDetails
-      ? [suratJalan.suratJalanDetails]
-      : [];
-
-  const tanggalSuratJalan = formatDateLong(suratJalan.createdAt);
-  const nomorSuratJalan = suratJalan.no_surat_jalan
-    ? escapeHtml(suratJalan.no_surat_jalan)
-    : '-';
-  const alamatKirim = formatMultilineText(suratJalan.alamat_tujuan);
-  const pic = suratJalan.PIC ? escapeHtml(suratJalan.PIC) : '-';
-  const poNumber = suratJalan.purchaseOrder?.po_number
-    ? escapeHtml(suratJalan.purchaseOrder.po_number)
-    : '-';
-
-  const detailRows = buildDetailRows(details);
-
-  const documentHtml = buildDocumentHtml({
-    tanggalSuratJalan,
-    nomorSuratJalan,
-    alamatKirim,
-    pic,
-    poNumber,
-    detailRows,
-  });
-
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '-10000px';
-  container.style.top = '0';
-  container.style.width = '794px';
-  container.style.backgroundColor = '#ffffff';
-  container.innerHTML = documentHtml;
-
-  document.body.appendChild(container);
-
   try {
-    const pdfElement = container.querySelector('.sj-document') || container;
-
-    const canvas = await html2canvas(pdfElement, {
-      scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pdfHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
+    if (!suratJalan) {
+      throw new Error('Data surat jalan tidak tersedia');
     }
 
-    const fileName = `${sanitizeFileName(suratJalan.no_surat_jalan || 'Surat_Jalan')}.pdf`;
+    const details = Array.isArray(suratJalan.suratJalanDetails)
+      ? suratJalan.suratJalanDetails
+      : suratJalan.suratJalanDetails
+        ? [suratJalan.suratJalanDetails]
+        : [];
+
+    if (details.length === 0) {
+      throw new Error('Tidak ada detail untuk dicetak');
+    }
+
+    const pdf = createPDFDocument();
+    let yPosition = PDF_MARGINS.top;
+
+    yPosition = drawSuratJalanHeader(pdf, suratJalan);
+
+    yPosition = checkAndAddPage(pdf, yPosition, 30);
+    yPosition = drawSuratJalanDetailsTable(pdf, details, yPosition);
+
+    drawSuratJalanFooter(pdf, suratJalan, yPosition);
+
+    const fileName = generateFileName('SURAT_JALAN', suratJalan.no_surat_jalan);
     pdf.save(fileName);
+
+    toast.success('Surat Jalan berhasil di-export ke PDF', {
+      position: 'top-right',
+      autoClose: 3000,
+    });
   } catch (error) {
-    console.error('Gagal mengekspor Surat Jalan ke PDF:', error);
-    alert('Gagal mengekspor Surat Jalan ke PDF. Silakan coba lagi.');
-  } finally {
-    if (container && container.parentNode) {
-      container.parentNode.removeChild(container);
-    }
+    console.error('Error exporting Surat Jalan:', error);
+    toast.error(`Gagal export: ${error.message}`, {
+      position: 'top-right',
+      autoClose: 5000,
+    });
   }
 };
-
-export default exportSuratJalanToPDF;
