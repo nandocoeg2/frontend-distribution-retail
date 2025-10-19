@@ -55,6 +55,20 @@ const TandaTerimaFakturDetailModal = ({
   }
 
   const detail = tandaTerimaFaktur || {};
+  const totalLaporan = Array.isArray(detail.laporanPenerimaanBarang)
+    ? detail.laporanPenerimaanBarang.length
+    : 0;
+  const totalInvoice = Array.isArray(detail.invoicePenagihan)
+    ? detail.invoicePenagihan.length
+    : 0;
+  const totalFakturPajak = Array.isArray(detail.invoicePenagihan)
+    ? detail.invoicePenagihan.reduce((count, invoice) => {
+        const faktur = invoice?.fakturPajak || invoice?.faktur_pajak;
+        return faktur?.id ? count + 1 : count;
+      }, 0)
+    : 0;
+  const hasLaporan = totalLaporan > 0;
+  const hasInvoice = totalInvoice > 0;
   const handleExportPdf = () => {
     if (isLoading || !detail) {
       return;
@@ -119,21 +133,74 @@ const TandaTerimaFakturDetailModal = ({
                   Informasi Utama
                 </h3>
                 <div className='space-y-2'>
+                  <InfoRow label='ID TTF' value={detail.id || '-'} />
                   <InfoRow
                     label='Kode Supplier'
                     value={detail.code_supplier || '-'}
                   />
                   <InfoRow
                     label='Tanggal'
-                    value={formatDate(detail.tanggal)}
+                    value={
+                      detail.tanggal ? formatDate(detail.tanggal) : '-'
+                    }
                   />
                   <InfoRow
                     label='Grand Total'
-                    value={formatCurrency(detail.grand_total)}
+                    value={
+                      detail.grand_total != null
+                        ? formatCurrency(detail.grand_total)
+                        : '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Status ID'
+                    value={
+                      detail.statusId ||
+                      detail?.status?.id ||
+                      detail?.status_id ||
+                      '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Status Code'
+                    value={
+                      detail?.status?.status_code ||
+                      detail.status_code ||
+                      '-'
+                    }
                   />
                   <InfoRow
                     label='Status'
-                    value={detail?.status?.status_code || '-'}
+                    value={
+                      detail?.status?.status_name ||
+                      detail.status_name ||
+                      '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Term of Payment ID'
+                    value={
+                      detail.termOfPaymentId ||
+                      detail?.termOfPayment?.id ||
+                      '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Customer ID'
+                    value={detail.customerId || detail?.customer?.id || '-'}
+                  />
+                  <InfoRow
+                    label='Company ID'
+                    value={detail.companyId || detail?.company?.id || '-'}
+                  />
+                  <InfoRow label='Total LPB' value={totalLaporan} />
+                  <InfoRow
+                    label='Total Invoice Penagihan'
+                    value={totalInvoice}
+                  />
+                  <InfoRow
+                    label='Total Faktur Pajak'
+                    value={totalFakturPajak}
                   />
                 </div>
               </section>
@@ -144,21 +211,34 @@ const TandaTerimaFakturDetailModal = ({
                 </h3>
                 <div className='space-y-2'>
                   <InfoRow
-                    label='Term of Payment'
-                    value={detail?.termOfPayment?.name || '-'}
+                    label='Kode TOP'
+                    value={
+                      detail?.termOfPayment?.kode_top ||
+                      detail?.termOfPayment?.kodeTop ||
+                      detail?.termOfPayment?.name ||
+                      '-'
+                    }
                   />
                   <InfoRow
                     label='Jumlah Hari'
                     value={
-                      detail?.termOfPayment?.days != null
-                        ? `${detail.termOfPayment.days} hari`
-                        : '-'
+                      detail?.termOfPayment?.batas_hari != null
+                        ? `${detail.termOfPayment.batas_hari} hari`
+                        : detail?.termOfPayment?.days != null
+                          ? `${detail.termOfPayment.days} hari`
+                          : '-'
                     }
                   />
-                  <InfoRow
-                    label='Deskripsi'
-                    value={detail?.termOfPayment?.description || '-'}
-                  />
+                  {(detail?.termOfPayment?.description ||
+                    detail?.termOfPayment?.keterangan) && (
+                    <InfoRow
+                      label='Deskripsi'
+                      value={
+                        detail?.termOfPayment?.description ||
+                        detail?.termOfPayment?.keterangan
+                      }
+                    />
+                  )}
                 </div>
               </section>
 
@@ -169,28 +249,74 @@ const TandaTerimaFakturDetailModal = ({
                 <div className='space-y-2'>
                   <InfoRow
                     label='Nama Customer'
-                    value={detail?.customer?.nama_customer || '-'}
+                    value={
+                      detail?.customer?.namaCustomer ||
+                      detail?.customer?.nama_customer ||
+                      '-'
+                    }
                   />
                   <InfoRow
                     label='Kode Customer'
-                    value={detail?.customer?.kode_customer || '-'}
+                    value={
+                      detail?.customer?.kodeCustomer ||
+                      detail?.customer?.kode_customer ||
+                      '-'
+                    }
                   />
                   <InfoRow
-                    label='Alamat'
-                    value={detail?.customer?.alamat || '-'}
+                    label='Group Customer'
+                    value={
+                      detail?.customer?.groupCustomer?.nama_group ||
+                      detail?.customer?.group_customer?.nama_group ||
+                      '-'
+                    }
                   />
-                  <InfoRow
-                    label='Kecamatan'
-                    value={detail?.customer?.kecamatan?.nama_kecamatan || '-'}
-                  />
-                  <InfoRow
-                    label='Kabupaten'
-                    value={detail?.customer?.kabupaten?.nama_kabupaten || '-'}
-                  />
-                  <InfoRow
-                    label='Provinsi'
-                    value={detail?.customer?.provinsi?.nama_provinsi || '-'}
-                  />
+                  {(detail?.customer?.groupCustomer?.id ||
+                    detail?.customer?.group_customer?.id) && (
+                    <InfoRow
+                      label='Group Customer ID'
+                      value={
+                        detail?.customer?.groupCustomer?.id ||
+                        detail?.customer?.group_customer?.id
+                      }
+                    />
+                  )}
+                  {detail?.customer?.alamat && (
+                    <InfoRow
+                      label='Alamat'
+                      value={detail.customer.alamat}
+                    />
+                  )}
+                  {(detail?.customer?.kecamatan?.nama_kecamatan ||
+                    detail?.customer?.kecamatan?.namaKecamatan) && (
+                    <InfoRow
+                      label='Kecamatan'
+                      value={
+                        detail?.customer?.kecamatan?.nama_kecamatan ||
+                        detail?.customer?.kecamatan?.namaKecamatan
+                      }
+                    />
+                  )}
+                  {(detail?.customer?.kabupaten?.nama_kabupaten ||
+                    detail?.customer?.kabupaten?.namaKabupaten) && (
+                    <InfoRow
+                      label='Kabupaten'
+                      value={
+                        detail?.customer?.kabupaten?.nama_kabupaten ||
+                        detail?.customer?.kabupaten?.namaKabupaten
+                      }
+                    />
+                  )}
+                  {(detail?.customer?.provinsi?.nama_provinsi ||
+                    detail?.customer?.provinsi?.namaProvinsi) && (
+                    <InfoRow
+                      label='Provinsi'
+                      value={
+                        detail?.customer?.provinsi?.nama_provinsi ||
+                        detail?.customer?.provinsi?.namaProvinsi
+                      }
+                    />
+                  )}
                 </div>
               </section>
 
@@ -201,22 +327,174 @@ const TandaTerimaFakturDetailModal = ({
                 <div className='space-y-2'>
                   <InfoRow
                     label='Nama Perusahaan'
-                    value={detail?.company?.company_name || '-'}
+                    value={
+                      detail?.company?.nama_perusahaan ||
+                      detail?.company?.namaPerusahaan ||
+                      detail?.company?.company_name ||
+                      '-'
+                    }
                   />
                   <InfoRow
                     label='Kode Perusahaan'
-                    value={detail?.company?.company_code || '-'}
+                    value={
+                      detail?.company?.kode_company ||
+                      detail?.company?.kodeCompany ||
+                      detail?.company?.company_code ||
+                      '-'
+                    }
                   />
-                  <InfoRow
-                    label='Alamat'
-                    value={detail?.company?.address || '-'}
-                  />
-                  <InfoRow
-                    label='Telepon'
-                    value={detail?.company?.phone || '-'}
-                  />
+                  {(detail?.company?.alamat || detail?.company?.address) && (
+                    <InfoRow
+                      label='Alamat'
+                      value={detail?.company?.alamat || detail?.company?.address}
+                    />
+                  )}
+                  {(detail?.company?.telepon || detail?.company?.phone) && (
+                    <InfoRow
+                      label='Telepon'
+                      value={detail?.company?.telepon || detail?.company?.phone}
+                    />
+                  )}
                 </div>
               </section>
+
+              {hasLaporan && (
+                <section>
+                  <h3 className='mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide'>
+                    Laporan Penerimaan Barang
+                  </h3>
+                  <div className='space-y-3'>
+                    {detail.laporanPenerimaanBarang.map((laporan, index) => (
+                      <div
+                        key={laporan.id || `laporan-${index}`}
+                        className='p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-2'
+                      >
+                        <InfoRow
+                          label='ID Laporan'
+                          value={laporan.id || '-'}
+                        />
+                        {(laporan.purchaseOrderId ||
+                          laporan.purchase_order_id) && (
+                          <InfoRow
+                            label='Purchase Order ID'
+                            value={
+                              laporan.purchaseOrderId ||
+                              laporan.purchase_order_id
+                            }
+                          />
+                        )}
+                        {laporan.statusId && (
+                          <InfoRow
+                            label='Status ID'
+                            value={laporan.statusId}
+                          />
+                        )}
+                        {laporan.status_id && !laporan.statusId && (
+                          <InfoRow
+                            label='Status ID'
+                            value={laporan.status_id}
+                          />
+                        )}
+                        {laporan.createdAt && (
+                          <InfoRow
+                            label='Dibuat Pada'
+                            value={formatDateTime(laporan.createdAt)}
+                          />
+                        )}
+                        {laporan.created_at && !laporan.createdAt && (
+                          <InfoRow
+                            label='Dibuat Pada'
+                            value={formatDateTime(laporan.created_at)}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {hasInvoice && (
+                <section>
+                  <h3 className='mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide'>
+                    Invoice Penagihan
+                  </h3>
+                  <div className='space-y-3'>
+                    {detail.invoicePenagihan.map((invoice, index) => {
+                      const faktur =
+                        invoice?.fakturPajak || invoice?.faktur_pajak;
+                      return (
+                        <div
+                          key={invoice.id || `invoice-${index}`}
+                          className='p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-2'
+                        >
+                          <InfoRow
+                            label='ID Invoice'
+                            value={invoice.id || '-'}
+                          />
+                          <InfoRow
+                            label='No Invoice Penagihan'
+                            value={
+                              invoice.no_invoice_penagihan ||
+                              invoice.noInvoicePenagihan ||
+                              '-'
+                            }
+                          />
+                          {(invoice.purchaseOrderId ||
+                            invoice.purchase_order_id) && (
+                            <InfoRow
+                              label='Purchase Order ID'
+                              value={
+                                invoice.purchaseOrderId ||
+                                invoice.purchase_order_id
+                              }
+                            />
+                          )}
+                          {invoice.statusId && (
+                            <InfoRow
+                              label='Status ID'
+                              value={invoice.statusId}
+                            />
+                          )}
+                          {invoice.status_id && !invoice.statusId && (
+                            <InfoRow
+                              label='Status ID'
+                              value={invoice.status_id}
+                            />
+                          )}
+                          {invoice.createdAt && (
+                            <InfoRow
+                              label='Dibuat Pada'
+                              value={formatDateTime(invoice.createdAt)}
+                            />
+                          )}
+                          {invoice.created_at && !invoice.createdAt && (
+                            <InfoRow
+                              label='Dibuat Pada'
+                              value={formatDateTime(invoice.created_at)}
+                            />
+                          )}
+                          {faktur && (
+                            <>
+                              <InfoRow
+                                label='ID Faktur Pajak'
+                                value={faktur.id || '-'}
+                              />
+                              <InfoRow
+                                label='No Faktur Pajak'
+                                value={
+                                  faktur.no_pajak ||
+                                  faktur.noPajak ||
+                                  '-'
+                                }
+                              />
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
 
               <section>
                 <h3 className='mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide'>

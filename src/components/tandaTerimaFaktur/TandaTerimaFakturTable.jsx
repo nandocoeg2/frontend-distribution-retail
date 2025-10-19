@@ -87,31 +87,31 @@ const TandaTerimaFakturTable = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.termOfPayment?.name || '-'}
+                    {item?.termOfPayment?.kode_top || '-'}
                   </div>
-                  {item?.termOfPayment?.days != null && (
+                  {item?.termOfPayment?.batas_hari != null && (
                     <div className='text-xs text-gray-500'>
-                      {item.termOfPayment.days} hari
+                      {item.termOfPayment.batas_hari} hari
                     </div>
                   )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.customer?.nama_customer || '-'}
+                    {item?.customer?.namaCustomer || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.customer?.kode_customer || '-'}
+                    {item?.customer?.kodeCustomer || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.company?.company_name || '-'}
+                    {item?.company?.nama_perusahaan || '-'}
                   </div>
-                  {item?.company?.company_code && (
+                  {item?.company?.kode_company && (
                     <div className='text-xs text-gray-500'>
-                      {item.company.company_code}
+                      {item.company.kode_company}
                     </div>
                   )}
                 </td>
