@@ -18,7 +18,7 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import fakturPajakService from '@/services/fakturPajakService';
 
 const TAB_STATUS_CONFIG = {
-  all: { label: 'Semua', statusCode: null },
+  all: { label: 'All', statusCode: null },
   pending: {
     label: 'Pending',
     statusCode: 'PENDING FAKTUR PAJAK',
@@ -63,7 +63,7 @@ const INITIAL_TAB_PAGINATION = {
 const parseFakturPajakListResponse = (response = {}) => {
   if (response?.success === false) {
     throw new Error(
-      response?.error?.message || 'Failed to fetch faktur pajak data',
+      response?.error?.message || 'Failed to fetch faktur pajak data'
     );
   }
 
@@ -125,7 +125,7 @@ const parseFakturPajakListResponse = (response = {}) => {
 
 const mapPaginationShape = (
   source = {},
-  fallbackLimit = INITIAL_TAB_PAGINATION.itemsPerPage,
+  fallbackLimit = INITIAL_TAB_PAGINATION.itemsPerPage
 ) => {
   const currentPage =
     source?.currentPage ?? source?.page ?? INITIAL_TAB_PAGINATION.currentPage;
@@ -234,8 +234,7 @@ const FakturPajakPage = () => {
     return tabLoading;
   }, [activeTab, isSearchActive, loading, tabLoading]);
 
-  const tableError =
-    isSearchActive || activeTab === 'all' ? error : tabError;
+  const tableError = isSearchActive || activeTab === 'all' ? error : tabError;
 
   const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
   const activeTabBadge =
@@ -255,8 +254,8 @@ const FakturPajakPage = () => {
             pagination,
             pagination?.itemsPerPage ??
               pagination?.limit ??
-              INITIAL_TAB_PAGINATION.itemsPerPage,
-          ),
+              INITIAL_TAB_PAGINATION.itemsPerPage
+          )
         );
         setTabError(null);
         return;
@@ -281,7 +280,7 @@ const FakturPajakPage = () => {
         const response = await fakturPajakService.searchFakturPajak(
           searchParams,
           page,
-          nextLimit,
+          nextLimit
         );
         const { results, pagination: nextPagination } =
           parseFakturPajakListResponse(response);
@@ -308,13 +307,13 @@ const FakturPajakPage = () => {
           limit: nextLimit,
         });
         setTabError(
-          err?.message || 'Gagal memuat faktur pajak berdasarkan status.',
+          err?.message || 'Gagal memuat faktur pajak berdasarkan status.'
         );
       } finally {
         setTabLoading(false);
       }
     },
-    [fakturPajaks, pagination, tabPagination.itemsPerPage],
+    [fakturPajaks, pagination, tabPagination.itemsPerPage]
   );
 
   useEffect(() => {
@@ -363,7 +362,7 @@ const FakturPajakPage = () => {
 
       fetchTabData(activeTab, { page });
     },
-    [activeTab, fetchTabData, handlePageChange, isSearchActive],
+    [activeTab, fetchTabData, handlePageChange, isSearchActive]
   );
 
   const handleTableLimitChange = useCallback(
@@ -375,7 +374,7 @@ const FakturPajakPage = () => {
 
       fetchTabData(activeTab, { page: 1, limit });
     },
-    [activeTab, fetchTabData, handleLimitChange, isSearchActive],
+    [activeTab, fetchTabData, handleLimitChange, isSearchActive]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -418,7 +417,7 @@ const FakturPajakPage = () => {
         setDetailLoading(false);
       }
     },
-    [fetchFakturPajakById],
+    [fetchFakturPajakById]
   );
 
   const closeDetailModal = () => {
@@ -472,8 +471,8 @@ const FakturPajakPage = () => {
                 Manajemen Faktur Pajak
               </h3>
               <p className='text-sm text-gray-500'>
-                Kelola faktur pajak penjualan beserta relasi invoice dan
-                laporan penerimaan barang.
+                Kelola faktur pajak penjualan beserta relasi invoice dan laporan
+                penerimaan barang.
               </p>
             </div>
             <div className='flex items-center gap-2'>
