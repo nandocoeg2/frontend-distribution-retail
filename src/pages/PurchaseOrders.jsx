@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
 import PurchaseOrderSearch from '../components/purchaseOrders/PurchaseOrderSearch.jsx';
@@ -91,19 +91,19 @@ const PurchaseOrders = () => {
     pagination,
     loading,
     error,
+    filters,
     searchLoading,
-    searchQuery,
-    searchField,
+    hasActiveFilters,
     fetchPurchaseOrders,
-    searchPurchaseOrders,
     deletePurchaseOrder,
     createPurchaseOrder,
     updatePurchaseOrder,
     getPurchaseOrder,
     handlePageChange,
     handleLimitChange,
-    handleSearchChange,
-    handleSearchFieldChange,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
   } = usePurchaseOrders();
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -127,29 +127,7 @@ const PurchaseOrders = () => {
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
 
-  const isSearchActive = useMemo(() => {
-    if (searchQuery == null) {
-      return false;
-    }
-
-    if (searchField === 'statusId') {
-      return searchQuery !== '';
-    }
-
-    if (typeof searchQuery === 'string') {
-      return searchQuery.trim() !== '';
-    }
-
-    if (Array.isArray(searchQuery)) {
-      return searchQuery.length > 0;
-    }
-
-    if (typeof searchQuery === 'number') {
-      return !Number.isNaN(searchQuery);
-    }
-
-    return Boolean(searchQuery);
-  }, [searchField, searchQuery]);
+  const isSearchActive = Boolean(hasActiveFilters);
 
   const tableOrders = isSearchActive ? purchaseOrders : tabData;
   const tablePagination = isSearchActive ? pagination : tabPagination;
@@ -619,11 +597,11 @@ const PurchaseOrders = () => {
           </div>
 
           <PurchaseOrderSearch
-            searchQuery={searchQuery}
-            searchField={searchField}
-            handleSearchChange={handleSearchChange}
-            handleSearchFieldChange={handleSearchFieldChange}
-            searchLoading={searchLoading}
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onSearch={handleSearchSubmit}
+            onReset={handleResetFilters}
+            loading={Boolean(searchLoading || tableLoading)}
           />
 
           {/* Tabs for filtering by status */}

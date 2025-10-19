@@ -13,6 +13,37 @@ const INITIAL_PAGINATION = {
   total: 0
 };
 
+const createDefaultFilters = () => ({
+  po_number: '',
+  customer_name: '',
+  customerId: '',
+  supplierId: '',
+  status_code: '',
+  tanggal_masuk_po: ''
+});
+
+const sanitizeFilters = (filters = {}) => {
+  const sanitized = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== '') {
+        sanitized[key] = trimmed;
+      }
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
+
 const parsePurchaseOrdersResponse = (response) => {
   if (response?.success === false) {
     throw new Error(response?.error?.message || 'Failed to load purchase orders');
@@ -43,8 +74,11 @@ const resolvePurchaseOrdersError = (error) => {
 };
 
 const usePurchaseOrders = () => {
-  const [searchField, setSearchField] = useState('customer_name');
-  const searchFieldRef = useRef('customer_name');
+  const [filters, setFilters] = useState(() => createDefaultFilters());
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
+  const filtersRef = useRef(createDefaultFilters());
+  const activeFiltersRef = useRef({});
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -53,70 +87,103 @@ const usePurchaseOrders = () => {
   }, []);
 
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
     searchResults: purchaseOrders,
     pagination,
-    setPagination,
     loading,
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleAuthError: authHandler,
     resolveLimit
   } = usePaginatedSearch({
-    initialInput: '',
+    initialInput: createDefaultFilters(),
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => {
-      const trimmedQuery = typeof query === 'string' ? query.trim() : '';
-      const field = searchFieldRef.current || 'customer_name';
-      if (!trimmedQuery) {
+    searchFn: (queryFilters = {}, page, limit) => {
+      const sanitizedFilters = sanitizeFilters(queryFilters);
+      if (Object.keys(sanitizedFilters).length === 0) {
         return purchaseOrderService.getAllPurchaseOrders(page, limit);
       }
-      const searchParams = { [field]: trimmedQuery };
-      return purchaseOrderService.searchPurchaseOrders(searchParams, page, limit);
+      return purchaseOrderService.searchPurchaseOrders(sanitizedFilters, page, limit);
     },
     parseResponse: parsePurchaseOrdersResponse,
     resolveErrorMessage: resolvePurchaseOrdersError,
     onAuthError: handleAuthRedirect
   });
 
-  const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
-      return false;
-    }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+  const fetchPurchaseOrders = useCallback(
+    async (page = 1, limit = resolveLimit()) => {
+      const activeFilters = activeFiltersRef.current || {};
+      const hasFilters = Object.keys(activeFilters).length > 0;
 
-  const fetchPurchaseOrders = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
+      if (hasFilters) {
+        setSearchLoading(true);
+        try {
+          return await performSearch(activeFilters, page, limit);
+        } finally {
+          setSearchLoading(false);
+        }
+      }
+
+      const defaultFilters = createDefaultFilters();
+      activeFiltersRef.current = {};
+      setActiveFiltersVersion((version) => version + 1);
+      setSearchLoading(false);
+      return performSearch(defaultFilters, page, limit);
+    },
+    [performSearch, resolveLimit]
+  );
+
+  const handleFiltersChange = useCallback((field, value) => {
+    setFilters((prev) => {
+      const nextFilters = {
+        ...prev,
+        [field]: value
+      };
+      filtersRef.current = nextFilters;
+      return nextFilters;
+    });
+  }, []);
+
+  const handleSearchSubmit = useCallback(async (page = 1, limit = resolveLimit()) => {
+    const currentFilters = filtersRef.current || createDefaultFilters();
+    const sanitizedFilters = sanitizeFilters(currentFilters);
+    activeFiltersRef.current = sanitizedFilters;
+    setActiveFiltersVersion((version) => version + 1);
+
+    setSearchLoading(true);
+    try {
+      return await performSearch(currentFilters, page, limit);
+    } finally {
+      setSearchLoading(false);
+    }
   }, [performSearch, resolveLimit]);
 
-  const searchPurchaseOrders = useCallback((query, field = searchFieldRef.current, page = 1, limit = resolveLimit()) => {
-    if (field && field !== searchFieldRef.current) {
-      searchFieldRef.current = field;
-      setSearchField(field);
-    }
-    setSearchQuery(query);
-    return performSearch(query, page, limit);
-  }, [performSearch, resolveLimit, setSearchQuery]);
+  const handleResetFilters = useCallback(async () => {
+    const defaultFilters = createDefaultFilters();
+    filtersRef.current = defaultFilters;
+    activeFiltersRef.current = {};
+    setFilters(defaultFilters);
+    setActiveFiltersVersion((version) => version + 1);
 
-  const handleSearchChange = useCallback((event) => {
-    const query = event?.target ? event.target.value : event;
-    setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
-
-  const handleSearchFieldChange = useCallback((field) => {
-    searchFieldRef.current = field;
-    setSearchField(field);
-    if (typeof searchQuery === 'string' && searchQuery.trim()) {
-      performSearch(searchQuery, 1, resolveLimit());
+    setSearchLoading(true);
+    try {
+      return await performSearch(defaultFilters, 1, resolveLimit());
+    } finally {
+      setSearchLoading(false);
     }
-  }, [performSearch, resolveLimit, searchQuery]);
+  }, [performSearch, resolveLimit]);
+
+  const searchPurchaseOrders = useCallback(async (nextFilters = {}, page = 1, limit = resolveLimit()) => {
+    const mergedFilters = {
+      ...filtersRef.current,
+      ...nextFilters
+    };
+    filtersRef.current = mergedFilters;
+    setFilters(mergedFilters);
+    return handleSearchSubmit(page, limit);
+  }, [handleSearchSubmit, resolveLimit]);
 
   const computeNextPageAfterDelete = useCallback(() => {
     const itemsPerPage = resolveLimit();
@@ -151,9 +218,8 @@ const usePurchaseOrders = () => {
   const refreshAfterMutation = useCallback(async () => {
     const itemsPerPage = resolveLimit();
     const currentPage = pagination.currentPage || pagination.page || 1;
-    const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
-    await performSearch(trimmedQuery, currentPage, itemsPerPage);
-  }, [pagination, performSearch, resolveLimit, searchQuery]);
+    await performSearch(filtersRef.current, currentPage, itemsPerPage);
+  }, [pagination, performSearch, resolveLimit]);
 
   const createPurchaseOrder = useCallback(async (formData, files = []) => {
     try {
@@ -203,8 +269,7 @@ const usePurchaseOrders = () => {
       }
       toastService.success('Purchase order deleted successfully');
       const { nextPage, itemsPerPage } = computeNextPageAfterDelete();
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
-      await performSearch(trimmedQuery, nextPage, itemsPerPage);
+      await performSearch(filtersRef.current, nextPage, itemsPerPage);
       return true;
     } catch (err) {
       if (err?.message?.includes('token') || err?.message?.includes('unauthorized')) {
@@ -216,20 +281,43 @@ const usePurchaseOrders = () => {
       }
       return false;
     }
-  }, [authHandler, computeNextPageAfterDelete, performSearch, searchQuery, setError]);
+  }, [authHandler, computeNextPageAfterDelete, performSearch, setError]);
 
   useEffect(() => {
     fetchPurchaseOrders(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchPurchaseOrders]);
+
+  const hasActiveFilters = useMemo(() => {
+    const active = activeFiltersRef.current || {};
+    return Object.keys(active).length > 0;
+  }, [activeFiltersVersion]);
+
+  const searchQuery = useMemo(() => {
+    const active = activeFiltersRef.current || {};
+    if (Object.keys(active).length === 0) {
+      return '';
+    }
+
+    return (
+      active.po_number ||
+      active.customer_name ||
+      active.customerId ||
+      active.supplierId ||
+      active.status_code ||
+      active.tanggal_masuk_po ||
+      'filter aktif'
+    );
+  }, [activeFiltersVersion]);
 
   return {
     purchaseOrders,
     pagination,
     loading,
     error,
+    filters,
     searchLoading,
+    hasActiveFilters,
     searchQuery,
-    searchField,
     fetchPurchaseOrders,
     searchPurchaseOrders,
     deletePurchaseOrder,
@@ -238,8 +326,9 @@ const usePurchaseOrders = () => {
     getPurchaseOrder,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
-    handleSearchChange,
-    handleSearchFieldChange,
+    handleFiltersChange,
+    handleSearchSubmit,
+    handleResetFilters,
     refetch: fetchPurchaseOrders
   };
 };
