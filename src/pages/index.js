@@ -27,3 +27,6 @@ export { default as LaporanPenerimaanBarang } from './LaporanPenerimaanBarang';
 export { default as CheckingList } from './CheckingList';
 export { default as Kwitansi } from './Kwitansi';
 export { default as TandaTerimaFaktur } from './TandaTerimaFaktur';
+export { default as Returns } from './Returns';
+export { default as ReturnCreate } from './ReturnCreate';
+export { default as ReturnDetail } from './ReturnDetail';

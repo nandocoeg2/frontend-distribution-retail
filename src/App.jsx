@@ -35,6 +35,9 @@ import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
 import FakturPajak from './pages/FakturPajak.jsx';
 import Kwitansi from './pages/Kwitansi.jsx';
 import TandaTerimaFaktur from './pages/TandaTerimaFaktur.jsx';
+import Returns from './pages/Returns.jsx';
+import ReturnCreate from './pages/ReturnCreate.jsx';
+import ReturnDetail from './pages/ReturnDetail.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
@@ -278,6 +281,30 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <PurchaseOrderHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/returns'
+        element={
+          <ProtectedRoute>
+            <Returns />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/returns/create'
+        element={
+          <ProtectedRoute>
+            <ReturnCreate />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/returns/:id'
+        element={
+          <ProtectedRoute>
+            <ReturnDetail />
           </ProtectedRoute>
         }
       />
