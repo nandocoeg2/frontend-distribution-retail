@@ -1,129 +1,181 @@
 import React from 'react';
-import Card, { CardHeader } from '../ui/Card.jsx';
-import StatusPill from './StatusPill.jsx';
-import InlineDateInput from './InlineDateInput.jsx';
+import { formatDate } from '@/utils/formatUtils';
+import { StatusBadge } from '../ui/Badge.jsx';
+
+const resolveStatusText = (status) => {
+  if (!status) {
+    return null;
+  }
+
+  if (typeof status === 'string') {
+    return status;
+  }
+
+  return status.status_name || status.status_code || null;
+};
+
+const resolveStatusCode = (status) => {
+  if (!status || typeof status === 'string') {
+    return status ? String(status) : '';
+  }
+
+  return status.status_code || status.status_name || '';
+};
+
+const resolveStatusVariant = (status, defaultVariant = 'secondary') => {
+  const code = resolveStatusCode(status).trim().toUpperCase();
+
+  if (!code) {
+    return defaultVariant;
+  }
+
+  if (['PAID', 'SETTLED', 'COMPLETED', 'DELIVERED', 'RECEIVED'].includes(code)) {
+    return 'success';
+  }
+
+  if (['SENT', 'SHIPPED', 'IN_TRANSIT', 'DELIVERING'].includes(code)) {
+    return 'info';
+  }
+
+  if (['PENDING', 'WAITING', 'IN_PROGRESS', 'UNPAID'].includes(code)) {
+    return 'warning';
+  }
+
+  if (['VOID', 'CANCELLED', 'CANCELED', 'REJECTED', 'FAILED'].includes(code)) {
+    return 'danger';
+  }
+
+  return defaultVariant;
+};
+
+const renderStatus = (status, variantHint) => {
+  const statusText = resolveStatusText(status);
+
+  if (!statusText) {
+    return <span className='text-sm font-medium text-gray-400'>-</span>;
+  }
+
+  return (
+    <StatusBadge
+      status={statusText}
+      variant={resolveStatusVariant(status, variantHint)}
+      size='sm'
+      dot
+    />
+  );
+};
+
+const renderDateDisplay = (value, placeholder = '-') => {
+  const formatted = value ? formatDate(value) : null;
+
+  return (
+    <span className='block text-center text-sm font-medium text-gray-700'>
+      {formatted || placeholder}
+    </span>
+  );
+};
 
 const defaultColumnGroups = [
   {
     id: 'po-number',
     label: 'No PO',
     showSubHeader: false,
-    headerClassName: 'bg-gradient-to-r from-indigo-600 to-indigo-500',
+    headerClassName: 'bg-gray-100 text-gray-600',
+    align: 'center',
     columns: [
       {
-        id: 'poNumber',
+        id: 'po_number',
         label: 'No PO',
         align: 'center',
         render: (order) => (
-          <span className='text-sm font-semibold text-indigo-700'>{order.poNumber}</span>
+          <span className='text-sm font-semibold text-indigo-700'>{order.po_number || '-'}</span>
         ),
       },
     ],
   },
   {
     id: 'shipping-status',
-    label: 'Status Pengiriman',
-    headerClassName: 'bg-gradient-to-r from-indigo-600 to-blue-600',
+    label: 'Pengiriman',
+    headerClassName: 'bg-gray-100 text-gray-600',
+    align: 'center',
     columns: [
       {
-        id: 'shippingStatus',
+        id: 'status_pengiriman',
         label: 'Status',
-        render: (order) => (
-          <StatusPill status={order.shipping.status} />
-        ),
+        align: 'center',
+        render: (order) => renderStatus(order.status_pengiriman, 'info'),
       },
       {
-        id: 'shippingDate',
+        id: 'tanggal_pengiriman',
         label: 'Tanggal',
-        render: (order) => (
-          <InlineDateInput value={order.shipping.date} />
-        ),
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanggal_pengiriman),
       },
     ],
   },
   {
     id: 'receiving-status',
-    label: 'Status Penerimaan Barang',
-    headerClassName: 'bg-gradient-to-r from-blue-600 to-indigo-600',
+    label: 'Penerimaan Barang',
+    headerClassName: 'bg-gray-100 text-gray-600',
+    align: 'center',
     columns: [
       {
-        id: 'receivingExpire',
-        label: 'Tanggal Expired',
-        render: (order) => (
-          <InlineDateInput value={order.receiving.expiredDate} />
-        ),
-      },
-      {
-        id: 'receivingLpb',
+        id: 'tanggal_penerimaan_barang',
         label: 'Tanggal LPB',
-        render: (order) => (
-          <InlineDateInput value={order.receiving.lpbDate} />
-        ),
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanggal_penerimaan_barang),
       },
       {
-        id: 'receivingInvoice',
+        id: 'tanggal_invoice',
         label: 'Tanggal Invoice',
-        render: (order) => (
-          <InlineDateInput value={order.receiving.invoiceDate} />
-        ),
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanggal_invoice),
       },
-    ],
-  },
-  {
-    id: 'billing-submission',
-    label: 'Penagihan Diajukan',
-    headerClassName: 'bg-gradient-to-r from-indigo-600 to-purple-600',
-    columns: [
       {
-        id: 'billingSubmission',
-        label: 'Status',
-        render: (order) => (
-          order.billingSubmission
-            ? <StatusPill status={order.billingSubmission} dot={false} />
-            : <span className='text-sm text-gray-400'>-</span>
-        ),
+        id: 'tanggal_expired',
+        label: 'Tanggal Expired',
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanggal_expired),
       },
     ],
   },
   {
     id: 'billing-status',
-    label: 'Status Tagihan',
-    headerClassName: 'bg-gradient-to-r from-purple-600 to-violet-600',
+    label: 'Tagihan',
+    headerClassName: 'bg-gray-100 text-gray-600',
+    align: 'center',
     columns: [
       {
-        id: 'billingStatus',
+        id: 'status_tagihan',
         label: 'Status',
-        render: (order) => (
-          <StatusPill status={order.billing.status} />
-        ),
+        align: 'center',
+        render: (order) => renderStatus(order.status_tagihan, 'warning'),
       },
       {
-        id: 'billingDate',
+        id: 'tanggal_tagihan',
         label: 'Tanggal',
-        render: (order) => (
-          <InlineDateInput value={order.billing.date} />
-        ),
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanggal_tagihan),
       },
     ],
   },
   {
     id: 'payment-status',
     label: 'Pembayaran',
-    headerClassName: 'bg-gradient-to-r from-violet-600 to-purple-600',
+    headerClassName: 'bg-gray-100 text-gray-600',
+    align: 'center',
     columns: [
       {
-        id: 'paymentStatus',
+        id: 'status_pembayaran',
         label: 'Status',
-        render: (order) => (
-          <StatusPill status={order.payment.status} />
-        ),
+        align: 'center',
+        render: (order) => renderStatus(order.status_pembayaran, 'success'),
       },
       {
-        id: 'paymentDate',
+        id: 'tanggal_pembayaran',
         label: 'Tanggal',
-        render: (order) => (
-          <InlineDateInput value={order.payment.date} />
-        ),
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanggal_pembayaran),
       },
     ],
   },
@@ -134,6 +186,8 @@ const PurchaseOrderStatusTable = ({
   subtitle = 'Pantau status pengiriman hingga pembayaran untuk setiap PO',
   orders = [],
   columnGroups = defaultColumnGroups,
+  emptyMessage = 'Belum ada data purchase order untuk ditampilkan.',
+  loading = false,
 }) => {
   const renderHeaderRow = () => (
     <tr>
@@ -142,7 +196,7 @@ const PurchaseOrderStatusTable = ({
           key={group.id}
           colSpan={group.showSubHeader === false ? 1 : group.columns.length}
           rowSpan={group.showSubHeader === false ? 2 : 1}
-          className={`border border-indigo-100 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white ${group.headerClassName}`}
+          className={`border border-gray-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide ${group.headerClassName} ${group.align === 'center' ? 'text-center' : group.align === 'right' ? 'text-right' : 'text-left'}`}
         >
           {group.label}
         </th>
@@ -156,7 +210,7 @@ const PurchaseOrderStatusTable = ({
       .flatMap((group) => group.columns.map((column) => (
         <th
           key={`${group.id}-${column.id}`}
-          className='border border-indigo-100 bg-indigo-50 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-indigo-900'
+          className={`border border-gray-200 bg-gray-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-gray-600 ${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : 'text-left'}`}
         >
           {column.label}
         </th>
@@ -179,13 +233,27 @@ const PurchaseOrderStatusTable = ({
         colSpan={columnGroups.reduce((total, group) => total + group.columns.length, 0)}
         className='px-4 py-6 text-center text-sm text-gray-500'
       >
-        Belum ada data purchase order untuk ditampilkan.
+        {emptyMessage}
       </td>
     </tr>
   );
 
-  const renderCell = (order, group, column) => {
-    const key = `${order.poNumber}-${group.id}-${column.id}`;
+  const renderLoadingRow = () => (
+    <tr>
+      <td
+        colSpan={columnGroups.reduce((total, group) => total + group.columns.length, 0)}
+        className='px-4 py-6 text-center text-sm text-gray-500'
+      >
+        <div className='flex items-center justify-center gap-2'>
+          <div className='h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent' />
+          <span>Memuat data purchase order...</span>
+        </div>
+      </td>
+    </tr>
+  );
+
+  const renderCell = (order, group, column, rowKey) => {
+    const key = `${rowKey}-${group.id}-${column.id}`;
     const content = column.render
       ? column.render(order)
       : order[column.id] || '-';
@@ -199,7 +267,7 @@ const PurchaseOrderStatusTable = ({
     return (
       <td
         key={key}
-        className={`border border-indigo-50 bg-white px-4 py-3 text-sm text-gray-700 ${alignmentClass} ${column.cellClassName || ''}`}
+        className={`border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 ${alignmentClass} ${column.cellClassName || ''}`}
       >
         {content}
       </td>
@@ -207,33 +275,45 @@ const PurchaseOrderStatusTable = ({
   };
 
   return (
-    <Card padding='lg' className='shadow-sm'>
-      <CardHeader title={title} subtitle={subtitle} />
-
+    <div>
+      <div className='flex flex-col gap-1 pb-3'>
+        <h2 className='text-lg font-semibold text-gray-900'>{title}</h2>
+        {subtitle && <p className='text-sm text-gray-500'>{subtitle}</p>}
+      </div>
       <div className='overflow-x-auto'>
-        <table className='min-w-full border-collapse rounded-lg text-sm'>
-          <thead>
+        <table className='min-w-full divide-y divide-gray-200 text-sm'>
+          <thead className='bg-white'>
             {renderHeaderRow()}
             {renderSubHeaderRow()}
           </thead>
-          <tbody>
-            {orders.length === 0
+          <tbody className='bg-white divide-y divide-gray-200'>
+            {loading
+              ? renderLoadingRow()
+              : orders.length === 0
               ? renderEmptyState()
-              : orders.map((order) => (
-                <tr
-                  key={order.poNumber}
-                  className='even:bg-indigo-50/40'
-                >
-                  {columnGroups.flatMap((group) =>
-                    group.columns.map((column) => renderCell(order, group, column)),
-                  )}
-                </tr>
-              ))}
+              : orders.map((order, index) => {
+                  const rowKey = order.__rowKey || order.po_id || `${order.po_number || 'po'}-${index}`;
+
+                  return (
+                    <tr
+                      key={rowKey}
+                      className='hover:bg-gray-50'
+                    >
+                      {columnGroups.flatMap((group) =>
+                        group.columns.map((column) =>
+                          renderCell(order, group, column, rowKey)
+                        ),
+                      )}
+                    </tr>
+                  );
+                })}
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 };
 
 export default PurchaseOrderStatusTable;
+
+
