@@ -1,5 +1,10 @@
 import React from 'react';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowDownTrayIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 import {
   formatCurrency,
@@ -15,6 +20,8 @@ const KwitansiTable = ({
   onEdit,
   onDelete,
   onView,
+  onExport,
+  exportingId,
   loading,
   searchQuery,
   hasActiveFilters,
@@ -73,8 +80,11 @@ const KwitansiTable = ({
               </td>
             </tr>
           ) : (
-            data.map((item) => (
-              <tr key={item.id} className='hover:bg-gray-50'>
+            data.map((item) => {
+              const isExporting = exportingId === item.id;
+
+              return (
+                <tr key={item.id} className='hover:bg-gray-50'>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {item?.invoicePenagihan?.no_invoice_penagihan || '-'}
@@ -133,6 +143,18 @@ const KwitansiTable = ({
                 <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
                   <div className='flex justify-end space-x-2'>
                     <button
+                      onClick={() => onExport?.(item)}
+                      className='p-1 text-blue-600 hover:text-blue-900 disabled:text-blue-300'
+                      title='Export kwitansi ke PDF'
+                      disabled={actionDisabled || isExporting || !onExport}
+                    >
+                      {isExporting ? (
+                        <span className='block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin'></span>
+                      ) : (
+                        <ArrowDownTrayIcon className='w-4 h-4' />
+                      )}
+                    </button>
+                    <button
                       onClick={() => onView?.(item)}
                       className='p-1 text-indigo-600 hover:text-indigo-900 disabled:text-indigo-300'
                       title='Lihat detail kwitansi'
@@ -159,7 +181,8 @@ const KwitansiTable = ({
                   </div>
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
           {loading && (
             <tr>

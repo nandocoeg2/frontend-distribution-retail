@@ -6,8 +6,10 @@ import {
   KwitansiModal,
   KwitansiDetailModal,
 } from '@/components/kwitansi';
+import { exportKwitansiToPDF } from '@/components/kwitansi/PrintKwitansi';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import toastService from '@/services/toastService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TAB_STATUS_CONFIG = {
@@ -92,6 +94,7 @@ const KwitansiPage = () => {
   const [tabLoading, setTabLoading] = useState(false);
   const [tabKwitansis, setTabKwitansis] = useState([]);
   const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
+  const [exportingId, setExportingId] = useState(null);
 
   const openCreateModal = () => {
     setSelectedKwitansi(null);
@@ -137,6 +140,40 @@ const KwitansiPage = () => {
     setSelectedKwitansi(null);
     setDetailLoading(false);
   };
+
+  const handleExportKwitansi = useCallback(
+    async (kwitansiOrId) => {
+      const kwitansiId =
+        typeof kwitansiOrId === 'string'
+          ? kwitansiOrId
+          : kwitansiOrId?.id;
+
+      if (!kwitansiId) {
+        toastService.warning('Data kwitansi tidak ditemukan untuk diekspor.');
+        return;
+      }
+
+      setExportingId(kwitansiId);
+
+      try {
+        const detail = await fetchKwitansiById(kwitansiId);
+        if (!detail) {
+          return;
+        }
+
+        if (selectedKwitansi?.id === kwitansiId) {
+          setSelectedKwitansi(detail);
+        }
+
+        await exportKwitansiToPDF(detail);
+      } catch (error) {
+        console.error('Failed to export kwitansi:', error);
+      } finally {
+        setExportingId(null);
+      }
+    },
+    [fetchKwitansiById, selectedKwitansi]
+  );
 
   const isSearchActive = hasActiveFilters;
 
@@ -433,6 +470,8 @@ const KwitansiPage = () => {
               onEdit={openEditModal}
               onDelete={handleDelete}
               onView={openDetailModal}
+              onExport={handleExportKwitansi}
+              exportingId={exportingId}
               loading={tableLoading}
               searchQuery={searchQuery}
               hasActiveFilters={hasActiveFilters}
@@ -461,6 +500,11 @@ const KwitansiPage = () => {
         onClose={closeDetailModal}
         kwitansi={selectedKwitansi}
         isLoading={detailLoading}
+        onExport={handleExportKwitansi}
+        exportLoading={
+          Boolean(selectedKwitansi?.id) &&
+          exportingId === selectedKwitansi?.id
+        }
       />
 
       <ConfirmationDialog

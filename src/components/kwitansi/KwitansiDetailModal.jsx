@@ -1,5 +1,5 @@
 import React from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
 
 const InfoRow = ({ label, value }) => (
@@ -43,7 +43,14 @@ const renderAuditTrail = (audit) => {
   );
 };
 
-const KwitansiDetailModal = ({ isOpen, onClose, kwitansi, isLoading }) => {
+const KwitansiDetailModal = ({
+  isOpen,
+  onClose,
+  kwitansi,
+  isLoading,
+  onExport,
+  exportLoading,
+}) => {
   if (!isOpen) {
     return null;
   }
@@ -62,13 +69,30 @@ const KwitansiDetailModal = ({ isOpen, onClose, kwitansi, isLoading }) => {
               Ringkasan informasi kwitansi pembayaran invoice penagihan.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className='p-2 text-gray-500 transition-colors duration-150 rounded-lg hover:bg-gray-100'
-            aria-label='Tutup detail kwitansi'
-          >
-            <XMarkIcon className='w-6 h-6' />
-          </button>
+          <div className='flex items-center gap-2'>
+            {onExport && (
+              <button
+                type='button'
+                onClick={() => onExport(detail)}
+                disabled={isLoading || exportLoading || !detail?.id}
+                className='inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
+              >
+                {exportLoading ? (
+                  <span className='inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
+                ) : (
+                  <ArrowDownTrayIcon className='h-5 w-5' />
+                )}
+                <span>Export PDF</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className='p-2 text-gray-500 transition-colors duration-150 rounded-lg hover:bg-gray-100'
+              aria-label='Tutup detail kwitansi'
+            >
+              <XMarkIcon className='w-6 h-6' />
+            </button>
+          </div>
         </div>
 
         <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6'>

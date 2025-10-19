@@ -75,9 +75,19 @@ export const DOCUMENT_CONFIGS = {
     filename: 'Checking_List',
     multiPage: true,
   },
+  TANDA_TERIMA_FAKTUR: {
+    title: 'TANDA TERIMA FAKTUR',
+    filename: 'Tanda_Terima_Faktur',
+    multiPage: true,
+  },
   PACKING_STICKER: {
     title: 'PACKING STICKER',
     filename: 'Packing_Sticker',
+    multiPage: false,
+  },
+  KWITANSI: {
+    title: 'KWITANSI',
+    filename: 'Kwitansi',
     multiPage: false,
   },
 };

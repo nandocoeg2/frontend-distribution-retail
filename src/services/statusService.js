@@ -58,7 +58,7 @@ class StatusService {
    */
   async getInvoiceStatuses() {
     try {
-      const response = await get('/statuses/invoice');
+      const response = await get('/statuses/invoice-penagihan');
       return response;
     } catch (error) {
       console.error('Error fetching invoice statuses:', error);
