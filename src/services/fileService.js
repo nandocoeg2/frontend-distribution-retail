@@ -38,7 +38,7 @@ const fileService = {
       const formData = new FormData();
       
       for (const file of files) {
-        formData.append('file', file);
+        formData.append('files', file);
       }
 
       const response = await axios.post(`${API_BASE_URL}/bulk-purchase-order/bulk`, formData, {
