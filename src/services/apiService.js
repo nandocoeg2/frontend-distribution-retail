@@ -1,5 +1,6 @@
 import axios from 'axios';
 import toastService from './toastService';
+import authService from './authService';
 
 const API_BASE_URL = 'http://localhost:5050/api/v1';
 
@@ -32,12 +33,19 @@ api.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
       if (status === 401 || status === 403) {
-        localStorage.clear();
-        // Use window.location.hash for HashRouter compatibility in Electron
-        if (!window.location.hash.includes('#/login')) {
-          window.location.hash = '#/login';
-          toastService.error('Session expired. Please login again.');
+        authService.clearUserData();
+
+        if (typeof window !== 'undefined') {
+          // Notify the rest of the app that authentication state changed.
+          window.dispatchEvent(new Event('auth:logout'));
+
+          // Use window.location.hash for HashRouter compatibility in Electron
+          if (!window.location.hash.includes('#/login')) {
+            window.location.hash = '#/login';
+          }
         }
+
+        toastService.error('Session expired. Please login again.');
         return Promise.reject(new Error('Unauthorized'));
       }
       errorMessage = data.message || data.error?.message || `Error ${status}`;

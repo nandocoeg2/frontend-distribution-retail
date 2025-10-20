@@ -35,6 +35,26 @@ export const AuthProvider = ({ children }) => {
     initializeAuth();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const handleForcedLogout = () => {
+      setUser(null);
+      setToken(null);
+      setIsAuthenticated(false);
+      setLoading(false);
+    };
+
+    // Keep auth context in sync when other layers trigger a logout (e.g. interceptors).
+    window.addEventListener('auth:logout', handleForcedLogout);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleForcedLogout);
+    };
+  }, []);
+
   // Login function
   const login = useCallback(async (email, password) => {
     try {
