@@ -94,11 +94,12 @@ const AddPurchaseOrderModal = ({
         setSelectedFile(null);
         return;
       }
-      const allPdf = Array.from(files).every((file) =>
-        file.name.toLowerCase().endsWith('.pdf')
+      const allowedExtensions = ['.pdf', '.edi'];
+      const allAllowed = Array.from(files).every((file) =>
+        allowedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
       );
-      if (!allPdf) {
-        setError('Please select PDF files only.');
+      if (!allAllowed) {
+        setError('Please select PDF (.pdf) or EDI (.edi) files only.');
         setSelectedFile(null);
         if (bulkFileInputRef.current) {
           bulkFileInputRef.current.value = '';
@@ -113,7 +114,7 @@ const AddPurchaseOrderModal = ({
 
   const handleBulkUpload = async () => {
     if (!selectedFile || selectedFile.length === 0) {
-      setError('Please select a PDF (.pdf) file to upload.');
+      setError('Please select at least one PDF (.pdf) or EDI (.edi) file to upload.');
       return;
     }
     setLoading(true);
@@ -477,21 +478,22 @@ const AddPurchaseOrderModal = ({
               <div className='space-y-4'>
                 <div>
                   <label className='block mb-1 text-sm font-medium text-gray-700'>
-                    Upload Bulk Purchase Orders (PDF)
+                    Upload Bulk Purchase Orders (PDF / EDI)
                   </label>
                   <div className='flex items-center space-x-2'>
                     <input
                       ref={bulkFileInputRef}
                       type='file'
+                      multiple
                       onChange={handleFileChange}
-                      accept='.pdf'
+                      accept='.pdf,.edi'
                       className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
                     />
                   </div>
                   {selectedFile && selectedFile.length > 0 && (
                     <div className='p-3 mt-2 border rounded-md bg-gray-50'>
                       <p className='mb-2 text-sm text-gray-600'>
-                        <strong>{selectedFile.length}</strong> file PDF dipilih
+                        <strong>{selectedFile.length}</strong> file dipilih
                         untuk upload:
                       </p>
                       <div className='space-y-1'>
@@ -548,7 +550,9 @@ const AddPurchaseOrderModal = ({
                       <h4 className='text-sm font-medium text-yellow-800'>
                         Format File yang Didukung
                       </h4>
-                      <p className='mt-1 text-sm text-yellow-700'>PDF (.pdf)</p>
+                      <p className='mt-1 text-sm text-yellow-700'>
+                        PDF (.pdf) atau EDI (.edi)
+                      </p>
                     </div>
                   </div>
                 </div>
