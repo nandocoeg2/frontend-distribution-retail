@@ -203,6 +203,11 @@ const InvoicePenagihanPage = () => {
   });
   const [generatingFakturInvoiceId, setGeneratingFakturInvoiceId] =
     useState(null);
+  const [generateTtfConfirmation, setGenerateTtfConfirmation] = useState({
+    show: false,
+    invoice: null,
+  });
+  const [generatingTtfInvoiceId, setGeneratingTtfInvoiceId] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
   const [tabInvoices, setTabInvoices] = useState([]);
   const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
@@ -217,6 +222,10 @@ const InvoicePenagihanPage = () => {
   const generateFakturDialogLoading =
     Boolean(generateFakturDialogInvoice) &&
     generatingFakturInvoiceId === generateFakturDialogInvoice.id;
+  const generateTtfDialogInvoice = generateTtfConfirmation.invoice;
+  const generateTtfDialogLoading =
+    Boolean(generateTtfDialogInvoice) &&
+    generatingTtfInvoiceId === generateTtfDialogInvoice.id;
 
   const isSearchActive = hasActiveFilters;
 
@@ -462,6 +471,98 @@ const InvoicePenagihanPage = () => {
   }, [
     closeGenerateKwitansiDialog,
     generateKwitansiDialogInvoice,
+    handleAuthError,
+    refreshActiveTab,
+  ]);
+
+  const openGenerateTtfDialog = useCallback((invoice) => {
+    if (
+      !invoice ||
+      invoice?.tandaTerimaFakturId ||
+      invoice?.tandaTerimaFaktur?.id
+    ) {
+      return;
+    }
+    setGenerateTtfConfirmation({
+      show: true,
+      invoice,
+    });
+  }, []);
+
+  const closeGenerateTtfDialog = useCallback(() => {
+    setGenerateTtfConfirmation({
+      show: false,
+      invoice: null,
+    });
+  }, []);
+
+  const handleGenerateTtfConfirm = useCallback(async () => {
+    const targetInvoice = generateTtfDialogInvoice;
+    const invoiceId = targetInvoice?.id;
+
+    if (!invoiceId) {
+      closeGenerateTtfDialog();
+      return;
+    }
+
+    setGeneratingTtfInvoiceId(invoiceId);
+    try {
+      const response =
+        await invoicePenagihanService.generateTandaTerimaFaktur(invoiceId);
+      const payload = response ?? {};
+      if (payload?.success === false) {
+        throw new Error(
+          payload?.error?.message ||
+            'Gagal membuat tanda terima faktur dari invoice.'
+        );
+      }
+
+      const ttfData = payload?.data ?? payload;
+      toastService.success(
+        ttfData?.code_supplier
+          ? `Tanda terima faktur ${ttfData.code_supplier} berhasil dibuat.`
+          : 'Tanda terima faktur berhasil dibuat.'
+      );
+
+      closeGenerateTtfDialog();
+
+      setViewingInvoice((prev) => {
+        if (prev?.id !== invoiceId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          tandaTerimaFakturId:
+            ttfData?.id ||
+            ttfData?.tandaTerimaFakturId ||
+            prev?.tandaTerimaFakturId,
+          tandaTerimaFaktur: ttfData || prev?.tandaTerimaFaktur,
+        };
+      });
+
+      await refreshActiveTab();
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+      } else {
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Gagal membuat tanda terima faktur dari invoice penagihan.';
+        toastService.error(message);
+      }
+      console.error(
+        'Failed to generate tanda terima faktur from invoice penagihan:',
+        err
+      );
+    } finally {
+      setGeneratingTtfInvoiceId((current) =>
+        current === invoiceId ? null : current
+      );
+    }
+  }, [
+    closeGenerateTtfDialog,
+    generateTtfDialogInvoice,
     handleAuthError,
     refreshActiveTab,
   ]);
@@ -813,10 +914,12 @@ const InvoicePenagihanPage = () => {
               onView={openViewModal}
               onGenerateKwitansi={openGenerateKwitansiDialog}
               generatingInvoiceId={generatingInvoiceId}
+              onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
+              generatingTandaTerimaInvoiceId={generatingTtfInvoiceId}
               onGenerateFakturPajak={openGenerateFakturDialog}
               generatingFakturInvoiceId={generatingFakturInvoiceId}
               searchQuery={searchQuery}
-            />
+        />
           )}
         </div>
       </div>
@@ -855,6 +958,26 @@ const InvoicePenagihanPage = () => {
         cancelText='Batal'
         type='warning'
         loading={generateKwitansiDialogLoading}
+      />
+
+      <ConfirmationDialog
+        show={generateTtfConfirmation.show}
+        onClose={closeGenerateTtfDialog}
+        onConfirm={handleGenerateTtfConfirm}
+        title='Generate Tanda Terima Faktur'
+        message={
+          generateTtfDialogInvoice
+            ? `Apakah Anda yakin ingin membuat tanda terima faktur untuk invoice ${
+                generateTtfDialogInvoice.no_invoice_penagihan ||
+                generateTtfDialogInvoice.id ||
+                ''
+              }?`
+            : 'Apakah Anda yakin ingin membuat tanda terima faktur untuk invoice ini?'
+        }
+        confirmText='Ya, buat tanda terima'
+        cancelText='Batal'
+        type='warning'
+        loading={generateTtfDialogLoading}
       />
 
       <ConfirmationDialog

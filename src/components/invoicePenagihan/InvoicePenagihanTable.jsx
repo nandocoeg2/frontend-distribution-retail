@@ -13,6 +13,8 @@ const InvoicePenagihanTable = ({
   onView,
   onGenerateKwitansi,
   generatingInvoiceId,
+  onGenerateTandaTerimaFaktur,
+  generatingTandaTerimaInvoiceId,
   onGenerateFakturPajak,
   generatingFakturInvoiceId,
   searchQuery,
@@ -43,6 +45,9 @@ const InvoicePenagihanTable = ({
               Generate Kwitansi
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
+              Generate Tanda Terima Faktur
+            </th>
+            <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
               Generate Faktur Pajak
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
@@ -53,7 +58,7 @@ const InvoicePenagihanTable = ({
         <tbody className='bg-white divide-y divide-gray-200'>
           {data.length === 0 ? (
             <tr>
-              <td colSpan='8' className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan='9' className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery
                   ? 'Invoice penagihan tidak ditemukan.'
                   : 'Belum ada data invoice penagihan.'}
@@ -114,6 +119,47 @@ const InvoicePenagihanTable = ({
                     {invoice?.kwitansi?.no_kwitansi || invoice?.kwitansiId ? (
                       <span className='text-xs text-gray-500'>
                         {invoice?.kwitansi?.no_kwitansi || invoice?.kwitansiId}
+                      </span>
+                    ) : null}
+                  </div>
+                </td>
+                <td className='px-6 py-4 text-center whitespace-nowrap'>
+                  <div className='flex flex-col items-center justify-center space-y-1'>
+                    <div className='flex items-center space-x-2'>
+                      {generatingTandaTerimaInvoiceId === invoice.id ? (
+                        <span className='w-4 h-4 border-2 border-green-200 border-t-green-600 rounded-full animate-spin'></span>
+                      ) : null}
+                      <input
+                        type='checkbox'
+                        className='w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50'
+                        checked={Boolean(
+                          invoice?.tandaTerimaFakturId ||
+                            invoice?.tandaTerimaFaktur?.id
+                        )}
+                        onChange={(event) => {
+                          if (
+                            event.target.checked &&
+                            onGenerateTandaTerimaFaktur
+                          ) {
+                            onGenerateTandaTerimaFaktur(invoice);
+                          }
+                        }}
+                        disabled={
+                          Boolean(
+                            invoice?.tandaTerimaFakturId ||
+                              invoice?.tandaTerimaFaktur?.id
+                          ) || generatingTandaTerimaInvoiceId === invoice.id
+                        }
+                        aria-label='Generate tanda terima faktur untuk invoice ini'
+                      />
+                    </div>
+                    {invoice?.tandaTerimaFaktur?.code_supplier ||
+                    invoice?.tandaTerimaFaktur?.id ||
+                    invoice?.tandaTerimaFakturId ? (
+                      <span className='text-xs text-gray-500'>
+                        {invoice?.tandaTerimaFaktur?.code_supplier ||
+                          invoice?.tandaTerimaFaktur?.id ||
+                          invoice?.tandaTerimaFakturId}
                       </span>
                     ) : null}
                   </div>

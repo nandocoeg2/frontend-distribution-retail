@@ -110,6 +110,22 @@ class InvoicePenagihanService {
       throw error;
     }
   }
+
+  async generateTandaTerimaFaktur(id, overrides = {}) {
+    try {
+      const response = await this.api.post(
+        `/${id}/generate-tanda-terima-faktur`,
+        overrides
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error generating tanda terima faktur from invoice penagihan:',
+        error
+      );
+      throw error;
+    }
+  }
 }
 
 export default new InvoicePenagihanService();
