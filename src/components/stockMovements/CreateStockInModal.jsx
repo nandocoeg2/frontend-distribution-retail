@@ -132,80 +132,91 @@ const CreateStockInModal = ({
   }
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4'>
-      <div className='w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl'>
-        <div className='flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm'>
+      <div className='w-full max-w-3xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-black/5'>
+        <div className='flex items-start justify-between border-b border-indigo-100 bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-500 px-6 py-5 text-white'>
           <div>
-            <h2 className='text-xl font-semibold text-gray-900'>
-              Create Stock In
-            </h2>
-            <p className='text-sm text-gray-600'>
-              Catat penerimaan stok dari supplier sesuai dokumentasi API.
+            <h2 className='text-xl font-semibold'>Catat Stock In</h2>
+            <p className='mt-1 text-xs text-indigo-100'>
+              Lengkapi informasi penerimaan stok sebelum menyimpan perubahan.
             </p>
           </div>
           <button
             type='button'
             onClick={onClose}
-            className='rounded-full p-2 text-gray-500 transition hover:bg-white hover:text-gray-700'
+            className='rounded-full bg-white/10 p-2 transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60'
             aria-label='Tutup modal'
           >
             <XMarkIcon className='h-5 w-5' aria-hidden='true' />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className='max-h-[75vh] overflow-y-auto px-6 py-5 space-y-6'>
-          <div className='grid gap-4 md:grid-cols-2'>
-            <div>
-              <label
-                htmlFor='supplierId'
-                className='block text-sm font-medium text-gray-700'
-              >
-                Supplier
-              </label>
-              <input
-                id='supplierId'
-                name='supplierId'
-                list={supplierListId}
-                value={form.supplierId}
-                onChange={handleFieldChange}
-                placeholder='supplier-uuid'
-                className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-              />
-              <datalist id={supplierListId}>
-                {supplierOptions.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.label}
-                  </option>
-                ))}
-              </datalist>
-              {optionsLoading && (
-                <p className='mt-1 text-xs text-gray-500'>
-                  Memuat data supplier...
-                </p>
-              )}
-              <p className='mt-1 text-xs text-gray-500'>
-                Pilih ID supplier atau ketik manual sesuai master data.
-              </p>
-            </div>
+        <form
+          onSubmit={handleSubmit}
+          className='max-h-[80vh] overflow-y-auto px-6 py-6 space-y-6'
+        >
+          <section className='rounded-2xl border border-gray-100 bg-gray-50/80 p-4 shadow-sm'>
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <div className='flex flex-col'>
+                <label
+                  htmlFor='supplierId'
+                  className='text-sm font-medium text-gray-700'
+                >
+                  Pilih Supplier
+                </label>
+                <input
+                  id='supplierId'
+                  name='supplierId'
+                  list={supplierListId}
+                  value={form.supplierId}
+                  onChange={handleFieldChange}
+                  placeholder='Cari atau masukkan ID supplier'
+                  autoComplete='off'
+                  className='mt-2 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                  aria-describedby='supplier-helper'
+                />
+                <datalist id={supplierListId}>
+                  {supplierOptions.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.label}
+                    </option>
+                  ))}
+                </datalist>
+                <div className='mt-2 flex items-start gap-2 text-xs text-gray-500'>
+                  <span className='inline-flex h-2 w-2 translate-y-1 rounded-full bg-indigo-400' />
+                  <p id='supplier-helper'>
+                    Gunakan daftar untuk memilih supplier atau ketik manual ID yang valid.
+                    {optionsLoading && (
+                      <span className='ml-1 text-indigo-600'>
+                        Memuat data supplier...
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <label
-                htmlFor='notes'
-                className='block text-sm font-medium text-gray-700'
-              >
-                Catatan (Opsional)
-              </label>
-              <textarea
-                id='notes'
-                name='notes'
-                rows={3}
-                value={form.notes}
-                onChange={handleFieldChange}
-                placeholder='Restock mingguan'
-                className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-              />
+              <div className='flex flex-col'>
+                <label
+                  htmlFor='notes'
+                  className='text-sm font-medium text-gray-700'
+                >
+                  Catatan Penerimaan
+                </label>
+                <textarea
+                  id='notes'
+                  name='notes'
+                  rows={4}
+                  value={form.notes}
+                  onChange={handleFieldChange}
+                  placeholder='Contoh: Restock mingguan dari supplier utama'
+                  className='mt-2 block h-full w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                />
+                <p className='mt-2 text-xs text-gray-500'>
+                  Opsional, gunakan untuk menyimpan catatan pengecekan, nomor dokumen, atau info tambahan.
+                </p>
+              </div>
             </div>
-          </div>
+          </section>
 
           <StockMovementItemsInput
             items={form.items}
@@ -215,23 +226,23 @@ const CreateStockInModal = ({
           />
 
           {formError && (
-            <div className='rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
+            <div className='rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm'>
               {formError}
             </div>
           )}
 
-          <div className='flex justify-end space-x-3 pt-2'>
+          <div className='flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end sm:gap-4'>
             <button
               type='button'
               onClick={onClose}
-              className='inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+              className='inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
             >
-              Batal
+              Batalkan
             </button>
             <button
               type='submit'
               disabled={isSubmitting}
-              className='inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed'
+              className='inline-flex items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
             >
               {isSubmitting ? 'Menyimpan...' : 'Simpan Stock In'}
             </button>
@@ -243,4 +254,3 @@ const CreateStockInModal = ({
 };
 
 export default CreateStockInModal;
-

@@ -1,23 +1,8 @@
 import React, { useMemo } from 'react';
 import Pagination from '../common/Pagination.jsx';
 import { TableLoading } from '../ui/Loading.jsx';
-
-const resolveStatusClasses = (status) => {
-  switch (status) {
-    case 'STOCK_IN':
-      return 'bg-blue-100 text-blue-800';
-    case 'RETURN':
-      return 'bg-purple-100 text-purple-800';
-    case 'COMPLETED':
-      return 'bg-green-100 text-green-800';
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'REJECTED':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
+import { StatusBadge } from '../ui/Badge.jsx';
+import { formatDateTime } from '../../utils/formatUtils';
 
 const resolveTypeLabel = (type) => {
   if (!type) {
@@ -30,28 +15,27 @@ const resolveTypeLabel = (type) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const formatDateTime = (value) => {
-  if (!value) {
-    return '-';
+const resolveTypeVariant = (type) => {
+  switch (type) {
+    case 'STOCK_IN':
+      return 'primary';
+    case 'RETURN':
+      return 'info';
+    default:
+      return 'secondary';
   }
+};
 
-  try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-
-    const formatter = new Intl.DateTimeFormat('id-ID', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    return formatter.format(date);
-  } catch (error) {
-    return value;
+const resolveStatusVariant = (status) => {
+  switch (status) {
+    case 'COMPLETED':
+      return 'success';
+    case 'PENDING':
+      return 'warning';
+    case 'REJECTED':
+      return 'danger';
+    default:
+      return 'secondary';
   }
 };
 
@@ -198,22 +182,20 @@ const StockMovementTable = ({
                       {movement.movementNumber}
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${resolveStatusClasses(
-                          movement.type
-                        )}`}
-                      >
-                        {resolveTypeLabel(movement.type)}
-                      </span>
+                      <StatusBadge
+                        status={resolveTypeLabel(movement.type)}
+                        variant={resolveTypeVariant(movement.type)}
+                        size='sm'
+                        dot
+                      />
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${resolveStatusClasses(
-                          movement.status
-                        )}`}
-                      >
-                        {resolveTypeLabel(movement.status)}
-                      </span>
+                      <StatusBadge
+                        status={resolveTypeLabel(movement.status)}
+                        variant={resolveStatusVariant(movement.status)}
+                        size='sm'
+                        dot
+                      />
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                       {movement.supplierName || '-'}

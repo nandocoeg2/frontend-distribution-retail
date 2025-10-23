@@ -1,5 +1,11 @@
-import React from 'react';
-import { FunnelIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import React, { useMemo } from 'react';
+import {
+  FunnelIcon,
+  ArrowPathIcon,
+  AdjustmentsHorizontalIcon,
+  ChevronDownIcon,
+  MagnifyingGlassIcon,
+} from '@heroicons/react/24/outline';
 
 const MOVEMENT_TYPES = [
   { label: 'All Types', value: 'all' },
@@ -20,6 +26,14 @@ const StockMovementFilters = ({
   onReset,
   isLoading = false,
 }) => {
+  const hasActiveFilters = useMemo(() => {
+    return (
+      (filters.type && filters.type !== 'all') ||
+      (filters.status && filters.status !== 'all') ||
+      (filters.search && filters.search.trim() !== '')
+    );
+  }, [filters]);
+
   const handleSearchChange = (event) => {
     onChange({ search: event.target.value });
   };
@@ -37,94 +51,160 @@ const StockMovementFilters = ({
   };
 
   return (
-    <form
-      className='grid grid-cols-1 gap-4 md:grid-cols-4'
-      onSubmit={(event) => event.preventDefault()}
-    >
-      <div className='md:col-span-2'>
-        <label
-          htmlFor='stock-movements-search'
-          className='block text-sm font-medium text-gray-700'
-        >
-          Search Movements
-        </label>
-        <div className='mt-1 relative rounded-md shadow-sm'>
-          <input
-            id='stock-movements-search'
-            type='text'
-            name='search'
-            value={filters.search}
-            onChange={handleSearchChange}
-            disabled={isLoading}
-            placeholder='Movement number, notes, supplier...'
-            className='block w-full rounded-md border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-          />
-          <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400'>
-            <FunnelIcon className='h-5 w-5' aria-hidden='true' />
+    <section className='rounded-2xl border border-gray-100 bg-gray-50/80 p-4 shadow-sm sm:p-5'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        <div className='flex items-start gap-3'>
+          <span className='inline-flex rounded-full bg-indigo-100 p-2 text-indigo-600'>
+            <AdjustmentsHorizontalIcon className='h-5 w-5' aria-hidden='true' />
+          </span>
+          <div>
+            <h2 className='text-base font-semibold text-gray-900'>
+              Cari Pergerakan Stok
+            </h2>
+            <p className='text-xs text-gray-500'>
+              Kombinasikan pencarian dokumen, tipe pergerakan, dan status proses
+              untuk menemukan data yang kamu butuhkan.
+            </p>
           </div>
         </div>
-      </div>
 
-      <div>
-        <label
-          htmlFor='movement-type-filter'
-          className='block text-sm font-medium text-gray-700'
-        >
-          Movement Type
-        </label>
-        <select
-          id='movement-type-filter'
-          name='type'
-          value={filters.type}
-          onChange={handleTypeChange}
-          disabled={isLoading}
-          className='mt-1 block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm'
-        >
-          {MOVEMENT_TYPES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label
-          htmlFor='movement-status-filter'
-          className='block text-sm font-medium text-gray-700'
-        >
-          Status
-        </label>
-        <select
-          id='movement-status-filter'
-          name='status'
-          value={filters.status}
-          onChange={handleStatusChange}
-          disabled={isLoading}
-          className='mt-1 block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm'
-        >
-          {MOVEMENT_STATUS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className='flex items-end justify-end md:justify-start'>
         <button
           type='button'
           onClick={handleReset}
-          disabled={isLoading}
-          className='inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60'
+          disabled={isLoading || !hasActiveFilters}
+          className='inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
         >
           <ArrowPathIcon className='mr-2 h-4 w-4' aria-hidden='true' />
-          Reset Filters
+          Reset Filter
         </button>
       </div>
-    </form>
+
+      <form
+        className='mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'
+        onSubmit={(event) => event.preventDefault()}
+      >
+        <div className='sm:col-span-2'>
+          <label
+            htmlFor='stock-movements-search'
+            className='text-sm font-medium text-gray-700'
+          >
+            Kata Kunci Dokumen
+          </label>
+          <div className='relative mt-2'>
+            <MagnifyingGlassIcon
+              className='pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400'
+              aria-hidden='true'
+            />
+            <input
+              id='stock-movements-search'
+              type='text'
+              name='search'
+              value={filters.search}
+              onChange={handleSearchChange}
+              disabled={isLoading}
+              placeholder='Nomor movement, catatan stok, atau nama supplier'
+              className='block w-full rounded-xl border border-transparent bg-white px-10 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+            />
+            <div className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-300'>
+              <FunnelIcon className='h-5 w-5' aria-hidden='true' />
+            </div>
+          </div>
+          <p className='mt-2 text-xs text-gray-500'>
+            Gunakan kata kunci spesifik untuk mempercepat pencarian, misalnya{' '}
+            <span className='font-medium text-gray-800'>SIN-2025</span> atau{' '}
+            <span className='font-medium text-gray-800'>Supplier Sejahtera</span>.
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor='movement-type-filter'
+            className='text-sm font-medium text-gray-700'
+          >
+            Jenis Pergerakan
+          </label>
+          <div className='relative mt-2'>
+            <select
+              id='movement-type-filter'
+              name='type'
+              value={filters.type}
+              onChange={handleTypeChange}
+              disabled={isLoading}
+              className='block w-full appearance-none rounded-xl border border-transparent bg-white px-4 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+            >
+              {MOVEMENT_TYPES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon
+              className='pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400'
+              aria-hidden='true'
+            />
+          </div>
+          <p className='mt-2 text-xs text-gray-500'>
+            Filter berdasarkan sumber pergerakan stok: penerimaan dari supplier atau retur pelanggan.
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor='movement-status-filter'
+            className='text-sm font-medium text-gray-700'
+          >
+            Status Proses
+          </label>
+          <div className='relative mt-2'>
+            <select
+              id='movement-status-filter'
+              name='status'
+              value={filters.status}
+              onChange={handleStatusChange}
+              disabled={isLoading}
+              className='block w-full appearance-none rounded-xl border border-transparent bg-white px-4 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+            >
+              {MOVEMENT_STATUS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDownIcon
+              className='pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400'
+              aria-hidden='true'
+            />
+          </div>
+          <p className='mt-2 text-xs text-gray-500'>
+            Lihat pergerakan yang masih <span className='font-medium text-gray-700'>Pending</span>,{' '}
+            sudah <span className='font-medium text-green-600'>Completed</span>, atau{' '}
+            <span className='font-medium text-red-500'>Rejected</span>.
+          </p>
+        </div>
+      </form>
+
+      {hasActiveFilters && (
+        <div className='mt-4 flex flex-wrap items-center gap-2 text-xs'>
+          <span className='text-gray-500'>Filter aktif:</span>
+          {filters.search && filters.search.trim() !== '' && (
+            <span className='inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 font-medium text-indigo-700'>
+              Kata kunci: {filters.search}
+            </span>
+          )}
+          {filters.type && filters.type !== 'all' && (
+            <span className='inline-flex items-center rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-700'>
+              Tipe: {MOVEMENT_TYPES.find((option) => option.value === filters.type)?.label}
+            </span>
+          )}
+          {filters.status && filters.status !== 'all' && (
+            <span className='inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700'>
+              Status: {MOVEMENT_STATUS.find((option) => option.value === filters.status)?.label}
+            </span>
+          )}
+        </div>
+      )}
+    </section>
   );
 };
 
 export default StockMovementFilters;
-

@@ -53,15 +53,21 @@ const StockMovementItemsInput = ({
   };
 
   return (
-    <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <span className='text-sm font-medium text-gray-700'>
-          Items
-        </span>
+    <section className='space-y-5'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
+        <div>
+          <h2 className='text-sm font-semibold text-gray-900'>
+            Detail Item
+          </h2>
+          <p className='text-xs text-gray-500'>
+            Pilih inventory dan isi quantity sesuai barang yang bergerak. Kamu bisa menambahkan lebih
+            dari satu item sekaligus.
+          </p>
+        </div>
         <button
           type='button'
           onClick={handleAddItem}
-          className='inline-flex items-center rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors'
+          className='inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
         >
           <PlusIcon className='mr-1 h-4 w-4' aria-hidden='true' />
           Tambah Item
@@ -69,9 +75,10 @@ const StockMovementItemsInput = ({
       </div>
 
       {loading && (
-        <p className='text-xs text-gray-500'>
-          Memuat data inventory...
-        </p>
+        <div className='flex items-center gap-2 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/60 px-3 py-2 text-xs text-indigo-700'>
+          <span className='inline-flex h-2 w-2 animate-pulse rounded-full bg-indigo-500' />
+          Memuat data inventory terbaru...
+        </div>
       )}
 
       <datalist id={datalistId}>
@@ -83,74 +90,103 @@ const StockMovementItemsInput = ({
       </datalist>
 
       <div className='space-y-4'>
-        {items.map((item, index) => (
-          <div
-            key={`movement-item-${index}`}
-            className='rounded-lg border border-gray-200 p-4'
-          >
-            <div className='grid gap-4 md:grid-cols-12'>
-              <div className='md:col-span-7'>
-                <label
-                  htmlFor={`inventory-id-${index}`}
-                  className='block text-sm font-medium text-gray-700'
-                >
-                  Inventory ID
-                </label>
-                <input
-                  id={`inventory-id-${index}`}
-                  name={`inventoryId-${index}`}
-                  list={datalistId}
-                  value={item.inventoryId}
-                  onChange={(event) =>
-                    handleItemChange(index, 'inventoryId', event.target.value)
-                  }
-                  placeholder='inventory-uuid'
-                  className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-                />
-                <p className='mt-1 text-xs text-gray-500'>
-                  Pilih ID inventory atau ketik manual.
-                </p>
-              </div>
-
-              <div className='md:col-span-4'>
-                <label
-                  htmlFor={`inventory-quantity-${index}`}
-                  className='block text-sm font-medium text-gray-700'
-                >
-                  Quantity
-                </label>
-                <input
-                  id={`inventory-quantity-${index}`}
-                  name={`quantity-${index}`}
-                  type='number'
-                  min='1'
-                  value={item.quantity}
-                  onChange={(event) =>
-                    handleItemChange(index, 'quantity', event.target.value)
-                  }
-                  placeholder='Contoh: 100'
-                  className='mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-                />
-              </div>
-
-              <div className='md:col-span-1 flex items-end justify-end'>
+        {items.map((item, index) => {
+          const itemIndex = index + 1;
+          return (
+            <div
+              key={`movement-item-${index}`}
+              className='rounded-xl border border-gray-200 bg-gray-50/60 p-4 shadow-sm'
+            >
+              <div className='mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                <div>
+                  <span className='inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow'>
+                    Item #{itemIndex}
+                  </span>
+                  <p className='mt-2 text-xs text-gray-500'>
+                    Masukkan ID inventory dan quantity sesuai dokumen sumber.
+                  </p>
+                </div>
                 {items.length > 1 && (
                   <button
                     type='button'
                     onClick={() => handleRemoveItem(index)}
-                    className='inline-flex items-center rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors'
+                    className='inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
+                    aria-label={`Hapus item ${itemIndex}`}
                   >
-                    <TrashIcon className='h-4 w-4' aria-hidden='true' />
+                    <TrashIcon className='mr-1 h-4 w-4' aria-hidden='true' />
+                    Hapus
                   </button>
                 )}
               </div>
+
+              <div className='grid gap-4 sm:grid-cols-2'>
+                <div>
+                  <label
+                    htmlFor={`inventory-id-${index}`}
+                    className='block text-sm font-medium text-gray-700'
+                  >
+                    Inventory ID
+                  </label>
+                  <input
+                    id={`inventory-id-${index}`}
+                    name={`inventoryId-${index}`}
+                    list={datalistId}
+                    value={item.inventoryId}
+                    onChange={(event) =>
+                      handleItemChange(index, 'inventoryId', event.target.value)
+                    }
+                    placeholder='Contoh: inventory-uuid'
+                    autoComplete='off'
+                    className='mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                    aria-describedby={`inventory-helper-${index}`}
+                  />
+                  <p
+                    id={`inventory-helper-${index}`}
+                    className='mt-1 text-xs text-gray-500'
+                  >
+                    Pilih dari daftar atau ketik manual sesuai master data inventory.
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor={`inventory-quantity-${index}`}
+                    className='block text-sm font-medium text-gray-700'
+                  >
+                    Quantity
+                  </label>
+                  <div className='mt-1 flex rounded-lg border border-gray-300 bg-white shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500'>
+                    <input
+                      id={`inventory-quantity-${index}`}
+                      name={`quantity-${index}`}
+                      type='number'
+                      min='1'
+                      value={item.quantity}
+                      onChange={(event) =>
+                        handleItemChange(index, 'quantity', event.target.value)
+                      }
+                      placeholder='cth. 100'
+                      className='w-full rounded-lg px-3 py-2 text-sm focus:outline-none'
+                      aria-describedby={`quantity-helper-${index}`}
+                    />
+                    <span className='inline-flex items-center px-3 text-xs font-medium text-gray-500'>
+                      pcs
+                    </span>
+                  </div>
+                  <p
+                    id={`quantity-helper-${index}`}
+                    className='mt-1 text-xs text-gray-500'
+                  >
+                    Masukkan jumlah unit yang bergerak. Gunakan angka positif.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 };
 
 export default StockMovementItemsInput;
-
