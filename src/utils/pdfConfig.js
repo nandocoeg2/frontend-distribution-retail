@@ -90,4 +90,9 @@ export const DOCUMENT_CONFIGS = {
     filename: 'Kwitansi',
     multiPage: false,
   },
+  PURCHASE_ORDER: {
+    title: 'PURCHASE ORDER',
+    filename: 'Purchase_Order',
+    multiPage: true,
+  },
 };

@@ -5,6 +5,7 @@ import {
   drawTable,
   drawLine,
   checkAndAddPage,
+  generateFileName,
 } from '../../utils/pdfUtils';
 import {
   PDF_COLORS,
@@ -46,12 +47,6 @@ const formatNumberOrZero = (value) => {
   }
   return numberFormatter.format(numeric);
 };
-
-const sanitizeForFileName = (value) =>
-  String(value || 'document')
-    .replace(/[^A-Za-z0-9_-]/g, '_')
-    .replace(/_{2,}/g, '_')
-    .replace(/^_+|_+$/g, '');
 
 const formatPercentageOrDash = (value) => {
   const numeric = toFiniteNumber(value);
@@ -732,7 +727,7 @@ export const exportPurchaseOrderToPDF = async (order) => {
       order.noPurchaseOrder ||
       order.id ||
       'purchase_order';
-    const fileName = `Purchase_Order_${sanitizeForFileName(fileNumber)}_${Date.now()}.pdf`;
+    const fileName = generateFileName('PURCHASE_ORDER', fileNumber);
 
     pdf.save(fileName);
   } finally {
