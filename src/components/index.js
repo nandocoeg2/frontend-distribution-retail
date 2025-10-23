@@ -17,6 +17,9 @@ export * from './suppliers';
 // Inventory components
 export * from './inventories';
 
+// Stock Movement components
+export * from './stockMovements';
+
 
 // Laporan Penerimaan Barang components
 export * from './laporanPenerimaanBarang';

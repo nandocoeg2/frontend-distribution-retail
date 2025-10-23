@@ -46,6 +46,7 @@ import Companies from './pages/Companies.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import CheckingList from './pages/CheckingList.jsx';
+import StockMovements from './pages/StockMovements.jsx';
 
 // Component untuk routes yang menggunakan useAuth
 const AppRoutes = () => {
@@ -225,6 +226,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Inventories />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/stock-movements'
+        element={
+          <ProtectedRoute>
+            <StockMovements />
           </ProtectedRoute>
         }
       />
