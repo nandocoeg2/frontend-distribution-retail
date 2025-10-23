@@ -28,6 +28,7 @@ import { exportSuratJalanToPDF } from '../suratJalan/PrintSuratJalan';
 import { getPackingById } from '../../services/packingService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
+import { exportPurchaseOrderToPDF } from './PrintPurchaseOrder';
 
 const ViewPurchaseOrderModal = ({
   isOpen,
@@ -51,12 +52,60 @@ const ViewPurchaseOrderModal = ({
   });
 
   const [selectedDocuments, setSelectedDocuments] = useState({
+    PURCHASE_ORDER: false,
     PACKING: false,
     INVOICE_PENGIRIMAN: false,
     SURAT_JALAN: false,
   });
 
   const [printing, setPrinting] = useState(false);
+
+  const purchaseOrderExportInfoParts = [];
+  if (order?.po_number) {
+    purchaseOrderExportInfoParts.push(`PO: ${order.po_number}`);
+  }
+  const purchaseOrderPrintedRaw =
+    order?.is_printed ??
+    order?.isPrinted ??
+    order?.po_is_printed ??
+    order?.poIsPrinted ??
+    null;
+  if (purchaseOrderPrintedRaw !== null && purchaseOrderPrintedRaw !== undefined) {
+    let isPrinted = null;
+    if (typeof purchaseOrderPrintedRaw === 'boolean') {
+      isPrinted = purchaseOrderPrintedRaw;
+    } else if (typeof purchaseOrderPrintedRaw === 'string') {
+      const normalized = purchaseOrderPrintedRaw.trim().toLowerCase();
+      if (normalized === 'yes' || normalized === 'y' || normalized === 'printed' || normalized === '1') {
+        isPrinted = true;
+      } else if (normalized === 'no' || normalized === 'n' || normalized === '0' || normalized === 'unprinted') {
+        isPrinted = false;
+      }
+    } else if (typeof purchaseOrderPrintedRaw === 'number') {
+      isPrinted = purchaseOrderPrintedRaw > 0;
+    }
+
+    if (isPrinted !== null) {
+      purchaseOrderExportInfoParts.push(`Printed: ${isPrinted ? 'Yes' : 'No'}`);
+    }
+  }
+
+  const purchaseOrderPrintCounter =
+    order?.print_counter ??
+    order?.printCounter ??
+    order?.po_print_counter ??
+    order?.poPrintCounter;
+  if (
+    purchaseOrderPrintCounter !== null &&
+    purchaseOrderPrintCounter !== undefined
+  ) {
+    purchaseOrderExportInfoParts.push(`Counter: ${purchaseOrderPrintCounter}`);
+  }
+
+  const purchaseOrderPrintInfo =
+    purchaseOrderExportInfoParts.length > 0
+      ? purchaseOrderExportInfoParts.join(' • ')
+      : 'Ready to export purchase order PDF';
 
   if (!isOpen) return null;
 
@@ -131,6 +180,7 @@ const ViewPurchaseOrderModal = ({
     const allSelected = Object.values(selectedDocuments).every((val) => val);
     const newValue = !allSelected;
     setSelectedDocuments({
+      PURCHASE_ORDER: newValue,
       PACKING: newValue,
       INVOICE_PENGIRIMAN: newValue,
       SURAT_JALAN: newValue,
@@ -175,9 +225,26 @@ const ViewPurchaseOrderModal = ({
     }
 
     const exportTasks = [];
+    let purchaseOrderTaskCreated = false;
     let packingTaskCreated = false;
     let invoiceTaskCreated = false;
     let suratJalanTaskCreated = false;
+
+    if (selectedDocuments.PURCHASE_ORDER) {
+      const details = Array.isArray(order?.purchaseOrderDetails)
+        ? order.purchaseOrderDetails
+        : [];
+
+      if (!details.length) {
+        showError('Purchase order details are not available for printing');
+        return;
+      }
+
+      exportTasks.push(async () => {
+        await exportPurchaseOrderToPDF(order);
+      });
+      purchaseOrderTaskCreated = true;
+    }
 
     if (selectedDocuments.PACKING && order?.packing) {
       const packingId =
@@ -280,13 +347,15 @@ const ViewPurchaseOrderModal = ({
 
     if (exportTasks.length === 0) {
       const specificMessage =
-        (selectedDocuments.PACKING && !packingTaskCreated)
-          ? 'Packing data is not available to print'
-          : (selectedDocuments.INVOICE_PENGIRIMAN && !invoiceTaskCreated)
-            ? 'Invoice pengiriman data is not available to print'
-            : (selectedDocuments.SURAT_JALAN && !suratJalanTaskCreated)
-              ? 'Surat jalan data is not available to print'
-              : 'Selected documents are not available to print';
+        (selectedDocuments.PURCHASE_ORDER && !purchaseOrderTaskCreated)
+          ? 'Purchase order data is not available to export'
+          : (selectedDocuments.PACKING && !packingTaskCreated)
+            ? 'Packing data is not available to print'
+            : (selectedDocuments.INVOICE_PENGIRIMAN && !invoiceTaskCreated)
+              ? 'Invoice pengiriman data is not available to print'
+              : (selectedDocuments.SURAT_JALAN && !suratJalanTaskCreated)
+                ? 'Surat jalan data is not available to print'
+                : 'Selected documents are not available to print';
 
       showError(specificMessage);
       return;
@@ -311,6 +380,7 @@ const ViewPurchaseOrderModal = ({
           onProcessed();
         }
         setSelectedDocuments({
+          PURCHASE_ORDER: false,
           PACKING: false,
           INVOICE_PENGIRIMAN: false,
           SURAT_JALAN: false,
@@ -610,6 +680,36 @@ const ViewPurchaseOrderModal = ({
 
                       {/* Document Checkboxes */}
                       <div className='space-y-3'>
+                        {/* Purchase Order */}
+                        <div className='flex items-center justify-between p-4 border border-gray-200 rounded-lg transition-colors bg-white hover:bg-gray-50'>
+                          <div className='flex items-center flex-1'>
+                            <input
+                              type='checkbox'
+                              id='purchase-order-checkbox'
+                              checked={selectedDocuments.PURCHASE_ORDER}
+                              onChange={() =>
+                                handleDocumentCheckbox('PURCHASE_ORDER')
+                              }
+                              className='w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
+                            />
+                            <label
+                              htmlFor='purchase-order-checkbox'
+                              className='flex-1 ml-3'
+                            >
+                              <div className='flex items-center justify-between'>
+                                <div>
+                                  <p className='text-sm font-medium text-gray-900'>
+                                    Purchase Order
+                                  </p>
+                                  <p className='text-xs text-gray-500'>
+                                    {purchaseOrderPrintInfo}
+                                  </p>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
                         {/* Packing */}
                         <div
                           className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
