@@ -11,6 +11,7 @@ import {
   FakturPajakTable,
   FakturPajakModal,
   FakturPajakDetailModal,
+  FakturPajakExportModal,
 } from '@/components/fakturPajak';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
@@ -197,6 +198,7 @@ const FakturPajakPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -401,6 +403,14 @@ const FakturPajakPage = () => {
     setSelectedFakturPajak(null);
   };
 
+  const openExportModal = () => {
+    setIsExportModalOpen(true);
+  };
+
+  const closeExportModal = () => {
+    setIsExportModalOpen(false);
+  };
+
   const openDetailModal = useCallback(
     async (fakturPajak) => {
       if (!fakturPajak?.id) {
@@ -476,6 +486,13 @@ const FakturPajakPage = () => {
               </p>
             </div>
             <div className='flex items-center gap-2'>
+              <button
+                onClick={openExportModal}
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-md shadow-sm hover:bg-emerald-700'
+              >
+                <HeroIcon name='archive-box' className='w-5 h-5 mr-2' />
+                Export e-Faktur DJP
+              </button>
               <button
                 onClick={openCreateModal}
                 className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
@@ -568,6 +585,11 @@ const FakturPajakPage = () => {
         onClose={closeDetailModal}
         fakturPajak={selectedFakturPajak}
         isLoading={detailLoading}
+      />
+
+      <FakturPajakExportModal
+        isOpen={isExportModalOpen}
+        onClose={closeExportModal}
       />
 
       <ConfirmationDialog

@@ -95,6 +95,51 @@ class FakturPajakService {
       throw error;
     }
   }
+
+  async exportFakturPajak(params = {}) {
+    try {
+      const sanitizedParams = Object.entries(params || {}).reduce(
+        (acc, [key, value]) => {
+          if (value === null || value === undefined) {
+            return acc;
+          }
+
+          if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed !== '') {
+              acc[key] = trimmed;
+            }
+            return acc;
+          }
+
+          acc[key] = value;
+          return acc;
+        },
+        {}
+      );
+
+      const format =
+        typeof sanitizedParams.format === 'string' &&
+        sanitizedParams.format.trim().length > 0
+          ? sanitizedParams.format.trim().toLowerCase()
+          : 'json';
+
+      sanitizedParams.format = format;
+
+      const response = await this.api.get('/export', {
+        params: sanitizedParams,
+        headers: {
+          Accept: format === 'xml' ? 'application/xml' : 'application/json',
+        },
+        responseType: 'blob',
+      });
+
+      return response;
+    } catch (error) {
+      console.error('Error exporting faktur pajak:', error);
+      throw error;
+    }
+  }
 }
 
 export default new FakturPajakService();
