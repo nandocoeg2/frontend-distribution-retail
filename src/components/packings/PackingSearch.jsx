@@ -1,5 +1,7 @@
 import React from 'react';
+import Autocomplete from '../common/Autocomplete';
 import useStatuses from '../../hooks/useStatuses';
+import usePurchaseOrderAutocomplete from '../../hooks/usePurchaseOrderAutocomplete';
 
 const PackingSearch = ({
   filters,
@@ -9,6 +11,13 @@ const PackingSearch = ({
   searchLoading,
 }) => {
   const { packingStatuses, fetchPackingStatuses } = useStatuses();
+  const {
+    options: purchaseOrderOptions,
+    loading: purchaseOrderLoading,
+    fetchOptions: searchPurchaseOrders,
+  } = usePurchaseOrderAutocomplete({
+    selectedValue: filters.purchaseOrderId,
+  });
 
   React.useEffect(() => {
     fetchPackingStatuses();
@@ -25,6 +34,13 @@ const PackingSearch = ({
 
   const handleChange = (field) => (event) => {
     onFiltersChange?.(field, event.target.value);
+  };
+
+  const handleAutocompleteChange = (field) => (eventOrValue) => {
+    const value = eventOrValue?.target
+      ? eventOrValue.target.value
+      : eventOrValue || '';
+    onFiltersChange?.(field, value);
   };
 
   const isLoading = Boolean(searchLoading);
@@ -52,12 +68,18 @@ const PackingSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Purchase Order ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={purchaseOrderOptions}
             value={filters.purchaseOrderId || ''}
-            onChange={handleChange('purchaseOrderId')}
-            placeholder='Masukkan ID purchase order'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            onChange={handleAutocompleteChange('purchaseOrderId')}
+            placeholder='Cari Purchase Order'
+            displayKey='label'
+            valueKey='id'
+            name='purchaseOrderId'
+            loading={purchaseOrderLoading}
+            onSearch={searchPurchaseOrders}
+            showId
           />
         </div>
 

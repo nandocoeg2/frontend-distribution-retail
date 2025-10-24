@@ -3,6 +3,7 @@ import Autocomplete from '../common/Autocomplete';
 import useCustomersPage from '../../hooks/useCustomersPage';
 import useSupplierSearch from '../../hooks/useSupplierSearch';
 import useTermOfPaymentAutocomplete from '../../hooks/useTermOfPaymentAutocomplete';
+import usePurchaseOrderAutocomplete from '../../hooks/usePurchaseOrderAutocomplete';
 import supplierService from '../../services/supplierService';
 import {
   formatSupplierOptions,
@@ -41,6 +42,13 @@ const LaporanPenerimaanBarangSearch = ({
     fetchOptions: searchTermOfPayments
   } = useTermOfPaymentAutocomplete({
     selectedValue: filters?.termin_bayar
+  });
+  const {
+    options: purchaseOrderOptions,
+    loading: purchaseOrderLoading,
+    fetchOptions: searchPurchaseOrders,
+  } = usePurchaseOrderAutocomplete({
+    selectedValue: filters?.purchaseOrderId,
   });
 
   useEffect(() => {
@@ -116,6 +124,11 @@ const LaporanPenerimaanBarangSearch = ({
     onFiltersChange?.('supplierId', value);
   };
 
+  const handlePurchaseOrderChange = (event) => {
+    const value = event?.target ? event.target.value : event;
+    onFiltersChange?.('purchaseOrderId', value);
+  };
+
   const isLoading = Boolean(loading);
 
   return (
@@ -144,12 +157,18 @@ const LaporanPenerimaanBarangSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Purchase Order ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={purchaseOrderOptions}
             value={filters.purchaseOrderId || ''}
-            onChange={handleChange('purchaseOrderId')}
-            placeholder='Masukkan ID purchase order'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            onChange={handlePurchaseOrderChange}
+            placeholder='Cari Purchase Order'
+            displayKey='label'
+            valueKey='id'
+            name='purchaseOrderId'
+            loading={purchaseOrderLoading}
+            onSearch={searchPurchaseOrders}
+            showId
           />
         </div>
 

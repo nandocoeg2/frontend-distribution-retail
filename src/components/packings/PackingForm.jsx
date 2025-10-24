@@ -1,6 +1,8 @@
 import React from 'react';
+import Autocomplete from '../common/Autocomplete';
 import usePackingForm from '../../hooks/usePackingForm';
 import usePackingOperations from '../../hooks/usePackingOperations';
+import usePurchaseOrderAutocomplete from '../../hooks/usePurchaseOrderAutocomplete';
 
 const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
   const {
@@ -9,10 +11,8 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     isSubmitting,
     setIsSubmitting,
     packingStatuses,
-    purchaseOrders,
     inventories,
     statusLoading,
-    poLoading,
     inventoryLoading,
     handleInputChange,
     addPackingItem,
@@ -29,6 +29,20 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     createPackingData,
     updatePackingData
   } = usePackingOperations();
+  const {
+    options: purchaseOrderOptions,
+    loading: purchaseOrderLoading,
+    fetchOptions: searchPurchaseOrders,
+  } = usePurchaseOrderAutocomplete({
+    selectedValue: formData.purchaseOrderId,
+  });
+
+  const handlePurchaseOrderChange = (eventOrValue) => {
+    const value = eventOrValue?.target
+      ? eventOrValue.target.value
+      : eventOrValue || '';
+    handleInputChange('purchaseOrderId', value);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,7 +75,13 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     onCancel?.();
   };
 
-  const isLoading = statusLoading || poLoading || inventoryLoading || isSubmitting || isCreating || isUpdating;
+  const isLoading =
+    statusLoading ||
+    purchaseOrderLoading ||
+    inventoryLoading ||
+    isSubmitting ||
+    isCreating ||
+    isUpdating;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -115,21 +135,25 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Purchase Order *
           </label>
-          <select
-            value={formData.purchaseOrderId}
-            onChange={(e) => handleInputChange('purchaseOrderId', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.purchaseOrderId ? 'border-red-500' : 'border-gray-300'
-            }`}
+          <Autocomplete
+            label=""
+            options={purchaseOrderOptions}
+            value={formData.purchaseOrderId || ''}
+            onChange={handlePurchaseOrderChange}
+            placeholder="Cari Purchase Order"
+            displayKey="label"
+            valueKey="id"
+            name="purchaseOrderId"
+            loading={purchaseOrderLoading}
+            onSearch={searchPurchaseOrders}
+            showId
             disabled={isLoading}
-          >
-            <option value="">Pilih Purchase Order</option>
-            {Array.isArray(purchaseOrders) && purchaseOrders.map((po) => (
-              <option key={po.id} value={po.id}>
-                {po.po_number} - {po.supplier?.company_name || 'N/A'}
-              </option>
-            ))}
-          </select>
+            inputClassName={
+              errors.purchaseOrderId
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                : ''
+            }
+          />
           {errors.purchaseOrderId && (
             <p className="mt-1 text-sm text-red-600">{errors.purchaseOrderId}</p>
           )}

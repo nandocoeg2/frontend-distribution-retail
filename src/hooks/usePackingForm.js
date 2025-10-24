@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import useStatuses from './useStatuses';
-import usePurchaseOrders from './usePurchaseOrders';
 import useInventories from './useInventories';
 
 const usePackingForm = (initialData = null) => {
@@ -16,7 +15,6 @@ const usePackingForm = (initialData = null) => {
 
   // Load dependencies
   const { packingStatuses, loading: statusLoading, fetchPackingStatuses } = useStatuses();
-  const { purchaseOrders, loading: poLoading } = usePurchaseOrders();
   const { inventories, loading: inventoryLoading } = useInventories();
 
   // Load packing statuses on mount
@@ -161,10 +159,8 @@ const usePackingForm = (initialData = null) => {
     isSubmitting,
     setIsSubmitting,
     packingStatuses,
-    purchaseOrders,
     inventories,
     statusLoading,
-    poLoading,
     inventoryLoading,
     handleInputChange,
     addPackingItem,
