@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState(null);
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -18,11 +19,15 @@ export const AuthProvider = ({ children }) => {
       try {
         const userData = authService.getUserData();
         const tokenData = authService.getToken();
+        const companyData = authService.getCompanyData();
         
         if (userData && tokenData) {
           setUser(userData);
           setToken(tokenData);
           setIsAuthenticated(true);
+          if (companyData) {
+            setCompany(companyData);
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -44,6 +49,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      setCompany(null);
       setLoading(false);
     };
 
@@ -56,22 +62,25 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login function
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (username, password, companyId) => {
     try {
       setLoading(true);
-      const result = await authService.login(email, password);
+      const result = await authService.login(username, password, companyId);
       
       console.log('Login result:', result); // Debug log
       
       if (result.success) {
         // Periksa struktur data dengan aman
         if (result.data && result.data.user && result.data.accessToken) {
-          const { user: userData, accessToken } = result.data;
+          const { user: userData, accessToken, company: companyData } = result.data;
           console.log('User data:', userData); // Debug log
           console.log('Access token:', accessToken); // Debug log
           setUser(userData);
           setToken(accessToken);
           setIsAuthenticated(true);
+          if (companyData) {
+            setCompany(companyData);
+          }
           toastService.success('Login berhasil');
           return { success: true, data: result.data };
         } else {
@@ -122,6 +131,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      setCompany(null);
       toastService.success('Logout berhasil');
       // Navigate will be handled by the component using this hook
       return { success: true };
@@ -145,6 +155,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      setCompany(null);
       toastService.error('Session expired. Silakan login kembali.');
     }
     return isAuth;
@@ -167,6 +178,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    company,
     checkAuth,
     handleAuthError
   };

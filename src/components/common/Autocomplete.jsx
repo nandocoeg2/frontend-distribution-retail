@@ -14,7 +14,14 @@ const Autocomplete = ({
   onSearch = null, // Function to call when searching (for dynamic search)
   searchDelay = 300, // Delay in ms before calling onSearch
   loading = false, // External loading state
-  showId = false // Whether to show ID as subtitle
+  showId = false, // Whether to show ID as subtitle
+  className = '',
+  inputClassName = '',
+  optionsClassName = '',
+  optionClassName = 'px-3 py-2 cursor-pointer hover:bg-gray-100',
+  emptyStateClassName = 'px-3 py-2 text-gray-500',
+  searchingClassName = 'px-3 py-2 text-gray-500',
+  dropdownPosition = 'absolute' // 'absolute' | 'static'
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredOptions, setFilteredOptions] = useState([]);
@@ -24,15 +31,21 @@ const Autocomplete = ({
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (value) {
-      const selectedOption = options.find(option => option[valueKey] === value);
-      if (selectedOption) {
-        setInputValue(selectedOption[displayKey]);
-      }
-    } else {
-      setInputValue('');
+    if (!value) {
+      return;
+    }
+
+    const selectedOption = options.find(option => option[valueKey] === value);
+    if (selectedOption) {
+      setInputValue(selectedOption[displayKey]);
     }
   }, [value, options, displayKey, valueKey]);
+
+  useEffect(() => {
+    if (!value) {
+      setInputValue('');
+    }
+  }, [value]);
 
   useEffect(() => {
     setFilteredOptions(options);
@@ -112,7 +125,7 @@ const Autocomplete = ({
   }, []);
 
   return (
-    <div className="relative" ref={wrapperRef}>
+    <div className={`relative ${className}`} ref={wrapperRef}>
       {label && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {label} {required && ' *'}
@@ -127,12 +140,18 @@ const Autocomplete = ({
         required={required && !value}
         disabled={disabled}
         name={name || label.toLowerCase().replace(/\s+/g, '_')} // Use provided name or generate one
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${inputClassName}`}
       />
       {showOptions && (
-        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+        <ul
+          className={`w-full bg-white border border-gray-300 rounded-md max-h-60 overflow-y-auto shadow-lg ${
+            dropdownPosition === 'absolute'
+              ? 'absolute z-10 mt-1'
+              : 'relative mt-2'
+          } ${optionsClassName}`}
+        >
           {isSearching || loading ? (
-            <li className="px-3 py-2 text-gray-500">
+            <li className={searchingClassName}>
               <div className="flex items-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                 Searching...
@@ -143,7 +162,7 @@ const Autocomplete = ({
               <li
                 key={option[valueKey]}
                 onClick={() => handleOptionClick(option)}
-                className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+                className={optionClassName}
               >
                 <div className="font-medium">{option[displayKey]}</div>
                 {showId && option.id && (
@@ -152,7 +171,7 @@ const Autocomplete = ({
               </li>
             ))
           ) : (
-            <li className="px-3 py-2 text-gray-500">No results found</li>
+            <li className={emptyStateClassName}>No results found</li>
           )}
         </ul>
       )}

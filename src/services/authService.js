@@ -17,9 +17,15 @@ class AuthService {
   // Save user data to localStorage
   saveUserData(userData) {
     console.log('Saving user data:', userData); // Debug log
-    localStorage.setItem('userData', JSON.stringify(userData.user));
-    localStorage.setItem('token', userData.accessToken);
-    // Remove menus if not provided in new API structure
+    if (userData.user) {
+      localStorage.setItem('userData', JSON.stringify(userData.user));
+    }
+    if (userData.accessToken) {
+      localStorage.setItem('token', userData.accessToken);
+    }
+    if (userData.company) {
+      localStorage.setItem('company', JSON.stringify(userData.company));
+    }
     if (userData.user && userData.user.menus) {
       localStorage.setItem('menus', JSON.stringify(userData.user.menus));
     }
@@ -39,6 +45,16 @@ class AuthService {
   // Get token from localStorage
   getToken() {
     return localStorage.getItem('token');
+  }
+
+  getCompanyData() {
+    try {
+      const companyData = localStorage.getItem('company');
+      return companyData ? JSON.parse(companyData) : null;
+    } catch (error) {
+      console.error('Error parsing company data:', error);
+      return null;
+    }
   }
 
   // Get menus from localStorage
@@ -62,14 +78,16 @@ class AuthService {
     localStorage.removeItem('userData');
     localStorage.removeItem('token');
     localStorage.removeItem('menus');
+    localStorage.removeItem('company');
   }
 
   // Login API call
-  async login(email, password) {
+  async login(username, password, companyId) {
     try {
       const response = await this.api.post('/auth/login', {
-        email,
+        username,
         password,
+        companyId,
       });
 
       if (response.data && response.data.success) {
