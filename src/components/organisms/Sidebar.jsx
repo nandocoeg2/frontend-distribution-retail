@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { getActiveCompanyName } from '../../utils/companyUtils';
 import {
   ArchiveBoxIcon,
   BanknotesIcon,
@@ -33,6 +34,7 @@ import { ChevronDoubleRightIcon } from '@heroicons/react/20/solid';
 const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState(new Set());
+  const [companyName, setCompanyName] = useState(() => getActiveCompanyName());
 
   const toggleSubmenu = (menuId) => {
     const newExpanded = new Set(expandedMenus);
@@ -169,6 +171,26 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       location.pathname.startsWith(`${targetUrl}/`)
     );
   };
+
+  useEffect(() => {
+    const updateCompanyName = () => {
+      setCompanyName(getActiveCompanyName());
+    };
+
+    updateCompanyName();
+
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    window.addEventListener('storage', updateCompanyName);
+    window.addEventListener('company:updated', updateCompanyName);
+
+    return () => {
+      window.removeEventListener('storage', updateCompanyName);
+      window.removeEventListener('company:updated', updateCompanyName);
+    };
+  }, []);
 
   useEffect(() => {
     const menuSource = menus.length > 0 ? menus : defaultMenuItems;
@@ -345,9 +367,9 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
               </div>
               <div>
                 <h1 className='text-xl font-bold text-transparent bg-gradient-to-r from-white to-slate-200 bg-clip-text'>
-                  PT Doven
+                  {companyName}
                 </h1>
-                <p className='text-xs text-slate-400'>PT Doven</p>
+                <p className='text-xs text-slate-400'>{companyName}</p>
               </div>
             </div>
           )}

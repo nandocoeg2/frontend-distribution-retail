@@ -15,26 +15,7 @@ import {
   formatCurrencyCompact,
 } from '../../utils/numberWords';
 import { toast } from 'react-toastify';
-
-const COMPANY_PROFILE = {
-  brandName: 'DOVEN',
-  brandSuffix: 'tradeco',
-  companyName: 'PT Doven Tradeco',
-  addressLines: [
-    'Jl. Kapuk Raya No. 62 A',
-    'Pergudangan Duta Indah Kapuk 2 Blok. C8',
-    'Jakarta Utara, Indonesia',
-    'Telp : (021) 2901 8795',
-    'Fax  : (021) 5035 0355',
-  ],
-  city: 'Jakarta',
-  bankInfoLines: [
-    'Mohon dana ditransfer ke rekening:',
-    'A/N. PT. DOVEN TRADECO',
-    'BCA  A/C 865-0091877  Cab. PIK',
-  ],
-  signerName: 'Bun Sing',
-};
+import { getActiveCompanyProfile } from '../../utils/companyUtils';
 
 const formatFullDate = (value) => {
   if (!value) {
@@ -103,24 +84,39 @@ const resolveInvoiceDescription = (invoiceNumber, invoiceDate) => {
   return `FAKTUR PENJUALAN INVOICE NO : ${invoiceNumber}${datePart}`;
 };
 
-const drawCompanyHeader = (pdf, x, y) => {
+const drawCompanyHeader = (pdf, x, y, companyProfile) => {
   pdf.setFillColor(255, 99, 71);
   pdf.circle(x + 6, y - 6, 6, 'F');
 
   pdf.setFont('helvetica', PDF_FONT_STYLES.bold);
   pdf.setFontSize(16);
   pdf.setTextColor(...PDF_COLORS.black);
-  pdf.text(COMPANY_PROFILE.brandName, x + 18, y - 3);
 
-  pdf.setTextColor(255, 99, 71);
-  pdf.text(COMPANY_PROFILE.brandSuffix, x + 43, y - 3);
+  const brandName = companyProfile?.brandName || '';
+  const brandSuffix = companyProfile?.brandSuffix || '';
+
+  let textStartX = x + 18;
+
+  if (brandName) {
+    pdf.text(brandName, textStartX, y - 3);
+    textStartX += pdf.getTextWidth(brandName) + (brandSuffix ? 3 : 0);
+  }
+
+  if (brandSuffix) {
+    pdf.setTextColor(255, 99, 71);
+    pdf.text(brandSuffix, textStartX, y - 3);
+  }
 
   pdf.setTextColor(...PDF_COLORS.black);
   pdf.setFont('helvetica', PDF_FONT_STYLES.normal);
   pdf.setFontSize(PDF_FONT_SIZES.small + 1);
 
   let cursor = y + 2;
-  COMPANY_PROFILE.addressLines.forEach((line) => {
+  const addressLines = Array.isArray(companyProfile?.addressLines)
+    ? companyProfile.addressLines
+    : [];
+
+  addressLines.forEach((line) => {
     pdf.text(line, x, cursor);
     cursor += 4.5;
   });
@@ -188,6 +184,12 @@ export const exportKwitansiToPDF = async (kwitansi) => {
     const recipient = resolveCustomerName(kwitansi, invoice);
     const kwitansiNumber = resolveKwitansiNumber(kwitansi);
     const paymentDescription = resolveInvoiceDescription(invoiceNumber, invoiceDate);
+    const companyProfile = getActiveCompanyProfile(
+      kwitansi?.company,
+      kwitansi?.companyProfile,
+      invoice?.company,
+      invoice?.companyProfile
+    );
 
     const pdf = createPDFDocument();
     pdf.setLineHeightFactor(1.35);
@@ -206,7 +208,7 @@ export const exportKwitansiToPDF = async (kwitansi) => {
     const contentX = containerX + 12;
     let cursorY = containerY + 24;
 
-    cursorY = drawCompanyHeader(pdf, contentX, cursorY);
+    cursorY = drawCompanyHeader(pdf, contentX, cursorY, companyProfile);
 
     pdf.setFont('helvetica', PDF_FONT_STYLES.bold);
     pdf.setFontSize(20);
@@ -238,8 +240,8 @@ export const exportKwitansiToPDF = async (kwitansi) => {
 
     const documentDate = formatFullDate(kwitansi?.tanggal || kwitansi?.date);
     if (documentDate && documentDate !== '-') {
-      const locationText = COMPANY_PROFILE.city
-        ? `${COMPANY_PROFILE.city}, ${documentDate}`
+      const locationText = companyProfile?.city
+        ? `${companyProfile.city}, ${documentDate}`
         : documentDate;
       pdf.text(locationText, rightEdge - 12, cursorY, { align: 'right' });
     }
@@ -262,18 +264,23 @@ export const exportKwitansiToPDF = async (kwitansi) => {
       amountBoxWidth
     ) + 12;
 
-    const bankInfoText = COMPANY_PROFILE.bankInfoLines.join('\n');
-    cursorY = drawMultilineText(
-      pdf,
-      bankInfoText,
-      contentX,
-      cursorY,
-      containerWidth - 24,
-      {
-        fontSize: PDF_FONT_SIZES.body,
-        lineSpacing: 1.4,
-      }
-    ) + 12;
+    const bankInfoLines = Array.isArray(companyProfile?.bankInfoLines)
+      ? companyProfile.bankInfoLines.filter((line) => typeof line === 'string' && line.trim())
+      : [];
+
+    if (bankInfoLines.length > 0) {
+      cursorY = drawMultilineText(
+        pdf,
+        bankInfoLines.join('\n'),
+        contentX,
+        cursorY,
+        containerWidth - 24,
+        {
+          fontSize: PDF_FONT_SIZES.body,
+          lineSpacing: 1.4,
+        }
+      ) + 12;
+    }
 
     const signatureCenterX = rightEdge - 55;
     const signatureStartY = cursorY + 6;
@@ -292,12 +299,15 @@ export const exportKwitansiToPDF = async (kwitansi) => {
     );
 
     pdf.setFont('helvetica', PDF_FONT_STYLES.bold);
-    pdf.text(`(${COMPANY_PROFILE.signerName})`, signatureCenterX, signatureStartY + 42, {
+    const signerLabel = companyProfile?.signerName
+      ? `(${companyProfile.signerName})`
+      : '';
+    pdf.text(signerLabel, signatureCenterX, signatureStartY + 42, {
       align: 'center',
     });
 
     pdf.setFont('helvetica', PDF_FONT_STYLES.normal);
-    pdf.text(COMPANY_PROFILE.companyName, signatureCenterX, signatureStartY + 50, {
+    pdf.text(companyProfile?.companyName || '', signatureCenterX, signatureStartY + 50, {
       align: 'center',
     });
 

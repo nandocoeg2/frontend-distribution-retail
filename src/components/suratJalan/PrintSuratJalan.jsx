@@ -16,6 +16,19 @@ import {
   PDF_PAGE,
 } from '../../utils/pdfConfig';
 import { toast } from 'react-toastify';
+import { DEFAULT_COMPANY_NAME, getActiveCompanyName } from '../../utils/companyUtils';
+
+const getCompanyName = (suratJalan) => {
+  if (suratJalan && typeof suratJalan === 'object') {
+    return getActiveCompanyName(
+      suratJalan.company,
+      suratJalan.companyProfile,
+      suratJalan,
+    );
+  }
+
+  return getActiveCompanyName();
+};
 
 const formatMultilineText = (value) => {
   if (!value) {
@@ -168,7 +181,7 @@ const buildDetailRows = (details = []) => {
   });
 };
 
-const drawSuratJalanHeader = (pdf, suratJalan) => {
+const drawSuratJalanHeader = (pdf, suratJalan, companyName) => {
   let yPosition = PDF_MARGINS.top;
 
   drawText(pdf, 'SURAT JALAN', PDF_MARGINS.left, yPosition, {
@@ -176,7 +189,12 @@ const drawSuratJalanHeader = (pdf, suratJalan) => {
     fontStyle: PDF_FONT_STYLES.bold,
   });
 
-  drawText(pdf, 'PT DOVEN TRADECO', PDF_PAGE.width - PDF_MARGINS.right, yPosition, {
+  const safeCompanyName =
+    typeof companyName === 'string' && companyName.trim()
+      ? companyName.trim()
+      : DEFAULT_COMPANY_NAME;
+
+  drawText(pdf, safeCompanyName, PDF_PAGE.width - PDF_MARGINS.right, yPosition, {
     fontSize: PDF_FONT_SIZES.sectionHeader,
     fontStyle: PDF_FONT_STYLES.bold,
     align: 'right',
@@ -351,7 +369,9 @@ export const exportSuratJalanToPDF = async (suratJalan) => {
     const pdf = createPDFDocument();
     let yPosition = PDF_MARGINS.top;
 
-    yPosition = drawSuratJalanHeader(pdf, suratJalan);
+    const companyName = getCompanyName(suratJalan);
+
+    yPosition = drawSuratJalanHeader(pdf, suratJalan, companyName);
 
     yPosition = checkAndAddPage(pdf, yPosition, 30);
     yPosition = drawSuratJalanDetailsTable(pdf, details, yPosition);

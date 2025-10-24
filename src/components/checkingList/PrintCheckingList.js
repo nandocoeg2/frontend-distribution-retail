@@ -15,6 +15,7 @@ import {
   PDF_PAGE,
 } from '../../utils/pdfConfig';
 import { toast } from 'react-toastify';
+import { getActiveCompanyName } from '../../utils/companyUtils';
 
 const numberFormatter = new Intl.NumberFormat('id-ID');
 
@@ -409,10 +410,19 @@ const createInfoRows = (checklist, suratJalanList) => {
       ? destinationSummaryLines.join('\n')
       : 'Belum ada tujuan terkait';
 
+  const companyName = getActiveCompanyName(
+    checklist?.company,
+    checklist?.companyInfo,
+    primarySuratJalan?.company,
+    primarySuratJalan?.companyProfile,
+    checklist,
+    primarySuratJalan,
+  );
+
   const origin =
     extractField(checklist, ['origin', 'asal', 'companyName', 'company', 'dari']) ||
     extractField(primarySuratJalan, ['deliver_from', 'asal', 'warehouseName']) ||
-    'PT Doven Tradeco';
+    companyName;
 
   const formattedDate =
     formatDateLong(
@@ -431,7 +441,7 @@ const createInfoRows = (checklist, suratJalanList) => {
     { label: 'Tujuan', value: destinationSummary },
   ];
 
-  return { rows, origin, formattedDate };
+  return { rows, origin, formattedDate, companyName };
 };
 
 const getDateLocation = (checklist, primarySuratJalan, fallbackDate) => {
@@ -630,7 +640,7 @@ export const exportCheckingListToPDF = async (checklist) => {
       throw new Error('Tidak ada detail checklist untuk dicetak');
     }
 
-    const { rows: infoRows, origin, formattedDate } = createInfoRows(
+    const { rows: infoRows, origin, formattedDate, companyName } = createInfoRows(
       checklist,
       suratJalanList,
     );
@@ -651,7 +661,7 @@ export const exportCheckingListToPDF = async (checklist) => {
     yPosition = drawDateLocation(pdf, dateLocation, yPosition);
 
     yPosition = checkAndAddPage(pdf, yPosition, 60);
-    drawSignatureArea(pdf, yPosition, ['Checker Doven', 'Checker Ekspedisi'], {
+    drawSignatureArea(pdf, yPosition, [`Checker ${companyName}`, 'Checker Ekspedisi'], {
       columns: 2,
       spacing: 45,
     });

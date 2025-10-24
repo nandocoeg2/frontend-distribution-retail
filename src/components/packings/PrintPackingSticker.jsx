@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { getActiveCompanyName } from '../../utils/companyUtils';
 
 const exportStickerToPDF = (packing, packingItems) => {
   if (!packing || !packingItems || packingItems.length === 0) {
@@ -39,7 +40,13 @@ const exportStickerToPDF = (packing, packingItems) => {
   const poNumber = packing.purchaseOrder?.po_number || 'N/A';
 
   // Get customer data from various possible fields
-  const companyName = 'PT Jago Delta Internusa';
+  const companyName = getActiveCompanyName(
+    packing?.company,
+    packing?.purchaseOrder?.company,
+    packing?.purchaseOrder?.companyProfile,
+    packing?.purchaseOrder,
+    packing,
+  );
   const customerName = packing.purchaseOrder?.customer?.namaCustomer ||
                        packing.purchaseOrder?.customer?.customer_name ||
                        packing.purchaseOrder?.customer?.name ||
@@ -230,7 +237,13 @@ const printSticker = (packing, packingItems) => {
   const poNumber = packing.purchaseOrder?.po_number || 'N/A';
 
   // Get customer data
-  const companyName = 'PT Jago Delta Internusa';
+  const companyName = getActiveCompanyName(
+    packing?.company,
+    packing?.purchaseOrder?.company,
+    packing?.purchaseOrder?.companyProfile,
+    packing?.purchaseOrder,
+    packing,
+  );
   const customerName = packing.purchaseOrder?.customer?.namaCustomer ||
                        packing.purchaseOrder?.customer?.customer_name ||
                        packing.purchaseOrder?.customer?.name ||
