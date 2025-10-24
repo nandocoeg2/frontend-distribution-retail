@@ -127,6 +127,353 @@ const formatNumber = (value) => {
   });
 };
 
+const isPlainObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+const DETAIL_FIELD_KEYS = new Set([
+  'no_lpb',
+  'noLpb',
+  'nomor_lpb',
+  'lpb_number',
+  'lpbNumber',
+  'no_invoice',
+  'invoice_no',
+  'nomor_invoice',
+  'invoiceNumber',
+  'dpp',
+  'nilai_dpp',
+  'harga_dpp',
+  'invoice_amount',
+  'subtotal',
+  'amount',
+  'ppn',
+  'nilai_ppn',
+  'tax',
+  'ppn_amount',
+  'ppnValue',
+  'total',
+  'grand_total',
+  'jumlah',
+  'total_amount',
+  'amount_total',
+  'nomor_seri_faktur_pajak',
+  'no_seri_faktur',
+  'tax_invoice_number',
+  'no_fp',
+  'fp',
+]);
+
+const DETAIL_NESTED_KEYS = [
+  'invoice',
+  'invoicePengiriman',
+  'invoiceData',
+  'laporanPenerimaanBarang',
+  'laporan_penerimaan_barang',
+  'lpb',
+  'fakturPajak',
+  'faktur_pajak',
+];
+
+const MAX_TRAVERSAL_DEPTH = 4;
+
+const isDetailItem = (item) => {
+  if (!isPlainObject(item)) {
+    return false;
+  }
+
+  const keys = Object.keys(item);
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    if (DETAIL_FIELD_KEYS.has(key)) {
+      return true;
+    }
+  }
+
+  for (let index = 0; index < DETAIL_NESTED_KEYS.length; index += 1) {
+    const key = DETAIL_NESTED_KEYS[index];
+    if (item[key]) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const normalizeDetailArray = (candidate, depth = 0) => {
+  if (!candidate || depth > MAX_TRAVERSAL_DEPTH) {
+    return [];
+  }
+
+  if (Array.isArray(candidate)) {
+    const detailItems = candidate.filter((item) => isDetailItem(item));
+    if (detailItems.length > 0) {
+      return detailItems;
+    }
+
+    for (let index = 0; index < candidate.length; index += 1) {
+      const nested = normalizeDetailArray(candidate[index], depth + 1);
+      if (nested.length > 0) {
+        return nested;
+      }
+    }
+
+    return [];
+  }
+
+  if (isPlainObject(candidate)) {
+    const prioritizedKeys = [
+      'data',
+      'items',
+      'detail',
+      'details',
+      'rows',
+      'values',
+      'result',
+      'list',
+    ];
+
+    for (let index = 0; index < prioritizedKeys.length; index += 1) {
+      const key = prioritizedKeys[index];
+      if (!Object.prototype.hasOwnProperty.call(candidate, key)) {
+        continue;
+      }
+
+      const nested = normalizeDetailArray(candidate[key], depth + 1);
+      if (nested.length > 0) {
+        return nested;
+      }
+    }
+
+    const values = Object.values(candidate);
+    for (let index = 0; index < values.length; index += 1) {
+      const nested = normalizeDetailArray(values[index], depth + 1);
+      if (nested.length > 0) {
+        return nested;
+      }
+    }
+  }
+
+  return [];
+};
+
+const DETAIL_COLLECTION_KEYS = [
+  'tandaTerimaFakturDetails',
+  'tandaTerimaFakturDetail',
+  'tanda_terima_faktur_details',
+  'tanda_terima_faktur_detail',
+  'details',
+  'detail',
+  'detailItems',
+  'detail_items',
+  'items',
+  'fakturItems',
+  'fakturs',
+  'tandaTerimaFakturInvoices',
+  'tanda_terima_faktur_invoices',
+  'invoiceDetails',
+  'invoice_details',
+];
+
+const findDetailItemsInSource = (source) => {
+  if (!source || (typeof source !== 'object' && !Array.isArray(source))) {
+    return [];
+  }
+
+  const visited = new WeakSet();
+  const queue = [source];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || typeof current !== 'object') {
+      continue;
+    }
+
+    if (visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+
+    if (Array.isArray(current)) {
+      const normalized = normalizeDetailArray(current);
+      if (normalized.length > 0) {
+        return normalized;
+      }
+
+      for (let index = 0; index < current.length; index += 1) {
+        const value = current[index];
+        if (value && typeof value === 'object') {
+          queue.push(value);
+        }
+      }
+      continue;
+    }
+
+    for (let index = 0; index < DETAIL_COLLECTION_KEYS.length; index += 1) {
+      const key = DETAIL_COLLECTION_KEYS[index];
+      if (!Object.prototype.hasOwnProperty.call(current, key)) {
+        continue;
+      }
+
+      const candidate = current[key];
+      const normalized = normalizeDetailArray(candidate);
+      if (normalized.length > 0) {
+        return normalized;
+      }
+
+      if (candidate && typeof candidate === 'object') {
+        queue.push(candidate);
+      }
+    }
+
+    const values = Object.values(current);
+    for (let index = 0; index < values.length; index += 1) {
+      const value = values[index];
+      if (value && typeof value === 'object' && !visited.has(value)) {
+        queue.push(value);
+      }
+    }
+  }
+
+  return [];
+};
+
+const toArray = (value) => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (isPlainObject(value)) {
+    return Object.values(value);
+  }
+
+  return [];
+};
+
+const deriveDetailItemsFromInvoices = (ttf) => {
+  const sources = [
+    ttf,
+    ttf?.data,
+    ttf?.result,
+    ttf?.payload,
+    ttf?.tandaTerimaFaktur,
+    ttf?.tanda_terima_faktur,
+  ];
+
+  for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex += 1) {
+    const source = sources[sourceIndex];
+    if (!isPlainObject(source)) {
+      continue;
+    }
+
+    const invoices = pickValue(
+      source,
+      ['invoicePenagihan', 'invoice_penagihan', 'invoices'],
+      null
+    );
+    const arrayInvoices = toArray(invoices);
+    if (arrayInvoices.length === 0) {
+      continue;
+    }
+
+    const derived = arrayInvoices
+      .map((invoice) => {
+        if (!invoice || typeof invoice !== 'object') {
+          return null;
+        }
+
+        const invoiceNumber = pickValue(invoice, [
+          'no_invoice_penagihan',
+          'no_invoice',
+          'nomor_invoice',
+          'invoiceNumber',
+        ]);
+        const lpbNumber = pickValue(invoice, [
+          'no_lpb',
+          ['laporanPenerimaanBarang', 'no_lpb'],
+          ['laporan_penerimaan_barang', 'no_lpb'],
+        ]);
+        const fakturPajak = pickValue(invoice, [
+          'fakturPajak',
+          'faktur_pajak',
+        ]);
+        const fpNumber = pickValue(
+          invoice,
+          [
+            'nomor_seri_faktur_pajak',
+            'no_seri_faktur',
+            'tax_invoice_number',
+            'no_fp',
+            ['fakturPajak', 'nomor_seri_faktur_pajak'],
+            ['fakturPajak', 'no_pajak'],
+            ['faktur_pajak', 'nomor_seri_faktur_pajak'],
+            ['faktur_pajak', 'no_pajak'],
+          ],
+          fakturPajak
+            ? pickValue(fakturPajak, [
+                'nomor_seri_faktur_pajak',
+                'no_seri_faktur',
+                'no_pajak',
+              ])
+            : null
+        );
+        const dppValue = pickValue(invoice, [
+          'dpp',
+          'nilai_dpp',
+          ['summary', 'dpp'],
+        ]);
+        const ppnValue = pickValue(invoice, [
+          'ppn',
+          'nilai_ppn',
+          ['summary', 'ppn'],
+        ]);
+        const totalValue = pickValue(invoice, [
+          'grand_total',
+          'total',
+          'jumlah',
+          'total_amount',
+          'amount_total',
+          'total_price',
+          ['summary', 'grand_total'],
+        ]);
+
+        const hasMeaningfulValue =
+          invoiceNumber ||
+          lpbNumber ||
+          fpNumber ||
+          dppValue != null ||
+          ppnValue != null ||
+          totalValue != null;
+
+        if (!hasMeaningfulValue) {
+          return null;
+        }
+
+        return {
+          invoice,
+          invoiceData: invoice,
+          no_invoice: invoiceNumber,
+          no_lpb: lpbNumber,
+          fakturPajak: fakturPajak || undefined,
+          nomor_seri_faktur_pajak: fpNumber,
+          dpp: dppValue,
+          ppn: ppnValue,
+          total: totalValue,
+        };
+      })
+      .filter(Boolean);
+
+    if (derived.length > 0) {
+      return derived;
+    }
+  }
+
+  return [];
+};
+
 const formatCurrency = (value) => {
   const formatted = baseFormatCurrency(value);
   if (!formatted || formatted === 'N/A') {
@@ -270,34 +617,26 @@ const extractHeaderInfo = (ttf) => {
 };
 
 const collectDetailItems = (ttf) => {
-  const candidates = [
-    ttf?.tandaTerimaFakturDetails,
-    ttf?.tandaTerimaFakturDetail,
-    ttf?.details,
-    ttf?.detail,
-    ttf?.items,
-    ttf?.fakturItems,
-    ttf?.fakturs,
-    ttf?.tandaTerimaFakturInvoices,
-    ttf?.invoiceDetails,
+  const sources = [
+    ttf,
+    ttf?.data,
+    ttf?.result,
+    ttf?.payload,
+    ttf?.tandaTerimaFaktur,
+    ttf?.tanda_terima_faktur,
   ];
 
-  for (let index = 0; index < candidates.length; index += 1) {
-    const candidate = candidates[index];
-    if (!candidate) {
-      continue;
+  for (let index = 0; index < sources.length; index += 1) {
+    const source = sources[index];
+    const detailItems = findDetailItemsInSource(source);
+    if (detailItems.length > 0) {
+      return detailItems;
     }
+  }
 
-    if (Array.isArray(candidate) && candidate.length > 0) {
-      return candidate;
-    }
-
-    if (!Array.isArray(candidate) && typeof candidate === 'object') {
-      const values = Object.values(candidate);
-      if (values.length > 0) {
-        return values;
-      }
-    }
+  const derivedItems = deriveDetailItemsFromInvoices(ttf);
+  if (derivedItems.length > 0) {
+    return derivedItems;
   }
 
   return [];
