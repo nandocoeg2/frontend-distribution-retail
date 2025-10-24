@@ -19,6 +19,7 @@ const DEFAULT_FILTERS = {
   status_code: '',
   purchaseOrderId: '',
   customerId: '',
+  supplierId: '',
   termin_bayar: '',
   q: '',
 };
@@ -199,6 +200,7 @@ const useLaporanPenerimaanBarangPage = () => {
       active.q ||
       active.purchaseOrderId ||
       active.customerId ||
+      active.supplierId ||
       active.status_code ||
       active.termin_bayar ||
       'filter aktif'

@@ -1,6 +1,13 @@
-import React, { useEffect, useMemo, useState, useId } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Autocomplete from '../common/Autocomplete';
 import StockMovementItemsInput from './StockMovementItemsInput.jsx';
+import useSupplierSearch from '../../hooks/useSupplierSearch';
+import {
+  extractSupplierId,
+  formatSupplierOptions,
+  supplierMatchesId,
+} from '../../utils/supplierOptions';
 
 const initialFormState = {
   supplierId: '',
@@ -16,10 +23,43 @@ const CreateStockInModal = ({
   suppliers = [],
   optionsLoading = false,
 }) => {
-  const supplierListId = useId();
   const [form, setForm] = useState(initialFormState);
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    searchResults: supplierResults = [],
+    loading: supplierSearchLoading,
+    searchSuppliers,
+    setSearchResults: setSupplierResults,
+  } = useSupplierSearch();
+
+  const supplierOptions = useMemo(
+    () => formatSupplierOptions(supplierResults, form.supplierId),
+    [supplierResults, form.supplierId]
+  );
+
+  useEffect(() => {
+    if (!Array.isArray(suppliers) || suppliers.length === 0) {
+      return;
+    }
+
+    setSupplierResults((prev) => {
+      const next = Array.isArray(prev) ? [...prev] : [];
+      suppliers.forEach((supplier) => {
+        const supplierId = extractSupplierId(supplier);
+        if (!supplierId) {
+          return;
+        }
+        const alreadyIncluded = next.some((item) =>
+          supplierMatchesId(item, supplierId)
+        );
+        if (!alreadyIncluded) {
+          next.push(supplier);
+        }
+      });
+      return next;
+    });
+  }, [suppliers, setSupplierResults]);
 
   useEffect(() => {
     if (show) {
@@ -28,25 +68,6 @@ const CreateStockInModal = ({
       setIsSubmitting(false);
     }
   }, [show]);
-
-  const supplierOptions = useMemo(() => {
-    if (!Array.isArray(suppliers)) {
-      return [];
-    }
-
-    return suppliers
-      .map((supplier) => ({
-        id: supplier?.id || '',
-        label:
-          supplier?.name ||
-          supplier?.nama ||
-          supplier?.company_name ||
-          supplier?.companyName ||
-          supplier?.id ||
-          '',
-      }))
-      .filter((option) => option.id);
-  }, [suppliers]);
 
   const handleItemsChange = (items) => {
     setForm((prev) => ({
@@ -60,6 +81,14 @@ const CreateStockInModal = ({
     setForm((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleSupplierChange = (event) => {
+    const value = event?.target ? event.target.value : event;
+    setForm((prev) => ({
+      ...prev,
+      supplierId: value,
     }));
   };
 
@@ -159,41 +188,38 @@ const CreateStockInModal = ({
             <div className='grid gap-4 sm:grid-cols-2'>
               <div className='flex flex-col'>
                 <label
-                  htmlFor='supplierId'
-                  className='text-sm font-medium text-gray-700'
-                >
-                  Pilih Supplier
-                </label>
-                <input
-                  id='supplierId'
-                  name='supplierId'
-                  list={supplierListId}
-                  value={form.supplierId}
-                  onChange={handleFieldChange}
-                  placeholder='Cari atau masukkan ID supplier'
-                  autoComplete='off'
-                  className='mt-2 block w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-                  aria-describedby='supplier-helper'
-                />
-                <datalist id={supplierListId}>
-                  {supplierOptions.map((supplier) => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.label}
-                    </option>
-                  ))}
-                </datalist>
-                <div className='mt-2 flex items-start gap-2 text-xs text-gray-500'>
-                  <span className='inline-flex h-2 w-2 translate-y-1 rounded-full bg-indigo-400' />
-                  <p id='supplier-helper'>
-                    Gunakan daftar untuk memilih supplier atau ketik manual ID yang valid.
-                    {optionsLoading && (
-                      <span className='ml-1 text-indigo-600'>
-                        Memuat data supplier...
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
+              htmlFor='supplierId'
+              className='text-sm font-medium text-gray-700'
+            >
+              Pilih Supplier
+            </label>
+            <Autocomplete
+              label=''
+              name='supplierId'
+              options={supplierOptions}
+              value={form.supplierId ? String(form.supplierId) : ''}
+              onChange={handleSupplierChange}
+              placeholder='Cari nama atau ID supplier'
+              displayKey='label'
+              valueKey='id'
+              loading={optionsLoading || supplierSearchLoading}
+              onSearch={async (query) => {
+                try {
+                  await searchSuppliers(query, 1, 20);
+                } catch (error) {
+                  console.error('Failed to search suppliers:', error);
+                }
+              }}
+              showId
+              className='mt-2'
+            />
+            <p className='mt-2 text-xs text-gray-500'>
+              Ketik minimal dua karakter untuk mencari supplier, lalu pilih ID yang valid dari hasil pencarian.
+              {(optionsLoading || supplierSearchLoading) && (
+                <span className='ml-1 text-indigo-600'>Memuat data supplier...</span>
+              )}
+            </p>
+          </div>
 
               <div className='flex flex-col'>
                 <label

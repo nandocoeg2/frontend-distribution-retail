@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import Autocomplete from '../common/Autocomplete';
 import useCustomersPage from '../../hooks/useCustomersPage';
 import { usePurchaseOrderStatuses } from '../../hooks/useStatusTypes';
+import useSupplierSearch from '../../hooks/useSupplierSearch';
+import supplierService from '../../services/supplierService';
+import {
+  formatSupplierOptions,
+  resolveSupplierFromResponse,
+  supplierMatchesId,
+} from '../../utils/supplierOptions';
 
 const PurchaseOrderSearch = ({
   filters,
@@ -16,6 +23,68 @@ const PurchaseOrderSearch = ({
     searchCustomers,
   } = useCustomersPage();
   const { statuses: purchaseOrderStatuses } = usePurchaseOrderStatuses();
+  const supplierFilterValue = filters?.supplierId;
+  const {
+    searchResults: supplierResults = [],
+    loading: supplierLoading,
+    searchSuppliers,
+    setSearchResults: setSupplierResults,
+  } = useSupplierSearch();
+
+  const supplierOptions = useMemo(
+    () => formatSupplierOptions(supplierResults, supplierFilterValue),
+    [supplierResults, supplierFilterValue]
+  );
+
+  useEffect(() => {
+    const selectedId = supplierFilterValue;
+    if (!selectedId) {
+      return;
+    }
+
+    const exists =
+      Array.isArray(supplierResults) &&
+      supplierResults.some((supplier) => supplierMatchesId(supplier, selectedId));
+
+    if (exists) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchSupplier = async () => {
+      try {
+        const response = await supplierService.getSupplierById(selectedId);
+        const supplierData = resolveSupplierFromResponse(response, selectedId);
+
+        if (!supplierData) {
+          return;
+        }
+
+        if (isMounted) {
+          setSupplierResults((prev) => {
+            const next = Array.isArray(prev) ? [...prev] : [];
+            const alreadyIncluded = next.some((item) =>
+              supplierMatchesId(item, selectedId)
+            );
+            if (alreadyIncluded) {
+              return next;
+            }
+            next.push(supplierData);
+            return next;
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch supplier by ID:', error);
+      }
+    };
+
+    fetchSupplier();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supplierFilterValue, setSupplierResults, supplierResults]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -29,6 +98,11 @@ const PurchaseOrderSearch = ({
   const handleChange = (field) => (event) => {
     const value = event?.target ? event.target.value : event;
     onFiltersChange?.(field, value);
+  };
+
+  const handleSupplierChange = (event) => {
+    const value = event?.target ? event.target.value : event;
+    onFiltersChange?.('supplierId', value);
   };
 
   const handleCustomerChange = (event) => {
@@ -99,12 +173,28 @@ const PurchaseOrderSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Supplier ID
           </label>
-          <input
-            type='text'
-            value={filters?.supplierId || ''}
-            onChange={handleChange('supplierId')}
-            placeholder='Masukkan ID supplier'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          <Autocomplete
+            label=''
+            options={supplierOptions}
+            value={
+              supplierFilterValue !== undefined && supplierFilterValue !== null
+                ? String(supplierFilterValue)
+                : ''
+            }
+            onChange={handleSupplierChange}
+            placeholder='Cari nama atau ID supplier'
+            displayKey='label'
+            valueKey='id'
+            name='supplierId'
+            loading={supplierLoading}
+            onSearch={async (query) => {
+              try {
+                await searchSuppliers(query, 1, 20);
+              } catch (error) {
+                console.error('Failed to search suppliers:', error);
+              }
+            }}
+            showId
           />
         </div>
 
