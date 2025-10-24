@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import usePaginatedSearch from './usePaginatedSearch';
 import supplierService from '@/services/supplierService';
 
@@ -53,6 +53,56 @@ const useSupplierSearch = () => {
     resolveErrorMessage: resolveSupplierError,
     requireInput: true
   });
+
+  useEffect(() => {
+    if (Array.isArray(searchResults) && searchResults.length > 0) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const preloadSuppliers = async () => {
+      try {
+        const limit = resolveLimit();
+        const response = await supplierService.getAllSuppliers(1, limit);
+        const { results, pagination: initialPagination } = parseSupplierResponse(response) || {};
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSearchResults((prev) => {
+          if (Array.isArray(prev) && prev.length > 0) {
+            return prev;
+          }
+          return results || [];
+        });
+
+        setPagination((prev) => {
+          if (prev && (prev.totalItems || prev.total || 0) > 0) {
+            return prev;
+          }
+          return initialPagination || INITIAL_PAGINATION;
+        });
+
+        setError(null);
+      } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+
+        const message = resolveSupplierError(err);
+        setError((prev) => prev || message);
+        console.error('Failed to preload suppliers:', err);
+      }
+    };
+
+    preloadSuppliers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [resolveLimit, searchResults, setError, setPagination, setSearchResults]);
 
   const handleSearchChange = useCallback((event) => {
     const query = event.target.value;
