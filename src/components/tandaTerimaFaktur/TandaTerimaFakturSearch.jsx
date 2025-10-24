@@ -1,4 +1,6 @@
 import React from 'react';
+import Autocomplete from '../common/Autocomplete';
+import useCustomersPage from '../../hooks/useCustomersPage';
 
 const TandaTerimaFakturSearch = ({
   filters,
@@ -7,6 +9,12 @@ const TandaTerimaFakturSearch = ({
   onReset,
   loading,
 }) => {
+  const {
+    customers: customerResults = [],
+    loading: customersLoading,
+    searchCustomers,
+  } = useCustomersPage();
+
   const handleSubmit = (event) => {
     event.preventDefault();
     onSearch?.();
@@ -19,6 +27,11 @@ const TandaTerimaFakturSearch = ({
   const handleChange = (field) => (event) => {
     const value = event?.target ? event.target.value : event;
     onFiltersChange?.(field, value);
+  };
+
+  const handleCustomerChange = (event) => {
+    const value = event?.target ? event.target.value : event;
+    onFiltersChange?.('customerId', value);
   };
 
   const isLoading = Boolean(loading);
@@ -46,12 +59,24 @@ const TandaTerimaFakturSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Customer ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={Array.isArray(customerResults) ? customerResults : []}
             value={filters.customerId || ''}
-            onChange={handleChange('customerId')}
-            placeholder='Masukkan ID customer'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            onChange={handleCustomerChange}
+            placeholder='Cari nama atau ID customer'
+            displayKey='namaCustomer'
+            valueKey='id'
+            name='customerId'
+            loading={customersLoading}
+            onSearch={async (query) => {
+              try {
+                await searchCustomers(query, 1, 20);
+              } catch (error) {
+                console.error('Failed to search customers:', error);
+              }
+            }}
+            showId
           />
         </div>
 

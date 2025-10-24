@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FormModal from '../common/FormModal';
+import Autocomplete from '../common/Autocomplete';
+import useCustomersPage from '../../hooks/useCustomersPage';
 import toastService from '@/services/toastService';
 
 const DEFAULT_FORM_VALUES = {
@@ -77,6 +79,11 @@ const FakturPajakModal = ({
   const [isDppTouched, setIsDppTouched] = useState(false);
   const [isPpnTouched, setIsPpnTouched] = useState(false);
 
+  const {
+    customers: customerResults = [],
+    loading: customersLoading,
+    searchCustomers,
+  } = useCustomersPage();
   const isDppTouchedRef = useRef(false);
   const isPpnTouchedRef = useRef(false);
 
@@ -247,6 +254,44 @@ const FakturPajakModal = ({
     }),
     [],
   );
+  const customerOptions = useMemo(() => {
+    const baseOptions = Array.isArray(customerResults) ? customerResults : [];
+    const selectedId = formData.customerId;
+
+    if (!selectedId) {
+      return baseOptions;
+    }
+
+    const hasSelected = baseOptions.some(
+      (customer) => String(customer.id) === String(selectedId),
+    );
+
+    if (hasSelected) {
+      return baseOptions;
+    }
+
+    const fallback =
+      initialValues?.customer && initialValues.customer.id
+        ? initialValues.customer
+        : {
+            id: selectedId,
+            namaCustomer: String(selectedId),
+          };
+
+    const seen = new Set();
+
+    return [fallback, ...baseOptions].filter((customer) => {
+      if (!customer || customer.id === undefined || customer.id === null) {
+        return false;
+      }
+      const key = String(customer.id);
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }, [customerResults, formData.customerId, initialValues]);
 
   const validate = useCallback(() => {
     const nextErrors = {};
@@ -476,12 +521,26 @@ const FakturPajakModal = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Customer ID <span className='text-red-500'>*</span>
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={customerOptions}
             value={formData.customerId}
             onChange={handleChange('customerId')}
-            placeholder='Masukkan ID customer'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Cari nama atau ID customer'
+            displayKey='namaCustomer'
+            valueKey='id'
+            name='customerId'
+            required
+            loading={customersLoading}
+            disabled={isSubmitting}
+            onSearch={async (query) => {
+              try {
+                await searchCustomers(query, 1, 20);
+              } catch (error) {
+                console.error('Failed to search customers:', error);
+              }
+            }}
+            showId
           />
           {errors.customerId && (
             <p className='mt-1 text-xs text-red-600'>{errors.customerId}</p>
