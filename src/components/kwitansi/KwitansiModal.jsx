@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import FormModal from '../common/FormModal';
+import Autocomplete from '../common/Autocomplete';
 import toastService from '@/services/toastService';
+import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 
 const DEFAULT_FORM_VALUES = {
   invoicePenagihanId: '',
@@ -55,6 +57,14 @@ const KwitansiModal = ({
   const [formData, setFormData] = useState(DEFAULT_FORM_VALUES);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    options: termOfPaymentOptions,
+    loading: termOfPaymentLoading,
+    fetchOptions: searchTermOfPayments
+  } = useTermOfPaymentAutocomplete({
+    selectedId: formData.termOfPaymentId
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -266,12 +276,19 @@ const KwitansiModal = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Term of Payment ID <span className='text-red-500'>*</span>
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={termOfPaymentOptions}
             value={formData.termOfPaymentId}
             onChange={handleChange('termOfPaymentId')}
-            placeholder='Masukkan ID term of payment'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Cari Term of Payment'
+            displayKey='label'
+            valueKey='id'
+            name='termOfPaymentId'
+            required
+            loading={termOfPaymentLoading}
+            onSearch={searchTermOfPayments}
+            showId
           />
           {errors.termOfPaymentId && (
             <p className='mt-1 text-xs text-red-600'>

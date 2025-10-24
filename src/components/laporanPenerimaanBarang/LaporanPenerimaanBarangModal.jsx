@@ -3,9 +3,9 @@ import FormModal from '../common/FormModal';
 import Autocomplete from '../common/Autocomplete';
 import purchaseOrderService from '@/services/purchaseOrderService';
 import customerService from '@/services/customerService';
-import termOfPaymentService from '@/services/termOfPaymentService';
 import statusService from '@/services/statusService';
 import toastService from '@/services/toastService';
+import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
 
 const defaultFormValues = {
@@ -237,13 +237,22 @@ const LaporanPenerimaanBarangModal = ({
 
   const [purchaseOrderOptions, setPurchaseOrderOptions] = useState([]);
   const [customerOptions, setCustomerOptions] = useState([]);
-  const [termOptions, setTermOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
 
   const [purchaseOrderLoading, setPurchaseOrderLoading] = useState(false);
   const [customerLoading, setCustomerLoading] = useState(false);
-  const [termLoading, setTermLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+
+  const {
+    options: termOptions,
+    loading: termLoading,
+    fetchOptions: fetchTermOptions,
+    ensureOptionById: ensureTermOptionById,
+    addOptions: addTermOptions
+  } = useTermOfPaymentAutocomplete({
+    selectedId: formValues.termin_bayar,
+    initialFetch: false
+  });
 
   const fetchPurchaseOrderOptions = useCallback(async (query = '') => {
     setPurchaseOrderLoading(true);
@@ -286,24 +295,6 @@ const LaporanPenerimaanBarangModal = ({
       toastService.error('Gagal memuat data customer');
     } finally {
       setCustomerLoading(false);
-    }
-  }, []);
-
-  const fetchTermOptions = useCallback(async (query = '') => {
-    setTermLoading(true);
-    try {
-      const response = query
-        ? await termOfPaymentService.searchTermOfPayments(query, 1, 10)
-        : await termOfPaymentService.getAllTermOfPayments(1, 10);
-
-      const items = extractArray(response).map(mapTermOption).filter(Boolean);
-
-      setTermOptions((prev) => mergeUniqueOptions(items, prev));
-    } catch (error) {
-      console.error('Failed to fetch term of payments:', error);
-      toastService.error('Gagal memuat data term of payment');
-    } finally {
-      setTermLoading(false);
     }
   }, []);
 
@@ -383,12 +374,14 @@ const LaporanPenerimaanBarangModal = ({
       setCustomerOptions((prev) => mergeUniqueOptions([customerOption], prev));
     }
     if (termOption) {
-      setTermOptions((prev) => mergeUniqueOptions([termOption], prev));
+      addTermOptions([termOption]);
+    } else if (initialValues?.termin_bayar) {
+      ensureTermOptionById(initialValues.termin_bayar);
     }
     if (statusOption) {
       setStatusOptions((prev) => mergeUniqueOptions([statusOption], prev));
     }
-  }, [initialValues, isOpen]);
+  }, [addTermOptions, ensureTermOptionById, initialValues, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -592,20 +585,19 @@ const LaporanPenerimaanBarangModal = ({
         <label className='block mb-1 text-sm font-medium text-gray-700'>
           TOP
         </label>
-        <select
+        <Autocomplete
+          label=''
           name='termin_bayar'
+          options={termOptions}
           value={formValues.termin_bayar}
           onChange={handleChange}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          disabled={termLoading}
-        >
-          <option value=''>Pilih TOP</option>
-          {termOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          placeholder='Cari Term of Payment'
+          displayKey='label'
+          valueKey='id'
+          loading={termLoading}
+          onSearch={fetchTermOptions}
+          showId
+        />
       </div>
 
       <div>

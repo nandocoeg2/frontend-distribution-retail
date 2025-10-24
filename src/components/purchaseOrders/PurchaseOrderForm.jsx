@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useCustomersPage from '../../hooks/useCustomersPage';
 import useStatuses from '../../hooks/useStatuses';
-import useTermOfPayments from '../../hooks/useTermOfPayments';
 import Autocomplete from '../common/Autocomplete';
+import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 
 const PurchaseOrderForm = ({
   formData,
@@ -34,21 +34,19 @@ const PurchaseOrderForm = ({
 
   // Use term of payments hook
   const {
-    termOfPayments,
-    loading: termOfPaymentsLoading,
-    error: termOfPaymentsError,
-    fetchTermOfPayments,
-  } = useTermOfPayments();
+    options: termOfPaymentOptions,
+    loading: termOfPaymentLoading,
+    error: termOfPaymentError,
+    fetchOptions: searchTermOfPayments
+  } = useTermOfPaymentAutocomplete({
+    selectedValue: formData.termin_bayar,
+    valueKey: 'kode_top'
+  });
 
   // Fetch purchase order statuses on component mount
   useEffect(() => {
     fetchPurchaseOrderStatuses();
   }, [fetchPurchaseOrderStatuses]);
-
-  // Fetch term of payments on component mount
-  useEffect(() => {
-    fetchTermOfPayments(1, 100); // Fetch all term of payments
-  }, [fetchTermOfPayments]);
 
   // Set initial filtered customers when customers are loaded
   useEffect(() => {
@@ -283,22 +281,21 @@ const PurchaseOrderForm = ({
             <label className='block mb-1 text-sm font-medium text-gray-700'>
               TOP
             </label>
-            <select
+            <Autocomplete
+              label=''
               name='termin_bayar'
+              options={termOfPaymentOptions}
               value={formData.termin_bayar || ''}
               onChange={handleInputChange}
-              disabled={termOfPaymentsLoading}
-              className='w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed'
-            >
-              <option value=''>Pilih Termin</option>
-              {Array.isArray(termOfPayments) &&
-                termOfPayments.map((term) => (
-                  <option key={term.id} value={term.kode_top}>
-                    {term.kode_top} - {term.batas_hari} hari
-                  </option>
-                ))}
-            </select>
-            {termOfPaymentsError && (
+              placeholder='Cari Term of Payment'
+              displayKey='label'
+              valueKey='kode_top'
+              disabled={termOfPaymentLoading}
+              loading={termOfPaymentLoading}
+              onSearch={searchTermOfPayments}
+              showId
+            />
+            {termOfPaymentError && (
               <p className='mt-1 text-xs text-red-500'>Gagal memuat TOP</p>
             )}
           </div>

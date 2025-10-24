@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import Autocomplete from '../common/Autocomplete';
 import useCustomersPage from '../../hooks/useCustomersPage';
 import useSupplierSearch from '../../hooks/useSupplierSearch';
+import useTermOfPaymentAutocomplete from '../../hooks/useTermOfPaymentAutocomplete';
 import supplierService from '../../services/supplierService';
 import {
   formatSupplierOptions,
@@ -33,6 +34,14 @@ const LaporanPenerimaanBarangSearch = ({
     () => formatSupplierOptions(supplierResults, supplierFilterValue),
     [supplierResults, supplierFilterValue]
   );
+
+  const {
+    options: termOfPaymentOptions,
+    loading: termOfPaymentLoading,
+    fetchOptions: searchTermOfPayments
+  } = useTermOfPaymentAutocomplete({
+    selectedValue: filters?.termin_bayar
+  });
 
   useEffect(() => {
     const selectedId = supplierFilterValue;
@@ -202,12 +211,18 @@ const LaporanPenerimaanBarangSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Termin Bayar ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={termOfPaymentOptions}
             value={filters.termin_bayar || ''}
             onChange={handleChange('termin_bayar')}
-            placeholder='Masukkan ID term of payment'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Cari Term of Payment'
+            displayKey='label'
+            valueKey='id'
+            name='termin_bayar'
+            loading={termOfPaymentLoading}
+            onSearch={searchTermOfPayments}
+            showId
           />
         </div>
 

@@ -1,4 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
+import Autocomplete from '../common/Autocomplete';
+import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 
 const numberFields = [
   'sub_total',
@@ -110,6 +112,14 @@ const InvoicePenagihanForm = ({
     buildInitialState(initialValues)
   );
   const [errors, setErrors] = useState({});
+
+  const {
+    options: termOfPaymentOptions,
+    loading: termOfPaymentLoading,
+    fetchOptions: searchTermOfPayments
+  } = useTermOfPaymentAutocomplete({
+    selectedId: formState.termOfPaymentId
+  });
 
   useEffect(() => {
     setFormState(buildInitialState(initialValues));
@@ -348,14 +358,20 @@ const InvoicePenagihanForm = ({
           >
             Term of Payment ID *
           </label>
-          <input
-            id='termOfPaymentId'
-            name='termOfPaymentId'
-            type='text'
+          <Autocomplete
+            options={termOfPaymentOptions}
             value={formState.termOfPaymentId}
-            onChange={(e) => handleChange('termOfPaymentId', e.target.value)}
-            className='block w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Masukkan Term of Payment ID'
+            onChange={(event) =>
+              handleChange('termOfPaymentId', event.target.value)
+            }
+            placeholder='Cari Term of Payment'
+            displayKey='label'
+            valueKey='id'
+            name='termOfPaymentId'
+            required
+            loading={termOfPaymentLoading}
+            onSearch={searchTermOfPayments}
+            showId
           />
           {errors.termOfPaymentId && (
             <p className='mt-1 text-sm text-red-600'>

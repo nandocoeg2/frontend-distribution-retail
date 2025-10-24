@@ -1,6 +1,7 @@
 import React from 'react';
 import Autocomplete from '../common/Autocomplete';
 import useCustomersPage from '../../hooks/useCustomersPage';
+import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 
 const FakturPajakSearch = ({
   filters,
@@ -14,6 +15,13 @@ const FakturPajakSearch = ({
     loading: customersLoading,
     searchCustomers,
   } = useCustomersPage();
+  const {
+    options: termOfPaymentOptions,
+    loading: termOfPaymentLoading,
+    fetchOptions: searchTermOfPayments
+  } = useTermOfPaymentAutocomplete({
+    selectedValue: filters.termOfPaymentId
+  });
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -126,12 +134,18 @@ const FakturPajakSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Term of Payment ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={termOfPaymentOptions}
             value={filters.termOfPaymentId || ''}
             onChange={handleChange('termOfPaymentId')}
-            placeholder='Masukkan ID term of payment'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Cari Term of Payment'
+            displayKey='label'
+            valueKey='id'
+            name='termOfPaymentId'
+            loading={termOfPaymentLoading}
+            onSearch={searchTermOfPayments}
+            showId
           />
         </div>
 
