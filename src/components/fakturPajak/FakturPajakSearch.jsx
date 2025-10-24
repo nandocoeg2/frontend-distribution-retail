@@ -2,6 +2,7 @@ import React from 'react';
 import Autocomplete from '../common/Autocomplete';
 import useCustomersPage from '../../hooks/useCustomersPage';
 import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
+import useInvoicePenagihanAutocomplete from '@/hooks/useInvoicePenagihanAutocomplete';
 
 const FakturPajakSearch = ({
   filters,
@@ -21,6 +22,13 @@ const FakturPajakSearch = ({
     fetchOptions: searchTermOfPayments
   } = useTermOfPaymentAutocomplete({
     selectedValue: filters.termOfPaymentId
+  });
+  const {
+    options: invoicePenagihanOptions,
+    loading: invoicePenagihanLoading,
+    fetchOptions: searchInvoicePenagihans,
+  } = useInvoicePenagihanAutocomplete({
+    selectedValue: filters.invoicePenagihanId,
   });
 
   const handleSubmit = (event) => {
@@ -67,12 +75,18 @@ const FakturPajakSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Invoice Penagihan ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={invoicePenagihanOptions}
             value={filters.invoicePenagihanId || ''}
             onChange={handleChange('invoicePenagihanId')}
-            placeholder='Masukkan ID invoice penagihan'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Cari atau pilih invoice penagihan'
+            displayKey='label'
+            valueKey='id'
+            name='invoicePenagihanId'
+            loading={invoicePenagihanLoading}
+            onSearch={searchInvoicePenagihans}
+            showId
           />
         </div>
 

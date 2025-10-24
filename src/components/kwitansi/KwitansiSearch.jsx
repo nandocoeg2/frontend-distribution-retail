@@ -1,6 +1,7 @@
 import React from 'react';
 import Autocomplete from '../common/Autocomplete';
 import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
+import useInvoicePenagihanAutocomplete from '@/hooks/useInvoicePenagihanAutocomplete';
 
 const KwitansiSearch = ({
   filters,
@@ -16,6 +17,13 @@ const KwitansiSearch = ({
   } = useTermOfPaymentAutocomplete({
     selectedValue: filters.termOfPaymentId
   });
+  const {
+    options: invoicePenagihanOptions,
+    loading: invoicePenagihanLoading,
+    fetchOptions: searchInvoicePenagihans,
+  } = useInvoicePenagihanAutocomplete({
+    selectedValue: filters.invoicePenagihanId,
+  });
   const handleSubmit = (event) => {
     event.preventDefault();
     onSearch?.();
@@ -25,8 +33,11 @@ const KwitansiSearch = ({
     onReset?.();
   };
 
-  const handleChange = (field) => (event) => {
-    onFiltersChange?.(field, event.target.value);
+  const handleChange = (field) => (eventOrValue) => {
+    const value = eventOrValue?.target
+      ? eventOrValue.target.value
+      : eventOrValue;
+    onFiltersChange?.(field, value);
   };
 
   const isLoading = Boolean(loading);
@@ -67,12 +78,18 @@ const KwitansiSearch = ({
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Invoice Penagihan ID
           </label>
-          <input
-            type='text'
+          <Autocomplete
+            label=''
+            options={invoicePenagihanOptions}
             value={filters.invoicePenagihanId || ''}
             onChange={handleChange('invoicePenagihanId')}
-            placeholder='Masukkan ID invoice penagihan'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='Cari atau pilih invoice penagihan'
+            displayKey='label'
+            valueKey='id'
+            name='invoicePenagihanId'
+            loading={invoicePenagihanLoading}
+            onSearch={searchInvoicePenagihans}
+            showId
           />
         </div>
 
