@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import useGroupCustomersPage from '@/hooks/useGroupCustomersPage';
+import useGroupCustomerOperations from '@/hooks/useGroupCustomerOperations';
 import GroupCustomerTable from '@/components/groupCustomers/GroupCustomerTable';
 import GroupCustomerSearch from '@/components/groupCustomers/GroupCustomerSearch';
 import AddGroupCustomerModal from '@/components/groupCustomers/AddGroupCustomerModal';
@@ -25,6 +26,8 @@ const GroupCustomers = () => {
     handleAuthError
   } = useGroupCustomersPage();
 
+  const { getGroupCustomerById, loading: detailLoading } = useGroupCustomerOperations();
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -43,10 +46,20 @@ const GroupCustomers = () => {
     setShowEditModal(false);
   };
 
-  const openViewModal = (groupCustomer) => {
-    setViewingGroupCustomer(groupCustomer);
-    setShowViewModal(true);
+  const openViewModal = async (groupCustomer) => {
+    try {
+      // Fetch detail data using GET /:id endpoint
+      const detailData = await getGroupCustomerById(groupCustomer.id);
+      setViewingGroupCustomer(detailData);
+      setShowViewModal(true);
+    } catch (err) {
+      // If fetch fails, fallback to list data
+      console.warn('Failed to fetch group customer details, using list data:', err.message);
+      setViewingGroupCustomer(groupCustomer);
+      setShowViewModal(true);
+    }
   };
+
   const closeViewModal = () => {
     setViewingGroupCustomer(null);
     setShowViewModal(false);
@@ -137,10 +150,11 @@ const GroupCustomers = () => {
         handleAuthError={handleAuthError}
       />
 
-      <ViewGroupCustomerModal 
-        show={showViewModal} 
-        onClose={closeViewModal} 
-        groupCustomer={viewingGroupCustomer} 
+      <ViewGroupCustomerModal
+        show={showViewModal}
+        onClose={closeViewModal}
+        groupCustomer={viewingGroupCustomer}
+        loading={detailLoading}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -80,7 +80,7 @@ export const createApiService = (resource) => {
       api.delete(`${resourceUrl}/${id}`),
 
     search: (query, page = 1, limit = 10) =>
-      api.get(`${resourceUrl}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`),
+      api.get(`${resourceUrl}/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`),
 
     addCustomMethod(name, method) {
       this[name] = method.bind(this);
