@@ -1,13 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { ArchiveBoxIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxIcon, EyeIcon, CubeIcon, ScaleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import {
   AccordionItem,
   InfoCard,
   StatusBadge,
-  InfoTable
+  InfoTable,
+  TabContainer,
+  Tab,
+  TabContent,
+  TabPanel
 } from '../ui';
 import { formatCurrency, formatDateTime } from '../../utils/formatUtils';
 import useInventoryDetail from '../../hooks/useInventoryDetail';
+import ActivityTimeline from '../common/ActivityTimeline';
 
 const ViewInventoryModal = ({ show, inventory, onClose }) => {
   const inventoryId = show ? inventory?.id : null;
@@ -16,13 +21,11 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     loading,
     error
   } = useInventoryDetail(inventoryId);
+  const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
-    stockInfo: false,
     pricingInfo: false,
-    dimensionInfo: false,
-    metaInfo: false,
-    auditInfo: false
+    metaInfo: false
   });
 
   if (!show || !inventory) {
@@ -33,12 +36,6 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     return detailedInventory || inventory;
   }, [detailedInventory, inventory]);
 
-  const toggleSection = (section) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
 
   const resolveStockStatusVariant = (currentStock, minStock) => {
     if (currentStock <= minStock) {
@@ -123,130 +120,209 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
             <div className="flex justify-center py-10">
               <div className="h-10 w-10 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
             </div>
-          ) : null}
-
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <AccordionItem
-              title="Basic Information"
-              isExpanded={expandedSections.basicInfo}
-              onToggle={() => toggleSection('basicInfo')}
-              bgColor="bg-gradient-to-r from-orange-50 to-orange-100"
-            >
-              <InfoTable 
-                data={[
-                  { label: 'PLU', value: resolvedInventory?.plu, copyable: true },
-                  { label: 'Nama Barang', value: resolvedInventory?.nama_barang },
-                  { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true },
-                  { label: 'Allow Mixed Carton', value: resolvedInventory?.allow_mixed_carton ? 'Ya' : 'Tidak' }
-                ]}
-              />
-            </AccordionItem>
-
-            {/* Stock Information */}
-            <AccordionItem
-              title="Stock Information"
-              isExpanded={expandedSections.stockInfo}
-              onToggle={() => toggleSection('stockInfo')}
-              bgColor="bg-gradient-to-r from-blue-50 to-blue-100"
-            >
-              <InfoTable 
-                data={[
-                  { label: 'Stok Karton', value: `${totalCartons} karton` },
-                  { label: 'Stok Pcs', value: `${totalPieces} pcs` },
-                  { label: 'Total Stok', value: `${totalStock} unit` },
-                  { label: 'Minimum Stock', value: `${minimumStock} unit` },
-                  {
-                    label: 'Stock Status',
-                    component: <StatusBadge status={stockStatus.status} variant={stockStatus.variant} size='sm' dot />
-                  }
-                ]}
-              />
-            </AccordionItem>
-
-            {/* Pricing Information */}
-            <AccordionItem
-              title="Pricing Information"
-              isExpanded={expandedSections.pricingInfo}
-              onToggle={() => toggleSection('pricingInfo')}
-              bgColor="bg-gradient-to-r from-green-50 to-green-100"
-            >
-              <InfoTable 
-                data={[
-                  { label: 'Harga Barang', value: formatCurrency(resolvedInventory?.harga_barang) },
-                  { label: 'Total Value', value: formatCurrency((resolvedInventory?.harga_barang || 0) * totalStock) }
-                ]}
-              />
-            </AccordionItem>
-
-            {/* Dimension Information */}
-            <AccordionItem
-              title="Dimension Information"
-              isExpanded={expandedSections.dimensionInfo}
-              onToggle={() => toggleSection('dimensionInfo')}
-              bgColor="bg-gradient-to-r from-lime-50 to-emerald-50"
-            >
-              {dimensionExists ? (
-                <InfoTable
-                  data={[
-                    ...(hasCartonDimension
-                      ? [
-                          { label: 'Karton - Berat', value: `${cartonWeight || 0} kg` },
-                          { label: 'Karton - Panjang', value: `${cartonLength || 0} cm` },
-                          { label: 'Karton - Lebar', value: `${cartonWidth || 0} cm` },
-                          { label: 'Karton - Tinggi', value: `${cartonHeight || 0} cm` },
-                          { label: 'Karton - Qty per Carton', value: `${cartonQtyPerCarton || 0} pcs` }
-                        ]
-                      : []),
-                    ...(hasPcsDimension
-                      ? [
-                          { label: 'PCS - Berat', value: `${pcsWeight || 0} kg` },
-                          { label: 'PCS - Panjang', value: `${pcsLength || 0} cm` },
-                          { label: 'PCS - Lebar', value: `${pcsWidth || 0} cm` },
-                          { label: 'PCS - Tinggi', value: `${pcsHeight || 0} cm` }
-                        ]
-                      : [])
-                  ]}
+          ) : (
+            <div className="space-y-6">
+              {/* Tab Navigation */}
+              <TabContainer
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                variant="underline"
+                className="mb-6"
+              >
+                <Tab
+                  id="overview"
+                  label="Overview"
+                  icon={<EyeIcon className="h-4 w-4" />}
                 />
-              ) : (
-                <InfoCard
-                  variant="info"
-                  title="Dimensi belum diatur"
-                  description="Tidak ada data berat atau ukuran kardus untuk inventory ini."
+                <Tab
+                  id="stock"
+                  label="Stok"
+                  icon={<CubeIcon className="h-4 w-4" />}
                 />
-              )}
-            </AccordionItem>
+                <Tab
+                  id="dimensions"
+                  label="Dimensi"
+                  icon={<ScaleIcon className="h-4 w-4" />}
+                />
+                <Tab
+                  id="activity"
+                  label="Activity"
+                  icon={<ClockIcon className="h-4 w-4" />}
+                />
+              </TabContainer>
 
-            {/* System Information */}
-            <AccordionItem
-              title="System Information"
-              isExpanded={expandedSections.metaInfo}
-              onToggle={() => toggleSection('metaInfo')}
-              bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
-            >
-              <InfoTable 
-                data={[
-                  { label: 'Created At', value: formatDateTime(resolvedInventory?.createdAt) },
-                  { label: 'Updated At', value: formatDateTime(resolvedInventory?.updatedAt) }
-                ]}
-              />
-            </AccordionItem>
+              {/* Tab Content */}
+              <TabContent activeTab={activeTab}>
+                {/* Overview Tab */}
+                <TabPanel tabId="overview">
+                  <div className="space-y-6">
+                    {/* Basic Information */}
+                    <AccordionItem
+                      title="Basic Information"
+                      isExpanded={expandedSections.basicInfo}
+                      onToggle={() => setExpandedSections(prev => ({ ...prev, basicInfo: !prev.basicInfo }))}
+                      bgColor="bg-gradient-to-r from-orange-50 to-orange-100"
+                    >
+                      <InfoTable
+                        data={[
+                          { label: 'PLU', value: resolvedInventory?.plu, copyable: true },
+                          { label: 'Nama Barang', value: resolvedInventory?.nama_barang },
+                          { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true },
+                          { label: 'Allow Mixed Carton', value: resolvedInventory?.allow_mixed_carton ? 'Ya' : 'Tidak' }
+                        ]}
+                      />
+                    </AccordionItem>
 
-            {/* Audit Information */}
-            <AccordionItem
-              title="Audit Trail"
-              isExpanded={expandedSections.auditInfo}
-              onToggle={() => toggleSection('auditInfo')}
-              bgColor="bg-gradient-to-r from-slate-50 to-slate-100"
-            >
-              <InfoTable
-                data={[
-                  { label: 'Created By', value: resolvedInventory?.createdBy, copyable: true },
-                  { label: 'Updated By', value: resolvedInventory?.updatedBy, copyable: true }
-                ]}
-              />
-            </AccordionItem>
-          </div>
+                    {/* Pricing Information */}
+                    <AccordionItem
+                      title="Pricing Information"
+                      isExpanded={expandedSections.pricingInfo}
+                      onToggle={() => setExpandedSections(prev => ({ ...prev, pricingInfo: !prev.pricingInfo }))}
+                      bgColor="bg-gradient-to-r from-green-50 to-green-100"
+                    >
+                      <InfoTable
+                        data={[
+                          { label: 'Harga Barang', value: formatCurrency(resolvedInventory?.harga_barang) },
+                          { label: 'Total Value', value: formatCurrency((resolvedInventory?.harga_barang || 0) * totalStock) }
+                        ]}
+                      />
+                    </AccordionItem>
+
+                    {/* System Information */}
+                    <AccordionItem
+                      title="System Information"
+                      isExpanded={expandedSections.metaInfo}
+                      onToggle={() => setExpandedSections(prev => ({ ...prev, metaInfo: !prev.metaInfo }))}
+                      bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
+                    >
+                      <InfoTable
+                        data={[
+                          { label: 'Created At', value: formatDateTime(resolvedInventory?.createdAt) },
+                          { label: 'Updated At', value: formatDateTime(resolvedInventory?.updatedAt) }
+                        ]}
+                      />
+                    </AccordionItem>
+
+                  </div>
+                </TabPanel>
+
+                {/* Stock Tab */}
+                <TabPanel tabId="stock">
+                  <div className="space-y-6">
+                    {/* Stock Information */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                      <div className="flex items-center mb-4">
+                        <CubeIcon className="h-5 w-5 text-blue-500 mr-2" />
+                        <h3 className="text-lg font-semibold text-gray-900">Stock Information</h3>
+                      </div>
+                      <InfoTable
+                        data={[
+                          { label: 'Stok Karton', value: `${totalCartons} karton` },
+                          { label: 'Stok Pcs', value: `${totalPieces} pcs` },
+                          { label: 'Total Stok', value: `${totalStock} unit` },
+                          { label: 'Minimum Stock', value: `${minimumStock} unit` },
+                          {
+                            label: 'Stock Status',
+                            component: <StatusBadge status={stockStatus.status} variant={stockStatus.variant} size='sm' dot />
+                          }
+                        ]}
+                      />
+                    </div>
+
+                    {/* Stock Summary Card */}
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-lg font-semibold text-blue-900">Stock Overview</h4>
+                          <p className="text-blue-700 mt-1">
+                            Total: {totalStock} unit | Min: {minimumStock} unit
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <StatusBadge status={stockStatus.status} variant={stockStatus.variant} size='lg' dot />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </TabPanel>
+
+                {/* Dimensions Tab */}
+                <TabPanel tabId="dimensions">
+                  <div className="space-y-6">
+                    {dimensionExists ? (
+                      <>
+                        {/* Carton Dimensions */}
+                        {hasCartonDimension && (
+                          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                            <div className="flex items-center mb-4">
+                              <div className="p-2 bg-amber-100 rounded-lg mr-3">
+                                <ArchiveBoxIcon className="h-5 w-5 text-amber-600" />
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-900">Carton Dimensions</h3>
+                            </div>
+                            <InfoTable
+                              data={[
+                                { label: 'Berat', value: `${cartonWeight || 0} kg` },
+                                { label: 'Panjang', value: `${cartonLength || 0} cm` },
+                                { label: 'Lebar', value: `${cartonWidth || 0} cm` },
+                                { label: 'Tinggi', value: `${cartonHeight || 0} cm` },
+                                { label: 'Qty per Carton', value: `${cartonQtyPerCarton || 0} pcs` }
+                              ]}
+                            />
+                          </div>
+                        )}
+
+                        {/* PCS Dimensions */}
+                        {hasPcsDimension && (
+                          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                            <div className="flex items-center mb-4">
+                              <div className="p-2 bg-green-100 rounded-lg mr-3">
+                                <CubeIcon className="h-5 w-5 text-green-600" />
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-900">Individual Unit Dimensions</h3>
+                            </div>
+                            <InfoTable
+                              data={[
+                                { label: 'Berat', value: `${pcsWeight || 0} kg` },
+                                { label: 'Panjang', value: `${pcsLength || 0} cm` },
+                                { label: 'Lebar', value: `${pcsWidth || 0} cm` },
+                                { label: 'Tinggi', value: `${pcsHeight || 0} cm` }
+                              ]}
+                            />
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-10">
+                        <ScaleIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-500 mb-2">No Dimension Data</h3>
+                        <p className="text-gray-400">Tidak ada data berat atau ukuran untuk inventory ini.</p>
+                      </div>
+                    )}
+                  </div>
+                </TabPanel>
+
+                {/* Activity Tab */}
+                <TabPanel tabId="activity">
+                  <div className="space-y-6">
+                    {/* Activity Timeline */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                      <div className="flex items-center mb-4">
+                        <ClockIcon className="h-5 w-5 text-purple-500 mr-2" />
+                        <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
+                      </div>
+                      <ActivityTimeline
+                        auditTrails={resolvedInventory?.auditTrails || []}
+                        title=""
+                        showCount={true}
+                        emptyMessage="No activity found for this inventory item."
+                      />
+                    </div>
+                  </div>
+                </TabPanel>
+              </TabContent>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
