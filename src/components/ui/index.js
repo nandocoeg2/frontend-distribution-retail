@@ -37,16 +37,17 @@ export {
 } from './Card';
 
 // Loading Components
-export { 
-  LoadingState, 
-  Spinner, 
-  LoadingDots, 
-  ProgressBar, 
-  CircularProgress, 
-  Skeleton, 
-  PageLoading, 
-  CardLoading, 
-  TableLoading 
+export {
+  default as Loading,
+  LoadingState,
+  Spinner,
+  LoadingDots,
+  ProgressBar,
+  CircularProgress,
+  Skeleton,
+  PageLoading,
+  CardLoading,
+  TableLoading
 } from './Loading';
 
 // Button Components (if created in the future)
