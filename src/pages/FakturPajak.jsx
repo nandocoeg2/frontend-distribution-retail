@@ -1,14 +1,8 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import useFakturPajakPage from '@/hooks/useFakturPajakPage';
 import {
-  FakturPajakSearch,
-  FakturPajakTable,
+  FakturPajakTableServerSide,
   FakturPajakModal,
   FakturPajakDetailModal,
   FakturPajakExportModal,
@@ -16,7 +10,6 @@ import {
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
-import fakturPajakService from '@/services/fakturPajakService';
 
 const TAB_STATUS_CONFIG = {
   all: { label: 'All', statusCode: null },
@@ -51,7 +44,7 @@ const TAB_ORDER = [
   'completed',
 ];
 
-const INITIAL_TAB_PAGINATION = {
+const INITIAL_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
@@ -61,139 +54,18 @@ const INITIAL_TAB_PAGINATION = {
   total: 0,
 };
 
-const parseFakturPajakListResponse = (response = {}) => {
-  if (response?.success === false) {
-    throw new Error(
-      response?.error?.message || 'Failed to fetch faktur pajak data'
-    );
-  }
-
-  const responseData = response?.data || response;
-  const rawData =
-    responseData?.fakturPajaks ??
-    responseData?.data ??
-    responseData?.results ??
-    responseData ??
-    [];
-
-  const paginationSource =
-    responseData?.pagination ??
-    responseData?.meta ??
-    responseData?.data?.pagination ??
-    response?.pagination ??
-    {};
-
-  const currentPage =
-    paginationSource.currentPage ??
-    paginationSource.page ??
-    INITIAL_TAB_PAGINATION.currentPage;
-
-  const itemsPerPage =
-    paginationSource.itemsPerPage ??
-    paginationSource.limit ??
-    INITIAL_TAB_PAGINATION.itemsPerPage;
-
-  const totalItems =
-    paginationSource.totalItems ??
-    paginationSource.total ??
-    (Array.isArray(rawData) ? rawData.length : 0);
-
-  const totalPages =
-    paginationSource.totalPages ??
-    Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1);
-
-  const results = Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.fakturPajaks)
-      ? rawData.fakturPajaks
-      : Array.isArray(rawData?.data)
-        ? rawData.data
-        : [];
-
-  return {
-    results,
-    pagination: {
-      currentPage,
-      page: currentPage,
-      totalPages,
-      totalItems,
-      total: totalItems,
-      itemsPerPage,
-      limit: itemsPerPage,
-    },
-  };
-};
-
-const mapPaginationShape = (
-  source = {},
-  fallbackLimit = INITIAL_TAB_PAGINATION.itemsPerPage
-) => {
-  const currentPage =
-    source?.currentPage ?? source?.page ?? INITIAL_TAB_PAGINATION.currentPage;
-  const itemsPerPage =
-    source?.itemsPerPage ??
-    source?.limit ??
-    fallbackLimit ??
-    INITIAL_TAB_PAGINATION.itemsPerPage;
-  const totalItems =
-    source?.totalItems ?? source?.total ?? INITIAL_TAB_PAGINATION.totalItems;
-  const totalPages =
-    source?.totalPages ??
-    Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1);
-
-  return {
-    currentPage,
-    page: currentPage,
-    totalPages,
-    totalItems,
-    total: totalItems,
-    itemsPerPage,
-    limit: itemsPerPage,
-  };
-};
-
 const FakturPajakPage = () => {
+  const queryClient = useQueryClient();
+  
   const {
-    fakturPajaks,
-    pagination,
-    loading,
-    error,
-    filters,
-    searchLoading,
-    hasActiveFilters,
-    searchQuery,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
-    handlePageChange,
-    handleLimitChange,
     createFakturPajak,
     updateFakturPajak,
     deleteFakturPajak: triggerDeleteFakturPajak,
     deleteFakturPajakConfirmation,
-    fetchFakturPajak,
     fetchFakturPajakById,
   } = useFakturPajakPage();
 
-  const statusIdMapRef = useRef({});
   const [activeTab, setActiveTab] = useState('all');
-  const [tabFakturPajaks, setTabFakturPajaks] = useState([]);
-  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
-  const [tabLoading, setTabLoading] = useState(false);
-  const [tabError, setTabError] = useState(null);
-
-  const isSearchActive = useMemo(() => {
-    if (!hasActiveFilters) {
-      return false;
-    }
-
-    if (typeof searchQuery === 'string') {
-      return searchQuery.trim() !== '';
-    }
-
-    return Boolean(searchQuery);
-  }, [hasActiveFilters, searchQuery]);
-
   const [selectedFakturPajak, setSelectedFakturPajak] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -201,188 +73,15 @@ const FakturPajakPage = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  useEffect(() => {
-    if (!Array.isArray(fakturPajaks)) {
-      return;
-    }
-    const map = statusIdMapRef.current;
-    fakturPajaks.forEach((item) => {
-      const code = item?.status?.status_code;
-      const id = item?.statusId || item?.status?.id;
-      if (code && id && !map[code]) {
-        map[code] = id;
-      }
-    });
-  }, [fakturPajaks]);
-
-  const tableFakturPajaks = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return fakturPajaks;
-    }
-    return tabFakturPajaks;
-  }, [activeTab, fakturPajaks, isSearchActive, tabFakturPajaks]);
-
-  const tablePagination = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return pagination;
-    }
-    return tabPagination;
-  }, [activeTab, isSearchActive, pagination, tabPagination]);
-
-  const tableLoading = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return loading;
-    }
-    return tabLoading;
-  }, [activeTab, isSearchActive, loading, tabLoading]);
-
-  const tableError = isSearchActive || activeTab === 'all' ? error : tabError;
-
-  const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
-  const activeTabBadge =
-    resolvedPagination?.totalItems ?? resolvedPagination?.total ?? 0;
-
   const handleTabChange = useCallback((tabId) => {
     setActiveTab(tabId);
   }, []);
 
-  const fetchTabData = useCallback(
-    async (tabId, { page = 1, limit } = {}) => {
-      const tabConfig = TAB_STATUS_CONFIG[tabId];
-      if (!tabConfig || !tabConfig.statusCode) {
-        setTabFakturPajaks(fakturPajaks);
-        setTabPagination(
-          mapPaginationShape(
-            pagination,
-            pagination?.itemsPerPage ??
-              pagination?.limit ??
-              INITIAL_TAB_PAGINATION.itemsPerPage
-          )
-        );
-        setTabError(null);
-        return;
-      }
-
-      const nextLimit =
-        limit ??
-        tabPagination?.itemsPerPage ??
-        pagination?.itemsPerPage ??
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-
-      setTabLoading(true);
-      setTabError(null);
-
-      try {
-        const statusCode = tabConfig.statusCode;
-        const statusId = statusIdMapRef.current[statusCode];
-        const searchParams = statusId
-          ? { statusId }
-          : { status_code: statusCode };
-
-        const response = await fakturPajakService.searchFakturPajak(
-          searchParams,
-          page,
-          nextLimit
-        );
-        const { results, pagination: nextPagination } =
-          parseFakturPajakListResponse(response);
-
-        setTabFakturPajaks(results);
-        setTabPagination(mapPaginationShape(nextPagination, nextLimit));
-
-        if (Array.isArray(results)) {
-          const map = statusIdMapRef.current;
-          results.forEach((item) => {
-            const code = item?.status?.status_code;
-            const id = item?.statusId || item?.status?.id;
-            if (code && id && !map[code]) {
-              map[code] = id;
-            }
-          });
-        }
-      } catch (err) {
-        console.error('Failed to fetch faktur pajak by status:', err);
-        setTabFakturPajaks([]);
-        setTabPagination({
-          ...INITIAL_TAB_PAGINATION,
-          itemsPerPage: nextLimit,
-          limit: nextLimit,
-        });
-        setTabError(
-          err?.message || 'Gagal memuat faktur pajak berdasarkan status.'
-        );
-      } finally {
-        setTabLoading(false);
-      }
-    },
-    [fakturPajaks, pagination, tabPagination.itemsPerPage]
-  );
-
-  useEffect(() => {
-    if (isSearchActive) {
-      return;
-    }
-
-    if (activeTab === 'all') {
-      setTabError(null);
-      return;
-    }
-
-    fetchTabData(activeTab, { page: 1 });
-  }, [activeTab, fetchTabData, isSearchActive]);
-
-  const refreshActiveTab = useCallback(async () => {
-    if (isSearchActive) {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      await fetchFakturPajak({ page: currentPage });
-      return;
-    }
-
-    if (activeTab === 'all') {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      await fetchFakturPajak({ page: currentPage });
-      return;
-    }
-
-    const currentPage = tabPagination?.currentPage || tabPagination?.page || 1;
-    await fetchTabData(activeTab, { page: currentPage });
-  }, [
-    activeTab,
-    fetchFakturPajak,
-    fetchTabData,
-    isSearchActive,
-    pagination,
-    tabPagination,
-  ]);
-
-  const handleTablePageChange = useCallback(
-    (page) => {
-      if (isSearchActive || activeTab === 'all') {
-        handlePageChange(page);
-        return;
-      }
-
-      fetchTabData(activeTab, { page });
-    },
-    [activeTab, fetchTabData, handlePageChange, isSearchActive]
-  );
-
-  const handleTableLimitChange = useCallback(
-    (limit) => {
-      if (isSearchActive || activeTab === 'all') {
-        handleLimitChange(limit);
-        return;
-      }
-
-      fetchTabData(activeTab, { page: 1, limit });
-    },
-    [activeTab, fetchTabData, handleLimitChange, isSearchActive]
-  );
-
   const handleDeleteConfirm = useCallback(async () => {
     await deleteFakturPajakConfirmation.confirmDelete();
-    await refreshActiveTab();
-  }, [deleteFakturPajakConfirmation, refreshActiveTab]);
+    // Invalidate queries to refresh data
+    await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
+  }, [deleteFakturPajakConfirmation, queryClient]);
 
   const openCreateModal = () => {
     setSelectedFakturPajak(null);
@@ -439,9 +138,8 @@ const FakturPajakPage = () => {
   const handleCreateSubmit = async (payload) => {
     const result = await createFakturPajak(payload);
     if (result) {
-      if (isSearchActive || activeTab !== 'all') {
-        await refreshActiveTab();
-      }
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
       setIsCreateModalOpen(false);
     }
   };
@@ -452,23 +150,18 @@ const FakturPajakPage = () => {
     }
     const result = await updateFakturPajak(selectedFakturPajak.id, payload);
     if (result) {
-      if (isSearchActive || activeTab !== 'all') {
-        await refreshActiveTab();
-      }
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
       setIsEditModalOpen(false);
       setSelectedFakturPajak(null);
     }
   };
 
-  const handleDelete = (id) => {
-    if (!id) {
+  const handleDelete = (fakturPajak) => {
+    if (!fakturPajak?.id) {
       return;
     }
-    triggerDeleteFakturPajak(id);
-  };
-
-  const handleRetry = () => {
-    refreshActiveTab();
+    triggerDeleteFakturPajak(fakturPajak.id);
   };
 
   return (
@@ -503,14 +196,6 @@ const FakturPajakPage = () => {
             </div>
           </div>
 
-          <FakturPajakSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearchSubmit}
-            onReset={handleResetFilters}
-            loading={searchLoading || loading}
-          />
-
           <div className='mb-4 overflow-x-auto'>
             <TabContainer
               activeTab={activeTab}
@@ -522,46 +207,20 @@ const FakturPajakPage = () => {
                   key={tabId}
                   id={tabId}
                   label={TAB_STATUS_CONFIG[tabId].label}
-                  badge={activeTab === tabId ? activeTabBadge : null}
                 />
               ))}
             </TabContainer>
           </div>
 
-          {tableError ? (
-            <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
-              <p className='mb-3 text-sm text-red-800'>
-                Terjadi kesalahan: {tableError}
-              </p>
-              <button
-                onClick={handleRetry}
-                className='px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700'
-              >
-                Coba Lagi
-              </button>
-            </div>
-          ) : (
-            <>
-              {tableLoading && (
-                <div className='flex items-center mb-4 text-sm text-gray-500'>
-                  <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-                  Memuat data faktur pajak...
-                </div>
-              )}
-              <FakturPajakTable
-                fakturPajaks={tableFakturPajaks}
-                pagination={tablePagination}
-                onPageChange={handleTablePageChange}
-                onLimitChange={handleTableLimitChange}
-                onEdit={openEditModal}
-                onDelete={handleDelete}
-                onView={openDetailModal}
-                loading={tableLoading}
-                searchQuery={searchQuery}
-                hasActiveFilters={hasActiveFilters}
-              />
-            </>
-          )}
+          <FakturPajakTableServerSide
+            onView={openDetailModal}
+            onEdit={openEditModal}
+            onDelete={handleDelete}
+            deleteLoading={deleteFakturPajakConfirmation.loading}
+            initialPage={1}
+            initialLimit={10}
+            activeTab={activeTab}
+          />
         </div>
       </div>
 
