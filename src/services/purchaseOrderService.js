@@ -1,6 +1,45 @@
 const API_URL = 'http://localhost:5050/api/v1/purchase-orders';
 
 const purchaseOrderService = {
+  // Get purchase orders with pagination and optional filters (supports both old and new signatures)
+  getPurchaseOrders: function(params = {}) {
+    // Support both old (page, limit) and new (params object) signatures for backward compatibility
+    if (typeof params === 'number') {
+      const page = params;
+      const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
+      return this.getAllPurchaseOrders(page, limit);
+    }
+    
+    // New params object signature for TanStack Query
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const url = new URL(`${API_URL}/`);
+    
+    // Add all parameters to URL
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        url.searchParams.append(key, params[key]);
+      }
+    });
+
+    return fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    }).then(response => {
+      if (!response.ok) {
+        return response.json().then(errorData => {
+          throw new Error(errorData.error?.message || 'Failed to fetch purchase orders');
+        });
+      }
+      return response.json();
+    });
+  },
+
   // Get all purchase orders dengan pagination
   getAllPurchaseOrders: async (page = 1, limit = 10) => {
     const accessToken = localStorage.getItem('token');

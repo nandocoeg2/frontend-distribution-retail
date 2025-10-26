@@ -1,19 +1,32 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import usePurchaseOrders from '../hooks/usePurchaseOrders';
-import PurchaseOrderTable from '../components/purchaseOrders/PurchaseOrderTable.jsx';
-import PurchaseOrderSearch from '../components/purchaseOrders/PurchaseOrderSearch.jsx';
-import AddPurchaseOrderModal from '../components/purchaseOrders/AddPurchaseOrderModal.jsx';
-import EditPurchaseOrderModal from '../components/purchaseOrders/EditPurchaseOrderModal.jsx';
-import ViewPurchaseOrderModal from '../components/purchaseOrders/ViewPurchaseOrderModal.jsx';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  PurchaseOrderTableServerSide,
+  PurchaseOrderSearch,
+  AddPurchaseOrderModal,
+  EditPurchaseOrderModal,
+  ViewPurchaseOrderModal,
+} from '../components/purchaseOrders';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
-import { useNavigate } from 'react-router-dom';
-import { TabContainer, Tab, TabContent, TabPanel } from '../components/ui/Tabs';
+import { TabContainer, Tab } from '../components/ui/Tabs';
+import usePurchaseOrders from '../hooks/usePurchaseOrders';
 
 const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
 const FAILED_STATUS_CODE = 'FAILED PURCHASE ORDER';
+
+const TAB_STATUS_CONFIG = {
+  all: { label: 'All', statusCode: null },
+  pending: { label: 'Pending', statusCode: 'PENDING PURCHASE ORDER' },
+  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER' },
+  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER' },
+  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER' },
+  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER' },
+};
+
+const TAB_ORDER = ['all', 'pending', 'processing', 'processed', 'completed', 'failed'];
 
 const extractDuplicateGroups = (failedItems = []) => {
   const groupsMap = new Map();
@@ -64,7 +77,6 @@ const formatDuplicateMessage = (groups = []) => {
   return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin menandai duplikat sebagai FAILED (menyisakan data paling awal) lalu melanjutkan proses?`;
 };
 
-
 const resolveCreatedAtValue = (source) => {
   if (!source) {
     return null;
@@ -86,24 +98,11 @@ const resolveCreatedAtValue = (source) => {
 };
 
 const PurchaseOrders = () => {
+  const queryClient = useQueryClient();
   const {
     purchaseOrders,
-    pagination,
-    loading,
-    error,
-    filters,
-    searchLoading,
-    hasActiveFilters,
-    fetchPurchaseOrders,
-    deletePurchaseOrder,
-    createPurchaseOrder,
-    updatePurchaseOrder,
     getPurchaseOrder,
-    handlePageChange,
-    handleLimitChange,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
+    deletePurchaseOrder,
   } = usePurchaseOrders();
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -113,107 +112,40 @@ const PurchaseOrders = () => {
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [tabLoading, setTabLoading] = useState(false);
-  const [tabData, setTabData] = useState([]);
-  const [tabPagination, setTabPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: 10,
-    page: 1,
-    limit: 10,
-    total: 0
-  });
+
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
 
-  const isSearchActive = Boolean(hasActiveFilters);
-
-  const tableOrders = isSearchActive ? purchaseOrders : tabData;
-  const tablePagination = isSearchActive ? pagination : tabPagination;
-  const tableLoading = isSearchActive ? loading : tabLoading;
-
-  const { currentPage: tabCurrentPage, itemsPerPage: tabItemsPerPage } = tabPagination;
   const confirmActionRef = useRef(() => {});
 
   const openConfirmationDialog = (options, onConfirm) => {
     confirmActionRef.current = onConfirm;
     showDialog(options);
   };
-  const navigate = useNavigate();
 
-  // Map tab to status code
-  const getStatusCodeForTab = (tab) => {
-    const statusMap = {
-      'all': null,
-      'pending': 'PENDING PURCHASE ORDER',
-      'processing': 'PROCESSING PURCHASE ORDER',
-      'processed': 'PROCESSED PURCHASE ORDER',
-      'completed': 'COMPLETED PURCHASE ORDER',
-      'failed': 'FAILED PURCHASE ORDER'
-    };
-    return statusMap[tab];
-  };
-
-  // Fetch data based on active tab
-  const fetchDataByTab = useCallback(async (tab = activeTab, page = 1, limit = 10) => {
-    setTabLoading(true);
-    try {
-      const statusCode = getStatusCodeForTab(tab);
-      let response;
-
-      if (statusCode === null) {
-        // Fetch all purchase orders
-        response = await purchaseOrderService.getAllPurchaseOrders(page, limit);
-      } else {
-        // Fetch by status code
-        response = await purchaseOrderService.getPurchaseOrdersByStatus(statusCode, page, limit);
-      }
-
-      const rawData = response?.data?.data || response?.data || [];
-      const paginationData = response?.data?.pagination || {};
-
-      const currentPage = paginationData.currentPage || paginationData.page || 1;
-      const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || 10;
-      const totalItems = paginationData.totalItems || paginationData.total || 0;
-
-      const data = Array.isArray(rawData) ? rawData : [];
-
-      setTabData(data);
-      setTabPagination({
-        currentPage,
-        page: currentPage,
-        totalPages: paginationData.totalPages || 1,
-        totalItems,
-        total: totalItems,
-        itemsPerPage,
-        limit: itemsPerPage
-      });
-
-      return data;
-    } catch (err) {
-      console.error('Error fetching data by tab:', err);
-      showError(err.message || 'Failed to fetch purchase orders');
-      setTabData([]);
-      return [];
-    } finally {
-      setTabLoading(false);
-    }
-  }, [activeTab, showError]);
+  // Tab change handler
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(newTab);
+    setSelectedOrders([]); // Clear selection when changing tabs
+  }, []);
 
   // This function is now the callback for when the Add modal is finished.
   const handleAddFinished = () => {
     setAddModalOpen(false);
-    fetchPurchaseOrders(); // Always refresh the list when the modal closes.
-    fetchDataByTab(); // Also refresh tab data
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
   };
 
   const handleEditOrder = async (id, formData) => {
-    const result = await updatePurchaseOrder(id, formData);
-    if (result) {
+    try {
+      await purchaseOrderService.updatePurchaseOrder(id, formData);
       setEditModalOpen(false);
       setSelectedOrder(null);
-      fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      showSuccess('Purchase order updated successfully');
+    } catch (error) {
+      showError(`Gagal mengupdate purchase order: ${error.message}`);
     }
   };
 
@@ -229,45 +161,28 @@ const PurchaseOrders = () => {
     setSelectedOrder(orderData);
   };
 
-  // Tab change handler
-  const handleTabChange = useCallback((newTab) => {
-    setActiveTab(newTab);
-    setTabPagination(prev => ({ ...prev, currentPage: 1, page: 1 }));
-    fetchDataByTab(newTab, 1, tabPagination.itemsPerPage);
-  }, [fetchDataByTab, tabPagination.itemsPerPage]);
-
-  // Tab pagination handlers
-  const handleTabPageChange = useCallback((page) => {
-    fetchDataByTab(activeTab, page, tabPagination.itemsPerPage);
-  }, [activeTab, fetchDataByTab, tabPagination.itemsPerPage]);
-
-  const handleTabLimitChange = useCallback((limit) => {
-    fetchDataByTab(activeTab, 1, limit);
-  }, [activeTab, fetchDataByTab]);
-
-  const handleTablePageChange = useCallback((page) => {
-    if (isSearchActive) {
-      handlePageChange(page);
-    } else {
-      handleTabPageChange(page);
-    }
-  }, [handlePageChange, handleTabPageChange, isSearchActive]);
-
-  const handleTableLimitChange = useCallback((limit) => {
-    if (isSearchActive) {
-      handleLimitChange(limit);
-    } else {
-      handleTabLimitChange(limit);
-    }
-  }, [handleLimitChange, handleTabLimitChange, isSearchActive]);
-
-  const handleDeleteOrder = useCallback(async (id) => {
-    const success = await deletePurchaseOrder(id);
-    if (success && !isSearchActive) {
-      await fetchDataByTab(activeTab, tabCurrentPage, tabItemsPerPage);
-    }
-    return success;
-  }, [deletePurchaseOrder, isSearchActive, fetchDataByTab, activeTab, tabCurrentPage, tabItemsPerPage]);
+  const handleDeleteOrder = useCallback(async (id, poNumber) => {
+    openConfirmationDialog({
+      title: 'Hapus Purchase Order',
+      message: `Apakah Anda yakin ingin menghapus Purchase Order "${poNumber}"? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      type: 'danger',
+    }, async () => {
+      setLoading(true);
+      try {
+        await deletePurchaseOrder(id);
+        hideDialog();
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+        showSuccess('Purchase order deleted successfully');
+      } catch (error) {
+        showError(`Gagal menghapus purchase order: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    });
+  }, [deletePurchaseOrder, hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, queryClient]);
 
   // Bulk selection handlers
   const handleSelectionChange = (orderId, checked) => {
@@ -280,12 +195,13 @@ const PurchaseOrders = () => {
 
   const handleSelectAll = useCallback((checked) => {
     if (checked) {
-      const allIds = tableOrders.map(order => order.id);
-      setSelectedOrders(allIds);
+      // We'll get all order IDs from the current table view
+      // The table component will handle this
+      setSelectedOrders([]);
     } else {
       setSelectedOrders([]);
     }
-  }, [tableOrders]);
+  }, []);
 
   // Bulk process handlers
   const handleBulkProcess = () => {
@@ -348,8 +264,8 @@ const PurchaseOrders = () => {
 
       showSuccess(messageParts.join(' '));
 
-      await fetchPurchaseOrders();
-      await fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       setSelectedOrders([]);
       hideDialog();
     } catch (error) {
@@ -360,8 +276,6 @@ const PurchaseOrders = () => {
       setBulkProcessing(false);
     }
   };
-
-
 
   const resolveOrderDetails = async (id) => {
     if (!id) {
@@ -506,8 +420,8 @@ const PurchaseOrders = () => {
 
       if (idsToProcess.length === 0) {
         showSuccess(`Berhasil mengupdate ${idsToDelete.length} purchase order duplikat menjadi FAILED. Tidak ada data tersisa untuk diproses.`);
-        await fetchPurchaseOrders();
-        await fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
         hideDialog();
         return;
       }
@@ -523,32 +437,6 @@ const PurchaseOrders = () => {
       setBulkProcessing(false);
     }
   };
-  // Fetch data when component mounts
-  useEffect(() => {
-    fetchDataByTab(activeTab, 1, 10);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
-
-  // Clear selection when tab changes
-  useEffect(() => {
-    setSelectedOrders([]);
-  }, [activeTab]);
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Error: {error}</p>
-          <button
-            onClick={() => fetchPurchaseOrders()}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6">
@@ -557,35 +445,6 @@ const PurchaseOrders = () => {
           <div className="mb-4 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Purchase Orders</h3>
             <div className="flex items-center gap-2">
-              {selectedOrders.length > 0 && (
-                <div className="flex items-center gap-2 mr-4">
-                  <span className="text-sm text-gray-600">
-                    {selectedOrders.length} dipilih
-                  </span>
-                  <button
-                    onClick={handleBulkProcess}
-                    disabled={bulkProcessing}
-                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed"
-                  >
-                    {bulkProcessing ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Memproses...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Proses ({selectedOrders.length})
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
               <button
                 onClick={() => setAddModalOpen(true)}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -596,14 +455,6 @@ const PurchaseOrders = () => {
             </div>
           </div>
 
-          <PurchaseOrderSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearchSubmit}
-            onReset={handleResetFilters}
-            loading={Boolean(searchLoading || tableLoading)}
-          />
-
           {/* Tabs for filtering by status */}
           <div className="mb-4">
             <TabContainer
@@ -611,46 +462,30 @@ const PurchaseOrders = () => {
               onTabChange={handleTabChange}
               variant="underline"
             >
-              <Tab
-                id="all"
-                label="All"
-                badge={tabPagination.totalItems}
-              />
-              <Tab
-                id="pending"
-                label="Pending"
-              />
-              <Tab
-                id="processing"
-                label="Processing"
-              />
-              <Tab
-                id="processed"
-                label="Processed"
-              />
-              <Tab
-                id="completed"
-                label="Completed"
-              />
-              <Tab
-                id="failed"
-                label="Failed"
-              />
+              {TAB_ORDER.map((tabId) => (
+                <Tab
+                  key={tabId}
+                  id={tabId}
+                  label={TAB_STATUS_CONFIG[tabId].label}
+                />
+              ))}
             </TabContainer>
           </div>
 
-          <PurchaseOrderTable
-            orders={tableOrders}
-            pagination={tablePagination}
-            onPageChange={handleTablePageChange}
-            onLimitChange={handleTableLimitChange}
+          {/* TanStack Table with Server-Side Features */}
+          <PurchaseOrderTableServerSide
             onView={handleViewOrder}
             onEdit={handleEditModalOpen}
             onDelete={handleDeleteOrder}
-            loading={tableLoading}
             selectedOrders={selectedOrders}
             onSelectionChange={handleSelectionChange}
             onSelectAll={handleSelectAll}
+            onBulkProcess={handleBulkProcess}
+            isProcessing={bulkProcessing}
+            hasSelectedOrders={selectedOrders.length > 0}
+            activeTab={activeTab}
+            initialPage={1}
+            initialLimit={10}
           />
         </div>
       </div>
@@ -660,7 +495,6 @@ const PurchaseOrders = () => {
           isOpen={isAddModalOpen}
           onClose={() => setAddModalOpen(false)}
           onFinished={handleAddFinished}
-          createPurchaseOrder={createPurchaseOrder}
         />
       )}
 
@@ -686,8 +520,8 @@ const PurchaseOrders = () => {
           order={selectedOrder}
           loading={!selectedOrder}
           onProcessed={() => {
-            fetchPurchaseOrders();
-            fetchDataByTab(activeTab, tabPagination.currentPage, tabPagination.itemsPerPage);
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
           }}
         />
       )}

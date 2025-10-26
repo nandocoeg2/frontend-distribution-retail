@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
-import InvoicePengirimanSearch from '@/components/invoicePengiriman/InvoicePengirimanSearch';
 import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
 import EditInvoicePengirimanModal from '@/components/invoicePengiriman/EditInvoicePengirimanModal';
 import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
@@ -39,18 +38,10 @@ const InvoicePengirimanPage = () => {
     pagination,
     loading,
     error,
-    filters,
-    searchQuery,
-    searchLoading,
-    hasActiveFilters,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
     handlePageChange,
     handleLimitChange,
     createInvoicePenagihan,
     deleteInvoiceConfirmation,
-    fetchInvoicePengiriman,
     handleAuthError,
   } = useInvoicePengiriman();
 
@@ -149,19 +140,6 @@ const InvoicePengirimanPage = () => {
     [handleLimitChange]
   );
 
-  const handleSearch = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleSearchSubmit();
-  }, [activeTab, handleSearchSubmit]);
-
-  const handleReset = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleResetFilters();
-  }, [activeTab, handleResetFilters]);
 
   const refreshActiveTab = useCallback(() => {
     const currentPage = pagination?.currentPage || pagination?.page || 1;
@@ -367,12 +345,7 @@ const InvoicePengirimanPage = () => {
     return (
       <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
         <p className='text-red-800'>Terjadi kesalahan: {error}</p>
-        <button
-          onClick={fetchInvoicePengiriman}
-          className='px-4 py-2 mt-2 text-white bg-red-600 rounded hover:bg-red-700'
-        >
-          Coba Lagi
-        </button>
+        <p className='text-sm text-red-600 mt-2'>Halaman akan otomatis mencoba lagi. Jika masalah berlanjut, silakan refresh halaman.</p>
       </div>
     );
   }
@@ -401,13 +374,6 @@ const InvoicePengirimanPage = () => {
             </button> */}
           </div>
 
-          <InvoicePengirimanSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            loading={Boolean(searchLoading)}
-          />
 
           <div className='mb-4 overflow-x-auto'>
             <TabContainer

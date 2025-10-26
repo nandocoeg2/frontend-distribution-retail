@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import invoicePengirimanService from '../services/invoicePengirimanService';
-import usePaginatedSearch from './usePaginatedSearch';
+// usePaginatedSearch is no longer needed
 import { useDeleteConfirmation } from './useDeleteConfirmation';
 
 const INITIAL_PAGINATION = {
@@ -15,133 +15,16 @@ const INITIAL_PAGINATION = {
   total: 0,
 };
 
-const DEFAULT_FILTERS = {
-  no_invoice: '',
-  deliver_to: '',
-  type: '',
-  status_code: '',
-  purchaseOrderId: '',
-  tanggal_start: '',
-  tanggal_end: '',
-  is_printed: '',
-};
+// Helper functions for search are no longer needed as search
+// functionality is handled by TanStack Table
 
-const createEmptyFilters = () => ({ ...DEFAULT_FILTERS });
-
-const sanitizeFilters = (filters = {}) => {
-  const sanitized = {};
-
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value === null || value === undefined) {
-      return;
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (trimmed === '') {
-        return;
-      }
-
-      if (key === 'is_printed') {
-        const lowered = trimmed.toLowerCase();
-        if (lowered === 'true') {
-          sanitized[key] = true;
-          return;
-        }
-        if (lowered === 'false') {
-          sanitized[key] = false;
-          return;
-        }
-        return;
-      }
-
-      if (key === 'type') {
-        sanitized[key] = trimmed.toUpperCase();
-        return;
-      }
-
-      sanitized[key] = trimmed;
-      return;
-    }
-
-    if (key === 'is_printed') {
-      sanitized[key] = Boolean(value);
-      return;
-    }
-
-    sanitized[key] = value;
-  });
-
-  return sanitized;
-};
-
-const areFiltersEqual = (a = {}, b = {}) => {
-  const keysA = Object.keys(a);
-  const keysB = Object.keys(b);
-
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-
-  return keysA.every((key) => a[key] === b[key]);
-};
-
-const parseInvoicePengirimanResponse = (response = {}) => {
-  if (response?.success === false) {
-    throw new Error(
-      response?.error?.message || 'Failed to fetch invoice pengiriman'
-    );
-  }
-
-  const rawData = response?.data?.data ?? response?.data ?? [];
-  const paginationData = response?.data?.pagination ?? {};
-  const currentPage =
-    paginationData.currentPage ??
-    paginationData.page ??
-    INITIAL_PAGINATION.currentPage;
-  const itemsPerPage =
-    paginationData.itemsPerPage ??
-    paginationData.limit ??
-    INITIAL_PAGINATION.itemsPerPage;
-  const totalItems =
-    paginationData.totalItems ??
-    paginationData.total ??
-    INITIAL_PAGINATION.totalItems;
-
-  return {
-    results: Array.isArray(rawData)
-      ? rawData
-      : Array.isArray(rawData?.data)
-        ? rawData.data
-        : [],
-    pagination: {
-      currentPage,
-      page: currentPage,
-      totalPages:
-        paginationData.totalPages ?? INITIAL_PAGINATION.totalPages,
-      totalItems,
-      total: totalItems,
-      itemsPerPage,
-      limit: itemsPerPage,
-    },
-  };
-};
-
-const resolveInvoicePengirimanError = (error) => {
-  return (
-    error?.response?.data?.error?.message ||
-    error?.message ||
-    'Failed to load invoice pengiriman'
-  );
-};
+// Response parsing is now handled by TanStack Query hook
+// No need for parse and error resolve functions
 
 const useInvoicePengiriman = () => {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState(() => createEmptyFilters());
-  const filtersRef = useRef(createEmptyFilters());
-  const activeFiltersRef = useRef({});
-  const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
-  const [searchLoadingState, setSearchLoadingState] = useState(false);
+  // Search functionality is now handled by TanStack Table
+  // No need for search-related state
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -149,108 +32,39 @@ const useInvoicePengiriman = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const {
-    searchResults: invoicePengiriman,
-    setSearchResults: setInvoicePengiriman,
-    pagination,
-    setPagination,
-    loading,
-    error,
-    setError,
-    performSearch,
-    handlePageChange: handlePageChangeInternal,
-    handleLimitChange: handleLimitChangeInternal,
-    handleAuthError: authHandler,
-    resolveLimit,
-  } = usePaginatedSearch({
-    initialInput: createEmptyFilters(),
-    initialPagination: INITIAL_PAGINATION,
-    searchFn: (rawFilters = {}, page, limit) => {
-      const sanitized = sanitizeFilters(rawFilters);
-      if (Object.keys(sanitized).length === 0) {
-        return invoicePengirimanService.getAllInvoicePengiriman(page, limit);
-      }
-      return invoicePengirimanService.searchInvoicePengiriman(
-        sanitized,
-        page,
-        limit
-      );
-    },
-    parseResponse: parseInvoicePengirimanResponse,
-    resolveErrorMessage: resolveInvoicePengirimanError,
-    onAuthError: handleAuthRedirect,
-  });
+  // State management for CRUD operations only
+  const [invoicePengiriman, setInvoicePengiriman] = useState([]);
+  const [pagination, setPagination] = useState(INITIAL_PAGINATION);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const updateActiveFilters = useCallback((nextFilters) => {
-    const previous = activeFiltersRef.current || {};
-    const isSame = areFiltersEqual(previous, nextFilters);
-    activeFiltersRef.current = nextFilters;
-    if (!isSame) {
-      setActiveFiltersVersion((version) => version + 1);
-    }
+  // authHandler is now handleAuthRedirect directly
+
+  const resolveLimit = useCallback(() => {
+    return pagination.itemsPerPage || pagination.limit || INITIAL_PAGINATION.itemsPerPage;
+  }, [pagination]);
+
+  const handlePageChange = useCallback((page) => {
+    // Page change is now handled by TanStack Table
+    // This function is kept for backward compatibility with modals
   }, []);
 
-  const runSearch = useCallback(
-    async (rawFilters = {}, page = 1, limit, options = {}) => {
-      const { trackLoading = true } = options;
-      const effectiveLimit =
-        typeof limit === 'number' ? limit : resolveLimit();
-      const sanitized = sanitizeFilters(rawFilters);
-
-      updateActiveFilters(sanitized);
-
-      if (trackLoading) {
-        setSearchLoadingState(true);
-      }
-
-      try {
-        await performSearch(sanitized, page, effectiveLimit);
-      } finally {
-        if (trackLoading) {
-          setSearchLoadingState(false);
-        }
-      }
-    },
-    [performSearch, resolveLimit, updateActiveFilters]
-  );
-
-  const fetchInvoicePengiriman = useCallback(
-    (page = 1, limit = resolveLimit()) =>
-      runSearch({}, page, limit, { trackLoading: false }),
-    [resolveLimit, runSearch]
-  );
-
-  const handleFiltersChange = useCallback((field, value) => {
-    setFilters((prev) => {
-      const next = {
-        ...prev,
-        [field]: value,
-      };
-      filtersRef.current = next;
-      return next;
-    });
+  const handleLimitChange = useCallback((limit) => {
+    // Limit change is now handled by TanStack Table
+    // This function is kept for backward compatibility with modals
   }, []);
 
-  const handleSearchSubmit = useCallback(async () => {
-    await runSearch(filtersRef.current, 1, resolveLimit(), {
-      trackLoading: true,
-    });
-  }, [resolveLimit, runSearch]);
+  // Search functionality is now handled by TanStack Table
+  // No need for search-related functions
 
-  const handleResetFilters = useCallback(async () => {
-    const reset = createEmptyFilters();
-    filtersRef.current = reset;
-    setFilters(reset);
-    await runSearch({}, 1, resolveLimit(), { trackLoading: true });
-  }, [resolveLimit, runSearch]);
+  // fetchInvoicePengiriman function is no longer needed as data fetching
+  // is handled by TanStack Query in the table component
 
-  const refreshAfterMutation = useCallback(async () => {
-    const itemsPerPage = resolveLimit();
-    const currentPage = pagination.currentPage || pagination.page || 1;
-    await runSearch(activeFiltersRef.current, currentPage, itemsPerPage, {
-      trackLoading: false,
-    });
-  }, [pagination, resolveLimit, runSearch]);
+  // Search functionality is now handled by TanStack Table
+  // No need for search-related functions
+
+  // refreshAfterMutation is no longer needed as TanStack Query
+  // handles cache invalidation automatically
 
   const createInvoicePengiriman = useCallback(
     async (invoiceData) => {
@@ -266,11 +80,11 @@ const useInvoicePengiriman = () => {
           );
         }
         toastService.success('Invoice pengiriman created successfully');
-        await refreshAfterMutation();
+        // TanStack Query will automatically invalidate and refetch data
         return result?.data;
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
-          authHandler();
+          handleAuthRedirect();
           return undefined;
         }
         const message =
@@ -281,7 +95,7 @@ const useInvoicePengiriman = () => {
         throw err;
       }
     },
-    [authHandler, refreshAfterMutation]
+    [handleAuthRedirect]
   );
 
   const createInvoicePenagihan = useCallback(
@@ -299,11 +113,11 @@ const useInvoicePengiriman = () => {
           );
         }
         toastService.success('Invoice penagihan berhasil dibuat');
-        await refreshAfterMutation();
+        // TanStack Query will automatically invalidate and refetch data
         return result?.data;
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
-          authHandler();
+          handleAuthRedirect();
           return undefined;
         }
         const apiMessage =
@@ -317,7 +131,7 @@ const useInvoicePengiriman = () => {
         throw err;
       }
     },
-    [authHandler, refreshAfterMutation]
+    [handleAuthRedirect]
   );
 
   const updateInvoicePengiriman = useCallback(
@@ -335,11 +149,11 @@ const useInvoicePengiriman = () => {
           );
         }
         toastService.success('Invoice pengiriman updated successfully');
-        await refreshAfterMutation();
+        // TanStack Query will automatically invalidate and refetch data
         return result?.data;
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
-          authHandler();
+          handleAuthRedirect();
           return undefined;
         }
         const message =
@@ -350,7 +164,7 @@ const useInvoicePengiriman = () => {
         throw err;
       }
     },
-    [authHandler, refreshAfterMutation]
+    [handleAuthRedirect]
   );
 
   const deleteInvoicePengirimanFn = useCallback(
@@ -371,29 +185,10 @@ const useInvoicePengiriman = () => {
           );
         }
         toastService.success('Invoice pengiriman berhasil dihapus');
-
-        const itemsPerPage = resolveLimit();
-        const currentPage = pagination.currentPage || pagination.page || 1;
-        const totalItems =
-          pagination.totalItems ||
-          pagination.total ||
-          invoicePengiriman.length;
-        const newTotalItems = Math.max(totalItems - 1, 0);
-        const newTotalPages = Math.max(
-          Math.ceil(newTotalItems / itemsPerPage),
-          1
-        );
-        const nextPage = Math.min(currentPage, newTotalPages);
-
-        await runSearch(
-          activeFiltersRef.current,
-          nextPage,
-          itemsPerPage,
-          { trackLoading: false }
-        );
+        // TanStack Query will automatically invalidate and refetch data
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
-          authHandler();
+          handleAuthRedirect();
           return;
         }
         const message =
@@ -405,11 +200,10 @@ const useInvoicePengiriman = () => {
       }
     },
     [
-      authHandler,
+      handleAuthRedirect,
       invoicePengiriman.length,
       pagination,
       resolveLimit,
-      runSearch,
       setError,
     ]
   );
@@ -420,54 +214,11 @@ const useInvoicePengiriman = () => {
     'Hapus Invoice Pengiriman'
   );
 
-  useEffect(() => {
-    fetchInvoicePengiriman(1, INITIAL_PAGINATION.itemsPerPage);
-  }, [fetchInvoicePengiriman]);
+  // Data fetching is now handled by TanStack Query in the table component
+  // No need for initial fetch here
 
-  const hasActiveFilters = useMemo(() => {
-    const active = activeFiltersRef.current || {};
-    return Object.keys(active).length > 0;
-  }, [activeFiltersVersion]);
-
-  const searchQuery = useMemo(() => {
-    if (!hasActiveFilters) {
-      return '';
-    }
-
-    const active = activeFiltersRef.current || {};
-
-    if (active.no_invoice) {
-      return active.no_invoice;
-    }
-    if (active.deliver_to) {
-      return active.deliver_to;
-    }
-    if (active.purchaseOrderId) {
-      return active.purchaseOrderId;
-    }
-    if (active.status_code) {
-      return active.status_code;
-    }
-    if (active.type) {
-      return active.type;
-    }
-    if (typeof active.is_printed === 'boolean') {
-      return active.is_printed ? 'sudah dicetak' : 'belum dicetak';
-    }
-    if (active.tanggal_start && active.tanggal_end) {
-      return `${active.tanggal_start} - ${active.tanggal_end}`;
-    }
-    if (active.tanggal_start) {
-      return active.tanggal_start;
-    }
-    if (active.tanggal_end) {
-      return active.tanggal_end;
-    }
-
-    return 'filter aktif';
-  }, [hasActiveFilters, activeFiltersVersion]);
-
-  const searchLoading = searchLoadingState;
+  // Search functionality is now handled by TanStack Table
+  // No need for search-related variables
 
   return {
     invoicePengiriman,
@@ -476,23 +227,15 @@ const useInvoicePengiriman = () => {
     setPagination,
     loading,
     error,
-    filters,
-    searchLoading,
-    hasActiveFilters,
-    searchQuery,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
-    handlePageChange: handlePageChangeInternal,
-    handleLimitChange: handleLimitChangeInternal,
+    handlePageChange,
+    handleLimitChange,
     createInvoice: createInvoicePengiriman,
     createInvoicePengiriman,
     createInvoicePenagihan,
     updateInvoice: updateInvoicePengiriman,
     updateInvoicePengiriman,
     deleteInvoiceConfirmation: deleteInvoicePengirimanConfirmation,
-    fetchInvoicePengiriman,
-    handleAuthError: authHandler,
+    handleAuthError: handleAuthRedirect,
   };
 };
 
