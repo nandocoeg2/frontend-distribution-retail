@@ -125,79 +125,29 @@ const InvoicePenagihanTableServerSide = ({
     () => [
       columnHelper.accessor('no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <button
-              onClick={() => column.toggleSorting()}
-              className="flex items-center space-x-1 font-medium hover:text-blue-600"
-            >
-              <span>No Invoice</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUpIcon className="w-4 h-4" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDownIcon className="w-4 h-4" />
-              ) : null}
-            </button>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'No Invoice',
         cell: (info) => (
           <div className="text-sm font-medium text-gray-900">
             {info.getValue() || '-'}
           </div>
         ),
+        enableSorting: true,
+        enableColumnFilter: true,
       }),
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <button
-              onClick={() => column.toggleSorting()}
-              className="flex items-center space-x-1 font-medium hover:text-blue-600"
-            >
-              <span>Tanggal</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUpIcon className="w-4 h-4" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDownIcon className="w-4 h-4" />
-              ) : null}
-            </button>
-          </div>
-        ),
+        header: 'Tanggal',
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {formatDate(info.getValue())}
           </div>
         ),
+        enableSorting: true,
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('kepada', {
         id: 'kepada',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kepada</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Kepada',
         cell: (info) => {
           const invoice = info.row.original;
           return (
@@ -206,66 +156,23 @@ const InvoicePenagihanTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
+        enableColumnFilter: true,
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <button
-              onClick={() => column.toggleSorting()}
-              className="flex items-center space-x-1 font-medium hover:text-blue-600"
-            >
-              <span>Grand Total</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUpIcon className="w-4 h-4" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDownIcon className="w-4 h-4" />
-              ) : null}
-            </button>
-          </div>
-        ),
+        header: 'Grand Total',
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {formatCurrency(info.getValue())}
           </div>
         ),
+        enableSorting: true,
+        enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
         id: 'status',
-        header: ({ column }) => {
-          const isLocked = activeTab !== 'all';
-          
-          return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
-              {isLocked ? (
-                // Locked: Show read-only display
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {TAB_STATUS_CONFIG[activeTab]?.label || 'N/A'}
-                </div>
-              ) : (
-                // Unlocked: Show dropdown (only in "All" tab)
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(e) => {
-                    column.setFilterValue(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  <option value="PENDING INVOICE PENAGIHAN">Pending</option>
-                  <option value="PROCESSING INVOICE PENAGIHAN">Processing</option>
-                  <option value="PAID INVOICE PENAGIHAN">Paid</option>
-                  <option value="OVERDUE INVOICE PENAGIHAN">Overdue</option>
-                  <option value="COMPLETED INVOICE PENAGIHAN">Completed</option>
-                  <option value="CANCELLED INVOICE PENAGIHAN">Cancelled</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: 'Status',
         cell: (info) => (
           <StatusBadge
             status={info.getValue() || 'Unknown'}
@@ -274,6 +181,8 @@ const InvoicePenagihanTableServerSide = ({
             dot
           />
         ),
+        enableSorting: false,
+        enableColumnFilter: true,
       }),
       columnHelper.display({
         id: 'kwitansi',
@@ -512,19 +421,110 @@ const InvoicePenagihanTableServerSide = ({
           <thead className="bg-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const isSorted = header.column.getIsSorted();
+                  const canFilter = header.column.getCanFilter();
+                  const columnId = header.column.id;
+
+                  return (
+                    <th
+                      key={header.id}
+                      className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div className="space-y-2">
+                          {canSort ? (
+                            <div
+                              className="cursor-pointer select-none flex items-center space-x-1 hover:text-blue-600 font-medium"
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              <span className="flex-1">
+                                {typeof header.column.columnDef.header === 'string'
+                                  ? header.column.columnDef.header
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                              </span>
+                              <span className="text-gray-400">
+                                {isSorted === 'asc' ? (
+                                  <ArrowUpIcon className="h-4 w-4" />
+                                ) : isSorted === 'desc' ? (
+                                  <ArrowDownIcon className="h-4 w-4" />
+                                ) : (
+                                  <span className="opacity-50">⇅</span>
+                                )}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="font-medium">
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                            </div>
+                          )}
+
+                          {/* Inline column filters */}
+                          {canFilter && columnId === 'no_invoice_penagihan' && (
+                            <input
+                              type="text"
+                              value={header.column.getFilterValue() ?? ''}
+                              onChange={(e) => {
+                                header.column.setFilterValue(e.target.value);
+                                setPage(1);
+                              }}
+                              placeholder="Filter..."
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          )}
+
+                          {canFilter && columnId === 'kepada' && (
+                            <input
+                              type="text"
+                              value={header.column.getFilterValue() ?? ''}
+                              onChange={(e) => {
+                                header.column.setFilterValue(e.target.value);
+                                setPage(1);
+                              }}
+                              placeholder="Filter..."
+                              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          )}
+
+                          {canFilter && columnId === 'status' && (
+                            activeTab === 'all' ? (
+                              <select
+                                value={header.column.getFilterValue() ?? ''}
+                                onChange={(e) => {
+                                  header.column.setFilterValue(e.target.value);
+                                  setPage(1);
+                                }}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="">Semua</option>
+                                <option value="PENDING INVOICE PENAGIHAN">Pending</option>
+                                <option value="PROCESSING INVOICE PENAGIHAN">Processing</option>
+                                <option value="PAID INVOICE PENAGIHAN">Paid</option>
+                                <option value="OVERDUE INVOICE PENAGIHAN">Overdue</option>
+                                <option value="COMPLETED INVOICE PENAGIHAN">Completed</option>
+                                <option value="CANCELLED INVOICE PENAGIHAN">Cancelled</option>
+                              </select>
+                            ) : (
+                              <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                                {TAB_STATUS_CONFIG[activeTab]?.label || 'N/A'}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
