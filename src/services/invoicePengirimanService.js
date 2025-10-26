@@ -23,10 +23,21 @@ class InvoicePengirimanService {
     });
   }
 
-  async getAllInvoicePengiriman(page = 1, limit = 10) {
+  async getAllInvoicePengiriman(params = {}) {
     try {
+      // Support both old (page, limit) and new (params object) signatures
+      if (typeof params === 'number') {
+        const page = params;
+        const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
+        const response = await this.api.get('/', {
+          params: { page, limit }
+        });
+        return response.data;
+      }
+
+      // New params object signature
       const response = await this.api.get('/', {
-        params: { page, limit }
+        params: params
       });
       return response.data;
     } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
-import InvoicePengirimanTable from '@/components/invoicePengiriman/InvoicePengirimanTable';
+import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
 import InvoicePengirimanSearch from '@/components/invoicePengiriman/InvoicePengirimanSearch';
 import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
 import EditInvoicePengirimanModal from '@/components/invoicePengiriman/EditInvoicePengirimanModal';
@@ -29,41 +30,9 @@ const INITIAL_TAB_PAGINATION = {
   total: 0,
 };
 
-const parseInvoicePengirimanApiResponse = (response = {}) => {
-  const rawData = response?.data?.data ?? response?.data ?? [];
-  const paginationData = response?.data?.pagination ?? {};
-  const currentPage = paginationData.currentPage ?? paginationData.page ?? 1;
-  const itemsPerPage =
-    paginationData.itemsPerPage ??
-    paginationData.limit ??
-    INITIAL_TAB_PAGINATION.itemsPerPage;
-  const results = Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.data)
-      ? rawData.data
-      : [];
-  const totalItems =
-    paginationData.totalItems ??
-    paginationData.total ??
-    (Array.isArray(results) ? results.length : 0);
-
-  return {
-    results,
-    pagination: {
-      currentPage,
-      page: currentPage,
-      totalPages:
-        paginationData.totalPages ??
-        Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1),
-      totalItems,
-      total: totalItems,
-      itemsPerPage,
-      limit: itemsPerPage,
-    },
-  };
-};
-
 const InvoicePengirimanPage = () => {
+  const queryClient = useQueryClient();
+
   const {
     invoicePengiriman,
     setInvoicePengiriman,
@@ -98,9 +67,6 @@ const InvoicePengirimanPage = () => {
   const [viewModalError, setViewModalError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('all');
-  const [tabLoading, setTabLoading] = useState(false);
-  const [tabData, setTabData] = useState([]);
-  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
   const [creatingInvoicePenagihanId, setCreatingInvoicePenagihanId] =
     useState(null);
   const [createPenagihanDialog, setCreatePenagihanDialog] = useState({
@@ -108,32 +74,6 @@ const InvoicePengirimanPage = () => {
     invoice: null,
     loading: false,
   });
-
-  const isSearchActive = useMemo(
-    () => Boolean(hasActiveFilters),
-    [hasActiveFilters]
-  );
-
-  const tableInvoices = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return invoicePengiriman;
-    }
-    return tabData;
-  }, [activeTab, invoicePengiriman, isSearchActive, tabData]);
-
-  const tablePagination = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return pagination;
-    }
-    return tabPagination;
-  }, [activeTab, isSearchActive, pagination, tabPagination]);
-
-  const tableLoading = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return loading;
-    }
-    return tabLoading;
-  }, [activeTab, isSearchActive, loading, tabLoading]);
 
   const fetchInvoiceDetail = useCallback(
     async (id) => {
@@ -186,131 +126,27 @@ const InvoicePengirimanPage = () => {
     []
   );
 
-  const fetchDataByTab = useCallback(
-    async (tab = activeTab, page = 1, limit) => {
-      const effectiveLimit =
-        typeof limit === 'number'
-          ? limit
-          : tabPagination.itemsPerPage ||
-            tabPagination.limit ||
-            INITIAL_TAB_PAGINATION.itemsPerPage;
-
-      if (tab === 'all') {
-        await fetchInvoicePengiriman(page, effectiveLimit);
-        return;
-      }
-
-      const statusCode = getStatusCodeForTab(tab);
-      if (!statusCode) {
-        setTabData([]);
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-          totalItems: 0,
-          total: 0,
-          totalPages: 1,
-        }));
-        return;
-      }
-
-      setTabLoading(true);
-      try {
-        const response = await invoicePengirimanService.searchInvoicePengiriman(
-          { status_code: statusCode },
-          page,
-          effectiveLimit
-        );
-        const { results, pagination: parsedPagination } =
-          parseInvoicePengirimanApiResponse(response);
-        setTabData(results);
-        setTabPagination(parsedPagination);
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          handleAuthError();
-        }
-        console.error('Failed to fetch invoice pengiriman by status:', err);
-        setTabData([]);
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-          totalItems: 0,
-          total: 0,
-          totalPages: 1,
-        }));
-      } finally {
-        setTabLoading(false);
-      }
-    },
-    [
-      activeTab,
-      fetchInvoicePengiriman,
-      getStatusCodeForTab,
-      handleAuthError,
-      tabPagination.itemsPerPage,
-      tabPagination.limit,
-    ]
-  );
 
   const handleTabChange = useCallback(
     (newTab) => {
       setActiveTab(newTab);
-
-      if (newTab === 'all') {
-        const currentPage = pagination?.currentPage || pagination?.page || 1;
-        const currentLimit =
-          pagination?.itemsPerPage ||
-          pagination?.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchInvoicePengiriman(currentPage, currentLimit);
-      } else {
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-        }));
-        const currentLimit =
-          tabPagination.itemsPerPage ||
-          tabPagination.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchDataByTab(newTab, 1, currentLimit);
-      }
+      // The server-side table will handle filtering automatically based on activeTab
     },
-    [
-      fetchDataByTab,
-      fetchInvoicePengiriman,
-      pagination,
-      tabPagination.itemsPerPage,
-      tabPagination.limit,
-    ]
+    []
   );
 
   const handleTablePageChange = useCallback(
     (page) => {
-      if (isSearchActive || activeTab === 'all') {
-        handlePageChange(page);
-      } else {
-        fetchDataByTab(activeTab, page);
-      }
+      handlePageChange(page);
     },
-    [activeTab, fetchDataByTab, handlePageChange, isSearchActive]
+    [handlePageChange]
   );
 
   const handleTableLimitChange = useCallback(
     (limit) => {
-      if (isSearchActive || activeTab === 'all') {
-        handleLimitChange(limit);
-      } else {
-        setTabPagination((prev) => ({
-          ...prev,
-          itemsPerPage: limit,
-          limit,
-        }));
-        fetchDataByTab(activeTab, 1, limit);
-      }
+      handleLimitChange(limit);
     },
-    [activeTab, fetchDataByTab, handleLimitChange, isSearchActive]
+    [handleLimitChange]
   );
 
   const handleSearch = useCallback(async () => {
@@ -328,36 +164,9 @@ const InvoicePengirimanPage = () => {
   }, [activeTab, handleResetFilters]);
 
   const refreshActiveTab = useCallback(() => {
-    if (isSearchActive) {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      handlePageChange(currentPage);
-      return;
-    }
-
-    if (activeTab === 'all') {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      const currentLimit =
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      fetchInvoicePengiriman(currentPage, currentLimit);
-    } else {
-      const currentPage = tabPagination.currentPage || tabPagination.page || 1;
-      const currentLimit =
-        tabPagination.itemsPerPage ||
-        tabPagination.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      fetchDataByTab(activeTab, currentPage, currentLimit);
-    }
-  }, [
-    activeTab,
-    fetchDataByTab,
-    fetchInvoicePengiriman,
-    handlePageChange,
-    isSearchActive,
-    pagination,
-    tabPagination,
-  ]);
+    const currentPage = pagination?.currentPage || pagination?.page || 1;
+    handlePageChange(currentPage);
+  }, [handlePageChange, pagination]);
 
   const handleInvoicePenagihanToggle = useCallback(
     (invoice) => {
@@ -506,13 +315,21 @@ const InvoicePengirimanPage = () => {
     );
   }, [loadInvoiceIntoState, viewingInvoiceId]);
 
+  const handleModalSuccess = useCallback(() => {
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
+    refreshActiveTab();
+    closeAddModal();
+    closeEditModal();
+  }, [closeAddModal, closeEditModal, refreshActiveTab, queryClient]);
+
   const handleInvoiceAdded = (newInvoice) => {
     if (!newInvoice) {
       return;
     }
     setInvoicePengiriman((prev) => [...prev, newInvoice]);
     closeAddModal();
-    refreshActiveTab();
+    handleModalSuccess();
   };
 
   const handleInvoiceUpdated = (updatedInvoice) => {
@@ -525,18 +342,20 @@ const InvoicePengirimanPage = () => {
       )
     );
     closeEditModal();
-    refreshActiveTab();
+    handleModalSuccess();
   };
 
   const handleDeleteConfirm = useCallback(async () => {
     try {
       await deleteInvoiceConfirmation.confirmDelete();
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
     } finally {
       refreshActiveTab();
     }
-  }, [deleteInvoiceConfirmation, refreshActiveTab]);
+  }, [deleteInvoiceConfirmation, refreshActiveTab, queryClient]);
 
-  if (loading && activeTab === 'all' && !isSearchActive) {
+  if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
         <div className='w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin'></div>
@@ -558,7 +377,7 @@ const InvoicePengirimanPage = () => {
     );
   }
 
-  const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
+  const resolvedPagination = pagination || INITIAL_TAB_PAGINATION;
 
   return (
     <div className='p-6'>
@@ -587,7 +406,7 @@ const InvoicePengirimanPage = () => {
             onFiltersChange={handleFiltersChange}
             onSearch={handleSearch}
             onReset={handleReset}
-            loading={Boolean(searchLoading || tableLoading)}
+            loading={Boolean(searchLoading)}
           />
 
           <div className='mb-4 overflow-x-auto'>
@@ -611,25 +430,20 @@ const InvoicePengirimanPage = () => {
             </TabContainer>
           </div>
 
-          {tableLoading ? (
-            <div className='flex items-center justify-center h-40'>
-              <div className='w-10 h-10 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-            </div>
-          ) : (
-            <InvoicePengirimanTable
-              invoices={tableInvoices}
-              pagination={resolvedPagination}
-              onPageChange={handleTablePageChange}
-              onLimitChange={handleTableLimitChange}
-              onEdit={openEditModal}
-              onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
-              onView={openViewModal}
-              searchQuery={searchQuery}
-              hasActiveFilters={hasActiveFilters}
-              onTogglePenagihan={handleInvoicePenagihanToggle}
-              creatingPenagihanId={creatingInvoicePenagihanId}
-            />
-          )}
+          <InvoicePengirimanTableServerSide
+            onView={openViewModal}
+            onEdit={openEditModal}
+            onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
+            deleteLoading={deleteInvoiceConfirmation.loading}
+            selectedInvoices={[]} // TODO: Implement selection if needed
+            onSelectInvoice={() => {}} // TODO: Implement selection if needed
+            onSelectAllInvoices={() => {}} // TODO: Implement selection if needed
+            onTogglePenagihan={handleInvoicePenagihanToggle}
+            creatingPenagihanId={creatingInvoicePenagihanId}
+            initialPage={resolvedPagination.currentPage}
+            initialLimit={resolvedPagination.itemsPerPage}
+            activeTab={activeTab}
+          />
         </div>
       </div>
 
