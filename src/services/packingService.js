@@ -2,9 +2,19 @@ import { get, post, put, del } from './apiService';
 
 const API_URL = '/packings';
 
-// Get all packings with pagination
-export const getPackings = (page = 1, limit = 10) => {
-  return get(API_URL, { page, limit });
+// Get all packings with pagination and optional filters
+export const getPackings = function(params = {}) {
+  // Support both old (page, limit) and new (params object) signatures
+  if (typeof params === 'number') {
+    const page = params;
+    const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
+    return get(API_URL, { page, limit });
+  }
+  
+  // New params object signature
+  // If params is empty or only has page/limit, use it directly
+  // Otherwise, it's a filter object
+  return get(API_URL, params);
 };
 
 // Get packing by ID
@@ -55,3 +65,15 @@ export const completePackings = (ids) => {
   return post(`${API_URL}/complete`, { ids });
 };
 
+export default {
+  getPackings,
+  getPackingById,
+  createPacking,
+  updatePacking,
+  deletePacking,
+  searchPackingsByStatus,
+  searchPackings,
+  searchPackingsAdvanced,
+  processPackings,
+  completePackings,
+};

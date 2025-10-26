@@ -20,6 +20,7 @@ This is a modern, cross-platform desktop application designed specifically for d
 ### Technical Features
 - **Cross-platform**: Runs on Windows, macOS, and Linux
 - **Modern UI**: Built with React and styled with Tailwind CSS
+- **Advanced Data Tables**: TanStack Table with sorting, filtering, and search (NEW! ✨)
 - **Real-time Updates**: Toast notifications for user feedback
 - **Protected Routes**: Secure routing with authentication requirements
 - **Responsive Design**: Adapts to different screen sizes
@@ -29,6 +30,7 @@ This is a modern, cross-platform desktop application designed specifically for d
 
 ### Stack
 - **React 18** - Modern UI library for building user interfaces
+- **TanStack Table v8** - Powerful table & data grid library (NEW! ✨)
 - **Tailwind CSS** - Utility-first CSS framework for styling
 - **Heroicons** - Beautiful hand-crafted SVG icons
 - **Webpack** - Module bundling and build optimization

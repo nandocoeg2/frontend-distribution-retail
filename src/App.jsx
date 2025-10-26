@@ -8,10 +8,23 @@ import {
 } from 'react-router-dom';
 
 import { ToastContainer } from 'react-toastify';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 import 'react-toastify/dist/ReactToastify.css';
 
 import { AuthProvider, useAuth } from './hooks/useAuth';
+
+// Create a query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -325,25 +338,28 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <div className='App'>
-          <ToastContainer
-            position='bottom-right'
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme='light'
-          />
-          <AppRoutes />
-        </div>
-      </Router>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <div className='App'>
+            <ToastContainer
+              position='bottom-right'
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme='light'
+            />
+            <AppRoutes />
+          </div>
+        </Router>
+      </AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 

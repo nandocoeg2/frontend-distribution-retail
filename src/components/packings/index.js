@@ -1,4 +1,6 @@
 export { default as PackingTable } from './PackingTable';
+export { default as PackingTableTanStack } from './PackingTableTanStack';
+export { default as PackingTableServerSide } from './PackingTableServerSide';
 export { default as PackingSearch } from './PackingSearch';
 export { default as PackingForm } from './PackingForm';
 export { default as PackingModal } from './PackingModal';
