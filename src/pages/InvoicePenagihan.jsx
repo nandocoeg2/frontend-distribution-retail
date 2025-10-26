@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePenagihan from '@/hooks/useInvoicePenagihanPage';
-import InvoicePenagihanTable from '@/components/invoicePenagihan/InvoicePenagihanTable';
+import InvoicePenagihanTableServerSide from '@/components/invoicePenagihan/InvoicePenagihanTableServerSide';
 import InvoicePenagihanSearch from '@/components/invoicePenagihan/InvoicePenagihanSearch';
 import AddInvoicePenagihanModal from '@/components/invoicePenagihan/AddInvoicePenagihanModal';
 import EditInvoicePenagihanModal from '@/components/invoicePenagihan/EditInvoicePenagihanModal';
@@ -105,6 +106,8 @@ const parseInvoicePenagihanListResponse = (response = {}) => {
 };
 
 const InvoicePenagihanPage = () => {
+  const queryClient = useQueryClient();
+  
   const {
     invoicePenagihan,
     setInvoicePenagihan,
@@ -451,6 +454,8 @@ const InvoicePenagihanPage = () => {
         };
       });
 
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
       await refreshActiveTab();
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -473,6 +478,7 @@ const InvoicePenagihanPage = () => {
     generateKwitansiDialogInvoice,
     handleAuthError,
     refreshActiveTab,
+    queryClient,
   ]);
 
   const openGenerateTtfDialog = useCallback((invoice) => {
@@ -540,6 +546,8 @@ const InvoicePenagihanPage = () => {
         };
       });
 
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
       await refreshActiveTab();
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -565,6 +573,7 @@ const InvoicePenagihanPage = () => {
     generateTtfDialogInvoice,
     handleAuthError,
     refreshActiveTab,
+    queryClient,
   ]);
 
   const openGenerateFakturDialog = useCallback((invoice) => {
@@ -626,6 +635,8 @@ const InvoicePenagihanPage = () => {
         };
       });
 
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
       await refreshActiveTab();
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -648,6 +659,7 @@ const InvoicePenagihanPage = () => {
     generateFakturDialogInvoice,
     handleAuthError,
     refreshActiveTab,
+    queryClient,
   ]);
 
   const openViewModal = useCallback(
@@ -781,11 +793,13 @@ const InvoicePenagihanPage = () => {
           }
           return [...previous, createdInvoice];
         });
+        // Invalidate queries to refresh data
+        await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
         await refreshActiveTab();
       }
       return createdInvoice;
     },
-    [createInvoice, refreshActiveTab, setInvoicePenagihan]
+    [createInvoice, refreshActiveTab, setInvoicePenagihan, queryClient]
   );
 
   const handleInvoiceUpdated = useCallback(
@@ -798,17 +812,21 @@ const InvoicePenagihanPage = () => {
             invoice.id === updatedInvoice.id ? updatedInvoice : invoice
           );
         });
+        // Invalidate queries to refresh data
+        await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
         await refreshActiveTab();
       }
       return updatedInvoice;
     },
-    [refreshActiveTab, setInvoicePenagihan, updateInvoice]
+    [refreshActiveTab, setInvoicePenagihan, updateInvoice, queryClient]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
     await confirmDelete();
+    // Invalidate queries to refresh data
+    await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
     await refreshActiveTab();
-  }, [confirmDelete, refreshActiveTab]);
+  }, [confirmDelete, refreshActiveTab, queryClient]);
 
   const handleRetry = useCallback(() => {
     refreshActiveTab();
@@ -852,13 +870,14 @@ const InvoicePenagihanPage = () => {
             </div> */}
           </div>
 
-          <InvoicePenagihanSearch
+          {/* Search is now integrated in the server-side table */}
+          {/* <InvoicePenagihanSearch
             filters={filters}
             onFiltersChange={handleFiltersChange}
             onSearch={handleSearch}
             onReset={handleReset}
             loading={Boolean(searchLoading || tableLoading)}
-          />
+          /> */}
 
           <div className='mb-4 overflow-x-auto'>
             <TabContainer
@@ -877,50 +896,21 @@ const InvoicePenagihanPage = () => {
             </TabContainer>
           </div>
 
-          {shouldShowGlobalError ? (
-            <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
-              <p className='mb-3 text-sm text-red-800'>
-                Terjadi kesalahan: {error}
-              </p>
-              <button
-                onClick={handleRetry}
-                className='px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700'
-              >
-                Coba Lagi
-              </button>
-            </div>
-          ) : shouldShowTabError ? (
-            <div className='p-4 border border-yellow-200 rounded-lg bg-yellow-50'>
-              <p className='text-sm text-yellow-800'>{tabError}</p>
-              <button
-                onClick={handleTabRetry}
-                className='px-4 py-2 mt-2 text-white bg-yellow-600 rounded hover:bg-yellow-700'
-              >
-                Muat Ulang
-              </button>
-            </div>
-          ) : tableLoading ? (
-            <div className='flex items-center justify-center h-40'>
-              <div className='w-10 h-10 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-            </div>
-          ) : (
-            <InvoicePenagihanTable
-              invoices={tableInvoices}
-              pagination={resolvedPagination}
-              onPageChange={handleTablePageChange}
-              onLimitChange={handleTableLimitChange}
-              onEdit={openEditModal}
-              onDelete={showDeleteConfirmation}
-              onView={openViewModal}
-              onGenerateKwitansi={openGenerateKwitansiDialog}
-              generatingInvoiceId={generatingInvoiceId}
-              onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
-              generatingTandaTerimaInvoiceId={generatingTtfInvoiceId}
-              onGenerateFakturPajak={openGenerateFakturDialog}
-              generatingFakturInvoiceId={generatingFakturInvoiceId}
-              searchQuery={searchQuery}
-        />
-          )}
+          <InvoicePenagihanTableServerSide
+            onView={openViewModal}
+            onEdit={openEditModal}
+            onDelete={showDeleteConfirmation}
+            onGenerateKwitansi={openGenerateKwitansiDialog}
+            generatingInvoiceId={generatingInvoiceId}
+            onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
+            generatingTandaTerimaInvoiceId={generatingTtfInvoiceId}
+            onGenerateFakturPajak={openGenerateFakturDialog}
+            generatingFakturInvoiceId={generatingFakturInvoiceId}
+            deleteLoading={deleteDialogLoading}
+            initialPage={1}
+            initialLimit={10}
+            activeTab={activeTab}
+          />
         </div>
       </div>
 

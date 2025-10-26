@@ -1,4 +1,5 @@
 ﻿export { default as InvoicePenagihanTable } from './InvoicePenagihanTable';
+export { default as InvoicePenagihanTableServerSide } from './InvoicePenagihanTableServerSide';
 export { default as InvoicePenagihanSearch } from './InvoicePenagihanSearch';
 export { default as AddInvoicePenagihanModal } from './AddInvoicePenagihanModal';
 export { default as EditInvoicePenagihanModal } from './EditInvoicePenagihanModal';
