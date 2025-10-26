@@ -18,15 +18,16 @@ const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
 const FAILED_STATUS_CODE = 'FAILED PURCHASE ORDER';
 
 const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: { label: 'Pending', statusCode: 'PENDING PURCHASE ORDER' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER' },
-  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER' },
-  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER' },
-  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER' },
+  all: { label: 'All', statusCode: null, poType: null },
+  pendingManual: { label: 'Pending - Manual', statusCode: 'PENDING PURCHASE ORDER', poType: 'MANUAL' },
+  pendingAuto: { label: 'Pending - Auto', statusCode: 'PENDING PURCHASE ORDER', poType: 'AUTO' },
+  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER', poType: null },
+  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER', poType: null },
+  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER', poType: null },
+  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER', poType: null },
 };
 
-const TAB_ORDER = ['all', 'pending', 'processing', 'processed', 'completed', 'failed'];
+const TAB_ORDER = ['all', 'pendingManual', 'pendingAuto', 'processing', 'processed', 'completed', 'failed'];
 
 const extractDuplicateGroups = (failedItems = []) => {
   const groupsMap = new Map();

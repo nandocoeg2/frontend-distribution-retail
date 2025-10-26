@@ -20,12 +20,13 @@ const columnHelper = createColumnHelper();
 
 // Tab to status code mapping
 const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: { label: 'Pending', statusCode: 'PENDING PURCHASE ORDER' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER' },
-  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER' },
-  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER' },
-  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER' },
+  all: { label: 'All', statusCode: null, poType: null },
+  pendingManual: { label: 'Pending - Manual', statusCode: 'PENDING PURCHASE ORDER', poType: 'MANUAL' },
+  pendingAuto: { label: 'Pending - Auto', statusCode: 'PENDING PURCHASE ORDER', poType: 'AUTO' },
+  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER', poType: null },
+  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER', poType: null },
+  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER', poType: null },
+  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER', poType: null },
 };
 
 const isEditDisabled = (order) => {
@@ -88,22 +89,42 @@ const PurchaseOrderTableServerSide = ({
     return () => clearTimeout(timeout);
   }, [globalFilter]);
 
-  // Auto-set status filter based on active tab
+  // Auto-set status and po_type filters based on active tab
   useEffect(() => {
-    const tabStatusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
+    const tabConfig = TAB_STATUS_CONFIG[activeTab];
+    const tabStatusCode = tabConfig?.statusCode;
+    const tabPoType = tabConfig?.poType;
     
-    if (activeTab !== 'all' && tabStatusCode) {
-      // Lock status filter to tab's status code
-      const hasStatusFilter = columnFilters.some(f => f.id === 'status');
-      if (!hasStatusFilter || columnFilters.find(f => f.id === 'status')?.value !== tabStatusCode) {
-        setColumnFilters(prev => {
-          const filtered = prev.filter(f => f.id !== 'status');
-          return [...filtered, { id: 'status', value: tabStatusCode }];
-        });
-      }
+    if (activeTab !== 'all') {
+      setColumnFilters(prev => {
+        let filtered = [...prev];
+        
+        // Handle status filter - always set for non-"all" tabs
+        if (tabStatusCode) {
+          const hasStatusFilter = filtered.some(f => f.id === 'status');
+          if (!hasStatusFilter || filtered.find(f => f.id === 'status')?.value !== tabStatusCode) {
+            filtered = filtered.filter(f => f.id !== 'status');
+            filtered.push({ id: 'status', value: tabStatusCode });
+          }
+        }
+        
+        // Handle po_type filter - only set for pendingManual and pendingAuto tabs
+        if (activeTab === 'pendingManual' || activeTab === 'pendingAuto') {
+          if (tabPoType) {
+            const hasPoTypeFilter = filtered.some(f => f.id === 'po_type');
+            if (!hasPoTypeFilter || filtered.find(f => f.id === 'po_type')?.value !== tabPoType) {
+              filtered = filtered.filter(f => f.id !== 'po_type');
+              filtered.push({ id: 'po_type', value: tabPoType });
+            }
+          }
+        }
+        // For other tabs (processing, processed, completed, failed), don't clear po_type filter
+        
+        return filtered;
+      });
     } else if (activeTab === 'all') {
-      // In "All" tab, clear status filter to show all data
-      setColumnFilters(prev => prev.filter(f => f.id !== 'status'));
+      // In "All" tab, clear status and po_type filters to show all data
+      setColumnFilters(prev => prev.filter(f => f.id !== 'status' && f.id !== 'po_type'));
     }
   }, [activeTab]);
 
@@ -116,6 +137,8 @@ const PurchaseOrderTableServerSide = ({
         filterObj['status_code'] = filter.value;
       } else if (filter.id === 'customer') {
         filterObj['customer_name'] = filter.value;
+      } else if (filter.id === 'po_type') {
+        filterObj['po_type'] = filter.value;
       } else {
         filterObj[filter.id] = filter.value;
       }
@@ -296,28 +319,75 @@ const PurchaseOrderTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.accessor('po_type', {
-        header: 'Type',
+        header: ({ column }) => {
+          const tabConfig = TAB_STATUS_CONFIG[activeTab];
+          const lockedPoType = tabConfig?.poType;
+          // Only lock po_type in pendingManual and pendingAuto tabs
+          const isLocked = (activeTab === 'pendingManual' || activeTab === 'pendingAuto') && lockedPoType;
+          
+          return (
+            <div className="space-y-2">
+              <div className="font-medium">Type</div>
+              {isLocked ? (
+                // Locked: Show read-only display with the locked value
+                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                  {lockedPoType}
+                </div>
+              ) : (
+                // Unlocked: Show dropdown
+                <select
+                  value={column.getFilterValue() ?? ''}
+                  onChange={(e) => {
+                    column.setFilterValue(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <option value="">Semua</option>
+                  <option value="MANUAL">MANUAL</option>
+                  <option value="AUTO">AUTO</option>
+                </select>
+              )}
+            </div>
+          );
+        },
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {info.getValue() || '-'}
           </div>
         ),
-        enableColumnFilter: false,
+        enableSorting: false,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
         header: ({ column }) => {
           const isLocked = activeTab !== 'all';
-          const lockedStatus = TAB_STATUS_CONFIG[activeTab]?.statusCode;
+          const tabConfig = TAB_STATUS_CONFIG[activeTab];
+          const lockedStatus = tabConfig?.statusCode;
           
           return (
             <div className="space-y-2">
               <div className="font-medium">Status</div>
-              {isLocked ? (
-                // Locked: Show read-only display
+              {isLocked && lockedStatus ? (
+                // Locked with value: Show read-only display with status label
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {TAB_STATUS_CONFIG[activeTab]?.label || 'N/A'}
+                  {tabConfig?.label || 'N/A'}
                 </div>
+              ) : isLocked && !lockedStatus ? (
+                // Locked without value (shouldn't happen but handle it): Show disabled dropdown
+                <select
+                  value={column.getFilterValue() ?? ''}
+                  disabled
+                  className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700 cursor-not-allowed"
+                >
+                  <option value="">Semua</option>
+                  <option value="PENDING PURCHASE ORDER">Pending</option>
+                  <option value="PROCESSING PURCHASE ORDER">Processing</option>
+                  <option value="PROCESSED PURCHASE ORDER">Processed</option>
+                  <option value="COMPLETED PURCHASE ORDER">Completed</option>
+                  <option value="FAILED PURCHASE ORDER">Failed</option>
+                </select>
               ) : (
                 // Unlocked: Show dropdown (only in "All" tab)
                 <select
@@ -353,6 +423,7 @@ const PurchaseOrderTableServerSide = ({
             <span className="text-sm text-gray-500">-</span>
           );
         },
+        enableSorting: false,
       }),
       columnHelper.display({
         id: 'actions',
