@@ -157,41 +157,17 @@ const TandaTerimaFakturTableServerSide = ({
   const columns = useMemo(
     () => [
       columnHelper.accessor('tanggal', {
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Tanggal</div>
-            <input
-              type='date'
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Tanggal',
+        enableSorting: true,
         cell: (info) => formatDate(info.getValue()),
+        meta: {
+          filterType: 'date',
+        },
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'kode_top',
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>TOP</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'TOP',
+        enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
           return (
@@ -205,65 +181,35 @@ const TandaTerimaFakturTableServerSide = ({
             </div>
           );
         },
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter TOP...',
+        },
       }),
       columnHelper.accessor('customer.namaCustomer', {
         id: 'customer_name',
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Nama Customer</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Nama Customer',
+        enableSorting: false,
         cell: (info) => info.getValue() || '-',
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter customer...',
+        },
       }),
       columnHelper.accessor('customer.kodeCustomer', {
         id: 'customer_code',
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Kode Customer</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Kode Customer',
+        enableSorting: false,
         cell: (info) => info.getValue() || '-',
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter kode...',
+        },
       }),
       columnHelper.accessor('company.nama_perusahaan', {
         id: 'company_name',
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Nama Company</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Nama Company',
+        enableSorting: false,
         cell: (info) => {
           const row = info.row.original;
           return (
@@ -275,24 +221,14 @@ const TandaTerimaFakturTableServerSide = ({
             </div>
           );
         },
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter company...',
+        },
       }),
       columnHelper.accessor('code_supplier', {
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Kode Supplier</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Kode Supplier',
+        enableSorting: true,
         cell: (info) => {
           const row = info.row.original;
           return (
@@ -302,9 +238,14 @@ const TandaTerimaFakturTableServerSide = ({
             </div>
           );
         },
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter supplier...',
+        },
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
+        enableSorting: false,
         header: ({ column }) => {
           const isLocked = activeTab !== 'all';
           const lockedStatus = TAB_STATUS_CONFIG[activeTab]?.statusCode;
@@ -351,16 +292,19 @@ const TandaTerimaFakturTableServerSide = ({
       }),
       columnHelper.accessor('grand_total', {
         header: 'Grand Total',
+        enableSorting: true,
         cell: (info) => formatCurrency(info.getValue()),
         enableColumnFilter: false,
       }),
       columnHelper.accessor('createdAt', {
         header: 'Created',
+        enableSorting: true,
         cell: (info) => formatDateTime(info.getValue()),
         enableColumnFilter: false,
       }),
       columnHelper.accessor('updatedAt', {
         header: 'Updated',
+        enableSorting: true,
         cell: (info) => formatDateTime(info.getValue()),
         enableColumnFilter: false,
       }),
@@ -484,6 +428,8 @@ const TandaTerimaFakturTableServerSide = ({
                     {headerGroup.headers.map((header) => {
                       const canSort = header.column.getCanSort();
                       const isSorted = header.column.getIsSorted();
+                      const canFilter = header.column.getCanFilter();
+                      const filterMeta = header.column.columnDef.meta;
 
                       return (
                         <th
@@ -522,6 +468,34 @@ const TandaTerimaFakturTableServerSide = ({
                                     header.getContext()
                                   )}
                                 </div>
+                              )}
+
+                              {/* Column Filter */}
+                              {canFilter && filterMeta && (
+                                filterMeta.filterType === 'text' ? (
+                                  <input
+                                    type='text'
+                                    value={header.column.getFilterValue() ?? ''}
+                                    onChange={(e) => {
+                                      header.column.setFilterValue(e.target.value);
+                                      setPage(1);
+                                    }}
+                                    placeholder={filterMeta.filterPlaceholder || 'Filter...'}
+                                    className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                ) : filterMeta.filterType === 'date' ? (
+                                  <input
+                                    type='date'
+                                    value={header.column.getFilterValue() ?? ''}
+                                    onChange={(e) => {
+                                      header.column.setFilterValue(e.target.value);
+                                      setPage(1);
+                                    }}
+                                    className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                ) : null
                               )}
                             </div>
                           )}
