@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import useLaporanPenerimaanBarangPage from '@/hooks/useLaporanPenerimaanBarangPage';
 import {
-  LaporanPenerimaanBarangSearch,
-  LaporanPenerimaanBarangTable,
+  LaporanPenerimaanBarangTableServerSide,
   LaporanPenerimaanBarangModal,
   LaporanPenerimaanBarangDetailModal,
   LaporanPenerimaanBarangBulkModal,
@@ -12,7 +12,6 @@ import {
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
-import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TAB_STATUS_CONFIG = {
@@ -37,7 +36,7 @@ const TAB_STATUS_CONFIG = {
 
 const TAB_ORDER = ['all', 'pending', 'processing', 'completed', 'failed'];
 
-const INITIAL_TAB_PAGINATION = {
+const INITIAL_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
@@ -47,56 +46,10 @@ const INITIAL_TAB_PAGINATION = {
   total: 0,
 };
 
-const parseReportsByStatusResponse = (response = {}) => {
-  const rawData = response?.data?.data ?? response?.data ?? [];
-  const paginationData = response?.data?.pagination ?? {};
-  const currentPage = paginationData.currentPage ?? paginationData.page ?? 1;
-  const itemsPerPage =
-    paginationData.itemsPerPage ??
-    paginationData.limit ??
-    INITIAL_TAB_PAGINATION.itemsPerPage;
-  const totalItems =
-    paginationData.totalItems ??
-    paginationData.total ??
-    (Array.isArray(rawData) ? rawData.length : 0);
-
-  const results = Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.data)
-      ? rawData.data
-      : [];
-
-  return {
-    results,
-    pagination: {
-      currentPage,
-      page: currentPage,
-      totalPages:
-        paginationData.totalPages ??
-        Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1),
-      totalItems,
-      total: totalItems,
-      itemsPerPage,
-      limit: itemsPerPage,
-    },
-  };
-};
-
 const LaporanPenerimaanBarang = () => {
+  const queryClient = useQueryClient();
+  
   const {
-    reports,
-    pagination,
-    loading,
-    error,
-    filters,
-    searchQuery,
-    hasActiveFilters,
-    searchLoading,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
-    handlePageChange,
-    handleLimitChange,
     createReport,
     createReportFromFile,
     uploadBulkReports,
@@ -105,11 +58,9 @@ const LaporanPenerimaanBarang = () => {
     updateReport,
     deleteReport,
     deleteReportConfirmation,
-    fetchReports,
     fetchReportById,
     processReports,
     completeReports,
-    handleAuthError,
   } = useLaporanPenerimaanBarangPage();
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -122,15 +73,14 @@ const LaporanPenerimaanBarang = () => {
   const [isProcessingReports, setIsProcessingReports] = useState(false);
   const [isCompletingReports, setIsCompletingReports] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [tabLoading, setTabLoading] = useState(false);
-  const [tabReports, setTabReports] = useState([]);
-  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
+
   const {
     showDialog: showProcessDialog,
     hideDialog: hideProcessDialog,
     setLoading: setProcessDialogLoading,
     ConfirmationDialog: ProcessConfirmationDialog,
   } = useConfirmationDialog();
+
   const {
     showDialog: showCompleteDialog,
     hideDialog: hideCompleteDialog,
@@ -138,37 +88,14 @@ const LaporanPenerimaanBarang = () => {
     ConfirmationDialog: CompleteConfirmationDialog,
   } = useConfirmationDialog();
 
-  const isSearchActive = hasActiveFilters;
-
-  const tableReports = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return reports;
-    }
-    return tabReports;
-  }, [activeTab, isSearchActive, reports, tabReports]);
-
-  const tablePagination = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return pagination;
-    }
-    return tabPagination;
-  }, [activeTab, isSearchActive, pagination, tabPagination]);
-
-  const tableLoading = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return loading;
-    }
-    return tabLoading;
-  }, [activeTab, isSearchActive, loading, tabLoading]);
-  const resolveReportId = (report) => {
+  const resolveReportId = useCallback((report) => {
     if (!report) {
       return null;
     }
-
     return report?.id || report?.lpbId || report?._id || report?.uuid || null;
-  };
+  }, []);
 
-  const handleSelectReport = (reportId, checked) => {
+  const handleSelectReport = useCallback((reportId, checked) => {
     if (!reportId) {
       return;
     }
@@ -182,239 +109,28 @@ const LaporanPenerimaanBarang = () => {
       }
       return Array.from(next);
     });
-  };
+  }, []);
 
-  const handleSelectAllReports = (checked) => {
-    const dataSource = Array.isArray(tableReports) ? tableReports : [];
+  const handleSelectAllReports = useCallback(() => {
+    // This will be handled by the table component
+    // Just toggle the selection state
+    setSelectedReportIds((prev) => (prev.length > 0 ? [] : []));
+  }, []);
 
-    if (checked) {
-      const ids = dataSource
-        .map((reportItem) => resolveReportId(reportItem))
-        .filter(Boolean);
-      setSelectedReportIds(Array.from(new Set(ids)));
-    } else {
-      setSelectedReportIds([]);
-    }
-  };
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setSelectedReportIds([]);
+  }, []);
 
-  React.useEffect(() => {
-    setSelectedReportIds((prev) => {
-      const dataSource = Array.isArray(tableReports) ? tableReports : [];
+  const refreshData = useCallback(() => {
+    setSelectedReportIds([]);
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
+  }, [queryClient]);
 
-      if (!dataSource.length) {
-        return prev.length ? [] : prev;
-      }
-
-      const availableIds = new Set(
-        dataSource.map((item) => resolveReportId(item)).filter(Boolean)
-      );
-
-      const filtered = prev.filter((id) => availableIds.has(id));
-
-      return filtered.length === prev.length ? prev : filtered;
-    });
-  }, [tableReports]);
-  const getStatusCodeForTab = useCallback(
-    (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode || null,
-    []
-  );
-
-  const fetchDataByTab = useCallback(
-    async (tab = activeTab, page = 1, limit) => {
-      const effectiveLimit =
-        typeof limit === 'number'
-          ? limit
-          : tabPagination.itemsPerPage ||
-            tabPagination.limit ||
-            INITIAL_TAB_PAGINATION.itemsPerPage;
-
-      if (tab === 'all') {
-        await fetchReports(page, effectiveLimit);
-        return;
-      }
-
-      const statusCode = getStatusCodeForTab(tab);
-      if (!statusCode) {
-        setTabReports([]);
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-          totalItems: 0,
-          total: 0,
-          totalPages: 1,
-        }));
-        return;
-      }
-
-      setTabLoading(true);
-      try {
-        const response = await laporanPenerimaanBarangService.searchReports(
-          { status_code: statusCode },
-          page,
-          effectiveLimit
-        );
-        const { results, pagination: parsedPagination } =
-          parseReportsByStatusResponse(response);
-        setTabReports(results);
-        setTabPagination(parsedPagination);
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          handleAuthError();
-        }
-        console.error(
-          'Failed to fetch laporan penerimaan barang by status:',
-          err
-        );
-        setTabReports([]);
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-          totalItems: 0,
-          total: 0,
-          totalPages: 1,
-        }));
-      } finally {
-        setTabLoading(false);
-      }
-    },
-    [
-      activeTab,
-      fetchReports,
-      getStatusCodeForTab,
-      handleAuthError,
-      tabPagination.itemsPerPage,
-      tabPagination.limit,
-    ]
-  );
-
-  const handleTabChange = useCallback(
-    (newTab) => {
-      setActiveTab(newTab);
-      setSelectedReportIds([]);
-
-      if (newTab === 'all') {
-        const currentPage = pagination?.currentPage || pagination?.page || 1;
-        const currentLimit =
-          pagination?.itemsPerPage ||
-          pagination?.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchReports(currentPage, currentLimit);
-      } else {
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-        }));
-        const currentLimit =
-          tabPagination.itemsPerPage ||
-          tabPagination.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchDataByTab(newTab, 1, currentLimit);
-      }
-    },
-    [
-      fetchDataByTab,
-      fetchReports,
-      pagination,
-      tabPagination.itemsPerPage,
-      tabPagination.limit,
-    ]
-  );
-
-  const handleTabPageChange = useCallback(
-    (page) => {
-      fetchDataByTab(activeTab, page);
-    },
-    [activeTab, fetchDataByTab]
-  );
-
-  const handleTabLimitChange = useCallback(
-    (limit) => {
-      fetchDataByTab(activeTab, 1, limit);
-    },
-    [activeTab, fetchDataByTab]
-  );
-
-  const handleTablePageChange = useCallback(
-    (page) => {
-      if (isSearchActive || activeTab === 'all') {
-        handlePageChange(page);
-      } else {
-        handleTabPageChange(page);
-      }
-    },
-    [activeTab, handlePageChange, handleTabPageChange, isSearchActive]
-  );
-
-  const handleTableLimitChange = useCallback(
-    (limit) => {
-      if (isSearchActive || activeTab === 'all') {
-        handleLimitChange(limit);
-      } else {
-        handleTabLimitChange(limit);
-      }
-    },
-    [activeTab, handleLimitChange, handleTabLimitChange, isSearchActive]
-  );
-
-  const refreshActiveTab = useCallback(async () => {
-    if (isSearchActive) {
-      return;
-    }
-
-    if (activeTab === 'all') {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      const currentLimit =
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      await fetchReports(currentPage, currentLimit);
-    } else {
-      const currentPage = tabPagination.currentPage || tabPagination.page || 1;
-      const currentLimit =
-        tabPagination.itemsPerPage ||
-        tabPagination.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      await fetchDataByTab(activeTab, currentPage, currentLimit);
-    }
-  }, [
-    activeTab,
-    fetchDataByTab,
-    fetchReports,
-    isSearchActive,
-    pagination,
-    tabPagination,
-  ]);
-
-  const handleDeleteConfirm = useCallback(async () => {
-    await deleteReportConfirmation.confirmDelete();
-    await refreshActiveTab();
-  }, [deleteReportConfirmation, refreshActiveTab]);
-
-  const handleSearch = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleSearchSubmit();
-  }, [activeTab, handleSearchSubmit]);
-
-  const handleReset = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleResetFilters();
-  }, [activeTab, handleResetFilters]);
-
-  const selectionDisabled =
-    tableLoading || isProcessingReports || isCompletingReports;
   const hasSelectedReports = selectedReportIds.length > 0;
-  const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
-  const activeTabBadge =
-    resolvedPagination?.totalItems ?? resolvedPagination?.total ?? 0;
 
-  const handleProcessSelected = () => {
+  const handleProcessSelected = useCallback(() => {
     if (!hasSelectedReports) {
       return;
     }
@@ -426,9 +142,9 @@ const LaporanPenerimaanBarang = () => {
       cancelText: 'Batal',
       type: 'warning',
     });
-  };
+  }, [hasSelectedReports, selectedReportIds.length, showProcessDialog]);
 
-  const handleConfirmProcess = async () => {
+  const handleConfirmProcess = useCallback(async () => {
     setProcessDialogLoading(true);
     setIsProcessingReports(true);
 
@@ -445,7 +161,7 @@ const LaporanPenerimaanBarang = () => {
         setSelectedReportIds([]);
       }
 
-      await refreshActiveTab();
+      await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
       hideProcessDialog();
     } catch (error) {
       console.error('Failed to process laporan penerimaan barang:', error);
@@ -453,9 +169,9 @@ const LaporanPenerimaanBarang = () => {
       setProcessDialogLoading(false);
       setIsProcessingReports(false);
     }
-  };
+  }, [processReports, selectedReportIds, resolveReportId, hideProcessDialog, setProcessDialogLoading, queryClient]);
 
-  const handleCompleteSelected = () => {
+  const handleCompleteSelected = useCallback(() => {
     if (!hasSelectedReports) {
       return;
     }
@@ -467,9 +183,9 @@ const LaporanPenerimaanBarang = () => {
       cancelText: 'Batal',
       type: 'info',
     });
-  };
+  }, [hasSelectedReports, selectedReportIds.length, showCompleteDialog]);
 
-  const handleConfirmComplete = async () => {
+  const handleConfirmComplete = useCallback(async () => {
     setCompleteDialogLoading(true);
     setIsCompletingReports(true);
 
@@ -486,7 +202,7 @@ const LaporanPenerimaanBarang = () => {
         setSelectedReportIds([]);
       }
 
-      await refreshActiveTab();
+      await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
       hideCompleteDialog();
     } catch (error) {
       console.error('Failed to complete laporan penerimaan barang:', error);
@@ -494,37 +210,37 @@ const LaporanPenerimaanBarang = () => {
       setCompleteDialogLoading(false);
       setIsCompletingReports(false);
     }
-  };
+  }, [completeReports, selectedReportIds, resolveReportId, hideCompleteDialog, setCompleteDialogLoading, queryClient]);
 
-  const openCreateModal = () => {
+  const openCreateModal = useCallback(() => {
     setSelectedReport(null);
     setIsCreateModalOpen(true);
-  };
+  }, []);
 
-  const closeCreateModal = () => {
+  const closeCreateModal = useCallback(() => {
     setIsCreateModalOpen(false);
     setSelectedReport(null);
-  };
+  }, []);
 
-  const openBulkModal = () => {
+  const openBulkModal = useCallback(() => {
     setIsBulkModalOpen(true);
-  };
+  }, []);
 
-  const closeBulkModal = () => {
+  const closeBulkModal = useCallback(() => {
     setIsBulkModalOpen(false);
-  };
+  }, []);
 
-  const openEditModal = (report) => {
+  const openEditModal = useCallback((report) => {
     setSelectedReport(report);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  const closeEditModal = () => {
+  const closeEditModal = useCallback(() => {
     setIsEditModalOpen(false);
     setSelectedReport(null);
-  };
+  }, []);
 
-  const openDetailModal = async (report) => {
+  const openDetailModal = useCallback(async (report) => {
     if (!report?.id) {
       return;
     }
@@ -542,79 +258,73 @@ const LaporanPenerimaanBarang = () => {
     } finally {
       setDetailLoading(false);
     }
-  };
+  }, [fetchReportById]);
 
-  const closeDetailModal = () => {
+  const closeDetailModal = useCallback(() => {
     setIsDetailModalOpen(false);
     setSelectedReport(null);
     setDetailLoading(false);
-  };
+  }, []);
 
   const handleUploadFromFile = useCallback(
     async ({ file, prompt }) => {
       const result = await createReportFromFile({ file, prompt });
-      await refreshActiveTab();
+      refreshData();
       return result;
     },
-    [createReportFromFile, refreshActiveTab]
+    [createReportFromFile, refreshData]
   );
 
-  const handleCreateSubmit = async (payload) => {
+  const handleCreateSubmit = useCallback(async (payload) => {
     await createReport(payload);
-    await refreshActiveTab();
-  };
+    refreshData();
+    closeCreateModal();
+  }, [createReport, refreshData, closeCreateModal]);
 
-  const handleUpdateSubmit = async (payload) => {
+  const handleUpdateSubmit = useCallback(async (payload) => {
     if (!selectedReport?.id) {
       return;
     }
     await updateReport(selectedReport.id, payload);
-    await refreshActiveTab();
-  };
+    refreshData();
+    closeEditModal();
+  }, [selectedReport?.id, updateReport, refreshData, closeEditModal]);
 
-  const handleRetry = () => {
-    if (isSearchActive) {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      handlePageChange(currentPage);
-      return;
-    }
-
-    refreshActiveTab();
-  };
+  const handleDeleteConfirm = useCallback(async () => {
+    await deleteReportConfirmation.confirmDelete();
+    await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
+  }, [deleteReportConfirmation, queryClient]);
 
   return (
     <div className='p-6'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-4 py-5 sm:p-6'>
-          <div className='flex items-center justify-between mb-4'>
-            <h3 className='text-lg font-medium text-gray-900'>
-              Laporan Penerimaan Barang
-            </h3>
+          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
+            <div>
+              <h3 className='text-lg font-medium text-gray-900'>
+                Laporan Penerimaan Barang
+              </h3>
+              <p className='text-sm text-gray-500'>
+                Kelola dan pantau laporan penerimaan barang dari supplier.
+              </p>
+            </div>
             <div className='flex items-center gap-2'>
               <button
                 onClick={openBulkModal}
-                className='inline-flex items-center px-4 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600'
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-500 rounded-md shadow-sm hover:bg-indigo-600'
               >
                 <HeroIcon name='arrow-up-tray' className='w-5 h-5 mr-2' />
                 Upload Bulk
               </button>
               <button
                 onClick={openCreateModal}
-                className='inline-flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
               >
                 <HeroIcon name='plus' className='w-5 h-5 mr-2' />
                 Tambah Laporan
               </button>
             </div>
           </div>
-
-          <LaporanPenerimaanBarangSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            loading={Boolean(searchLoading || tableLoading)}
-          />
 
           <div className='mb-4 overflow-x-auto'>
             <TabContainer
@@ -627,52 +337,30 @@ const LaporanPenerimaanBarang = () => {
                   key={tabId}
                   id={tabId}
                   label={TAB_STATUS_CONFIG[tabId].label}
-                  badge={activeTab === tabId ? activeTabBadge : null}
                 />
               ))}
             </TabContainer>
           </div>
 
-          {error ? (
-            <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
-              <p className='mb-3 text-sm text-red-800'>
-                Terjadi kesalahan: {error}
-              </p>
-              <button
-                onClick={handleRetry}
-                className='px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700'
-              >
-                Coba Lagi
-              </button>
-            </div>
-          ) : (
-            <>
-              {tableLoading && (
-                <div className='flex items-center mb-4 text-sm text-gray-500'>
-                  <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-                  Memuat data laporan...
-                </div>
-              )}
-              <LaporanPenerimaanBarangTable
-                reports={tableReports}
-                pagination={resolvedPagination}
-                onPageChange={handleTablePageChange}
-                onLimitChange={handleTableLimitChange}
-                onEdit={openEditModal}
-                onDelete={deleteReport}
-                onView={openDetailModal}
-                searchQuery={searchQuery}
-                selectedReports={selectedReportIds}
-                onSelectReport={handleSelectReport}
-                onSelectAllReports={handleSelectAllReports}
-                onProcessSelected={handleProcessSelected}
-                onCompleteSelected={handleCompleteSelected}
-                isProcessing={isProcessingReports}
-                isCompleting={isCompletingReports}
-                disableSelection={selectionDisabled}
-              />
-            </>
-          )}
+          <div className='space-y-4'>
+            <LaporanPenerimaanBarangTableServerSide
+              onView={openDetailModal}
+              onEdit={openEditModal}
+              onDelete={deleteReport}
+              deleteLoading={deleteReportConfirmation.loading}
+              selectedReports={selectedReportIds}
+              onSelectReport={handleSelectReport}
+              onSelectAllReports={handleSelectAllReports}
+              onProcessSelected={handleProcessSelected}
+              onCompleteSelected={handleCompleteSelected}
+              isProcessing={isProcessingReports}
+              isCompleting={isCompletingReports}
+              hasSelectedReports={hasSelectedReports}
+              initialPage={1}
+              initialLimit={10}
+              activeTab={activeTab}
+            />
+          </div>
         </div>
       </div>
 

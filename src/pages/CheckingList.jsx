@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import useCheckingListPage from '@/hooks/useCheckingListPage';
 import {
-  CheckingListSearch,
-  CheckingListTable,
+  CheckingListTableServerSide,
   CheckingListModal,
   CheckingListDetailModal,
 } from '@/components/checkingList';
@@ -24,20 +24,11 @@ const resolveChecklistId = (checklist) => {
 };
 
 const CheckingList = () => {
+  const queryClient = useQueryClient();
+
   const {
-    checklists,
     pagination,
-    loading,
     error,
-    filters,
-    searchQuery,
-    searchLoading,
-    hasActiveFilters,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
-    handlePageChange,
-    handleLimitChange,
     createChecklist,
     updateChecklist,
     deleteChecklist: showDeleteChecklistDialog,
@@ -120,8 +111,10 @@ const CheckingList = () => {
   const handleCreateSubmit = useCallback(
     async (payload) => {
       await createChecklist(payload);
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
     },
-    [createChecklist]
+    [createChecklist, queryClient]
   );
 
   const handleEditSubmit = useCallback(
@@ -131,8 +124,10 @@ const CheckingList = () => {
         return;
       }
       await updateChecklist(checklistId, payload);
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
     },
-    [editingChecklist, updateChecklist]
+    [editingChecklist, updateChecklist, queryClient]
   );
 
   const handleDeleteChecklist = useCallback(
@@ -145,8 +140,10 @@ const CheckingList = () => {
     [showDeleteChecklistDialog]
   );
 
-  const handleDeleteConfirm = () => {
-    deleteChecklistConfirmation.confirmDelete();
+  const handleDeleteConfirm = async () => {
+    await deleteChecklistConfirmation.confirmDelete();
+    // Invalidate queries to refresh data
+    await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
   };
 
   const handleRetry = () => {
@@ -174,21 +171,6 @@ const CheckingList = () => {
             </div>
           </div>
 
-          <CheckingListSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearchSubmit}
-            onReset={handleResetFilters}
-            loading={Boolean(searchLoading || loading)}
-          />
-
-          {loading && (
-            <div className='flex items-center mb-4 text-sm text-gray-500'>
-              <div className='w-4 h-4 mr-2 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-              Memuat data checklist surat jalan...
-            </div>
-          )}
-
           {error ? (
             <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
               <p className='mb-3 text-sm text-red-800'>
@@ -203,17 +185,13 @@ const CheckingList = () => {
               </button>
             </div>
           ) : (
-            <CheckingListTable
-              checklists={checklists}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
+            <CheckingListTableServerSide
+              onView={openDetailModal}
               onEdit={openEditModal}
               onDelete={handleDeleteChecklist}
-              onView={openDetailModal}
-              loading={loading}
-              searchQuery={searchQuery}
-              hasActiveFilters={hasActiveFilters}
+              deleteLoading={deleteChecklistConfirmation.loading}
+              initialPage={pagination?.currentPage || 1}
+              initialLimit={pagination?.itemsPerPage || 10}
             />
           )}
         </div>
