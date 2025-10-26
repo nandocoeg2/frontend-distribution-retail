@@ -1,25 +1,19 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import React, { useMemo } from 'react';
+import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   ArrowDownTrayIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useKwitansiQuery } from '../../hooks/useKwitansiQuery';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
+import { useServerSideTable } from '../../hooks/useServerSideTable';
+import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
-// Tab to status code mapping
 const TAB_STATUS_CONFIG = {
   all: { label: 'All', statusCode: null },
   pending: { label: 'Pending', statusCode: 'PENDING KWITANSI' },
@@ -65,71 +59,40 @@ const KwitansiTableServerSide = ({
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all', // Tab aktif untuk lock status filter
+  activeTab = 'all',
 }) => {
-  // Server-side state
-  const [page, setPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
-  const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-
-  // Debounce global filter
-  const [debouncedGlobalFilter, setDebouncedGlobalFilter] = useState('');
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedGlobalFilter(globalFilter);
-      setPage(1); // Reset to page 1 when search changes
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [globalFilter]);
-
-  // Auto-set status filter based on active tab
-  useEffect(() => {
-    const tabStatusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    
-    if (activeTab !== 'all' && tabStatusCode) {
-      // Lock status filter to tab's status code
-      const hasStatusFilter = columnFilters.some(f => f.id === 'status_code');
-      if (!hasStatusFilter || columnFilters.find(f => f.id === 'status_code')?.value !== tabStatusCode) {
-        setColumnFilters(prev => {
-          const filtered = prev.filter(f => f.id !== 'status_code');
-          return [...filtered, { id: 'status_code', value: tabStatusCode }];
-        });
-      }
-    } else if (activeTab === 'all') {
-      // In "All" tab, clear status filter to show all data
-      setColumnFilters(prev => prev.filter(f => f.id !== 'status_code'));
+  const lockedFilters = useMemo(() => {
+    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
+    if (!statusCode || activeTab === 'all') {
+      return [];
     }
+    return [{ id: 'status_code', value: statusCode }];
   }, [activeTab]);
 
-  // Convert columnFilters to backend format
-  const filters = useMemo(() => {
-    const filterObj = {};
-    columnFilters.forEach((filter) => {
-      filterObj[filter.id] = filter.value;
-    });
-    return filterObj;
-  }, [columnFilters]);
-
-  // Fetch data from backend
-  const { data, isLoading, isFetching, error } = useKwitansiQuery({
-    page,
-    limit,
-    sorting,
-    filters,
-    globalFilter: debouncedGlobalFilter,
+  const {
+    data: kwitansis,
+    pagination,
+    columnFilters,
+    globalFilter,
+    setPage,
+    resetFilters,
+    hasActiveFilters,
+    isLoading,
+    error,
+    tableOptions,
+  } = useServerSideTable({
+    queryHook: useKwitansiQuery,
+    selectData: (response) => response?.kwitansis ?? [],
+    selectPagination: (response) => response?.pagination,
+    initialPage,
+    initialLimit,
+    globalFilter: {
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    },
+    lockedFilters,
   });
-
-  const kwitansis = data?.kwitansis || [];
-  const pagination = data?.pagination || {
-    currentPage: page,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: limit,
-  };
 
   const columns = useMemo(
     () => [
@@ -141,13 +104,13 @@ const KwitansiTableServerSide = ({
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
                 setPage(1);
               }}
               placeholder="Filter..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
@@ -160,31 +123,34 @@ const KwitansiTableServerSide = ({
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
                 setPage(1);
               }}
               placeholder="Filter..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) => (
-          <div>
-            <div className="text-sm font-medium text-gray-900">
-              {info.getValue() || '-'}
+        cell: (info) => {
+          const statusCode = info.row.original?.status?.status_code;
+          return (
+            <div>
+              <div className="text-sm font-medium text-gray-900">
+                {info.getValue() || '-'}
+              </div>
+              {statusCode && (
+                <StatusBadge
+                  status={statusCode}
+                  variant={resolveStatusVariant(statusCode)}
+                  size="sm"
+                  dot
+                />
+              )}
             </div>
-            {info.row.original?.status?.status_code && (
-              <StatusBadge
-                status={info.row.original.status.status_code}
-                variant={resolveStatusVariant(info.row.original.status.status_code)}
-                size="sm"
-                dot
-              />
-            )}
-          </div>
-        ),
+          );
+        },
       }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
@@ -193,134 +159,160 @@ const KwitansiTableServerSide = ({
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
                 setPage(1);
               }}
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
         cell: (info) => formatDate(info.getValue()),
       }),
-      columnHelper.accessor('kepada', {
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kepada</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => (
-          <div>
-            <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
-            {info.row.original.invoicePenagihan?.customer?.nama_customer && (
-              <div className="text-xs text-gray-500">
-                {info.row.original.invoicePenagihan.customer.nama_customer}
-              </div>
-            )}
-          </div>
-        ),
-      }),
-      columnHelper.accessor('grand_total', {
-        header: 'Grand Total',
+      columnHelper.accessor('jumlah_pembayaran', {
+        header: 'Jumlah',
         cell: (info) => formatCurrency(info.getValue()),
-        enableColumnFilter: false,
+        enableSorting: true,
       }),
-      columnHelper.accessor('createdAt', {
-        header: 'Created',
-        cell: (info) => formatDateTime(info.getValue()),
-        enableColumnFilter: false,
-      }),
-      columnHelper.accessor('updatedAt', {
-        header: 'Updated',
-        cell: (info) => formatDateTime(info.getValue()),
-        enableColumnFilter: false,
-      }),
-      columnHelper.accessor('termOfPayment.kode_top', {
-        id: 'termOfPaymentId',
+      columnHelper.accessor('penerima', {
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">TOP</div>
+            <div className="font-medium">Penerima</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
                 setPage(1);
               }}
               placeholder="Filter..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) => (
-          <div>
-            <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
-            {info.row.original?.termOfPayment?.batas_hari != null && (
-              <div className="text-xs text-gray-500">
-                {info.row.original.termOfPayment.batas_hari} hari
-              </div>
-            )}
+        cell: (info) => info.getValue() || '-',
+      }),
+      columnHelper.accessor((row) => row.invoicePenagihan?.customer?.namaCustomer, {
+        id: 'customer_name',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Customer</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter customer..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
           </div>
         ),
+        cell: (info) => {
+          const customer = info.row.original?.invoicePenagihan?.customer;
+          return (
+            <div>
+              <div className="text-sm text-gray-900">{customer?.namaCustomer || '-'}</div>
+              {customer?.kodeCustomer && (
+                <div className="text-xs text-gray-500">{customer.kodeCustomer}</div>
+              )}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor('status.status_name', {
+        id: 'status_code',
+        header: ({ column }) => {
+          const statusConfig = TAB_STATUS_CONFIG[activeTab];
+          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
+
+          return (
+            <div className="space-y-2">
+              <div className="font-medium">Status</div>
+              {isLocked ? (
+                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                  {statusConfig?.label || 'N/A'}
+                </div>
+              ) : (
+                <select
+                  value={column.getFilterValue() ?? ''}
+                  onChange={(event) => {
+                    column.setFilterValue(event.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <option value="">Semua</option>
+                  <option value="PENDING KWITANSI">Pending</option>
+                  <option value="PROCESSING KWITANSI">Processing</option>
+                  <option value="PAID KWITANSI">Paid</option>
+                  <option value="OVERDUE KWITANSI">Overdue</option>
+                  <option value="COMPLETED KWITANSI">Completed</option>
+                  <option value="CANCELLED KWITANSI">Cancelled</option>
+                </select>
+              )}
+            </div>
+          );
+        },
+        cell: (info) => (
+          <StatusBadge
+            status={info.getValue() || 'Unknown'}
+            variant={resolveStatusVariant(info.getValue())}
+            size="sm"
+            dot
+          />
+        ),
+      }),
+      columnHelper.accessor('created_at', {
+        id: 'created_at',
+        header: 'Dibuat',
+        enableSorting: true,
+        enableColumnFilter: false,
+        cell: (info) => formatDateTime(info.getValue()),
       }),
       columnHelper.display({
         id: 'actions',
-        header: 'Aksi',
+        header: 'Actions',
         cell: ({ row }) => {
-          const item = row.original;
-          const isExporting = exportingId === item.id;
-          const actionDisabled = deleteLoading;
+          const kwitansi = row.original;
+          const isExporting = exportingId === kwitansi.id;
 
           return (
-            <div className="flex justify-end space-x-2">
+            <div className="flex items-center space-x-2">
               <button
-                onClick={() => onExport?.(item)}
-                className="p-1 text-blue-600 hover:text-blue-900 disabled:text-blue-300"
-                title="Export kwitansi ke PDF"
-                disabled={actionDisabled || isExporting || !onExport}
+                onClick={() => onView(kwitansi)}
+                className="text-indigo-600 hover:text-indigo-900"
+                title="Lihat detail"
               >
-                {isExporting ? (
-                  <span className="block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  <ArrowDownTrayIcon className="w-4 h-4" />
-                )}
+                <EyeIcon className="h-5 w-5" />
               </button>
               <button
-                onClick={() => onView?.(item)}
-                className="p-1 text-indigo-600 hover:text-indigo-900 disabled:text-indigo-300"
-                title="Lihat detail kwitansi"
-                disabled={actionDisabled}
+                onClick={() => onEdit(kwitansi)}
+                className="text-green-600 hover:text-green-900"
+                title="Edit"
               >
-                <EyeIcon className="w-4 h-4" />
+                <PencilIcon className="h-5 w-5" />
               </button>
               <button
-                onClick={() => onEdit?.(item)}
-                className="p-1 text-indigo-600 hover:text-indigo-900 disabled:text-indigo-300"
-                title="Ubah kwitansi"
-                disabled={actionDisabled}
+                onClick={() => onDelete(kwitansi)}
+                disabled={deleteLoading}
+                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Hapus"
               >
-                <PencilIcon className="w-4 h-4" />
+                <TrashIcon className="h-5 w-5" />
               </button>
               <button
-                onClick={() => onDelete?.(item.id)}
-                className="p-1 text-red-600 hover:text-red-900 disabled:text-red-300"
-                title="Hapus kwitansi"
-                disabled={actionDisabled}
+                onClick={() => onExport(kwitansi)}
+                disabled={isExporting}
+                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Export PDF"
               >
-                <TrashIcon className="w-4 h-4" />
+                <ArrowDownTrayIcon className="h-5 w-5" />
               </button>
             </div>
           );
@@ -328,55 +320,30 @@ const KwitansiTableServerSide = ({
         enableSorting: false,
       }),
     ],
-    [activeTab, onView, onEdit, onDelete, onExport, exportingId, deleteLoading]
+    [
+      kwitansis,
+      onView,
+      onEdit,
+      onDelete,
+      onExport,
+      deleteLoading,
+      exportingId,
+      activeTab,
+      setPage,
+    ]
   );
 
   const table = useReactTable({
-    data: kwitansis,
+    ...tableOptions,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
-    pageCount: pagination.totalPages,
-    state: {
-      sorting,
-      columnFilters,
-      globalFilter,
-      pagination: {
-        pageIndex: page - 1, // TanStack uses 0-indexed pages
-        pageSize: limit,
-      },
-    },
-    onSortingChange: (updater) => {
-      setSorting(updater);
-      setPage(1); // Reset to page 1 when sort changes
-    },
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: (updater) => {
-      const newPaginationState = typeof updater === 'function' 
-        ? updater({ pageIndex: page - 1, pageSize: limit })
-        : updater;
-      
-      setPage(newPaginationState.pageIndex + 1); // Convert back to 1-indexed
-      setLimit(newPaginationState.pageSize);
-    },
   });
-
-  const hasActiveFilters = globalFilter || columnFilters.length > 0;
 
   return (
     <div className="space-y-4">
-      {/* Reset Filter Button (only shown when filters active) */}
       {hasActiveFilters && (
         <div className="flex justify-end">
           <button
-            onClick={() => {
-              setGlobalFilter('');
-              setColumnFilters([]);
-              setPage(1);
-            }}
+            onClick={resetFilters}
             className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
           >
             Reset Semua Filter
@@ -384,230 +351,33 @@ const KwitansiTableServerSide = ({
         </div>
       )}
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="flex items-center justify-center p-8 text-gray-500">
-          <div className="w-8 h-8 mr-3 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <span>Memuat data kwitansi...</span>
-        </div>
-      )}
+      <DataTable
+        table={table}
+        isLoading={isLoading}
+        error={error}
+        hasActiveFilters={hasActiveFilters}
+        loadingMessage="Memuat data kwitansi..."
+        emptyMessage="Belum ada data kwitansi."
+        emptyFilteredMessage="Kwitansi tidak ditemukan."
+        tableClassName="min-w-full bg-white border border-gray-200 divide-y divide-gray-200"
+        headerRowClassName="bg-gray-50"
+        headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-200"
+        rowClassName="hover:bg-gray-50"
+        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+        emptyCellClassName="px-6 py-6 text-center text-sm text-gray-500"
+      />
 
-      {/* Error State */}
-      {error && (
-        <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-          <p className="text-sm text-red-800">
-            Terjadi kesalahan: {error.message}
-          </p>
-        </div>
-      )}
-
-      {/* Table */}
       {!isLoading && !error && (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200 divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      const canSort = header.column.getCanSort();
-                      const isSorted = header.column.getIsSorted();
-
-                      return (
-                        <th
-                          key={header.id}
-                          className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div className="space-y-2">
-                              {canSort ? (
-                                <div
-                                  className="cursor-pointer select-none flex items-center space-x-1 hover:text-gray-700 font-medium"
-                                  onClick={header.column.getToggleSortingHandler()}
-                                >
-                                  <span className="flex-1">
-                                    {typeof header.column.columnDef.header === 'string'
-                                      ? header.column.columnDef.header
-                                      : flexRender(
-                                          header.column.columnDef.header,
-                                          header.getContext()
-                                        )}
-                                  </span>
-                                  <span className="text-gray-400">
-                                    {isSorted === 'asc' ? (
-                                      <ArrowUpIcon className="h-4 w-4" />
-                                    ) : isSorted === 'desc' ? (
-                                      <ArrowDownIcon className="h-4 w-4" />
-                                    ) : (
-                                      <span className="opacity-50">⇅</span>
-                                    )}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="font-medium">
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-6 py-6 text-center text-sm text-gray-500"
-                    >
-                      {hasActiveFilters
-                        ? 'Kwitansi tidak ditemukan.'
-                        : 'Belum ada data kwitansi.'}
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* TanStack Table Built-in Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">
-                Menampilkan{' '}
-                <span className="font-medium">
-                  {pagination.currentPage === pagination.totalPages
-                    ? pagination.totalItems
-                    : pagination.currentPage * pagination.itemsPerPage}
-                </span>{' '}
-                dari <span className="font-medium">{pagination.totalItems}</span> kwitansi
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {/* Page size selector */}
-              <div className="flex items-center space-x-2">
-                <label htmlFor="pageSize" className="text-sm text-gray-700">
-                  Per halaman:
-                </label>
-                <select
-                  id="pageSize"
-                  value={table.getState().pagination.pageSize}
-                  onChange={(e) => {
-                    table.setPageSize(Number(e.target.value));
-                  }}
-                  className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {[5, 10, 20, 50, 100].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Pagination controls */}
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="First page"
-                >
-                  {'<<'}
-                </button>
-                <button
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous page"
-                >
-                  {'<'}
-                </button>
-
-                <span className="px-3 py-1 text-sm text-gray-700">
-                  Halaman{' '}
-                  <strong>
-                    {table.getState().pagination.pageIndex + 1} dari {table.getPageCount()}
-                  </strong>
-                </span>
-
-                <button
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next page"
-                >
-                  {'>'}
-                </button>
-                <button
-                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                  disabled={!table.getCanNextPage()}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Last page"
-                >
-                  {'>>'}
-                </button>
-              </div>
-
-              {/* Go to page input */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Ke halaman:</span>
-                <input
-                  type="number"
-                  min="1"
-                  max={table.getPageCount()}
-                  defaultValue={table.getState().pagination.pageIndex + 1}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value) return;
-                    
-                    const pageNumber = Number(value);
-                    const maxPage = table.getPageCount();
-                    
-                    // Validate: must be between 1 and maxPage
-                    if (pageNumber >= 1 && pageNumber <= maxPage) {
-                      table.setPageIndex(pageNumber - 1);
-                    } else {
-                      // Reset to current page if invalid
-                      e.target.value = table.getState().pagination.pageIndex + 1;
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    // Also trigger on Enter key
-                    if (e.key === 'Enter') {
-                      e.target.blur(); // Trigger onBlur
-                    }
-                  }}
-                  className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        </>
+        <DataTablePagination
+          table={table}
+          pagination={pagination}
+          itemLabel="kwitansi"
+          pageSizeOptions={[5, 10, 20, 50, 100]}
+        />
       )}
     </div>
   );
 };
 
 export default KwitansiTableServerSide;
-

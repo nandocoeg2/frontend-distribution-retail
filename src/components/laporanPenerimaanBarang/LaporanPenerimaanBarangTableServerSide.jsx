@@ -1,26 +1,20 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import React, { useMemo } from 'react';
+import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
   PlayIcon,
   CheckIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
 import { formatDate } from '../../utils/formatUtils';
+import { useServerSideTable } from '../../hooks/useServerSideTable';
+import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
-// Tab to status code mapping
 const TAB_STATUS_CONFIG = {
   all: { label: 'All', statusCode: null },
   pending: {
@@ -71,6 +65,7 @@ const resolveReportId = (report) => {
   if (!report) {
     return null;
   }
+
   return report.id || report.lpbId || report._id || report.uuid || null;
 };
 
@@ -89,77 +84,62 @@ const LaporanPenerimaanBarangTableServerSide = ({
   hasSelectedReports = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all', // Tab aktif untuk lock status filter
+  activeTab = 'all',
 }) => {
-  // Server-side state
-  const [page, setPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
-  const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-
-  // Debounce global filter
-  const [debouncedGlobalFilter, setDebouncedGlobalFilter] = useState('');
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedGlobalFilter(globalFilter);
-      setPage(1); // Reset to page 1 when search changes
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [globalFilter]);
-
-  // Auto-set status filter based on active tab
-  useEffect(() => {
-    const tabStatusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    
-    if (activeTab !== 'all' && tabStatusCode) {
-      // Lock status filter to tab's status code
-      const hasStatusFilter = columnFilters.some(f => f.id === 'status');
-      if (!hasStatusFilter || columnFilters.find(f => f.id === 'status')?.value !== tabStatusCode) {
-        setColumnFilters(prev => {
-          const filtered = prev.filter(f => f.id !== 'status');
-          return [...filtered, { id: 'status_code', value: tabStatusCode }];
-        });
-      }
-    } else if (activeTab === 'all') {
-      // In "All" tab, clear status filter to show all data
-      setColumnFilters(prev => prev.filter(f => f.id !== 'status_code'));
+  const lockedFilters = useMemo(() => {
+    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
+    if (!statusCode || activeTab === 'all') {
+      return [];
     }
+    return [{ id: 'status_code', value: statusCode }];
   }, [activeTab]);
 
-  // Convert columnFilters to backend format
-  const filters = useMemo(() => {
-    const filterObj = {};
-    columnFilters.forEach((filter) => {
-      filterObj[filter.id] = filter.value;
-    });
-    return filterObj;
-  }, [columnFilters]);
-
-  // Fetch data from backend
-  const { data, isLoading, isFetching, error } = useLaporanPenerimaanBarangQuery({
-    page,
-    limit,
-    sorting,
-    filters,
-    globalFilter: debouncedGlobalFilter,
+  const {
+    data: reports,
+    pagination,
+    columnFilters,
+    globalFilter,
+    setPage,
+    resetFilters,
+    isLoading,
+    error,
+    tableOptions,
+  } = useServerSideTable({
+    queryHook: useLaporanPenerimaanBarangQuery,
+    selectData: (response) => response?.reports ?? [],
+    selectPagination: (response) => response?.pagination,
+    initialPage,
+    initialLimit,
+    globalFilter: {
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    },
+    lockedFilters,
   });
 
-  const reports = data?.reports || [];
-  const pagination = data?.pagination || {
-    currentPage: page,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: limit,
-  };
+  const hasActiveFilters = useMemo(() => {
+    const hasGlobal = Boolean(globalFilter && globalFilter.trim() !== '');
+    const hasColumn = columnFilters.some((filter) => {
+      if (!filter || filter.value === undefined || filter.value === null || filter.value === '') {
+        return false;
+      }
+
+      if (filter.id === 'status_code') {
+        return activeTab === 'all';
+      }
+
+      return true;
+    });
+
+    return hasGlobal || hasColumn;
+  }, [globalFilter, columnFilters, activeTab]);
 
   const columns = useMemo(
     () => [
       columnHelper.display({
         id: 'select',
-        header: ({ table }) => {
+        header: () => {
           const isAllSelected =
             reports.length > 0 && selectedReports.length === reports.length;
           const isIndeterminate =
@@ -183,7 +163,9 @@ const LaporanPenerimaanBarangTableServerSide = ({
             <input
               type="checkbox"
               checked={selectedReports.includes(reportId)}
-              onChange={() => onSelectReport(reportId, !selectedReports.includes(reportId))}
+              onChange={() =>
+                onSelectReport(reportId, !selectedReports.includes(reportId))
+              }
               disabled={!reportId}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
@@ -201,109 +183,79 @@ const LaporanPenerimaanBarangTableServerSide = ({
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
                 setPage(1);
               }}
               placeholder="Filter..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) =>
-          info.getValue() ||
-          info.row.original?.purchaseOrderId ||
-          'N/A',
+        cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.accessor('tanggal_po', {
+      columnHelper.accessor('nomor_lpb', {
+        id: 'nomor_lpb',
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Tanggal PO</div>
+            <div className="font-medium">No. LPB</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => info.getValue() || '-',
+      }),
+      columnHelper.accessor('tanggal_lpb', {
+        id: 'tanggal_lpb',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Tanggal LPB</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
                 setPage(1);
               }}
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) =>
-          formatDate(info.getValue() || info.row.original?.purchaseOrder?.tanggal_po),
-      }),
-      columnHelper.accessor('customer.namaCustomer', {
-        id: 'customer',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) =>
-          info.getValue() ||
-          info.row.original?.customerId ||
-          'N/A',
-      }),
-      columnHelper.accessor('termOfPayment.kode_top', {
-        id: 'termin_bayar',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Termin Bayar</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) =>
-          info.getValue() ||
-          info.row.original?.termin_bayar ||
-          'N/A',
+        cell: (info) => formatDate(info.getValue()),
       }),
       columnHelper.accessor('status.status_name', {
-        id: 'status_code',
+        id: 'status',
         header: ({ column }) => {
-          const isLocked = activeTab !== 'all';
-          
+          const statusConfig = TAB_STATUS_CONFIG[activeTab];
+          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
+
           return (
             <div className="space-y-2">
               <div className="font-medium">Status</div>
               {isLocked ? (
-                // Locked: Show read-only display
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {TAB_STATUS_CONFIG[activeTab]?.label || 'N/A'}
+                  {statusConfig?.label || 'N/A'}
                 </div>
               ) : (
-                // Unlocked: Show dropdown (only in "All" tab)
                 <select
                   value={column.getFilterValue() ?? ''}
-                  onChange={(e) => {
-                    column.setFilterValue(e.target.value);
+                  onChange={(event) => {
+                    column.setFilterValue(event.target.value);
                     setPage(1);
                   }}
                   className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(event) => event.stopPropagation()}
                 >
                   <option value="">Semua</option>
                   <option value="PENDING LAPORAN PENERIMAAN BARANG">Pending</option>
@@ -315,32 +267,14 @@ const LaporanPenerimaanBarangTableServerSide = ({
             </div>
           );
         },
-        cell: (info) => {
-          const statusName =
-            info.getValue() ||
-            info.row.original?.status?.status_code ||
-            info.row.original?.statusId ||
-            'Unknown';
-          
-          return (
-            <StatusBadge
-              status={statusName}
-              variant={resolveStatusVariant(statusName)}
-              size="sm"
-              dot
-            />
-          );
-        },
-      }),
-      columnHelper.accessor('files', {
-        id: 'total_files',
-        header: 'File',
-        cell: (info) => {
-          const files = info.getValue();
-          return Array.isArray(files) ? files.length : 0;
-        },
-        enableColumnFilter: false,
-        enableSorting: false,
+        cell: (info) => (
+          <StatusBadge
+            status={info.getValue() || 'Unknown'}
+            variant={resolveStatusVariant(info.getValue())}
+            size="sm"
+            dot
+          />
+        ),
       }),
       columnHelper.display({
         id: 'actions',
@@ -392,57 +326,23 @@ const LaporanPenerimaanBarangTableServerSide = ({
       onDelete,
       deleteLoading,
       activeTab,
+      setPage,
     ]
   );
 
   const table = useReactTable({
-    data: reports,
+    ...tableOptions,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
-    pageCount: pagination.totalPages,
-    state: {
-      sorting,
-      columnFilters,
-      globalFilter,
-      pagination: {
-        pageIndex: page - 1, // TanStack uses 0-indexed pages
-        pageSize: limit,
-      },
-    },
-    onSortingChange: (updater) => {
-      setSorting(updater);
-      setPage(1); // Reset to page 1 when sort changes
-    },
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: (updater) => {
-      const newPaginationState = typeof updater === 'function' 
-        ? updater({ pageIndex: page - 1, pageSize: limit })
-        : updater;
-      
-      setPage(newPaginationState.pageIndex + 1); // Convert back to 1-indexed
-      setLimit(newPaginationState.pageSize);
-    },
   });
 
   const actionDisabled = isProcessing || isCompleting;
 
-  const hasActiveFilters = globalFilter || columnFilters.some(f => f.id !== 'status_code' || activeTab === 'all');
-
   return (
     <div className="space-y-4">
-      {/* Reset Filter Button (only shown when filters active) */}
       {hasActiveFilters && (
         <div className="flex justify-end">
           <button
-            onClick={() => {
-              setGlobalFilter('');
-              setColumnFilters([]);
-              setPage(1);
-            }}
+            onClick={resetFilters}
             className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
           >
             Reset Semua Filter
@@ -450,7 +350,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
         </div>
       )}
 
-      {/* Process/Complete Buttons */}
       {hasSelectedReports && (
         <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center space-x-2">
@@ -479,240 +378,39 @@ const LaporanPenerimaanBarangTableServerSide = ({
         </div>
       )}
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="flex items-center justify-center p-8 text-gray-500">
-          <div className="w-8 h-8 mr-3 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <span>Memuat data laporan...</span>
-        </div>
-      )}
+      <DataTable
+        table={table}
+        isLoading={isLoading}
+        error={error}
+        hasActiveFilters={hasActiveFilters}
+        loadingMessage="Memuat data laporan..."
+        emptyMessage="Tidak ada data laporan penerimaan barang"
+        emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian"
+        tableClassName="min-w-full bg-white border border-gray-200"
+        headerRowClassName="bg-gray-50"
+        headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-200"
+        rowClassName="hover:bg-gray-50"
+        getRowClassName={({ row }) => {
+          const reportId = resolveReportId(row.original);
+          return reportId && selectedReports.includes(reportId)
+            ? 'bg-blue-50 hover:bg-blue-100'
+            : undefined;
+        }}
+        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+        emptyCellClassName="px-6 py-4 text-center text-gray-500"
+      />
 
-      {/* Error State */}
-      {error && (
-        <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-          <p className="text-sm text-red-800">
-            Terjadi kesalahan: {error.message}
-          </p>
-        </div>
-      )}
-
-      {/* Table */}
       {!isLoading && !error && (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id} className="bg-gray-50">
-                    {headerGroup.headers.map((header) => {
-                      const canSort = header.column.getCanSort();
-                      const isSorted = header.column.getIsSorted();
-
-                      return (
-                        <th
-                          key={header.id}
-                          className="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div className="space-y-2">
-                              {canSort ? (
-                                <div
-                                  className="cursor-pointer select-none flex items-center space-x-1 hover:text-gray-700 font-medium"
-                                  onClick={header.column.getToggleSortingHandler()}
-                                >
-                                  <span className="flex-1">
-                                    {typeof header.column.columnDef.header === 'string'
-                                      ? header.column.columnDef.header
-                                      : flexRender(
-                                          header.column.columnDef.header,
-                                          header.getContext()
-                                        )}
-                                  </span>
-                                  <span className="text-gray-400">
-                                    {isSorted === 'asc' ? (
-                                      <ArrowUpIcon className="h-4 w-4" />
-                                    ) : isSorted === 'desc' ? (
-                                      <ArrowDownIcon className="h-4 w-4" />
-                                    ) : (
-                                      <span className="opacity-50">⇅</span>
-                                    )}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="font-medium">
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-6 py-4 text-center text-gray-500"
-                    >
-                      {hasActiveFilters
-                        ? 'Tidak ada data yang sesuai dengan pencarian'
-                        : 'Tidak ada data laporan penerimaan barang'}
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => {
-                    const reportId = resolveReportId(row.original);
-                    return (
-                      <tr
-                        key={row.id}
-                        className={
-                          selectedReports.includes(reportId)
-                            ? 'bg-blue-50 hover:bg-blue-100'
-                            : 'hover:bg-gray-50'
-                        }
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <td
-                            key={cell.id}
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                          >
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* TanStack Table Built-in Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">
-                Menampilkan{' '}
-                <span className="font-medium">
-                  {pagination.currentPage === pagination.totalPages
-                    ? pagination.totalItems
-                    : pagination.currentPage * pagination.itemsPerPage}
-                </span>{' '}
-                dari <span className="font-medium">{pagination.totalItems}</span> laporan
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {/* Page size selector */}
-              <div className="flex items-center space-x-2">
-                <label htmlFor="pageSize" className="text-sm text-gray-700">
-                  Per halaman:
-                </label>
-                <select
-                  id="pageSize"
-                  value={table.getState().pagination.pageSize}
-                  onChange={(e) => {
-                    table.setPageSize(Number(e.target.value));
-                  }}
-                  className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {[5, 10, 20, 50, 100].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Pagination controls */}
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="First page"
-                >
-                  {'<<'}
-                </button>
-                <button
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous page"
-                >
-                  {'<'}
-                </button>
-
-                <span className="px-3 py-1 text-sm text-gray-700">
-                  Halaman{' '}
-                  <strong>
-                    {table.getState().pagination.pageIndex + 1} dari {table.getPageCount()}
-                  </strong>
-                </span>
-
-                <button
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next page"
-                >
-                  {'>'}
-                </button>
-                <button
-                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                  disabled={!table.getCanNextPage()}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Last page"
-                >
-                  {'>>'}
-                </button>
-              </div>
-
-              {/* Go to page input */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Ke halaman:</span>
-                <input
-                  type="number"
-                  min="1"
-                  max={table.getPageCount()}
-                  defaultValue={table.getState().pagination.pageIndex + 1}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value) return;
-                    
-                    const pageNumber = Number(value);
-                    const maxPage = table.getPageCount();
-                    
-                    // Validate: must be between 1 and maxPage
-                    if (pageNumber >= 1 && pageNumber <= maxPage) {
-                      table.setPageIndex(pageNumber - 1);
-                    } else {
-                      // Reset to current page if invalid
-                      e.target.value = table.getState().pagination.pageIndex + 1;
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    // Also trigger on Enter key
-                    if (e.key === 'Enter') {
-                      e.target.blur(); // Trigger onBlur
-                    }
-                  }}
-                  className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        </>
+        <DataTablePagination
+          table={table}
+          pagination={pagination}
+          itemLabel="laporan"
+          pageSizeOptions={[5, 10, 20, 50, 100]}
+        />
       )}
     </div>
   );
 };
 
 export default LaporanPenerimaanBarangTableServerSide;
-

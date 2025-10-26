@@ -158,7 +158,37 @@ const InvoicePengirimanTableServerSide = ({
           </div>
         ),
         enableSorting: false,
-        enableHiding: false,
+        enableColumnFilter: false,
+      }),
+      columnHelper.display({
+        id: 'select',
+        header: () => {
+          const isAllSelected =
+            invoicePengiriman.length > 0 && selectedInvoices.length === invoicePengiriman.length;
+          const isIndeterminate =
+            selectedInvoices.length > 0 && selectedInvoices.length < invoicePengiriman.length;
+
+          return (
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = isIndeterminate;
+              }}
+              onChange={onSelectAllInvoices}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          );
+        },
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={selectedInvoices.includes(row.original.id)}
+            onChange={() => onSelectInvoice(row.original.id)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+        ),
+        enableSorting: false,
         enableColumnFilter: false,
       }),
       columnHelper.accessor('no_invoice', {
@@ -170,7 +200,7 @@ const InvoicePengirimanTableServerSide = ({
               value={column.getFilterValue() ?? ''}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
-                setPage(1); // Reset to page 1
+                setPage(1);
               }}
               placeholder="Filter..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -178,12 +208,14 @@ const InvoicePengirimanTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => info.getValue() || 'N/A',
+        cell: (info) => (
+          <div className="font-medium text-gray-900">{info.getValue() || '-'}</div>
+        ),
       }),
-      columnHelper.accessor('tanggal', {
+      columnHelper.accessor('tanggal_invoice', {
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Tanggal</div>
+            <div className="font-medium">Tanggal Invoice</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
@@ -198,10 +230,11 @@ const InvoicePengirimanTableServerSide = ({
         ),
         cell: (info) => formatDate(info.getValue()),
       }),
-      columnHelper.accessor('deliver_to', {
+      columnHelper.accessor('customer.namaCustomer', {
+        id: 'nama_customer',
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Tujuan Pengiriman</div>
+            <div className="font-medium">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -217,27 +250,63 @@ const InvoicePengirimanTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.accessor('grand_total', {
-        header: 'Grand Total',
+      columnHelper.accessor('jumlah_invoice', {
+        header: 'Jumlah',
         cell: (info) => formatCurrency(info.getValue()),
-        enableColumnFilter: false,
-        enableSorting: false,
+      }),
+      columnHelper.accessor('status.status_name', {
+        id: 'status',
+        header: ({ column }) => {
+          const isLocked = activeTab !== 'all';
+
+          return (
+            <div className="space-y-2">
+              <div className="font-medium">Status</div>
+              {isLocked ? (
+                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                  {TAB_STATUS_CONFIG[activeTab]?.label || 'N/A'}
+                </div>
+              ) : (
+                <select
+                  value={column.getFilterValue() ?? ''}
+                  onChange={(e) => {
+                    column.setFilterValue(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <option value="">Semua</option>
+                  <option value="CANCELLED INVOICE">Cancelled</option>
+                  <option value="PENDING INVOICE">Pending</option>
+                  <option value="PAID INVOICE">Paid</option>
+                  <option value="OVERDUE INVOICE">Overdue</option>
+                </select>
+              )}
+            </div>
+          );
+        },
+        cell: (info) => (
+          <span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+              {info.getValue() || 'Unknown'}
+            </span>
+          </span>
+        ),
       }),
       columnHelper.display({
         id: 'actions',
-        header: 'Actions',
+        header: 'Aksi',
         cell: ({ row }) => (
-          <div className="flex justify-end space-x-2">
+          <div className="flex space-x-2 justify-center">
             <button
-              type="button"
               onClick={() => onView(row.original)}
               className="text-indigo-600 hover:text-indigo-900"
-              title="View Details"
+              title="Lihat detail"
             >
               <EyeIcon className="h-5 w-5" />
             </button>
             <button
-              type="button"
               onClick={() => onEdit(row.original)}
               className="text-green-600 hover:text-green-900"
               title="Edit"
@@ -245,7 +314,6 @@ const InvoicePengirimanTableServerSide = ({
               <PencilIcon className="h-5 w-5" />
             </button>
             <button
-              type="button"
               onClick={() => onDelete(row.original.id)}
               disabled={deleteLoading}
               className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -259,12 +327,18 @@ const InvoicePengirimanTableServerSide = ({
       }),
     ],
     [
-      creatingPenagihanId,
-      onTogglePenagihan,
+      invoicePengiriman,
+      selectedInvoices,
+      onSelectInvoice,
+      onSelectAllInvoices,
       onView,
       onEdit,
       onDelete,
       deleteLoading,
+      onTogglePenagihan,
+      creatingPenagihanId,
+      activeTab,
+      setPage,
     ]
   );
 
@@ -292,10 +366,10 @@ const InvoicePengirimanTableServerSide = ({
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: (updater) => {
-      const newPaginationState = typeof updater === 'function'
+      const newPaginationState = typeof updater === 'function' 
         ? updater({ pageIndex: page - 1, pageSize: limit })
         : updater;
-
+      
       setPage(newPaginationState.pageIndex + 1); // Convert back to 1-indexed
       setLimit(newPaginationState.pageSize);
     },
@@ -322,7 +396,7 @@ const InvoicePengirimanTableServerSide = ({
       )}
 
       {/* Loading Overlay */}
-      {isLoading && !data && (
+      {isLoading && (
         <div className="flex items-center justify-center p-8 text-gray-500">
           <div className="w-8 h-8 mr-3 border-b-2 border-blue-600 rounded-full animate-spin"></div>
           <span>Memuat data invoice pengiriman...</span>
@@ -339,7 +413,7 @@ const InvoicePengirimanTableServerSide = ({
       )}
 
       {/* Table */}
-      {(!isLoading || data) && !error && (
+      {!isLoading && !error && (
         <>
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200">
