@@ -97,10 +97,9 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const {
     data: reports,
     pagination,
-    columnFilters,
-    globalFilter,
     setPage,
     resetFilters,
+    hasActiveFilters,
     isLoading,
     error,
     tableOptions,
@@ -117,23 +116,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
     },
     lockedFilters,
   });
-
-  const hasActiveFilters = useMemo(() => {
-    const hasGlobal = Boolean(globalFilter && globalFilter.trim() !== '');
-    const hasColumn = columnFilters.some((filter) => {
-      if (!filter || filter.value === undefined || filter.value === null || filter.value === '') {
-        return false;
-      }
-
-      if (filter.id === 'status_code') {
-        return activeTab === 'all';
-      }
-
-      return true;
-    });
-
-    return hasGlobal || hasColumn;
-  }, [globalFilter, columnFilters, activeTab]);
 
   const columns = useMemo(
     () => [

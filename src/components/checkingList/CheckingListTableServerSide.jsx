@@ -1,19 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import {
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-} from '@heroicons/react/24/outline';
+import React, { useMemo } from 'react';
+import { createColumnHelper, useReactTable } from '@tanstack/react-table';
+import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
 import { formatDateTime } from '../../utils/formatUtils';
+import { useServerSideTable } from '../../hooks/useServerSideTable';
+import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
@@ -37,50 +28,27 @@ const CheckingListTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
 }) => {
-  // Server-side state
-  const [page, setPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
-  const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-
-  // Debounce global filter
-  const [debouncedGlobalFilter, setDebouncedGlobalFilter] = useState('');
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedGlobalFilter(globalFilter);
-      setPage(1); // Reset to page 1 when search changes
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [globalFilter]);
-
-  // Convert columnFilters to backend format
-  const filters = useMemo(() => {
-    const filterObj = {};
-    columnFilters.forEach((filter) => {
-      filterObj[filter.id] = filter.value;
-    });
-    return filterObj;
-  }, [columnFilters]);
-
-  // Fetch data from backend
-  const { data, isLoading, isFetching, error } = useCheckingListQuery({
-    page,
-    limit,
-    sorting,
-    filters,
-    globalFilter: debouncedGlobalFilter,
+  const {
+    data: checklists,
+    pagination,
+    setPage,
+    hasActiveFilters,
+    isLoading,
+    error,
+    resetFilters,
+    tableOptions,
+  } = useServerSideTable({
+    queryHook: useCheckingListQuery,
+    selectData: (response) => response?.checklists ?? [],
+    selectPagination: (response) => response?.pagination,
+    initialPage,
+    initialLimit,
+    globalFilter: {
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    },
   });
-
-  const checklists = data?.checklists || [];
-  const pagination = data?.pagination || {
-    currentPage: page,
-    totalPages: 1,
-    totalItems: 0,
-    itemsPerPage: limit,
-  };
 
   const columns = useMemo(
     () => [
@@ -93,7 +61,7 @@ const CheckingListTableServerSide = ({
               value={column.getFilterValue() ?? ''}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
-                setPage(1); // Reset to page 1
+                setPage(1);
               }}
               placeholder="Filter..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -288,39 +256,9 @@ const CheckingListTableServerSide = ({
   );
 
   const table = useReactTable({
-    data: checklists,
+    ...tableOptions,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    manualFiltering: true,
-    pageCount: pagination.totalPages,
-    state: {
-      sorting,
-      columnFilters,
-      globalFilter,
-      pagination: {
-        pageIndex: page - 1, // TanStack uses 0-indexed pages
-        pageSize: limit,
-      },
-    },
-    onSortingChange: (updater) => {
-      setSorting(updater);
-      setPage(1); // Reset to page 1 when sort changes
-    },
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: (updater) => {
-      const newPaginationState = typeof updater === 'function' 
-        ? updater({ pageIndex: page - 1, pageSize: limit })
-        : updater;
-      
-      setPage(newPaginationState.pageIndex + 1); // Convert back to 1-indexed
-      setLimit(newPaginationState.pageSize);
-    },
   });
-
-  const hasActiveFilters = globalFilter || columnFilters.length > 0;
 
   return (
     <div className="space-y-4">
@@ -328,11 +266,7 @@ const CheckingListTableServerSide = ({
       {hasActiveFilters && (
         <div className="flex justify-end">
           <button
-            onClick={() => {
-              setGlobalFilter('');
-              setColumnFilters([]);
-              setPage(1);
-            }}
+            onClick={resetFilters}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             Reset Semua Filter
@@ -360,205 +294,30 @@ const CheckingListTableServerSide = ({
       {/* Table */}
       {!isLoading && !error && (
         <>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-            <table className="min-w-full divide-y divide-gray-200 bg-white">
-              <thead className="bg-gray-50">
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      const canSort = header.column.getCanSort();
-                      const isSorted = header.column.getIsSorted();
+          <DataTable
+            table={table}
+            isLoading={isLoading}
+            error={error}
+            hasActiveFilters={hasActiveFilters}
+            loadingMessage="Memuat data checklist surat jalan..."
+            emptyMessage="Belum ada checklist surat jalan."
+            emptyFilteredMessage="Tidak ada checklist surat jalan yang cocok dengan pencarian."
+            wrapperClassName="overflow-x-auto rounded-xl border border-gray-200 shadow-sm"
+            tableClassName="min-w-full divide-y divide-gray-200 bg-white"
+            headerRowClassName="bg-gray-50"
+            headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
+            bodyClassName="divide-y divide-gray-200 bg-white"
+            rowClassName="hover:bg-gray-50"
+            cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+            emptyCellClassName="px-6 py-6 text-center text-sm text-gray-500"
+          />
 
-                      return (
-                        <th
-                          key={header.id}
-                          className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-                        >
-                          {header.isPlaceholder ? null : (
-                            <div className="space-y-2">
-                              {canSort ? (
-                                <div
-                                  className="cursor-pointer select-none flex items-center space-x-1 hover:text-gray-700 font-medium"
-                                  onClick={header.column.getToggleSortingHandler()}
-                                >
-                                  <span className="flex-1">
-                                    {typeof header.column.columnDef.header === 'string'
-                                      ? header.column.columnDef.header
-                                      : flexRender(
-                                          header.column.columnDef.header,
-                                          header.getContext()
-                                        )}
-                                  </span>
-                                  <span className="text-gray-400">
-                                    {isSorted === 'asc' ? (
-                                      <ArrowUpIcon className="h-4 w-4" />
-                                    ) : isSorted === 'desc' ? (
-                                      <ArrowDownIcon className="h-4 w-4" />
-                                    ) : (
-                                      <span className="opacity-50">⇅</span>
-                                    )}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="font-medium">
-                                  {flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
-                {table.getRowModel().rows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className="px-6 py-6 text-center text-sm text-gray-500"
-                    >
-                      {hasActiveFilters
-                        ? 'Tidak ada checklist surat jalan yang cocok dengan pencarian.'
-                        : 'Belum ada checklist surat jalan.'}
-                    </td>
-                  </tr>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
-                      {row.getVisibleCells().map((cell) => (
-                        <td
-                          key={cell.id}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* TanStack Table Built-in Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">
-                Menampilkan{' '}
-                <span className="font-medium">
-                  {pagination.currentPage === pagination.totalPages
-                    ? pagination.totalItems
-                    : pagination.currentPage * pagination.itemsPerPage}
-                </span>{' '}
-                dari <span className="font-medium">{pagination.totalItems}</span> checklist
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {/* Page size selector */}
-              <div className="flex items-center space-x-2">
-                <label htmlFor="pageSize" className="text-sm text-gray-700">
-                  Per halaman:
-                </label>
-                <select
-                  id="pageSize"
-                  value={table.getState().pagination.pageSize}
-                  onChange={(e) => {
-                    table.setPageSize(Number(e.target.value));
-                  }}
-                  className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  {[5, 10, 20, 50, 100].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Pagination controls */}
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() => table.setPageIndex(0)}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="First page"
-                >
-                  {'<<'}
-                </button>
-                <button
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Previous page"
-                >
-                  {'<'}
-                </button>
-
-                <span className="px-3 py-1 text-sm text-gray-700">
-                  Halaman{' '}
-                  <strong>
-                    {table.getState().pagination.pageIndex + 1} dari {table.getPageCount()}
-                  </strong>
-                </span>
-
-                <button
-                  onClick={() => table.nextPage()}
-                  disabled={!table.getCanNextPage()}
-                  className="px-3 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Next page"
-                >
-                  {'>'}
-                </button>
-                <button
-                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                  disabled={!table.getCanNextPage()}
-                  className="px-2 py-1 text-sm text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Last page"
-                >
-                  {'>>'}
-                </button>
-              </div>
-
-              {/* Go to page input */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Ke halaman:</span>
-                <input
-                  type="number"
-                  min="1"
-                  max={table.getPageCount()}
-                  defaultValue={table.getState().pagination.pageIndex + 1}
-                  onBlur={(e) => {
-                    const value = e.target.value;
-                    if (!value) return;
-                    
-                    const pageNumber = Number(value);
-                    const maxPage = table.getPageCount();
-                    
-                    // Validate: must be between 1 and maxPage
-                    if (pageNumber >= 1 && pageNumber <= maxPage) {
-                      table.setPageIndex(pageNumber - 1);
-                    } else {
-                      // Reset to current page if invalid
-                      e.target.value = table.getState().pagination.pageIndex + 1;
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    // Also trigger on Enter key
-                    if (e.key === 'Enter') {
-                      e.target.blur(); // Trigger onBlur
-                    }
-                  }}
-                  className="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
+          <DataTablePagination
+            table={table}
+            pagination={pagination}
+            itemLabel="checklist"
+            pageSizeOptions={[5, 10, 20, 50, 100]}
+          />
         </>
       )}
     </div>

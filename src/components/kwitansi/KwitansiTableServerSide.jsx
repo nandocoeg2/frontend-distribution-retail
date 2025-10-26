@@ -72,8 +72,6 @@ const KwitansiTableServerSide = ({
   const {
     data: kwitansis,
     pagination,
-    columnFilters,
-    globalFilter,
     setPage,
     resetFilters,
     hasActiveFilters,

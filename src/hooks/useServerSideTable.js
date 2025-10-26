@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getCoreRowModel } from '@tanstack/react-table';
 
 const DEFAULT_PAGINATION = {
@@ -17,6 +17,37 @@ const DEFAULT_GLOBAL_FILTER = {
 
 const isDefined = (value) => value !== undefined && value !== null && value !== '';
 
+const mergeLockedFilters = (filters = [], lockedFilters = []) => {
+  if (!Array.isArray(filters) || filters.length === 0) {
+    return lockedFilters.filter((filter) => isDefined(filter.value));
+  }
+
+  const lockedIds = lockedFilters.map((filter) => filter.id);
+  const base = filters.filter((filter) => !lockedIds.includes(filter.id));
+  const lockedWithValue = lockedFilters.filter((filter) => isDefined(filter.value));
+
+  return [...base, ...lockedWithValue];
+};
+
+const areFiltersEqual = (a = [], b = []) => {
+  if (a === b) {
+    return true;
+  }
+
+  if (!Array.isArray(a) || !Array.isArray(b)) {
+    return false;
+  }
+
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return a.every((item, index) => {
+    const other = b[index];
+    return item?.id === other?.id && item?.value === other?.value;
+  });
+};
+
 export const useServerSideTable = ({
   queryHook,
   selectData,
@@ -30,6 +61,8 @@ export const useServerSideTable = ({
   manualSorting = true,
   manualFiltering = true,
   autoResetPageOnSort = true,
+  autoResetPageOnColumnFilterChange = true,
+  columnFilterDebounceMs = 500,
   tableOptions: extraTableOptions = {},
 } = {}) => {
   if (typeof queryHook !== 'function') {
@@ -39,7 +72,6 @@ export const useServerSideTable = ({
   const [page, setPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
   const [sorting, setSorting] = useState([]);
-  const [columnFilters, setColumnFilters] = useState([]);
 
   const globalFilterEnabled = Boolean(globalFilterOptions?.enabled);
   const globalFilterInitialValue = globalFilterOptions?.initialValue ?? '';
@@ -84,38 +116,61 @@ export const useServerSideTable = ({
     [lockedFilters]
   );
 
-  const lockedFilterIdsRef = useRef([]);
+  const [columnFiltersInput, setColumnFiltersInput] = useState(() =>
+    mergeLockedFilters([], normalizedLockedFilters)
+  );
+  const [columnFiltersApplied, setColumnFiltersApplied] = useState(() =>
+    mergeLockedFilters([], normalizedLockedFilters)
+  );
 
   useEffect(() => {
-    setColumnFilters((prev) => {
-      const previousLockedIds = lockedFilterIdsRef.current;
-      const nextLockedIds = normalizedLockedFilters.map((filter) => filter.id);
+    setColumnFiltersInput((prev) => mergeLockedFilters(prev, normalizedLockedFilters));
+    setColumnFiltersApplied((prev) => mergeLockedFilters(prev, normalizedLockedFilters));
+  }, [normalizedLockedFilters]);
 
-      // Remove filters that belonged to the old locked set
-      let nextFilters = prev.filter((filter) => !previousLockedIds.includes(filter.id));
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setColumnFiltersApplied((prev) => {
+        const next = mergeLockedFilters(columnFiltersInput, normalizedLockedFilters);
+        if (areFiltersEqual(prev, next)) {
+          return prev;
+        }
 
-      // Remove filters for the new locked ids (will be re-added below)
-      nextFilters = nextFilters.filter((filter) => !nextLockedIds.includes(filter.id));
+        if (autoResetPageOnColumnFilterChange) {
+          setPage(1);
+        }
 
-      // Add new locked filters when they have a defined value
-      const lockedWithValue = normalizedLockedFilters.filter((filter) =>
-        isDefined(filter.value)
-      );
+        return next;
+      });
+    }, columnFilterDebounceMs);
 
-      lockedFilterIdsRef.current = nextLockedIds;
-      return [...nextFilters, ...lockedWithValue];
+    return () => clearTimeout(timeout);
+  }, [
+    columnFiltersInput,
+    normalizedLockedFilters,
+    columnFilterDebounceMs,
+    autoResetPageOnColumnFilterChange,
+  ]);
+
+  const lockedFilterMap = useMemo(() => {
+    const map = new Map();
+    normalizedLockedFilters.forEach((filter) => {
+      if (isDefined(filter.value)) {
+        map.set(filter.id, filter.value);
+      }
     });
+    return map;
   }, [normalizedLockedFilters]);
 
   const filters = useMemo(() => {
     const filterObj = {};
-    columnFilters.forEach(({ id, value }) => {
+    columnFiltersApplied.forEach(({ id, value }) => {
       if (isDefined(value)) {
         filterObj[id] = value;
       }
     });
     return filterObj;
-  }, [columnFilters]);
+  }, [columnFiltersApplied]);
 
   const queryParams = useMemo(() => {
     const baseParams = {
@@ -129,7 +184,7 @@ export const useServerSideTable = ({
     if (typeof getQueryParams === 'function') {
       return getQueryParams({
         ...baseParams,
-        columnFilters,
+        columnFilters: columnFiltersApplied,
         globalFilter,
         debouncedGlobalFilter,
       });
@@ -141,7 +196,7 @@ export const useServerSideTable = ({
     limit,
     sorting,
     filters,
-    columnFilters,
+    columnFiltersApplied,
     globalFilterEnabled,
     globalFilter,
     debouncedGlobalFilter,
@@ -203,14 +258,20 @@ export const useServerSideTable = ({
     };
   }, [rawData, selectPagination, page, limit]);
 
-  const hasColumnFilters = columnFilters.some(({ value }) => isDefined(value));
+  const hasColumnFilters = columnFiltersApplied.some(({ id, value }) => {
+    if (!isDefined(value)) {
+      return false;
+    }
+    const lockedValue = lockedFilterMap.get(id);
+    return lockedValue === undefined || lockedValue !== value;
+  });
   const hasGlobalFilter = globalFilterEnabled && isDefined(globalFilter);
   const hasActiveFilters = hasColumnFilters || hasGlobalFilter;
 
   const resetFilters = () => {
-    setColumnFilters(
-      normalizedLockedFilters.filter((filter) => isDefined(filter.value))
-    );
+    const resetValue = mergeLockedFilters([], normalizedLockedFilters);
+    setColumnFiltersInput(resetValue);
+    setColumnFiltersApplied(resetValue);
 
     if (globalFilterEnabled) {
       setGlobalFilter(globalFilterInitialValue);
@@ -229,7 +290,7 @@ export const useServerSideTable = ({
     pageCount: pagination.totalPages,
     state: {
       sorting,
-      columnFilters,
+      columnFilters: columnFiltersInput,
       pagination: {
         pageIndex: Math.max(page - 1, 0),
         pageSize: limit,
@@ -242,7 +303,7 @@ export const useServerSideTable = ({
         setPage(1);
       }
     },
-    onColumnFiltersChange: setColumnFilters,
+    onColumnFiltersChange: setColumnFiltersInput,
     onPaginationChange: (updater) => {
       const current = { pageIndex: Math.max(page - 1, 0), pageSize: limit };
       const next =
@@ -266,7 +327,8 @@ export const useServerSideTable = ({
     page,
     limit,
     sorting,
-    columnFilters,
+    columnFilters: columnFiltersInput,
+    appliedColumnFilters: columnFiltersApplied,
     globalFilter: globalFilterEnabled ? globalFilter : undefined,
     debouncedGlobalFilter: globalFilterEnabled ? debouncedGlobalFilter : undefined,
     filters,
@@ -277,7 +339,7 @@ export const useServerSideTable = ({
     setPage,
     setLimit,
     setSorting,
-    setColumnFilters,
+    setColumnFilters: setColumnFiltersInput,
     setGlobalFilter: globalFilterEnabled ? setGlobalFilter : undefined,
     resetFilters,
     tableOptions,
