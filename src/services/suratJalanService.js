@@ -24,14 +24,28 @@ class SuratJalanService {
     });
   }
 
-  async getAllSuratJalan(page = 1, limit = 10) {
+  // Unified endpoint with support for pagination, sorting, and filtering
+  async getSuratJalan(params = {}) {
     try {
-      const response = await this.api.get(`/surat-jalan?page=${page}&limit=${limit}`);
+      // Support both old (page, limit) and new (params object) signatures
+      if (typeof params === 'number') {
+        const page = params;
+        const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
+        return this.api.get('/surat-jalan', { params: { page, limit } }).then(res => res.data);
+      }
+      
+      // New params object signature with support for sorting and filtering
+      const response = await this.api.get('/surat-jalan', { params });
       return response.data;
     } catch (error) {
       console.error('Error fetching surat jalan:', error);
       throw error;
     }
+  }
+
+  // Legacy method - redirects to getSuratJalan for backward compatibility
+  async getAllSuratJalan(page = 1, limit = 10) {
+    return this.getSuratJalan({ page, limit });
   }
 
   async getSuratJalanById(id) {
@@ -44,17 +58,10 @@ class SuratJalanService {
     }
   }
 
+  // Legacy method - redirects to getSuratJalan for backward compatibility
   async searchSuratJalan(searchParams, page = 1, limit = 10) {
-    try {
-      const params = new URLSearchParams(searchParams);
-      params.append('page', page);
-      params.append('limit', limit);
-      const response = await this.api.get(`/surat-jalan/search?${params.toString()}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error searching surat jalan:', error);
-      throw error;
-    }
+    const params = { page, limit, ...searchParams };
+    return this.getSuratJalan(params);
   }
 
   async createSuratJalan(suratJalanData) {

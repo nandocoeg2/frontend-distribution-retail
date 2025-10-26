@@ -105,6 +105,10 @@ const useSuratJalanPage = () => {
   const [activeFiltersVersion, setActiveFiltersVersion] = useState(0);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessingSuratJalan, setIsProcessingSuratJalan] = useState(false);
+  
+  // Sorting state
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const handleAuthRedirect = useCallback(() => {
     localStorage.clear();
@@ -133,12 +137,17 @@ const useSuratJalanPage = () => {
     initialPagination: INITIAL_PAGINATION,
     searchFn: (queryFilters = {}, page, limit) => {
       const sanitized = sanitizeFilters(queryFilters);
+      
+      // Build params object with pagination, sorting, and filters
+      const params = {
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        ...sanitized,
+      };
 
-      if (Object.keys(sanitized).length === 0) {
-        return suratJalanService.getAllSuratJalan(page, limit);
-      }
-
-      return suratJalanService.searchSuratJalan(sanitized, page, limit);
+      return suratJalanService.getSuratJalan(params);
     },
     parseResponse: parseSuratJalanResponse,
     resolveErrorMessage: resolveSuratJalanError,
@@ -279,6 +288,24 @@ const useSuratJalanPage = () => {
     [selectedSuratJalan]
   );
 
+  const handleSortChange = useCallback(
+    (columnId) => {
+      if (sortBy === columnId) {
+        // Toggle sort order if clicking same column
+        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      } else {
+        // Set new column and default to ascending
+        setSortBy(columnId);
+        setSortOrder('asc');
+      }
+      
+      // Refresh data with new sort
+      const currentPage = pagination.currentPage || pagination.page || 1;
+      performSearch(currentFilters, currentPage, resolveLimit());
+    },
+    [sortBy, currentFilters, pagination, performSearch, resolveLimit]
+  );
+
   useEffect(() => {
     fetchSuratJalan(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchSuratJalan]);
@@ -416,6 +443,8 @@ const useSuratJalanPage = () => {
     setSelectedSuratJalan,
     hasSelectedSuratJalan: selectedSuratJalan.length > 0,
     isProcessingSuratJalan,
+    sortBy,
+    sortOrder,
     handleFiltersChange,
     handleSearchSubmit,
     handleResetFilters,
@@ -424,6 +453,7 @@ const useSuratJalanPage = () => {
     handleSelectSuratJalan,
     handleSelectAllSuratJalan,
     handleProcessSuratJalan,
+    handleSortChange,
     deleteSuratJalan: deleteSuratJalanConfirmation.showDeleteConfirmation,
     deleteSuratJalanConfirmation,
     fetchSuratJalan,
