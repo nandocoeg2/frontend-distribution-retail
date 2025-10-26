@@ -118,32 +118,8 @@ const FakturPajakTableServerSide = ({
     () => [
       columnHelper.accessor('no_pajak', {
         id: 'no_pajak',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <button
-              onClick={() => column.toggleSorting()}
-              className="flex items-center space-x-1 font-medium hover:text-blue-600"
-            >
-              <span>Nomor Faktur</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUpIcon className="w-4 h-4" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDownIcon className="w-4 h-4" />
-              ) : null}
-            </button>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Nomor Faktur',
+        enableSorting: true,
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -159,72 +135,42 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter nomor faktur...',
+        },
       }),
       columnHelper.accessor((row) => row.invoicePenagihan?.no_invoice_penagihan, {
         id: 'no_invoice_penagihan',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nomor Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Nomor Invoice',
+        enableSorting: false,
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {info.getValue() || '-'}
           </div>
         ),
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter nomor invoice...',
+        },
       }),
       columnHelper.accessor('tanggal_invoice', {
         id: 'tanggal_invoice',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <button
-              onClick={() => column.toggleSorting()}
-              className="flex items-center space-x-1 font-medium hover:text-blue-600"
-            >
-              <span>Tanggal Invoice</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUpIcon className="w-4 h-4" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDownIcon className="w-4 h-4" />
-              ) : null}
-            </button>
-          </div>
-        ),
+        header: 'Tanggal Invoice',
+        enableSorting: true,
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {formatDate(info.getValue())}
           </div>
         ),
+        meta: {
+          filterType: 'date',
+        },
       }),
       columnHelper.accessor((row) => row.laporanPenerimaanBarang?.no_lpb, {
         id: 'no_lpb',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nomor LPB</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Nomor LPB',
+        enableSorting: false,
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -240,25 +186,15 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter nomor LPB...',
+        },
       }),
       columnHelper.accessor((row) => row.customer?.namaCustomer, {
         id: 'customer',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nama Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        header: 'Nama Customer',
+        enableSorting: false,
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -274,51 +210,48 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        meta: {
+          filterType: 'text',
+          filterPlaceholder: 'Filter customer...',
+        },
       }),
       columnHelper.accessor('total_harga_jual', {
         id: 'total_harga_jual',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <button
-              onClick={() => column.toggleSorting()}
-              className="flex items-center space-x-1 font-medium hover:text-blue-600"
-            >
-              <span>Total Harga Jual</span>
-              {column.getIsSorted() === 'asc' ? (
-                <ArrowUpIcon className="w-4 h-4" />
-              ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDownIcon className="w-4 h-4" />
-              ) : null}
-            </button>
-          </div>
-        ),
+        header: 'Total Harga Jual',
+        enableSorting: true,
         cell: (info) => (
           <div className="text-sm text-gray-900 text-right">
             {formatCurrency(info.getValue())}
           </div>
         ),
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('potongan_harga', {
         id: 'potongan_harga',
-        header: () => <div className="font-medium">Potongan Harga</div>,
+        header: 'Potongan Harga',
+        enableSorting: true,
         cell: (info) => (
           <div className="text-sm text-gray-900 text-right">
             {formatCurrency(info.getValue())}
           </div>
         ),
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('dasar_pengenaan_pajak', {
         id: 'dasar_pengenaan_pajak',
-        header: () => <div className="font-medium">Dasar Pengenaan Pajak</div>,
+        header: 'Dasar Pengenaan Pajak',
+        enableSorting: true,
         cell: (info) => (
           <div className="text-sm text-gray-900 text-right">
             {formatCurrency(info.getValue())}
           </div>
         ),
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('ppn_rp', {
         id: 'ppn_rp',
-        header: () => <div className="font-medium">PPN Rupiah</div>,
+        header: 'PPN Rupiah',
+        enableSorting: true,
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -334,10 +267,12 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.termOfPayment?.kode_top, {
         id: 'top',
-        header: () => <div className="font-medium">TOP</div>,
+        header: 'TOP',
+        enableSorting: false,
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -353,6 +288,7 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
         id: 'status',
@@ -521,19 +457,83 @@ const FakturPajakTableServerSide = ({
           <thead className="bg-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const canSort = header.column.getCanSort();
+                  const isSorted = header.column.getIsSorted();
+                  const canFilter = header.column.getCanFilter();
+                  const filterMeta = header.column.columnDef.meta;
+
+                  return (
+                    <th
+                      key={header.id}
+                      className="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                    >
+                      {header.isPlaceholder ? null : (
+                        <div className="space-y-2">
+                          {canSort ? (
+                            <div
+                              className="cursor-pointer select-none flex items-center space-x-1 hover:text-gray-700 font-medium"
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              <span className="flex-1">
+                                {typeof header.column.columnDef.header === 'string'
+                                  ? header.column.columnDef.header
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext()
+                                    )}
+                              </span>
+                              <span className="text-gray-400">
+                                {isSorted === 'asc' ? (
+                                  <ArrowUpIcon className="h-4 w-4" />
+                                ) : isSorted === 'desc' ? (
+                                  <ArrowDownIcon className="h-4 w-4" />
+                                ) : (
+                                  <span className="opacity-50">⇅</span>
+                                )}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="font-medium">
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Column Filter */}
+                          {canFilter && filterMeta && (
+                            filterMeta.filterType === 'text' ? (
+                              <input
+                                type="text"
+                                value={header.column.getFilterValue() ?? ''}
+                                onChange={(e) => {
+                                  header.column.setFilterValue(e.target.value);
+                                  setPage(1);
+                                }}
+                                placeholder={filterMeta.filterPlaceholder || 'Filter...'}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : filterMeta.filterType === 'date' ? (
+                              <input
+                                type="date"
+                                value={header.column.getFilterValue() ?? ''}
+                                onChange={(e) => {
+                                  header.column.setFilterValue(e.target.value);
+                                  setPage(1);
+                                }}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : null
+                          )}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
