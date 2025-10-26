@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import useKwitansiPage from '@/hooks/useKwitansiPage';
 import {
-  KwitansiSearch,
-  KwitansiTable,
+  KwitansiTableServerSide,
   KwitansiModal,
   KwitansiDetailModal,
 } from '@/components/kwitansi';
@@ -50,7 +50,7 @@ const TAB_ORDER = [
   'cancelled',
 ];
 
-const INITIAL_TAB_PAGINATION = {
+const INITIAL_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
@@ -61,28 +61,13 @@ const INITIAL_TAB_PAGINATION = {
 };
 
 const KwitansiPage = () => {
+  const queryClient = useQueryClient();
+
   const {
-    kwitansis,
-    pagination,
-    loading,
-    error,
-    filters,
-    searchLoading,
-    hasActiveFilters,
-    searchQuery,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
-    handlePageChange,
-    handleLimitChange,
     createKwitansi,
     updateKwitansi,
-    deleteKwitansi: triggerDeleteKwitansi,
     deleteKwitansiConfirmation,
-    fetchKwitansi,
     fetchKwitansiById,
-    searchKwitansiWithFilters,
-    handleAuthError,
   } = useKwitansiPage();
 
   const [selectedKwitansi, setSelectedKwitansi] = useState(null);
@@ -91,9 +76,6 @@ const KwitansiPage = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [tabLoading, setTabLoading] = useState(false);
-  const [tabKwitansis, setTabKwitansis] = useState([]);
-  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
   const [exportingId, setExportingId] = useState(null);
 
   const openCreateModal = () => {
@@ -175,184 +157,24 @@ const KwitansiPage = () => {
     [fetchKwitansiById, selectedKwitansi]
   );
 
-  const isSearchActive = hasActiveFilters;
-
-  const tableKwitansis = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return kwitansis;
-    }
-    return tabKwitansis;
-  }, [activeTab, isSearchActive, kwitansis, tabKwitansis]);
-
-  const tablePagination = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return pagination;
-    }
-    return tabPagination;
-  }, [activeTab, isSearchActive, pagination, tabPagination]);
-
-  const tableLoading = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return loading;
-    }
-    return tabLoading;
-  }, [activeTab, isSearchActive, loading, tabLoading]);
-
-  const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
-  const activeTabBadge =
-    resolvedPagination?.totalItems ?? resolvedPagination?.total ?? 0;
-
-  const fetchDataByTab = useCallback(
-    async (tab = activeTab, page = 1, limit) => {
-      const effectiveLimit =
-        typeof limit === 'number' && !Number.isNaN(limit) && limit > 0
-          ? limit
-          : tabPagination.itemsPerPage ||
-            tabPagination.limit ||
-            INITIAL_TAB_PAGINATION.itemsPerPage;
-
-      if (tab === 'all') {
-        await fetchKwitansi({ page, limit: effectiveLimit });
-        return;
-      }
-
-      const filtersByTab = TAB_STATUS_CONFIG[tab]?.filters;
-      if (!filtersByTab) {
-        setTabKwitansis([]);
-        setTabPagination({
-          ...INITIAL_TAB_PAGINATION,
-          itemsPerPage: effectiveLimit,
-          limit: effectiveLimit,
-        });
-        return;
-      }
-
-      setTabLoading(true);
-      try {
-        const { results, pagination: parsedPagination } =
-          await searchKwitansiWithFilters(filtersByTab, page, effectiveLimit);
-        setTabKwitansis(results);
-        setTabPagination({
-          ...parsedPagination,
-          itemsPerPage:
-            parsedPagination?.itemsPerPage ||
-            parsedPagination?.limit ||
-            effectiveLimit,
-          limit:
-            parsedPagination?.limit ||
-            parsedPagination?.itemsPerPage ||
-            effectiveLimit,
-        });
-      } catch (error) {
-        if (error?.response?.status === 401 || error?.response?.status === 403) {
-          handleAuthError();
-        }
-        console.error('Failed to fetch kwitansi by status:', error);
-        setTabKwitansis([]);
-        setTabPagination({
-          ...INITIAL_TAB_PAGINATION,
-          itemsPerPage: effectiveLimit,
-          limit: effectiveLimit,
-        });
-      } finally {
-        setTabLoading(false);
-      }
-    },
-    [
-      activeTab,
-      fetchKwitansi,
-      handleAuthError,
-      searchKwitansiWithFilters,
-      tabPagination.itemsPerPage,
-      tabPagination.limit,
-    ]
-  );
-
   const handleTabChange = useCallback(
-    (newTab) => {
-      setActiveTab(newTab);
-
-      if (newTab === 'all') {
-        const currentPage = pagination?.currentPage || pagination?.page || 1;
-        const currentLimit =
-          pagination?.itemsPerPage ||
-          pagination?.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchKwitansi({ page: currentPage, limit: currentLimit });
-      } else {
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-        }));
-        const currentLimit =
-          tabPagination.itemsPerPage ||
-          tabPagination.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchDataByTab(newTab, 1, currentLimit);
-      }
+    (tabId) => {
+      setActiveTab(tabId);
     },
-    [fetchDataByTab, fetchKwitansi, pagination, tabPagination]
+    []
   );
 
-  const handleTablePageChange = useCallback(
-    (page) => {
-      if (isSearchActive || activeTab === 'all') {
-        handlePageChange(page);
-      } else {
-        fetchDataByTab(activeTab, page);
-      }
-    },
-    [activeTab, fetchDataByTab, handlePageChange, isSearchActive]
-  );
-
-  const handleTableLimitChange = useCallback(
-    (limit) => {
-      if (isSearchActive || activeTab === 'all') {
-        handleLimitChange(limit);
-      } else {
-        fetchDataByTab(activeTab, 1, limit);
-      }
-    },
-    [activeTab, fetchDataByTab, handleLimitChange, isSearchActive]
-  );
-
-  const refreshActiveTab = useCallback(async () => {
-    if (hasActiveFilters) {
-      await handleSearchSubmit();
-      return;
-    }
-
-    if (activeTab === 'all') {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      const currentLimit =
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      await fetchKwitansi({ page: currentPage, limit: currentLimit });
-    } else {
-      const currentPage = tabPagination.currentPage || tabPagination.page || 1;
-      const currentLimit =
-        tabPagination.itemsPerPage ||
-        tabPagination.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      await fetchDataByTab(activeTab, currentPage, currentLimit);
-    }
-  }, [
-    activeTab,
-    fetchDataByTab,
-    fetchKwitansi,
-    handleSearchSubmit,
-    hasActiveFilters,
-    pagination,
-    tabPagination,
-  ]);
+  const handleModalSuccess = useCallback(async () => {
+    // Invalidate queries to refresh data
+    await queryClient.invalidateQueries({ queryKey: ['kwitansi'] });
+    closeCreateModal();
+    closeEditModal();
+  }, [closeCreateModal, closeEditModal, queryClient]);
 
   const handleCreateSubmit = async (payload) => {
     const result = await createKwitansi(payload);
     if (result) {
-      setIsCreateModalOpen(false);
-      await refreshActiveTab();
+      await handleModalSuccess();
     }
   };
 
@@ -363,9 +185,7 @@ const KwitansiPage = () => {
 
     const result = await updateKwitansi(selectedKwitansi.id, payload);
     if (result) {
-      setIsEditModalOpen(false);
-      setSelectedKwitansi(null);
-      await refreshActiveTab();
+      await handleModalSuccess();
     }
   };
 
@@ -373,31 +193,14 @@ const KwitansiPage = () => {
     if (!id) {
       return;
     }
-    triggerDeleteKwitansi(id);
+    deleteKwitansiConfirmation.showDeleteConfirmation(id);
   };
 
   const handleDeleteConfirm = useCallback(async () => {
     await deleteKwitansiConfirmation.confirmDelete();
-    await refreshActiveTab();
-  }, [deleteKwitansiConfirmation.confirmDelete, refreshActiveTab]);
-
-  const handleSearch = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleSearchSubmit();
-  }, [activeTab, handleSearchSubmit]);
-
-  const handleReset = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleResetFilters();
-  }, [activeTab, handleResetFilters]);
-
-  const handleRetry = () => {
-    refreshActiveTab();
-  };
+    // Invalidate queries to refresh data
+    await queryClient.invalidateQueries({ queryKey: ['kwitansi'] });
+  }, [deleteKwitansiConfirmation, queryClient]);
 
   return (
     <div className='p-6'>
@@ -424,14 +227,6 @@ const KwitansiPage = () => {
             </div>
           </div>
 
-          <KwitansiSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            loading={Boolean(searchLoading || tableLoading)}
-          />
-
           <div className='mb-4 overflow-x-auto'>
             <TabContainer
               activeTab={activeTab}
@@ -443,40 +238,24 @@ const KwitansiPage = () => {
                   key={tabId}
                   id={tabId}
                   label={TAB_STATUS_CONFIG[tabId]?.label || tabId}
-                  badge={activeTab === tabId ? activeTabBadge : null}
                 />
               ))}
             </TabContainer>
           </div>
 
-          {error ? (
-            <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
-              <p className='mb-3 text-sm text-red-800'>
-                Terjadi kesalahan: {error}
-              </p>
-              <button
-                onClick={handleRetry}
-                className='px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700'
-              >
-                Coba Lagi
-              </button>
-            </div>
-          ) : (
-            <KwitansiTable
-              kwitansis={tableKwitansis}
-              pagination={resolvedPagination}
-              onPageChange={handleTablePageChange}
-              onLimitChange={handleTableLimitChange}
+          <div className='space-y-4'>
+            <KwitansiTableServerSide
+              onView={openDetailModal}
               onEdit={openEditModal}
               onDelete={handleDelete}
-              onView={openDetailModal}
               onExport={handleExportKwitansi}
               exportingId={exportingId}
-              loading={tableLoading}
-              searchQuery={searchQuery}
-              hasActiveFilters={hasActiveFilters}
+              deleteLoading={deleteKwitansiConfirmation.loading}
+              initialPage={1}
+              initialLimit={10}
+              activeTab={activeTab}
             />
-          )}
+          </div>
         </div>
       </div>
 
