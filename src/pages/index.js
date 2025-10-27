@@ -31,3 +31,4 @@ export { default as TandaTerimaFaktur } from './TandaTerimaFaktur';
 export { default as Returns } from './Returns';
 export { default as ReturnCreate } from './ReturnCreate';
 export { default as ReturnDetail } from './ReturnDetail';
+export { default as MutasiBank } from './MutasiBank';

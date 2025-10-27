@@ -23,6 +23,7 @@ export * from './stockMovements';
 
 // Laporan Penerimaan Barang components
 export * from './laporanPenerimaanBarang';
+export * from './mutasiBank';
 // Invoice components
 export * from './invoices';
 export * from './invoicePenagihan';

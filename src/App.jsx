@@ -48,6 +48,7 @@ import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
 import FakturPajak from './pages/FakturPajak.jsx';
 import Kwitansi from './pages/Kwitansi.jsx';
 import TandaTerimaFaktur from './pages/TandaTerimaFaktur.jsx';
+import MutasiBank from './pages/MutasiBank.jsx';
 import Returns from './pages/Returns.jsx';
 import ReturnCreate from './pages/ReturnCreate.jsx';
 import ReturnDetail from './pages/ReturnDetail.jsx';
@@ -199,6 +200,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <TandaTerimaFaktur />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/invoice/mutasi-bank'
+        element={
+          <ProtectedRoute>
+            <MutasiBank />
           </ProtectedRoute>
         }
       />
