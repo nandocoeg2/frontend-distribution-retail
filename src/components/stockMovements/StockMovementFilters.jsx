@@ -10,6 +10,7 @@ import {
 const MOVEMENT_TYPES = [
   { label: 'All Types', value: 'all' },
   { label: 'Stock In', value: 'STOCK_IN' },
+  { label: 'Stock Out', value: 'STOCK_OUT' },
   { label: 'Return', value: 'RETURN' },
 ];
 
@@ -144,7 +145,7 @@ const StockMovementFilters = ({
             />
           </div>
           <p className='mt-2 text-xs text-gray-500'>
-            Filter berdasarkan sumber pergerakan stok: penerimaan dari supplier atau retur pelanggan.
+            Filter berdasarkan jenis pergerakan: stock in dari supplier, stock out ke customer, atau retur pelanggan.
           </p>
         </div>
 

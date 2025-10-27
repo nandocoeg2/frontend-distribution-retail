@@ -19,6 +19,8 @@ const resolveTypeVariant = (type) => {
   switch (type) {
     case 'STOCK_IN':
       return 'primary';
+    case 'STOCK_OUT':
+      return 'warning';
     case 'RETURN':
       return 'info';
     default:
@@ -56,37 +58,51 @@ const StockMovementTable = ({
       return [];
     }
 
-    return movements.map((movement) => ({
-      id: movement.id,
-      movementNumber: movement.movementNumber || '-',
-      type: movement.type || 'UNKNOWN',
-      status: movement.status || 'UNKNOWN',
-      supplierName: movement.supplierName || '-',
-      totalItems:
-        typeof movement.totalItems === 'number'
-          ? movement.totalItems
-          : Array.isArray(movement.items)
-          ? movement.items.length
-          : 0,
-      totalQuantity:
-        typeof movement.totalQuantity === 'number'
-          ? movement.totalQuantity
-          : Array.isArray(movement.items)
-          ? movement.items.reduce(
-              (sum, item) => sum + Number(item?.quantity || 0),
-              0
-            )
-          : 0,
-      createdAt: movement.createdAt || movement.updatedAt || null,
-      notes: movement.notes || '',
-      source: movement,
-    }));
+    return movements.map((movement) => {
+      const items = Array.isArray(movement.items) ? movement.items : [];
+      const totalItems = typeof movement.totalItems === 'number'
+        ? movement.totalItems
+        : items.length;
+      
+      // Extract product names
+      let productDisplay = '-';
+      if (items.length > 0) {
+        const firstProduct = items[0]?.inventory?.nama_barang || 
+                            items[0]?.inventory?.name || 
+                            items[0]?.productName || '-';
+        if (items.length === 1) {
+          productDisplay = firstProduct;
+        } else {
+          productDisplay = `${firstProduct} (+${items.length - 1} more)`;
+        }
+      }
+
+      return {
+        id: movement.id,
+        movementNumber: movement.movementNumber || '-',
+        type: movement.type || 'UNKNOWN',
+        status: movement.status || 'UNKNOWN',
+        supplierName: movement.supplierName || '-',
+        productDisplay,
+        totalItems,
+        totalQuantity:
+          typeof movement.totalQuantity === 'number'
+            ? movement.totalQuantity
+            : items.reduce(
+                (sum, item) => sum + Number(item?.quantity || 0),
+                0
+              ),
+        createdAt: movement.createdAt || movement.updatedAt || null,
+        notes: movement.notes || '',
+        source: movement,
+      };
+    });
   }, [hasMovements, movements]);
 
   if (loading && !searchLoading) {
     return (
       <div className='bg-white rounded-lg shadow divide-y divide-gray-200'>
-        <TableLoading rows={5} columns={6} className='p-6' />
+        <TableLoading rows={5} columns={9} className='p-6' />
       </div>
     );
   }
@@ -120,6 +136,12 @@ const StockMovementTable = ({
                 className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Supplier
+              </th>
+              <th
+                scope='col'
+                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+              >
+                Product
               </th>
               <th
                 scope='col'
@@ -159,7 +181,7 @@ const StockMovementTable = ({
             {renderedMovements.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className='px-6 py-10 text-center text-sm text-gray-500'
                 >
                   {searchLoading
@@ -197,8 +219,15 @@ const StockMovementTable = ({
                         dot
                       />
                     </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                      {movement.supplierName || '-'}
+                    <td className='px-6 py-4 text-xs text-gray-500'>
+                      <div className='max-w-xs truncate' title={movement.supplierName || '-'}>
+                        {movement.supplierName || '-'}
+                      </div>
+                    </td>
+                    <td className='px-6 py-4 text-xs text-gray-900'>
+                      <div className='max-w-xs truncate' title={movement.productDisplay}>
+                        {movement.productDisplay}
+                      </div>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right'>
                       {movement.totalItems}
