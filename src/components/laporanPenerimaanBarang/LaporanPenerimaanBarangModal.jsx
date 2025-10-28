@@ -7,6 +7,7 @@ import statusService from '@/services/statusService';
 import toastService from '@/services/toastService';
 import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
+import { formatDateTime } from '@/utils/formatUtils';
 
 const defaultFormValues = {
   purchaseOrderId: '',
@@ -15,6 +16,22 @@ const defaultFormValues = {
   termin_bayar: '',
   statusId: '',
   filesText: '',
+  files: [],
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes === null || bytes === undefined) {
+    return '-';
+  }
+
+  const num = Number(bytes);
+  if (!Number.isFinite(num) || num === 0) {
+    return '0 B';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(num) / Math.log(1024));
+  return `${(num / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
 };
 
 const toDateInput = (value) => {
@@ -403,6 +420,7 @@ const LaporanPenerimaanBarangModal = ({
           initialValues?.statusId || initialValues?.status?.id
         ),
         filesText: extractFileIds(initialValues?.files),
+        files: Array.isArray(initialValues?.files) ? initialValues.files : [],
       });
       setIsSubmitting(false);
       resetUploadState();
@@ -485,6 +503,45 @@ const LaporanPenerimaanBarangModal = ({
     setActiveTab(tabId);
     setUploadError('');
   }, []);
+
+  const renderFileList = (files) => {
+    if (!Array.isArray(files) || files.length === 0) {
+      return (
+        <div className='text-center py-8 text-gray-500'>
+          <p className='text-sm'>Tidak ada lampiran</p>
+        </div>
+      );
+    }
+
+    return (
+      <ul className='space-y-3'>
+        {files.map((file) => {
+          const key = file?.id || file?.filename || file;
+          return (
+            <li
+              key={key}
+              className='flex items-start justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm'
+            >
+              <div className='flex-1'>
+                <p className='text-sm font-medium text-gray-900'>
+                  {file?.originalName || file?.filename || key}
+                </p>
+                <p className='text-xs text-gray-500 mt-1'>
+                  {file?.mimeType || file?.mimetype || 'Tipe tidak dikenal'} •{' '}
+                  {formatFileSize(file?.size)}
+                </p>
+                {file?.createdAt && (
+                  <p className='text-[11px] text-gray-400 mt-0.5'>
+                    Diunggah: {formatDateTime(file.createdAt)}
+                  </p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  };
 
   const renderFileUploadPanel = () => (
     <div className='p-4 border border-blue-300 border-dashed rounded-lg bg-blue-50/50'>
@@ -621,20 +678,12 @@ const LaporanPenerimaanBarangModal = ({
       </div>
 
       <div className='md:col-span-2'>
-        <label className='block mb-1 text-sm font-medium text-gray-700'>
-          File IDs
+        <label className='block mb-2 text-sm font-medium text-gray-700'>
+          Lampiran File
         </label>
-        <textarea
-          name='filesText'
-          value={formValues.filesText}
-          onChange={handleChange}
-          rows={2}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          placeholder='Pisahkan ID file dengan koma. Contoh: file-id-1, file-id-2'
-        />
-        <p className='mt-1 text-xs text-gray-500'>
-          Sisakan kosong jika tidak ada file yang ingin dilampirkan.
-        </p>
+        <div className='border border-gray-300 rounded-lg p-4 bg-gray-50'>
+          {renderFileList(formValues.files)}
+        </div>
       </div>
     </div>
   );
