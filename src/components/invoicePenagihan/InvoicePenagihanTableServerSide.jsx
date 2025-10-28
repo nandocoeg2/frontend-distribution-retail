@@ -208,7 +208,7 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'kwitansi',
-        header: () => <div className="text-center font-medium">Generate Kwitansi</div>,
+        header: () => <div className="text-center font-medium">{/* Generate Kwitansi */}Kwitansi</div>,
         cell: ({ row }) => {
           const invoice = row.original;
           const isGenerating = generatingInvoiceId === invoice.id;
@@ -244,7 +244,7 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'tandaTerimaFaktur',
-        header: () => <div className="text-center font-medium">Generate TTF</div>,
+        header: () => <div className="text-center font-medium">{/* Generate Tanda Terima Faktur */}Tanda Terima Faktur</div>,
         cell: ({ row }) => {
           const invoice = row.original;
           const isGenerating = generatingTandaTerimaInvoiceId === invoice.id;
@@ -280,7 +280,7 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'fakturPajak',
-        header: () => <div className="text-center font-medium">Generate Faktur Pajak</div>,
+        header: () => <div className="text-center font-medium">{/* Generate Faktur Pajak */}Faktur Pajak</div>,
         cell: ({ row }) => {
           const invoice = row.original;
           const isGenerating = generatingFakturInvoiceId === invoice.id;

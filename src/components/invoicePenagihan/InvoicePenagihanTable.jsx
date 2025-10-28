@@ -42,13 +42,16 @@ const InvoicePenagihanTable = ({
               Status
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
-              Generate Kwitansi
+              {/* Generate Kwitansi */}
+              Kwitansi
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
-              Generate Tanda Terima Faktur
+              {/* Generate Tanda Terima Faktur */}
+              Tanda Terima Faktur
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase'>
-              Generate Faktur Pajak
+              {/* Generate Faktur Pajak */}
+              Faktur Pajak
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Aksi
