@@ -83,7 +83,8 @@ export const useCheckingListQuery = ({
       };
     },
     keepPreviousData: true, // Keep previous data while fetching new data
-    staleTime: 30 * 1000, // Consider data stale after 30 seconds
+    staleTime: 0, // Always consider data stale to ensure fresh data after mutations
+    cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
   });
 };
 

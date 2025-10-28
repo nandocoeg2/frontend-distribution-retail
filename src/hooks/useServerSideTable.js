@@ -218,6 +218,7 @@ export const useServerSideTable = ({
     isLoading = false,
     isFetching = false,
     error = null,
+    refetch = null,
   } = queryResult ?? {};
 
   const data = useMemo(() => {
@@ -351,6 +352,7 @@ export const useServerSideTable = ({
     setColumnFilters: setColumnFiltersInput,
     setGlobalFilter: globalFilterEnabled ? setGlobalFilter : undefined,
     resetFilters,
+    refetch,
     tableOptions,
     queryResult,
     queryParams,

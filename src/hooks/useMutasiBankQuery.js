@@ -174,7 +174,8 @@ export const useMutasiBankQuery = ({
       return parseListResponse(response);
     },
     keepPreviousData: true,
-    staleTime: 30 * 1000,
+    staleTime: 0, // Always consider data stale to ensure fresh data after mutations
+    cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
   });
 };
 

@@ -260,6 +260,42 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  async assignPurchaseOrder(lpbId, purchaseOrderId) {
+    try {
+      if (!lpbId) {
+        throw new Error('ID laporan penerimaan barang diperlukan');
+      }
+      if (!purchaseOrderId) {
+        throw new Error('ID purchase order diperlukan');
+      }
+
+      const response = await this.api.patch(
+        '/laporan-penerimaan-barang/' + lpbId + '/assign-purchase-order',
+        { purchaseOrderId }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning purchase order to LPB:', error);
+      throw error;
+    }
+  }
+
+  async unassignPurchaseOrder(lpbId) {
+    try {
+      if (!lpbId) {
+        throw new Error('ID laporan penerimaan barang diperlukan');
+      }
+
+      const response = await this.api.patch(
+        '/laporan-penerimaan-barang/' + lpbId + '/unassign-purchase-order'
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error unassigning purchase order from LPB:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();

@@ -78,7 +78,8 @@ export const useKwitansiQuery = ({
       };
     },
     keepPreviousData: true, // Keep previous data while fetching new data
-    staleTime: 30 * 1000, // Consider data stale after 30 seconds
+    staleTime: 0, // Always consider data stale to ensure fresh data after mutations
+    cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
   });
 };
 
@@ -124,7 +125,8 @@ export const useKwitansiByStatus = ({
     },
     enabled: !!statusCode, // Only run query if statusCode exists
     keepPreviousData: true,
-    staleTime: 30 * 1000,
+    staleTime: 0, // Always consider data stale to ensure fresh data after mutations
+    cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
   });
 };
 

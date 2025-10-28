@@ -4,3 +4,4 @@ export { default as LaporanPenerimaanBarangTableServerSide } from './LaporanPene
 export { default as LaporanPenerimaanBarangModal } from './LaporanPenerimaanBarangModal';
 export { default as LaporanPenerimaanBarangDetailModal } from './LaporanPenerimaanBarangDetailModal';
 export { default as LaporanPenerimaanBarangBulkModal } from './LaporanPenerimaanBarangBulkModal';
+export { default as AssignPurchaseOrderModal } from './AssignPurchaseOrderModal';
