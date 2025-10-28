@@ -108,9 +108,45 @@ const useLogin = () => {
     return [];
   }, []);
 
+  // Load initial companies (called on focus if no options exist)
+  const loadInitialCompanies = useCallback(async () => {
+    // Skip if already loaded
+    if (companyOptions.length > 0) {
+      return;
+    }
+
+    setIsCompanyLoading(true);
+    try {
+      // Fetch first 10 companies using search API with empty query
+      const response = await fetch(`http://localhost:5050/api/v1/companies/search?q=&limit=10`, {
+        headers: {
+          accept: 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const message = errorData?.error?.message || errorData?.message || 'Gagal memuat daftar perusahaan';
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+      const candidates = extractCompanyList(data);
+      const normalized = normalizeCompanies(candidates);
+      setCompanyOptions(normalized);
+    } catch (error) {
+      console.error('Load companies error:', error);
+      toastService.error(error.message || 'Gagal memuat daftar perusahaan');
+      setCompanyOptions([]);
+    } finally {
+      setIsCompanyLoading(false);
+    }
+  }, [companyOptions.length, extractCompanyList, normalizeCompanies]);
+
   const handleCompanySearch = useCallback(async (query) => {
     if (!query) {
-      setCompanyOptions([]);
+      // If query is cleared, reload initial companies
+      await loadInitialCompanies();
       return;
     }
 
@@ -139,7 +175,7 @@ const useLogin = () => {
     } finally {
       setIsCompanyLoading(false);
     }
-  }, [extractCompanyList, normalizeCompanies]);
+  }, [extractCompanyList, normalizeCompanies, loadInitialCompanies]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e) => {
@@ -217,6 +253,7 @@ const useLogin = () => {
     companyOptions,
     isCompanyLoading,
     handleCompanySearch,
+    handleCompanyFocus: loadInitialCompanies,
     handleInputChange,
     handleSubmit,
     resetForm,

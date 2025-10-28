@@ -18,6 +18,7 @@ const Login = () => {
     handleInputChange,
     handleSubmit,
     handleCompanySearch,
+    handleCompanyFocus,
   } = useLogin();
 
   return (
@@ -108,6 +109,7 @@ const Login = () => {
                     handleInputChange('companyId', event.target.value)
                   }
                   onSearch={handleCompanySearch}
+                  onFocus={handleCompanyFocus}
                   loading={isCompanyLoading}
                   placeholder='Cari dan pilih perusahaan'
                   label=''
@@ -120,10 +122,10 @@ const Login = () => {
                       : 'border-white/20 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500/50'
                   }`}
                   inputClassName='pl-12 pr-4 py-4 bg-transparent border-none text-white placeholder-slate-400 focus:ring-0 focus:outline-none'
-                  optionsClassName='bg-slate-900/95 border-white/20 text-white backdrop-blur-xl'
-                  optionClassName='px-4 py-3 cursor-pointer hover:bg-slate-700/60'
-                  emptyStateClassName='px-4 py-3 text-slate-300'
-                  searchingClassName='px-4 py-3 text-slate-300'
+                  optionsClassName='!bg-slate-800/95 border-slate-700 text-white backdrop-blur-xl shadow-2xl'
+                  optionClassName='px-4 py-3 cursor-pointer transition-all duration-200 hover:!bg-blue-600 hover:text-white'
+                  emptyStateClassName='px-4 py-3 text-slate-400'
+                  searchingClassName='px-4 py-3 text-slate-400'
                   dropdownPosition='static'
                 />
               </div>

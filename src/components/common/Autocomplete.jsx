@@ -12,6 +12,7 @@ const Autocomplete = ({
   valueKey = 'id',
   name = null,
   onSearch = null, // Function to call when searching (for dynamic search)
+  onFocus = null, // Function to call when input is focused
   searchDelay = 300, // Delay in ms before calling onSearch
   loading = false, // External loading state
   showId = false, // Whether to show ID as subtitle
@@ -113,6 +114,11 @@ const Autocomplete = ({
   const handleFocus = () => {
     setFilteredOptions(options);
     setShowOptions(true);
+    
+    // Call external onFocus callback if provided
+    if (onFocus) {
+      onFocus();
+    }
   };
 
   // Cleanup timeout on unmount
@@ -144,11 +150,11 @@ const Autocomplete = ({
       />
       {showOptions && (
         <ul
-          className={`w-full bg-white border border-gray-300 rounded-md max-h-60 overflow-y-auto shadow-lg ${
+          className={`w-full border rounded-md max-h-60 overflow-y-auto shadow-lg ${
             dropdownPosition === 'absolute'
               ? 'absolute z-10 mt-1'
               : 'relative mt-2'
-          } ${optionsClassName}`}
+          } ${optionsClassName || 'bg-white border-gray-300'}`}
         >
           {isSearching || loading ? (
             <li className={searchingClassName}>
