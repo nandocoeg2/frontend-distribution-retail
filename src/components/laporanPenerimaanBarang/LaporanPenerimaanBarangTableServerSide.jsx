@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
@@ -6,12 +6,17 @@ import {
   TrashIcon,
   PlayIcon,
   CheckIcon,
+  LinkIcon,
+  LinkSlashIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
 import { formatDate } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import { ConfirmationDialog } from '../ui/ConfirmationDialog';
+import AssignPurchaseOrderModal from './AssignPurchaseOrderModal';
+import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerimaanBarangOperations';
 
 const columnHelper = createColumnHelper();
 
@@ -86,6 +91,16 @@ const LaporanPenerimaanBarangTableServerSide = ({
   initialLimit = 10,
   activeTab = 'all',
 }) => {
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedLpbForAssign, setSelectedLpbForAssign] = useState(null);
+  const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState(null);
+  const [lpbToUnassign, setLpbToUnassign] = useState(null);
+  const [showAssignConfirmation, setShowAssignConfirmation] = useState(false);
+  const [showUnassignConfirmation, setShowUnassignConfirmation] = useState(false);
+
+  const { isAssigning, isUnassigning, assignPurchaseOrder, unassignPurchaseOrder } =
+    useLaporanPenerimaanBarangOperations();
+
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
     if (!statusCode || activeTab === 'all') {
@@ -112,6 +127,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     isLoading,
     error,
     tableOptions,
+    refetch,
   } = useServerSideTable({
     queryHook: useLaporanPenerimaanBarangQuery,
     selectData: (response) => response?.reports ?? [],
@@ -121,6 +137,74 @@ const LaporanPenerimaanBarangTableServerSide = ({
     globalFilter: globalFilterConfig,
     lockedFilters,
   });
+
+  // Handler untuk membuka modal assign
+  const handleOpenAssignModal = (report) => {
+    setSelectedLpbForAssign(report);
+    setShowAssignModal(true);
+  };
+
+  // Handler untuk menutup modal assign
+  const handleCloseAssignModal = () => {
+    setShowAssignModal(false);
+    setSelectedLpbForAssign(null);
+  };
+
+  // Handler untuk proses assign dari modal (sebelum konfirmasi)
+  const handleAssignFromModal = (purchaseOrderId) => {
+    setShowAssignModal(false);
+    setSelectedPurchaseOrderId(purchaseOrderId);
+    setShowAssignConfirmation(true);
+  };
+
+  // Handler untuk konfirmasi assign
+  const handleConfirmAssign = async () => {
+    const reportId = resolveReportId(selectedLpbForAssign);
+    if (!reportId || !selectedPurchaseOrderId) return;
+
+    try {
+      await assignPurchaseOrder(reportId, selectedPurchaseOrderId);
+      setShowAssignConfirmation(false);
+      setSelectedLpbForAssign(null);
+      setSelectedPurchaseOrderId(null);
+      // Cache will be automatically invalidated by the mutation
+    } catch (error) {
+      console.error('Error assigning purchase order:', error);
+    }
+  };
+
+  // Handler untuk cancel assign confirmation
+  const handleCancelAssignConfirmation = () => {
+    setShowAssignConfirmation(false);
+    setSelectedPurchaseOrderId(null);
+  };
+
+  // Handler untuk tombol unassign
+  const handleUnassignClick = (report) => {
+    setLpbToUnassign(report);
+    setShowUnassignConfirmation(true);
+  };
+
+  // Handler untuk konfirmasi unassign
+  const handleConfirmUnassign = async () => {
+    const reportId = resolveReportId(lpbToUnassign);
+    if (!reportId) return;
+
+    try {
+      await unassignPurchaseOrder(reportId);
+      setShowUnassignConfirmation(false);
+      setLpbToUnassign(null);
+      // Cache will be automatically invalidated by the mutation
+    } catch (error) {
+      console.error('Error unassigning purchase order:', error);
+    }
+  };
+
+  // Handler untuk cancel unassign confirmation
+  const handleCancelUnassignConfirmation = () => {
+    setShowUnassignConfirmation(false);
+    setLpbToUnassign(null);
+  };
 
   const columns = useMemo(
     () => [
@@ -269,6 +353,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         cell: ({ row }) => {
           const report = row.original;
           const reportId = resolveReportId(report);
+          const hasPurchaseOrder = report.purchaseOrderId || report.purchaseOrder;
 
           return (
             <div className="flex space-x-2">
@@ -288,6 +373,25 @@ const LaporanPenerimaanBarangTableServerSide = ({
               >
                 <PencilIcon className="h-5 w-5" />
               </button>
+              {!hasPurchaseOrder ? (
+                <button
+                  type="button"
+                  onClick={() => handleOpenAssignModal(report)}
+                  className="text-blue-600 hover:text-blue-900"
+                  title="Assign Purchase Order"
+                >
+                  <LinkIcon className="h-5 w-5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleUnassignClick(report)}
+                  className="text-orange-600 hover:text-orange-900"
+                  title="Unassign Purchase Order"
+                >
+                  <LinkSlashIcon className="h-5 w-5" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => reportId && onDelete(reportId)}
@@ -314,6 +418,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       deleteLoading,
       activeTab,
       setPage,
+      handleOpenAssignModal,
+      handleUnassignClick,
     ]
   );
 
@@ -396,6 +502,41 @@ const LaporanPenerimaanBarangTableServerSide = ({
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}
+
+      {/* Assign Purchase Order Modal */}
+      <AssignPurchaseOrderModal
+        show={showAssignModal}
+        onClose={handleCloseAssignModal}
+        onAssign={handleAssignFromModal}
+        isSubmitting={isAssigning}
+        lpbData={selectedLpbForAssign}
+      />
+
+      {/* Assign Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showAssignConfirmation}
+        onClose={handleCancelAssignConfirmation}
+        onConfirm={handleConfirmAssign}
+        title="Konfirmasi Assign Purchase Order"
+        message={`Apakah Anda yakin ingin meng-assign Purchase Order ke LPB ${selectedLpbForAssign?.no_lpb || ''}? Data customer, term of payment, dan tanggal PO akan otomatis di-sync dari Purchase Order.`}
+        confirmText="Ya, Assign"
+        cancelText="Batal"
+        type="success"
+        loading={isAssigning}
+      />
+
+      {/* Unassign Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showUnassignConfirmation}
+        onClose={handleCancelUnassignConfirmation}
+        onConfirm={handleConfirmUnassign}
+        title="Konfirmasi Unassign Purchase Order"
+        message={`Apakah Anda yakin ingin meng-unassign Purchase Order dari LPB ${lpbToUnassign?.no_lpb || ''}? Hubungan dengan Purchase Order akan dilepas.`}
+        confirmText="Ya, Unassign"
+        cancelText="Batal"
+        type="warning"
+        loading={isUnassigning}
+      />
     </div>
   );
 };
