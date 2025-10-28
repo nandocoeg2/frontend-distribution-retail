@@ -168,15 +168,15 @@ const KwitansiTableServerSide = ({
         ),
         cell: (info) => formatDate(info.getValue()),
       }),
-      columnHelper.accessor('jumlah_pembayaran', {
-        header: 'Jumlah',
+      columnHelper.accessor('grand_total', {
+        header: 'Grand Total',
         cell: (info) => formatCurrency(info.getValue()),
         enableSorting: true,
       }),
-      columnHelper.accessor('penerima', {
+      columnHelper.accessor('kepada', {
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Penerima</div>
+            <div className="font-medium">Kepada</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -266,8 +266,8 @@ const KwitansiTableServerSide = ({
           />
         ),
       }),
-      columnHelper.accessor('created_at', {
-        id: 'created_at',
+      columnHelper.accessor('tanggal', {
+        id: 'tanggal',
         header: 'Dibuat',
         enableSorting: true,
         enableColumnFilter: false,
