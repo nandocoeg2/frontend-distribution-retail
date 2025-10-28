@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDate } from '@/utils/formatUtils';
 import { StatusBadge } from '../ui/Badge.jsx';
+import ViewPurchaseOrderModal from '../purchaseOrders/ViewPurchaseOrderModal';
+import purchaseOrderService from '../../services/purchaseOrderService';
 
 const resolveStatusText = (status) => {
   if (!status) {
@@ -75,7 +77,7 @@ const renderDateDisplay = (value, placeholder = '-') => {
   );
 };
 
-const defaultColumnGroups = [
+const createDefaultColumnGroups = (onPoNumberClick) => [
   {
     id: 'po-number',
     label: 'No PO',
@@ -88,7 +90,12 @@ const defaultColumnGroups = [
         label: 'No PO',
         align: 'center',
         render: (order) => (
-          <span className='text-sm font-semibold text-indigo-700'>{order.po_number || '-'}</span>
+          <button
+            onClick={() => onPoNumberClick(order)}
+            className='text-sm font-semibold text-indigo-700 hover:text-indigo-900 hover:underline transition-colors cursor-pointer'
+          >
+            {order.po_number || '-'}
+          </button>
         ),
       },
     ],
@@ -185,13 +192,47 @@ const PurchaseOrderStatusTable = ({
   title = 'Status Purchase Order',
   subtitle = 'Pantau status pengiriman hingga pembayaran untuk setiap PO',
   orders = [],
-  columnGroups = defaultColumnGroups,
+  columnGroups,
   emptyMessage = 'Belum ada data purchase order untuk ditampilkan.',
   loading = false,
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  const handlePoNumberClick = async (order) => {
+    if (!order.po_id && !order.id) {
+      console.error('No PO ID available');
+      return;
+    }
+
+    const poId = order.po_id || order.id;
+    
+    setIsModalOpen(true);
+    setModalLoading(true);
+    setSelectedOrder(null);
+
+    try {
+      const response = await purchaseOrderService.getPurchaseOrderById(poId);
+      const orderData = response?.data || response;
+      setSelectedOrder(orderData);
+    } catch (error) {
+      console.error('Failed to fetch purchase order details:', error);
+      setIsModalOpen(false);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedOrder(null);
+  };
+
+  const effectiveColumnGroups = columnGroups || createDefaultColumnGroups(handlePoNumberClick);
   const renderHeaderRow = () => (
     <tr>
-      {columnGroups.map((group) => (
+      {effectiveColumnGroups.map((group) => (
         <th
           key={group.id}
           colSpan={group.showSubHeader === false ? 1 : group.columns.length}
@@ -205,7 +246,7 @@ const PurchaseOrderStatusTable = ({
   );
 
   const renderSubHeaderRow = () => {
-    const headerCells = columnGroups
+    const headerCells = effectiveColumnGroups
       .filter((group) => group.showSubHeader !== false)
       .flatMap((group) => group.columns.map((column) => (
         <th
@@ -230,7 +271,7 @@ const PurchaseOrderStatusTable = ({
   const renderEmptyState = () => (
     <tr>
       <td
-        colSpan={columnGroups.reduce((total, group) => total + group.columns.length, 0)}
+        colSpan={effectiveColumnGroups.reduce((total, group) => total + group.columns.length, 0)}
         className='px-4 py-6 text-center text-sm text-gray-500'
       >
         {emptyMessage}
@@ -241,7 +282,7 @@ const PurchaseOrderStatusTable = ({
   const renderLoadingRow = () => (
     <tr>
       <td
-        colSpan={columnGroups.reduce((total, group) => total + group.columns.length, 0)}
+        colSpan={effectiveColumnGroups.reduce((total, group) => total + group.columns.length, 0)}
         className='px-4 py-6 text-center text-sm text-gray-500'
       >
         <div className='flex items-center justify-center gap-2'>
@@ -299,7 +340,7 @@ const PurchaseOrderStatusTable = ({
                       key={rowKey}
                       className='hover:bg-gray-50'
                     >
-                      {columnGroups.flatMap((group) =>
+                      {effectiveColumnGroups.flatMap((group) =>
                         group.columns.map((column) =>
                           renderCell(order, group, column, rowKey)
                         ),
@@ -310,6 +351,18 @@ const PurchaseOrderStatusTable = ({
           </tbody>
         </table>
       </div>
+
+      {/* Purchase Order Detail Modal */}
+      <ViewPurchaseOrderModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        order={selectedOrder}
+        loading={modalLoading}
+        onProcessed={() => {
+          // Optional: Refresh the table if needed
+          handleCloseModal();
+        }}
+      />
     </div>
   );
 };
