@@ -341,7 +341,7 @@ const InvoicePenagihanTableServerSide = ({
               )}
               {onDelete && (
                 <button
-                  onClick={() => onDelete(invoice)}
+                  onClick={() => onDelete(invoice.id)}
                   className="p-1 text-red-600 hover:text-red-900"
                   title="Hapus"
                   disabled={deleteLoading}

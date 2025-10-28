@@ -7,14 +7,18 @@ import {
   DevicePhoneMobileIcon,
   IdentificationIcon,
   CalendarDaysIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable } from '../ui';
+import fileService from '@/services/fileService';
 
 const ViewCompanyModal = ({ show, onClose, company }) => {
   if (!show) {
     return null;
   }
+
+  const logoUrl = company?.logoId ? fileService.getFileUrl(company.logoId) : null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -40,6 +44,25 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
         <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {company ? (
             <div className="space-y-6">
+              {/* Company Logo */}
+              {logoUrl && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <PhotoIcon className="h-5 w-5 text-gray-500 mr-2" />
+                    <h3 className="text-lg font-semibold text-gray-900">Company Logo</h3>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="w-48 h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                      <img
+                        src={logoUrl}
+                        alt={`${company.nama_perusahaan} logo`}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Company Information */}
               <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
                 <div className="flex items-center mb-4">

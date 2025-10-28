@@ -1,8 +1,29 @@
 import React from 'react';
+import ImageUpload from '@/components/common/ImageUpload';
 
-const CompanyForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false }) => {
+const CompanyForm = ({ 
+  formData, 
+  handleInputChange, 
+  handleSubmit, 
+  closeModal, 
+  isEdit = false,
+  logoId,
+  logoUrl,
+  onLogoChange,
+  onLogoRemove
+}) => {
   return (
     <form onSubmit={handleSubmit}>
+      {/* Logo Upload Section */}
+      <div className="mb-6">
+        <ImageUpload 
+          logoId={logoId}
+          logoUrl={logoUrl}
+          onLogoChange={onLogoChange}
+          onLogoRemove={onLogoRemove}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Company Code *</label>
