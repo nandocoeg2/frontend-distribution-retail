@@ -99,10 +99,13 @@ const SuratJalanTableServerSide = ({
       columnHelper.display({
         id: 'select',
         header: () => {
+          const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
+          const selectableItems = suratJalan.filter(item => !item?.checklistSuratJalanId);
+          const selectableIds = selectableItems.map(item => item?.id).filter(Boolean);
           const isAllSelected =
-            suratJalan.length > 0 && selectedSuratJalan.length === suratJalan.length;
+            selectableItems.length > 0 && selectableIds.every(id => selectedIds.includes(id));
           const isIndeterminate =
-            selectedSuratJalan.length > 0 && selectedSuratJalan.length < suratJalan.length;
+            selectedIds.length > 0 && !isAllSelected && selectableIds.some(id => selectedIds.includes(id));
 
           return (
             <input
@@ -111,19 +114,27 @@ const SuratJalanTableServerSide = ({
               ref={(input) => {
                 if (input) input.indeterminate = isIndeterminate;
               }}
-              onChange={() => onSelectAllSuratJalan && onSelectAllSuratJalan(suratJalan)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              onChange={() => onSelectAllSuratJalan && onSelectAllSuratJalan(selectableItems)}
+              disabled={selectableItems.length === 0}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             />
           );
         },
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            checked={selectedSuratJalan.includes(row.original.id)}
-            onChange={() => onSelectSuratJalan && onSelectSuratJalan(row.original.id)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-        ),
+        cell: ({ row }) => {
+          const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
+          const isDisabled = Boolean(row.original.checklistSuratJalanId);
+          const isChecked = isDisabled || selectedIds.includes(row.original.id);
+          return (
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={() => onSelectSuratJalan && onSelectSuratJalan(row.original)}
+              disabled={isDisabled}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isDisabled ? 'Surat jalan sudah diproses checklist' : ''}
+            />
+          );
+        },
         enableSorting: false,
         enableColumnFilter: false,
       }),
@@ -366,11 +377,12 @@ const SuratJalanTableServerSide = ({
         headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
         rowClassName="hover:bg-gray-50"
-        getRowClassName={({ row }) =>
-          selectedSuratJalan.includes(row.original.id)
+        getRowClassName={({ row }) => {
+          const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
+          return selectedIds.includes(row.original.id)
             ? 'bg-blue-50 hover:bg-blue-100'
-            : undefined
-        }
+            : undefined;
+        }}
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-4 text-center text-gray-500"
       />

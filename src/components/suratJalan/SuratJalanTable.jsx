@@ -29,18 +29,19 @@ const SuratJalanTable = ({
   // Ensure suratJalan is always an array
   const safeSuratJalan = Array.isArray(suratJalan) ? suratJalan : [];
   const selectedIds = Array.isArray(selectedSuratJalan)
-    ? selectedSuratJalan
+    ? selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id)
     : [];
-  const currentItemIds = safeSuratJalan
+  const selectableItems = safeSuratJalan.filter(item => !item?.checklistSuratJalanId);
+  const selectableItemIds = selectableItems
     .map((item) => item?.id)
     .filter(Boolean);
   const isAllSelected =
-    currentItemIds.length > 0 &&
-    currentItemIds.every((id) => selectedIds.includes(id));
+    selectableItemIds.length > 0 &&
+    selectableItemIds.every((id) => selectedIds.includes(id));
   const isIndeterminate =
     selectedIds.length > 0 &&
     !isAllSelected &&
-    currentItemIds.some((id) => selectedIds.includes(id));
+    selectableItemIds.some((id) => selectedIds.includes(id));
 
   return (
     <div className='space-y-4'>
@@ -68,17 +69,17 @@ const SuratJalanTable = ({
               <th className='px-4 py-3'>
                 <input
                   type='checkbox'
-                  checked={isAllSelected && currentItemIds.length > 0}
+                  checked={isAllSelected && selectableItemIds.length > 0}
                   ref={(element) => {
                     if (element) {
                       element.indeterminate = isIndeterminate;
                     }
                   }}
                   onChange={() =>
-                    !isProcessing && onSelectAllSuratJalan?.(safeSuratJalan)
+                    !isProcessing && onSelectAllSuratJalan?.(selectableItems)
                   }
-                  disabled={isProcessing || safeSuratJalan.length === 0}
-                  className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                  disabled={isProcessing || selectableItems.length === 0}
+                  className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
                 />
               </th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'>
@@ -126,6 +127,8 @@ const SuratJalanTable = ({
               safeSuratJalan.map((item, index) => {
                 const itemId = item?.id ?? `surat-jalan-${index}`;
                 const isSelected = Boolean(item?.id && selectedIds.includes(item.id));
+                const isDisabled = Boolean(item?.checklistSuratJalanId);
+                const isChecked = isDisabled || isSelected;
 
                 return (
                   <tr
@@ -135,12 +138,13 @@ const SuratJalanTable = ({
                     <td className='whitespace-nowrap px-4 py-4'>
                       <input
                         type='checkbox'
-                        checked={isSelected}
+                        checked={isChecked}
                         onChange={() =>
-                          item?.id && !isProcessing && onSelectSuratJalan?.(item.id)
+                          item?.id && !isProcessing && onSelectSuratJalan?.(item)
                         }
-                        disabled={isProcessing || !item?.id}
-                        className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                        disabled={isProcessing || !item?.id || isDisabled}
+                        className='h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
+                        title={isDisabled ? 'Surat jalan sudah diproses checklist' : ''}
                       />
                     </td>
                     <td className='whitespace-nowrap px-6 py-4'>

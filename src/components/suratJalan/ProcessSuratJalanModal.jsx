@@ -47,25 +47,22 @@ const ProcessSuratJalanModal = ({
 
   const selectedSummary = useMemo(() => {
     if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
-      return selectedIds;
+      return [];
     }
 
-    return selectedItems.map((item) => {
-      if (!item) {
-        return null;
-      }
+    return selectedItems
+      .map((item) => {
+        if (!item) {
+          return null;
+        }
 
-      return {
-        id: item.id,
-        display:
-          item.no_surat_jalan ||
-          item.noSuratJalan ||
-          item.deliver_to ||
-          item.deliverTo ||
-          item.id,
-        subtitle: item.deliver_to || item.deliverTo || undefined,
-      };
-    });
+        return {
+          id: item.id,
+          display: item.no_surat_jalan || '(No. Surat Jalan tidak tersedia)',
+          subtitle: item.deliver_to || item.deliverTo || undefined,
+        };
+      })
+      .filter((item) => item !== null);
   }, [selectedIds, selectedItems]);
 
   const handleInputChange = (event) => {
@@ -82,10 +79,6 @@ const ProcessSuratJalanModal = ({
 
   const validateForm = () => {
     const nextErrors = {};
-
-    if (!formValues.status_code?.trim()) {
-      nextErrors.status_code = 'Status checklist wajib diisi.';
-    }
 
     if (!formValues.tanggal) {
       nextErrors.tanggal = 'Tanggal checklist wajib diisi.';
@@ -170,47 +163,22 @@ const ProcessSuratJalanModal = ({
             </p>
             {Array.isArray(selectedSummary) && selectedSummary.length > 0 && (
               <ul className='mt-3 space-y-2 text-sm text-blue-900'>
-                {selectedSummary.map((item) =>
-                  item ? (
-                    <li
-                      key={item.id || item}
-                      className='flex items-center justify-between rounded-md bg-white/70 px-3 py-2 shadow-sm'
-                    >
-                      <span className='font-semibold'>
-                        {item.display || item.id || item}
-                      </span>
-                      {item.subtitle && (
-                        <span className='text-xs text-blue-600'>{item.subtitle}</span>
-                      )}
-                    </li>
-                  ) : null
-                )}
+                {selectedSummary.map((item) => (
+                  <li
+                    key={item.id}
+                    className='flex items-center justify-between rounded-md bg-white/70 px-3 py-2 shadow-sm'
+                  >
+                    <span className='font-semibold'>{item.display}</span>
+                    {item.subtitle && (
+                      <span className='text-xs text-blue-600'>{item.subtitle}</span>
+                    )}
+                  </li>
+                ))}
               </ul>
             )}
           </div>
 
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-            <div className='md:col-span-2'>
-              <label className='mb-1 block text-sm font-medium text-gray-700' htmlFor='status_code'>
-                {fieldLabels.status_code} <span className='text-red-500'>*</span>
-              </label>
-              <input
-                id='status_code'
-                name='status_code'
-                value={formValues.status_code}
-                onChange={handleInputChange}
-                className='w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                placeholder={STATUS_CODE_PLACEHOLDER}
-                required
-              />
-              {errors.status_code && (
-                <p className='mt-1 text-xs text-red-600'>{errors.status_code}</p>
-              )}
-              <p className='mt-1 text-xs text-gray-500'>
-                Gunakan status checklist yang sesuai dengan workflow. Nilai default mengikuti dokumentasi API.
-              </p>
-            </div>
-
             <div>
               <label className='mb-1 block text-sm font-medium text-gray-700' htmlFor='tanggal'>
                 {fieldLabels.tanggal} <span className='text-red-500'>*</span>

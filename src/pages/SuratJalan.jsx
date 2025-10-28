@@ -176,12 +176,13 @@ const SuratJalan = () => {
     });
   }, [showDeleteDialog, hideDeleteDialog, setDeleteDialogLoading, handleAuthError, queryClient]);
 
-  const handleSelectSuratJalan = useCallback((suratJalanId) => {
+  const handleSelectSuratJalan = useCallback((suratJalanItem) => {
     setSelectedSuratJalan((prevSelected) => {
-      if (prevSelected.includes(suratJalanId)) {
-        return prevSelected.filter((id) => id !== suratJalanId);
+      const itemId = typeof suratJalanItem === 'string' ? suratJalanItem : suratJalanItem?.id;
+      if (prevSelected.some(item => (typeof item === 'string' ? item : item?.id) === itemId)) {
+        return prevSelected.filter((item) => (typeof item === 'string' ? item : item?.id) !== itemId);
       }
-      return [...prevSelected, suratJalanId];
+      return [...prevSelected, suratJalanItem];
     });
   }, []);
 
@@ -191,15 +192,16 @@ const SuratJalan = () => {
       return;
     }
 
-    const ids = items.map((item) => item?.id).filter(Boolean);
+    const validItems = items.filter(item => item && item.id);
     
     setSelectedSuratJalan((prevSelected) => {
-      if (ids.length === 0) {
+      if (validItems.length === 0) {
         return [];
       }
       
-      const isAllSelected = ids.every((id) => prevSelected.includes(id));
-      return isAllSelected ? [] : ids;
+      const prevIds = prevSelected.map(item => typeof item === 'string' ? item : item?.id);
+      const isAllSelected = validItems.every((item) => prevIds.includes(item.id));
+      return isAllSelected ? [] : validItems;
     });
   }, []);
 
@@ -225,8 +227,9 @@ const SuratJalan = () => {
 
       setIsProcessing(true);
       try {
+        const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
         const requestBody = {
-          ids: selectedSuratJalan,
+          ids: selectedIds,
           checklist: checklistData,
         };
 
@@ -363,8 +366,8 @@ const SuratJalan = () => {
         onClose={closeProcessModal}
         onSubmit={handleProcessModalSubmit}
         isSubmitting={isProcessing}
-        selectedItems={selectedSuratJalan.map(id => ({ id }))}
-        selectedIds={selectedSuratJalan}
+        selectedItems={selectedSuratJalan}
+        selectedIds={selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean)}
       />
 
       <DeleteConfirmationDialog />
