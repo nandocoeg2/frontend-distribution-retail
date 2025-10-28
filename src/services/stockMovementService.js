@@ -84,6 +84,9 @@ export const getStockMovements = async ({
   search,
   status,
   type,
+  dateFilterType,
+  startDate,
+  endDate,
 } = {}) => {
   const query = buildQueryString({
     page,
@@ -91,6 +94,9 @@ export const getStockMovements = async ({
     search,
     status,
     type,
+    dateFilterType,
+    startDate,
+    endDate,
   });
 
   const response = await fetch(`${API_BASE_URL}${query}`, {

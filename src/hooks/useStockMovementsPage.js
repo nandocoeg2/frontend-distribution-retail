@@ -12,6 +12,9 @@ const INITIAL_FILTERS = {
   search: '',
   status: 'all',
   type: 'all',
+  dateFilterType: '',
+  startDate: '',
+  endDate: '',
 };
 
 const INITIAL_PAGINATION = {
@@ -146,11 +149,36 @@ const sanitizeFilters = (filters = {}) => {
     filters.status && filters.status !== 'all' ? filters.status : undefined;
   const type =
     filters.type && filters.type !== 'all' ? filters.type : undefined;
+  const dateFilterType =
+    filters.dateFilterType && filters.dateFilterType.trim() !== ''
+      ? filters.dateFilterType
+      : undefined;
+
+  // Convert datetime-local format to ISO 8601
+  const convertToISO = (dateStr) => {
+    if (!dateStr || dateStr.trim() === '') {
+      return undefined;
+    }
+    try {
+      // datetime-local format: 2025-10-28T16:52
+      // Add seconds if not present and convert to ISO
+      const isoDate = new Date(dateStr).toISOString();
+      return isoDate;
+    } catch (error) {
+      return undefined;
+    }
+  };
+
+  const startDate = convertToISO(filters.startDate);
+  const endDate = convertToISO(filters.endDate);
 
   return {
     search: trimmedSearch || undefined,
     status,
     type,
+    dateFilterType,
+    startDate,
+    endDate,
   };
 };
 
