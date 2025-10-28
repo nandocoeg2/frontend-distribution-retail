@@ -146,7 +146,7 @@ const FakturPajakTableServerSide = ({
           );
         },
       }),
-      columnHelper.accessor((row) => row.invoicePenagihan?.no_invoice_penagihan, {
+      columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'no_invoice_penagihan',
         header: ({ column }) => (
           <div className="space-y-2">
@@ -164,11 +164,23 @@ const FakturPajakTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => (
-          <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
-        ),
+        cell: (info) => {
+          const invoices = info.getValue();
+          if (!invoices || invoices.length === 0) {
+            return <div className="text-sm text-gray-900">-</div>;
+          }
+          return (
+            <div className="text-sm text-gray-900">
+              {invoices.map((invoice, index) => (
+                <div key={invoice.id || index}>
+                  {invoice.no_invoice_penagihan || '-'}
+                </div>
+              ))}
+            </div>
+          );
+        },
       }),
-      columnHelper.accessor('tanggal_invoice', {
+      columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'tanggal_invoice',
         header: ({ column }) => (
           <div className="space-y-2">
@@ -185,9 +197,21 @@ const FakturPajakTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => (
-          <div className="text-sm text-gray-900">{formatDate(info.getValue())}</div>
-        ),
+        cell: (info) => {
+          const invoices = info.getValue();
+          if (!invoices || invoices.length === 0) {
+            return <div className="text-sm text-gray-900">-</div>;
+          }
+          return (
+            <div className="text-sm text-gray-900">
+              {invoices.map((invoice, index) => (
+                <div key={invoice.id || index}>
+                  {formatDate(invoice.tanggal)}
+                </div>
+              ))}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor((row) => row.laporanPenerimaanBarang?.no_lpb, {
         id: 'no_lpb',
