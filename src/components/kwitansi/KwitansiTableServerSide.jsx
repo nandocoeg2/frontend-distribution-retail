@@ -272,7 +272,7 @@ const KwitansiTableServerSide = ({
         ),
       }),
       columnHelper.accessor('tanggal', {
-        id: 'tanggal',
+        id: 'created_at',
         header: 'Dibuat',
         enableSorting: true,
         enableColumnFilter: false,
