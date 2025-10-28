@@ -15,6 +15,9 @@ const DEFAULT_GLOBAL_FILTER = {
   resetPageOnChange: true,
 };
 
+const DEFAULT_LOCKED_FILTERS = [];
+const DEFAULT_TABLE_OPTIONS = {};
+
 const isDefined = (value) => value !== undefined && value !== null && value !== '';
 
 const mergeLockedFilters = (filters = [], lockedFilters = []) => {
@@ -56,14 +59,14 @@ export const useServerSideTable = ({
   initialPage = 1,
   initialLimit = 10,
   globalFilter: globalFilterOptions = DEFAULT_GLOBAL_FILTER,
-  lockedFilters = [],
+  lockedFilters = DEFAULT_LOCKED_FILTERS,
   manualPagination = true,
   manualSorting = true,
   manualFiltering = true,
   autoResetPageOnSort = true,
   autoResetPageOnColumnFilterChange = true,
   columnFilterDebounceMs = 500,
-  tableOptions: extraTableOptions = {},
+  tableOptions: extraTableOptions = DEFAULT_TABLE_OPTIONS,
 } = {}) => {
   if (typeof queryHook !== 'function') {
     throw new Error('useServerSideTable requires a queryHook function');
@@ -124,8 +127,14 @@ export const useServerSideTable = ({
   );
 
   useEffect(() => {
-    setColumnFiltersInput((prev) => mergeLockedFilters(prev, normalizedLockedFilters));
-    setColumnFiltersApplied((prev) => mergeLockedFilters(prev, normalizedLockedFilters));
+    setColumnFiltersInput((prev) => {
+      const next = mergeLockedFilters(prev, normalizedLockedFilters);
+      return areFiltersEqual(prev, next) ? prev : next;
+    });
+    setColumnFiltersApplied((prev) => {
+      const next = mergeLockedFilters(prev, normalizedLockedFilters);
+      return areFiltersEqual(prev, next) ? prev : next;
+    });
   }, [normalizedLockedFilters]);
 
   useEffect(() => {

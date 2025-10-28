@@ -66,6 +66,15 @@ const TandaTerimaFakturTableServerSide = ({
     return [{ id: 'status', value: statusCode }];
   }, [activeTab]);
 
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    }),
+    []
+  );
+
   const {
     data: tandaTerimaFakturs,
     pagination,
@@ -82,11 +91,7 @@ const TandaTerimaFakturTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: {
-      enabled: true,
-      initialValue: '',
-      debounceMs: 500,
-    },
+    globalFilter: globalFilterConfig,
     lockedFilters,
   });
 

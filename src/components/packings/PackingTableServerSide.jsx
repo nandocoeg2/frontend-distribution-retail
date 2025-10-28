@@ -101,6 +101,15 @@ const PackingTableServerSide = ({
     return [{ id: 'status', value: statusCode }];
   }, [activeTab]);
 
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    }),
+    []
+  );
+
   const {
     data: packings,
     pagination,
@@ -116,11 +125,7 @@ const PackingTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: {
-      enabled: true,
-      initialValue: '',
-      debounceMs: 500,
-    },
+    globalFilter: globalFilterConfig,
     lockedFilters,
   });
 

@@ -94,6 +94,15 @@ const LaporanPenerimaanBarangTableServerSide = ({
     return [{ id: 'status_code', value: statusCode }];
   }, [activeTab]);
 
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    }),
+    []
+  );
+
   const {
     data: reports,
     pagination,
@@ -109,11 +118,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: {
-      enabled: true,
-      initialValue: '',
-      debounceMs: 500,
-    },
+    globalFilter: globalFilterConfig,
     lockedFilters,
   });
 

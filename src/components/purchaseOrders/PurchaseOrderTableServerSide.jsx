@@ -75,29 +75,17 @@ const PurchaseOrderTableServerSide = ({
     return entries;
   }, [activeTab]);
 
-  const {
-    data: orders,
-    pagination,
-    setPage,
-    hasActiveFilters,
-    isLoading,
-    isFetching,
-    error,
-    resetFilters,
-    tableOptions,
-  } = useServerSideTable({
-    queryHook: usePurchaseOrdersQuery,
-    selectData: (response) => response?.purchaseOrders ?? [],
-    selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
-    globalFilter: {
+  const globalFilterConfig = useMemo(
+    () => ({
       enabled: true,
       initialValue: '',
       debounceMs: 500,
-    },
-    lockedFilters,
-    getQueryParams: ({ filters, ...rest }) => {
+    }),
+    []
+  );
+
+  const getQueryParams = useMemo(
+    () => ({ filters, ...rest }) => {
       const mappedFilters = { ...filters };
 
       if (mappedFilters.status) {
@@ -115,6 +103,28 @@ const PurchaseOrderTableServerSide = ({
         filters: mappedFilters,
       };
     },
+    []
+  );
+
+  const {
+    data: orders,
+    pagination,
+    setPage,
+    hasActiveFilters,
+    isLoading,
+    isFetching,
+    error,
+    resetFilters,
+    tableOptions,
+  } = useServerSideTable({
+    queryHook: usePurchaseOrdersQuery,
+    selectData: (response) => response?.purchaseOrders ?? [],
+    selectPagination: (response) => response?.pagination,
+    initialPage,
+    initialLimit,
+    globalFilter: globalFilterConfig,
+    lockedFilters,
+    getQueryParams,
   });
 
   const columns = useMemo(

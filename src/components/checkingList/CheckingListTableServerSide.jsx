@@ -28,6 +28,15 @@ const CheckingListTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
 }) => {
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    }),
+    []
+  );
+
   const {
     data: checklists,
     pagination,
@@ -43,11 +52,7 @@ const CheckingListTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: {
-      enabled: true,
-      initialValue: '',
-      debounceMs: 500,
-    },
+    globalFilter: globalFilterConfig,
   });
 
   const columns = useMemo(

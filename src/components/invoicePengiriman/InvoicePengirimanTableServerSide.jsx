@@ -35,6 +35,15 @@ const InvoicePengirimanTableServerSide = ({
     return [{ id: 'status', value: statusCode }];
   }, [activeTab]);
 
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: true,
+      initialValue: '',
+      debounceMs: 500,
+    }),
+    []
+  );
+
   const {
     data: invoices,
     pagination,
@@ -51,11 +60,7 @@ const InvoicePengirimanTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: {
-      enabled: true,
-      initialValue: '',
-      debounceMs: 500,
-    },
+    globalFilter: globalFilterConfig,
     lockedFilters,
   });
 
