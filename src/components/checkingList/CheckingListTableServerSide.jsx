@@ -52,10 +52,10 @@ const CheckingListTableServerSide = ({
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor('id', {
+      columnHelper.accessor('no_checklist_surat_jalan', {
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Checklist ID</div>
+            <div className="font-medium">No Checklist</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -74,7 +74,7 @@ const CheckingListTableServerSide = ({
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Tanggal</div>
+            <div className="font-medium">Tanggal Checklist</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
