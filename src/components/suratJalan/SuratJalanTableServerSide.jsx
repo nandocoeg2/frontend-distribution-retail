@@ -179,8 +179,8 @@ const SuratJalanTableServerSide = ({
         ),
         cell: (info) => info.getValue() || 'N/A',
       }),
-      columnHelper.accessor('invoice.invoice_number', {
-        id: 'invoice_number',
+      columnHelper.accessor('invoice.no_invoice', {
+        id: 'no_invoice',
         header: 'Invoice Number',
         cell: (info) => info.getValue() || 'N/A',
         enableColumnFilter: false,
