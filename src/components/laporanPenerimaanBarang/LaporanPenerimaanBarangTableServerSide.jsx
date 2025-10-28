@@ -197,8 +197,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.accessor('tanggal_lpb', {
-        id: 'tanggal_lpb',
+      columnHelper.accessor('tanggal_po', {
+        id: 'tanggal_po',
         header: ({ column }) => (
           <div className="space-y-2">
             <div className="font-medium">Tanggal LPB</div>

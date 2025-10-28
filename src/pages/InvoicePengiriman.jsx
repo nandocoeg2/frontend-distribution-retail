@@ -366,12 +366,6 @@ const InvoicePengirimanPage = () => {
                 dan status pembayaran.
               </p>
             </div>
-            {/* <button
-              onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
-            >
-              Tambah Invoice Pengiriman
-            </button> */}
           </div>
 
 
@@ -401,9 +395,6 @@ const InvoicePengirimanPage = () => {
             onEdit={openEditModal}
             onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
             deleteLoading={deleteInvoiceConfirmation.loading}
-            selectedInvoices={[]} // TODO: Implement selection if needed
-            onSelectInvoice={() => {}} // TODO: Implement selection if needed
-            onSelectAllInvoices={() => {}} // TODO: Implement selection if needed
             onTogglePenagihan={handleInvoicePenagihanToggle}
             creatingPenagihanId={creatingInvoicePenagihanId}
             initialPage={resolvedPagination.currentPage}

@@ -21,9 +21,6 @@ const InvoicePengirimanTableServerSide = ({
   onEdit,
   onDelete,
   deleteLoading = false,
-  selectedInvoices = [],
-  onSelectInvoice,
-  onSelectAllInvoices,
   onTogglePenagihan,
   creatingPenagihanId,
   initialPage = 1,
@@ -92,37 +89,6 @@ const InvoicePengirimanTableServerSide = ({
         enableSorting: false,
         enableColumnFilter: false,
       }),
-      columnHelper.display({
-        id: 'select',
-        header: () => {
-          const isAllSelected =
-            invoices.length > 0 && selectedInvoices.length === invoices.length;
-          const isIndeterminate =
-            selectedInvoices.length > 0 && selectedInvoices.length < invoices.length;
-
-          return (
-            <input
-              type="checkbox"
-              checked={isAllSelected}
-              ref={(input) => {
-                if (input) input.indeterminate = isIndeterminate;
-              }}
-              onChange={onSelectAllInvoices}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-          );
-        },
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            checked={selectedInvoices.includes(row.original.id)}
-            onChange={() => onSelectInvoice(row.original.id)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-        ),
-        enableSorting: false,
-        enableColumnFilter: false,
-      }),
       columnHelper.accessor('no_invoice', {
         header: ({ column }) => (
           <div className="space-y-2">
@@ -144,7 +110,7 @@ const InvoicePengirimanTableServerSide = ({
           <div className="font-medium text-gray-900">{info.getValue() || '-'}</div>
         ),
       }),
-      columnHelper.accessor('tanggal_invoice', {
+      columnHelper.accessor('tanggal', {
         header: ({ column }) => (
           <div className="space-y-2">
             <div className="font-medium">Tanggal Invoice</div>
@@ -162,7 +128,7 @@ const InvoicePengirimanTableServerSide = ({
         ),
         cell: (info) => formatDate(info.getValue()),
       }),
-      columnHelper.accessor('customer.namaCustomer', {
+      columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'nama_customer',
         header: ({ column }) => (
           <div className="space-y-2">
@@ -182,12 +148,12 @@ const InvoicePengirimanTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.accessor('jumlah_invoice', {
+      columnHelper.accessor('grand_total', {
         header: 'Jumlah',
         cell: (info) => formatCurrency(info.getValue()),
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('status.status_name', {
+      columnHelper.accessor('statusPembayaran.status_name', {
         id: 'status',
         header: ({ column }) => {
           const statusConfig = TAB_STATUS_CONFIG[activeTab];
@@ -260,9 +226,6 @@ const InvoicePengirimanTableServerSide = ({
     ],
     [
       invoices,
-      selectedInvoices,
-      onSelectInvoice,
-      onSelectAllInvoices,
       onView,
       onEdit,
       onDelete,
@@ -308,11 +271,6 @@ const InvoicePengirimanTableServerSide = ({
         headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="divide-y divide-gray-200"
         rowClassName="hover:bg-gray-50"
-        getRowClassName={({ row }) =>
-          selectedInvoices.includes(row.original.id)
-            ? 'bg-blue-50 hover:bg-blue-100'
-            : undefined
-        }
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-4 text-center text-sm text-gray-500"
       />
