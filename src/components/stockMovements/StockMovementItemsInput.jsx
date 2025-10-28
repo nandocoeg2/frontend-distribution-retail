@@ -1,5 +1,6 @@
-import React, { useMemo, useId } from 'react';
+import React, { useMemo } from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Autocomplete from '../common/Autocomplete';
 
 const defaultItem = { inventoryId: '', quantity: '' };
 
@@ -9,8 +10,6 @@ const StockMovementItemsInput = ({
   inventories = [],
   loading = false,
 }) => {
-  const datalistId = useId();
-
   const inventoryOptions = useMemo(() => {
     if (!Array.isArray(inventories)) {
       return [];
@@ -29,7 +28,7 @@ const StockMovementItemsInput = ({
           inventory?.id ||
           '',
       }))
-      .filter((option) => option.id);
+      .filter((option) => option.id && option.label);
   }, [inventories]);
 
   const handleItemChange = (index, field, value) => {
@@ -81,14 +80,6 @@ const StockMovementItemsInput = ({
         </div>
       )}
 
-      <datalist id={datalistId}>
-        {inventoryOptions.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </datalist>
-
       <div className='space-y-4'>
         {items.map((item, index) => {
           const itemIndex = index + 1;
@@ -125,26 +116,29 @@ const StockMovementItemsInput = ({
                     htmlFor={`inventory-id-${index}`}
                     className='block text-sm font-medium text-gray-700'
                   >
-                    Inventory ID
+                    Inventory
                   </label>
-                  <input
-                    id={`inventory-id-${index}`}
+                  <Autocomplete
+                    label=''
                     name={`inventoryId-${index}`}
-                    list={datalistId}
-                    value={item.inventoryId}
+                    options={inventoryOptions}
+                    value={item.inventoryId ? String(item.inventoryId) : ''}
                     onChange={(event) =>
                       handleItemChange(index, 'inventoryId', event.target.value)
                     }
-                    placeholder='Contoh: inventory-uuid'
-                    autoComplete='off'
-                    className='mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
-                    aria-describedby={`inventory-helper-${index}`}
+                    placeholder='Cari nama barang atau ID inventory'
+                    displayKey='label'
+                    valueKey='id'
+                    loading={loading}
+                    showId
+                    className='mt-1'
+                    inputClassName='rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500'
                   />
                   <p
                     id={`inventory-helper-${index}`}
                     className='mt-1 text-xs text-gray-500'
                   >
-                    Pilih dari daftar atau ketik manual sesuai master data inventory.
+                    Ketik untuk mencari inventory, lalu pilih dari daftar yang muncul.
                   </p>
                 </div>
 
