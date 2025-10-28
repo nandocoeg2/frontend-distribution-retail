@@ -55,22 +55,22 @@ const exportStickerToPDF = (packing, packingItems) => {
                           packing.purchaseOrder?.customer?.alamat ||
                           '';
 
-  // Create PDF in A4 landscape
+  // Create PDF with custom size: 27cm x 21cm
   const pdf = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: 'a4',
+    format: [210, 270], // height x width in landscape
   });
 
-  // A4 landscape dimensions: 297mm x 210mm
-  const pageWidth = 297;
+  // Custom dimensions: 270mm x 210mm
+  const pageWidth = 270;
   const pageHeight = 210;
-  const margin = 8;
-  const gap = 5;
 
-  // Calculate sticker dimensions (2x2 grid)
-  const stickerWidth = (pageWidth - 2 * margin - gap) / 2;
-  const stickerHeight = (pageHeight - 2 * margin - gap) / 2;
+  // Sticker dimensions (2x2 grid): 13.5cm x 10.5cm each
+  const stickerWidth = 135;
+  const stickerHeight = 105;
+  const margin = 0;
+  const gap = 0;
 
   let currentPage = 0;
 
@@ -312,20 +312,20 @@ const printSticker = (packing, packingItems) => {
       }
 
       @page {
-        size: A4 landscape;
-        margin: 8mm;
+        size: 270mm 210mm;
+        margin: 0;
       }
 
       .page {
-        width: 297mm;
+        width: 270mm;
         min-height: 210mm;
         background: white;
         margin: 0 auto;
-        padding: 5mm;
+        padding: 0;
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(2, 1fr);
-        gap: 5mm;
+        grid-template-columns: repeat(2, 135mm);
+        grid-template-rows: repeat(2, 105mm);
+        gap: 0;
         page-break-after: always;
       }
 
