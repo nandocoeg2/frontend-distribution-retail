@@ -189,7 +189,8 @@ const KwitansiPage = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (kwitansiOrId) => {
+    const id = typeof kwitansiOrId === 'string' ? kwitansiOrId : kwitansiOrId?.id;
     if (!id) {
       return;
     }
