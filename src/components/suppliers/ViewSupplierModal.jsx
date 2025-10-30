@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { AccordionItem, InfoCard, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
-
+import { BuildingOfficeIcon } from '@heroicons/react/24/outline';s
 const ViewSupplierModal = ({ show, onClose, supplier }) => {
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
@@ -28,7 +28,9 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-purple-100 rounded-lg'>
-              <span className='text-2xl'>ðŸ¢</span>
+              <span className='text-2xl'>
+                <BuildingOfficeIcon className='w-6 h-6' />
+              </span>
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
