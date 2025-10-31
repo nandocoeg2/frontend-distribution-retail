@@ -30,7 +30,7 @@ const resolveStatusVariant = (status) => {
     return 'success';
   }
 
-  if (value.includes('cancelled') || value.includes('failed')) {
+  if (value.includes('cancelled') || value.includes('failed') || value.includes('overdue')) {
     return 'danger';
   }
 
@@ -38,7 +38,7 @@ const resolveStatusVariant = (status) => {
     return 'primary';
   }
 
-  if (value.includes('overdue') || value.includes('processing')) {
+  if (value.includes('processing')) {
     return 'warning';
   }
 
