@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { AccordionItem, InfoCard, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
-import { BuildingOfficeIcon } from '@heroicons/react/24/outline';s
+import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
 const ViewSupplierModal = ({ show, onClose, supplier }) => {
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
