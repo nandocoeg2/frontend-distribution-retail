@@ -34,7 +34,11 @@ const resolveStatusVariant = (status) => {
     return 'danger';
   }
 
-  if (value.includes('processing') || value.includes('overdue')) {
+  if (value.includes('processed')) {
+    return 'primary';
+  }
+
+  if (value.includes('overdue') || value.includes('processing')) {
     return 'warning';
   }
 
