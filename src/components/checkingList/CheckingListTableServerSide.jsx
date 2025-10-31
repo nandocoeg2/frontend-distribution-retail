@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { StatusBadge } from '../ui/Badge';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
 import { formatDateTime } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
@@ -18,6 +19,50 @@ const resolveChecklistId = (item) => {
     item._id ||
     (typeof item === 'string' ? item : null)
   );
+};
+
+const resolveStatusVariant = (status) => {
+  const statusText = typeof status === 'string' 
+    ? status 
+    : status?.status_name || status?.status_code || '';
+  
+  const value = statusText.toLowerCase();
+
+  if (!value) {
+    return 'secondary';
+  }
+
+  if (value.includes('completed') || value.includes('selesai') || value.includes('success')) {
+    return 'success';
+  }
+
+  if (value.includes('cancelled') || value.includes('canceled') || value.includes('failed') || value.includes('batal')) {
+    return 'danger';
+  }
+
+  if (value.includes('processed') && !value.includes('processing')) {
+    return 'primary';
+  }
+
+  if (value.includes('processing') || value.includes('proses') || value.includes('in progress')) {
+    return 'warning';
+  }
+
+  if (value.includes('pending') || value.includes('menunggu') || value.includes('waiting')) {
+    return 'secondary';
+  }
+
+  return 'default';
+};
+
+const resolveStatusText = (status) => {
+  if (typeof status === 'string') {
+    return status;
+  }
+  if (!status) {
+    return null;
+  }
+  return status.status_name || status.status_code || null;
 };
 
 const CheckingListTableServerSide = ({
@@ -202,17 +247,19 @@ const CheckingListTableServerSide = ({
         header: 'Status Checklist',
         cell: (info) => {
           const status = info.getValue();
+          const statusText = resolveStatusText(status);
+          
+          if (!statusText) {
+            return <span className="text-sm text-gray-400">-</span>;
+          }
+
           return (
-            <div className="text-sm">
-              <p className="font-medium text-gray-900">
-                {status?.status_name || status?.status_code || '-'}
-              </p>
-              {(status?.status_code || info.row.original?.statusId) && (
-                <p className="text-xs text-gray-500">
-                  {status?.status_code || info.row.original?.statusId}
-                </p>
-              )}
-            </div>
+            <StatusBadge
+              status={statusText}
+              variant={resolveStatusVariant(status)}
+              size="sm"
+              dot
+            />
           );
         },
         enableColumnFilter: false,

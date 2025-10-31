@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import { useInvoicePengirimanQuery } from '../../hooks/useInvoicePengirimanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
@@ -14,6 +15,46 @@ const TAB_STATUS_CONFIG = {
   pending: { label: 'Pending', statusCode: 'PENDING INVOICE' },
   paid: { label: 'Paid', statusCode: 'PAID INVOICE' },
   overdue: { label: 'Overdue', statusCode: 'OVERDUE INVOICE' },
+};
+
+const resolveStatusVariant = (status) => {
+  const statusText = typeof status === 'string' 
+    ? status 
+    : status?.status_name || status?.status_code || '';
+  
+  const value = statusText.toLowerCase();
+
+  if (!value) {
+    return 'secondary';
+  }
+
+  if (value.includes('paid') || value.includes('completed') || value.includes('selesai')) {
+    return 'success';
+  }
+
+  if (value.includes('cancelled') || value.includes('canceled') || value.includes('failed') || value.includes('batal')) {
+    return 'danger';
+  }
+
+  if (value.includes('overdue')) {
+    return 'danger';
+  }
+
+  if (value.includes('pending') || value.includes('menunggu') || value.includes('waiting')) {
+    return 'secondary';
+  }
+
+  return 'default';
+};
+
+const resolveStatusText = (status) => {
+  if (typeof status === 'string') {
+    return status;
+  }
+  if (!status) {
+    return null;
+  }
+  return status.status_name || status.status_code || null;
 };
 
 const InvoicePengirimanTableServerSide = ({
@@ -191,11 +232,25 @@ const InvoicePengirimanTableServerSide = ({
             </div>
           );
         },
-        cell: (info) => (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-            {info.getValue() || 'Unknown'}
-          </span>
-        ),
+        cell: (info) => {
+          const statusValue = info.getValue();
+          const rowStatus = info.row.original?.statusPembayaran;
+          const status = statusValue || rowStatus;
+          const statusText = resolveStatusText(status);
+          
+          if (!statusText) {
+            return <span className="text-sm text-gray-400">-</span>;
+          }
+
+          return (
+            <StatusBadge
+              status={statusText}
+              variant={resolveStatusVariant(status)}
+              size="sm"
+              dot
+            />
+          );
+        },
       }),
       columnHelper.display({
         id: 'actions',
