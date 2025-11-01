@@ -18,21 +18,31 @@ const TAB_STATUS_CONFIG = {
 };
 
 const resolveStatusVariant = (status) => {
-  const statusText = typeof status === 'string' 
-    ? status 
-    : status?.status_name || status?.status_code || '';
-  
+  const statusText =
+    typeof status === 'string'
+      ? status
+      : status?.status_name || status?.status_code || '';
+
   const value = statusText.toLowerCase();
 
   if (!value) {
     return 'secondary';
   }
 
-  if (value.includes('paid') || value.includes('completed') || value.includes('selesai')) {
+  if (
+    value.includes('paid') ||
+    value.includes('completed') ||
+    value.includes('selesai')
+  ) {
     return 'success';
   }
 
-  if (value.includes('cancelled') || value.includes('canceled') || value.includes('failed') || value.includes('batal')) {
+  if (
+    value.includes('cancelled') ||
+    value.includes('canceled') ||
+    value.includes('failed') ||
+    value.includes('batal')
+  ) {
     return 'danger';
   }
 
@@ -40,7 +50,11 @@ const resolveStatusVariant = (status) => {
     return 'danger';
   }
 
-  if (value.includes('pending') || value.includes('menunggu') || value.includes('waiting')) {
+  if (
+    value.includes('pending') ||
+    value.includes('menunggu') ||
+    value.includes('waiting')
+  ) {
     return 'secondary';
   }
 
@@ -62,8 +76,6 @@ const InvoicePengirimanTableServerSide = ({
   onEdit,
   onDelete,
   deleteLoading = false,
-  onTogglePenagihan,
-  creatingPenagihanId,
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
@@ -107,67 +119,41 @@ const InvoicePengirimanTableServerSide = ({
 
   const columns = useMemo(
     () => [
-      columnHelper.display({
-        id: 'penagihan',
-        header: 'Penagihan',
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center">
-            {creatingPenagihanId === row.original.id ? (
-              <span className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:cursor-not-allowed"
-                checked={Boolean(row.original.invoicePenagihanId)}
-                disabled={
-                  Boolean(row.original.invoicePenagihanId) ||
-                  !onTogglePenagihan
-                }
-                onChange={() => {
-                  if (!row.original.invoicePenagihanId && onTogglePenagihan) {
-                    onTogglePenagihan(row.original);
-                  }
-                }}
-              />
-            )}
-          </div>
-        ),
-        enableSorting: false,
-        enableColumnFilter: false,
-      }),
       columnHelper.accessor('no_invoice', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No Invoice</div>
+          <div className='space-y-2'>
+            <div className='font-medium'>No Invoice</div>
             <input
-              type="text"
+              type='text'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder='Filter...'
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
         cell: (info) => (
-          <div className="font-medium text-gray-900">{info.getValue() || '-'}</div>
+          <div className='font-medium text-gray-900'>
+            {info.getValue() || '-'}
+          </div>
         ),
       }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal Invoice</div>
+          <div className='space-y-2'>
+            <div className='font-medium'>Tanggal Invoice</div>
             <input
-              type="date"
+              type='date'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -177,17 +163,17 @@ const InvoicePengirimanTableServerSide = ({
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'nama_customer',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Customer</div>
+          <div className='space-y-2'>
+            <div className='font-medium'>Customer</div>
             <input
-              type="text"
+              type='text'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder='Filter...'
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -206,10 +192,10 @@ const InvoicePengirimanTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className='space-y-2'>
+              <div className='font-medium'>Status</div>
               {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                <div className='w-full px-2 py-1 text-xs text-gray-700 bg-gray-100 border border-gray-300 rounded'>
                   {statusConfig?.label || 'N/A'}
                 </div>
               ) : (
@@ -219,14 +205,14 @@ const InvoicePengirimanTableServerSide = ({
                     column.setFilterValue(event.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <option value="">Semua</option>
-                  <option value="CANCELLED INVOICE">Cancelled</option>
-                  <option value="PENDING INVOICE">Pending</option>
-                  <option value="PAID INVOICE">Paid</option>
-                  <option value="OVERDUE INVOICE">Overdue</option>
+                  <option value=''>Semua</option>
+                  <option value='CANCELLED INVOICE'>Cancelled</option>
+                  <option value='PENDING INVOICE'>Pending</option>
+                  <option value='PAID INVOICE'>Paid</option>
+                  <option value='OVERDUE INVOICE'>Overdue</option>
                 </select>
               )}
             </div>
@@ -237,16 +223,16 @@ const InvoicePengirimanTableServerSide = ({
           const rowStatus = info.row.original?.statusPembayaran;
           const status = statusValue || rowStatus;
           const statusText = resolveStatusText(status);
-          
+
           if (!statusText) {
-            return <span className="text-sm text-gray-400">-</span>;
+            return <span className='text-sm text-gray-400'>-</span>;
           }
 
           return (
             <StatusBadge
               status={statusText}
               variant={resolveStatusVariant(status)}
-              size="sm"
+              size='sm'
               dot
             />
           );
@@ -256,45 +242,35 @@ const InvoicePengirimanTableServerSide = ({
         id: 'actions',
         header: 'Aksi',
         cell: ({ row }) => (
-          <div className="flex space-x-2 justify-center">
+          <div className='flex justify-center space-x-2'>
             <button
               onClick={() => onView(row.original)}
-              className="text-indigo-600 hover:text-indigo-900"
-              title="Lihat detail"
+              className='text-indigo-600 hover:text-indigo-900'
+              title='Lihat detail'
             >
-              <EyeIcon className="h-5 w-5" />
+              <EyeIcon className='w-5 h-5' />
             </button>
             <button
               onClick={() => onEdit(row.original)}
-              className="text-green-600 hover:text-green-900"
-              title="Edit"
+              className='text-green-600 hover:text-green-900'
+              title='Edit'
             >
-              <PencilIcon className="h-5 w-5" />
+              <PencilIcon className='w-5 h-5' />
             </button>
             <button
               onClick={() => onDelete(row.original.id)}
               disabled={deleteLoading}
-              className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Delete"
+              className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
+              title='Delete'
             >
-              <TrashIcon className="h-5 w-5" />
+              <TrashIcon className='w-5 h-5' />
             </button>
           </div>
         ),
         enableSorting: false,
       }),
     ],
-    [
-      invoices,
-      onView,
-      onEdit,
-      onDelete,
-      deleteLoading,
-      onTogglePenagihan,
-      creatingPenagihanId,
-      activeTab,
-      setPage,
-    ]
+    [invoices, onView, onEdit, onDelete, deleteLoading, activeTab, setPage]
   );
 
   const table = useReactTable({
@@ -305,12 +281,12 @@ const InvoicePengirimanTableServerSide = ({
   const loading = isLoading || isFetching;
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {hasActiveFilters && (
-        <div className="flex justify-end">
+        <div className='flex justify-end'>
           <button
             onClick={resetFilters}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            className='px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:text-gray-800 hover:bg-gray-50'
           >
             Reset Semua Filter
           </button>
@@ -322,24 +298,24 @@ const InvoicePengirimanTableServerSide = ({
         isLoading={loading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage="Memuat data invoice pengiriman..."
-        emptyMessage="Tidak ada data invoice pengiriman."
-        emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian."
-        wrapperClassName="overflow-x-auto border border-gray-200 rounded-lg"
-        tableClassName="min-w-full bg-white"
-        headerRowClassName="bg-gray-50"
-        headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
-        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-        emptyCellClassName="px-6 py-4 text-center text-sm text-gray-500"
+        loadingMessage='Memuat data invoice pengiriman...'
+        emptyMessage='Tidak ada data invoice pengiriman.'
+        emptyFilteredMessage='Tidak ada data yang sesuai dengan pencarian.'
+        wrapperClassName='overflow-x-auto border border-gray-200 rounded-lg'
+        tableClassName='min-w-full bg-white'
+        headerRowClassName='bg-gray-50'
+        headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
+        bodyClassName='divide-y divide-gray-200'
+        rowClassName='hover:bg-gray-50'
+        cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
+        emptyCellClassName='px-6 py-4 text-center text-sm text-gray-500'
       />
 
       {!loading && !error && (
         <DataTablePagination
           table={table}
           pagination={pagination}
-          itemLabel="invoice pengiriman"
+          itemLabel='invoice pengiriman'
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}

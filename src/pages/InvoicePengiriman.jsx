@@ -40,7 +40,6 @@ const InvoicePengirimanPage = () => {
     error,
     handlePageChange,
     handleLimitChange,
-    createInvoicePenagihan,
     deleteInvoiceConfirmation,
     handleAuthError,
   } = useInvoicePengiriman();
@@ -58,18 +57,12 @@ const InvoicePengirimanPage = () => {
   const [viewModalError, setViewModalError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('all');
-  const [creatingInvoicePenagihanId, setCreatingInvoicePenagihanId] =
-    useState(null);
-  const [createPenagihanDialog, setCreatePenagihanDialog] = useState({
-    show: false,
-    invoice: null,
-    loading: false,
-  });
 
   const fetchInvoiceDetail = useCallback(
     async (id) => {
       try {
-        const response = await invoicePengirimanService.getInvoicePengirimanById(id);
+        const response =
+          await invoicePengirimanService.getInvoicePengirimanById(id);
         if (response?.success === false) {
           throw new Error(
             response?.error?.message || 'Gagal memuat detail invoice pengiriman'
@@ -117,14 +110,10 @@ const InvoicePengirimanPage = () => {
     []
   );
 
-
-  const handleTabChange = useCallback(
-    (newTab) => {
-      setActiveTab(newTab);
-      // The server-side table will handle filtering automatically based on activeTab
-    },
-    []
-  );
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(newTab);
+    // The server-side table will handle filtering automatically based on activeTab
+  }, []);
 
   const handleTablePageChange = useCallback(
     (page) => {
@@ -140,77 +129,22 @@ const InvoicePengirimanPage = () => {
     [handleLimitChange]
   );
 
-
   const refreshActiveTab = useCallback(() => {
     const currentPage = pagination?.currentPage || pagination?.page || 1;
     handlePageChange(currentPage);
   }, [handlePageChange, pagination]);
 
-  const handleInvoicePenagihanToggle = useCallback(
-    (invoice) => {
-      if (!invoice?.id || invoice?.invoicePenagihanId) {
-        return;
-      }
-      setCreatePenagihanDialog({
-        show: true,
-        invoice,
-        loading: false,
-      });
-    },
-    []
-  );
+  const handleInvoicePenagihanToggle = useCallback((invoice) => {
+    // Functionality removed - no longer needed
+  }, []);
 
   const closeCreatePenagihanDialog = useCallback(() => {
-    setCreatePenagihanDialog({
-      show: false,
-      invoice: null,
-      loading: false,
-    });
+    // Functionality removed - no longer needed
   }, []);
 
   const confirmCreateInvoicePenagihan = useCallback(async () => {
-    setCreatePenagihanDialog((prev) => ({
-      ...prev,
-      loading: true,
-    }));
-
-    const invoiceId = createPenagihanDialog.invoice?.id;
-
-    if (!invoiceId) {
-      setCreatePenagihanDialog({
-        show: false,
-        invoice: null,
-        loading: false,
-      });
-      return;
-    }
-
-    try {
-      setCreatingInvoicePenagihanId(invoiceId);
-      await createInvoicePenagihan(invoiceId);
-      refreshActiveTab();
-      setCreatePenagihanDialog({
-        show: false,
-        invoice: null,
-        loading: false,
-      });
-    } catch (err) {
-      console.error(
-        'Failed to create invoice penagihan from invoice pengiriman:',
-        err
-      );
-      setCreatePenagihanDialog((prev) => ({
-        ...prev,
-        loading: false,
-      }));
-    } finally {
-      setCreatingInvoicePenagihanId(null);
-    }
-  }, [
-    createInvoicePenagihan,
-    createPenagihanDialog.invoice?.id,
-    refreshActiveTab,
-  ]);
+    // Functionality removed - no longer needed
+  }, []);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
@@ -345,7 +279,10 @@ const InvoicePengirimanPage = () => {
     return (
       <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
         <p className='text-red-800'>Terjadi kesalahan: {error}</p>
-        <p className='text-sm text-red-600 mt-2'>Halaman akan otomatis mencoba lagi. Jika masalah berlanjut, silakan refresh halaman.</p>
+        <p className='mt-2 text-sm text-red-600'>
+          Halaman akan otomatis mencoba lagi. Jika masalah berlanjut, silakan
+          refresh halaman.
+        </p>
       </div>
     );
   }
@@ -367,7 +304,6 @@ const InvoicePengirimanPage = () => {
               </p>
             </div>
           </div>
-
 
           <div className='mb-4 overflow-x-auto'>
             <TabContainer
@@ -395,8 +331,6 @@ const InvoicePengirimanPage = () => {
             onEdit={openEditModal}
             onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
             deleteLoading={deleteInvoiceConfirmation.loading}
-            onTogglePenagihan={handleInvoicePenagihanToggle}
-            creatingPenagihanId={creatingInvoicePenagihanId}
             initialPage={resolvedPagination.currentPage}
             initialLimit={resolvedPagination.itemsPerPage}
             activeTab={activeTab}
@@ -441,18 +375,6 @@ const InvoicePengirimanPage = () => {
         confirmText='Hapus'
         cancelText='Batal'
         loading={deleteInvoiceConfirmation.loading}
-      />
-
-      <ConfirmationDialog
-        show={createPenagihanDialog.show}
-        onClose={closeCreatePenagihanDialog}
-        onConfirm={confirmCreateInvoicePenagihan}
-        title='Buat Invoice Penagihan'
-        message={`Buat invoice penagihan dari ${createPenagihanDialog.invoice?.no_invoice || 'invoice ini'}?`}
-        confirmText='Ya, Buat'
-        cancelText='Batal'
-        type='warning'
-        loading={createPenagihanDialog.loading}
       />
     </div>
   );
