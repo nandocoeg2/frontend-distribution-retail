@@ -42,10 +42,10 @@ const TandaTerimaFakturTable = ({
               TOP
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Nama Customer
+              Nama Group Customer
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Kode Customer
+              Kode Group Customer
             </th>
             <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Nama Company
@@ -97,13 +97,31 @@ const TandaTerimaFakturTable = ({
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.customer?.namaCustomer || '-'}
+                    {item?.groupCustomer?.nama_group ||
+                      item?.groupCustomer?.namaGroup ||
+                      item?.customer?.groupCustomer?.nama_group ||
+                      item?.customer?.groupCustomer?.namaGroup ||
+                      '-'}
                   </div>
+                  {item?.customer?.namaCustomer && (
+                    <div className='text-xs text-gray-500'>
+                      Customer: {item.customer.namaCustomer}
+                    </div>
+                  )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
-                    {item?.customer?.kodeCustomer || '-'}
+                    {item?.groupCustomer?.kode_group ||
+                      item?.groupCustomer?.kodeGroup ||
+                      item?.customer?.groupCustomer?.kode_group ||
+                      item?.customer?.groupCustomer?.kodeGroup ||
+                      '-'}
                   </div>
+                  {item?.customer?.kodeCustomer && (
+                    <div className='text-xs text-gray-500'>
+                      Customer: {item.customer.kodeCustomer}
+                    </div>
+                  )}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>

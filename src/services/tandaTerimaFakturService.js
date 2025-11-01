@@ -3,6 +3,49 @@ import authService from './authService';
 
 const API_BASE_URL = 'http://localhost:5050/api/v1/tanda-terima-faktur';
 
+const sanitizeParams = (params = {}) => {
+  const sanitized = {};
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== '') {
+        sanitized[key] = trimmed;
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      const filtered = value
+        .map((item) => (typeof item === 'string' ? item.trim() : item))
+        .filter((item) => {
+          if (item === null || item === undefined) {
+            return false;
+          }
+
+          if (typeof item === 'string') {
+            return item.trim() !== '';
+          }
+
+          return true;
+        });
+
+      if (filtered.length > 0) {
+        sanitized[key] = filtered;
+      }
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
+
 class TandaTerimaFakturService {
   constructor() {
     this.api = axios.create({
@@ -23,10 +66,26 @@ class TandaTerimaFakturService {
     });
   }
 
-  async getAll(page = 1, limit = 10) {
+  async getAll(pageOrParams = 1, limit = 10, filters = {}) {
     try {
+      let params;
+
+      if (typeof pageOrParams === 'object' && pageOrParams !== null) {
+        params = { ...pageOrParams };
+      } else {
+        params = { page: pageOrParams, limit, ...filters };
+      }
+
+      if (params.page === undefined || params.page === null) {
+        params.page = 1;
+      }
+
+      if (params.limit === undefined || params.limit === null) {
+        params.limit = limit;
+      }
+
       const response = await this.api.get('/', {
-        params: { page, limit },
+        params: sanitizeParams(params),
       });
       return response.data;
     } catch (error) {
@@ -37,24 +96,14 @@ class TandaTerimaFakturService {
 
   async getTandaTerimaFaktur(params = {}) {
     try {
-      // Support both old (page, limit) and new (params object) signatures
       if (typeof params === 'number') {
         const page = params;
         const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
-        return this.getAll(page, limit);
+        const extra = typeof arguments[2] === 'object' ? arguments[2] : {};
+        return this.getAll(page, limit, extra);
       }
 
-      // Check if we need to use search endpoint (has filters other than page/limit)
-      const { page = 1, limit = 10, ...otherParams } = params;
-      const hasFilters = Object.keys(otherParams).length > 0;
-
-      if (hasFilters) {
-        // Use search endpoint for filtering
-        return this.search(otherParams, page, limit);
-      }
-
-      // Use regular getAll for simple pagination
-      return this.getAll(page, limit);
+      return this.getAll(params);
     } catch (error) {
       console.error('Error fetching tanda terima faktur:', error);
       throw error;
@@ -106,20 +155,38 @@ class TandaTerimaFakturService {
       let params = searchParams;
 
       if (typeof searchParams === 'string' && searchParams.trim()) {
-        params = { code_supplier: searchParams.trim() };
+        params = { search: searchParams.trim() };
       }
 
-      const response = await this.api.get('/search', {
-        params: {
-          ...params,
-          page,
-          limit,
-        },
-      });
+      const mergedParams = {
+        ...(typeof params === 'object' && params !== null ? params : {}),
+        page,
+        limit,
+      };
 
-      return response.data;
+      return this.getAll(mergedParams);
     } catch (error) {
       console.error('Error searching tanda terima faktur:', error);
+      throw error;
+    }
+  }
+
+  async assignDocuments(id, payload = {}) {
+    try {
+      const response = await this.api.post(`/${id}/assign-documents`, payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning documents to tanda terima faktur:', error);
+      throw error;
+    }
+  }
+
+  async unassignDocuments(id, payload = {}) {
+    try {
+      const response = await this.api.post(`/${id}/unassign-documents`, payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error unassigning documents from tanda terima faktur:', error);
       throw error;
     }
   }

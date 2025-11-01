@@ -67,6 +67,9 @@ const TandaTerimaFakturDetailModal = ({
         return faktur?.id ? count + 1 : count;
       }, 0)
     : 0;
+  const groupCustomer =
+    detail?.groupCustomer || detail?.customer?.groupCustomer || null;
+  const customer = detail?.customer || null;
   const hasLaporan = totalLaporan > 0;
   const hasInvoice = totalInvoice > 0;
   const handleExportPdf = () => {
@@ -186,8 +189,12 @@ const TandaTerimaFakturDetailModal = ({
                     }
                   />
                   <InfoRow
-                    label='Customer ID'
-                    value={detail.customerId || detail?.customer?.id || '-'}
+                    label='Group Customer ID'
+                    value={
+                      detail.groupCustomerId ||
+                      groupCustomer?.id ||
+                      '-'
+                    }
                   />
                   <InfoRow
                     label='Company ID'
@@ -244,81 +251,98 @@ const TandaTerimaFakturDetailModal = ({
 
               <section>
                 <h3 className='mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide'>
-                  Customer
+                  Group Customer
                 </h3>
                 <div className='space-y-2'>
                   <InfoRow
-                    label='Nama Customer'
+                    label='Nama Group'
                     value={
-                      detail?.customer?.namaCustomer ||
-                      detail?.customer?.nama_customer ||
+                      groupCustomer?.nama_group ||
+                      groupCustomer?.namaGroup ||
                       '-'
                     }
                   />
                   <InfoRow
-                    label='Kode Customer'
+                    label='Kode Group'
                     value={
-                      detail?.customer?.kodeCustomer ||
-                      detail?.customer?.kode_customer ||
+                      groupCustomer?.kode_group ||
+                      groupCustomer?.kodeGroup ||
                       '-'
                     }
                   />
-                  <InfoRow
-                    label='Group Customer'
-                    value={
-                      detail?.customer?.groupCustomer?.nama_group ||
-                      detail?.customer?.group_customer?.nama_group ||
-                      '-'
-                    }
-                  />
-                  {(detail?.customer?.groupCustomer?.id ||
-                    detail?.customer?.group_customer?.id) && (
-                    <InfoRow
-                      label='Group Customer ID'
-                      value={
-                        detail?.customer?.groupCustomer?.id ||
-                        detail?.customer?.group_customer?.id
-                      }
-                    />
-                  )}
-                  {detail?.customer?.alamat && (
+                  {(groupCustomer?.alamat || groupCustomer?.address) && (
                     <InfoRow
                       label='Alamat'
-                      value={detail.customer.alamat}
+                      value={groupCustomer?.alamat || groupCustomer?.address}
                     />
                   )}
-                  {(detail?.customer?.kecamatan?.nama_kecamatan ||
-                    detail?.customer?.kecamatan?.namaKecamatan) && (
+                  {groupCustomer?.npwp && (
                     <InfoRow
-                      label='Kecamatan'
-                      value={
-                        detail?.customer?.kecamatan?.nama_kecamatan ||
-                        detail?.customer?.kecamatan?.namaKecamatan
-                      }
-                    />
-                  )}
-                  {(detail?.customer?.kabupaten?.nama_kabupaten ||
-                    detail?.customer?.kabupaten?.namaKabupaten) && (
-                    <InfoRow
-                      label='Kabupaten'
-                      value={
-                        detail?.customer?.kabupaten?.nama_kabupaten ||
-                        detail?.customer?.kabupaten?.namaKabupaten
-                      }
-                    />
-                  )}
-                  {(detail?.customer?.provinsi?.nama_provinsi ||
-                    detail?.customer?.provinsi?.namaProvinsi) && (
-                    <InfoRow
-                      label='Provinsi'
-                      value={
-                        detail?.customer?.provinsi?.nama_provinsi ||
-                        detail?.customer?.provinsi?.namaProvinsi
-                      }
+                      label='NPWP'
+                      value={groupCustomer?.npwp}
                     />
                   )}
                 </div>
               </section>
+
+              {customer && (
+                <section>
+                  <h3 className='mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide'>
+                    Customer
+                  </h3>
+                  <div className='space-y-2'>
+                    <InfoRow
+                      label='Nama Customer'
+                      value={
+                        customer?.namaCustomer ||
+                        customer?.nama_customer ||
+                        '-'
+                      }
+                    />
+                    <InfoRow
+                      label='Kode Customer'
+                      value={
+                        customer?.kodeCustomer ||
+                        customer?.kode_customer ||
+                        '-'
+                      }
+                    />
+                    {customer?.alamat && (
+                      <InfoRow label='Alamat' value={customer.alamat} />
+                    )}
+                    {(customer?.kecamatan?.nama_kecamatan ||
+                      customer?.kecamatan?.namaKecamatan) && (
+                      <InfoRow
+                        label='Kecamatan'
+                        value={
+                          customer?.kecamatan?.nama_kecamatan ||
+                          customer?.kecamatan?.namaKecamatan
+                        }
+                      />
+                    )}
+                    {(customer?.kabupaten?.nama_kabupaten ||
+                      customer?.kabupaten?.namaKabupaten) && (
+                      <InfoRow
+                        label='Kabupaten'
+                        value={
+                          customer?.kabupaten?.nama_kabupaten ||
+                          customer?.kabupaten?.namaKabupaten
+                        }
+                      />
+                    )}
+                    {(customer?.provinsi?.nama_provinsi ||
+                      customer?.provinsi?.namaProvinsi) && (
+                      <InfoRow
+                        label='Provinsi'
+                        value={
+                          customer?.provinsi?.nama_provinsi ||
+                          customer?.provinsi?.namaProvinsi
+                        }
+                      />
+                    )}
+                  </div>
+                </section>
+              )}
 
               <section>
                 <h3 className='mb-3 text-sm font-semibold text-gray-700 uppercase tracking-wide'>

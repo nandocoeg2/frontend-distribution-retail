@@ -1,6 +1,76 @@
 import { useQuery } from '@tanstack/react-query';
 import tandaTerimaFakturService from '../services/tandaTerimaFakturService';
 
+const sanitizeParams = (params = {}) => {
+  const sanitized = {};
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== '') {
+        sanitized[key] = trimmed;
+      }
+      return;
+    }
+
+    sanitized[key] = value;
+  });
+
+  return sanitized;
+};
+
+const parseResponsePayload = (response, { page = 1, limit = 10 } = {}) => {
+  const payload = response?.data ?? response;
+
+  const dataCandidates = [
+    payload?.items,
+    payload?.data?.items,
+    payload?.tandaTerimaFakturs,
+    payload?.data?.tandaTerimaFakturs,
+    payload?.results,
+    Array.isArray(payload?.data) ? payload.data : null,
+    Array.isArray(payload) ? payload : null,
+  ];
+
+  const items = dataCandidates.find((candidate) => Array.isArray(candidate)) || [];
+
+  const paginationSource =
+    payload?.pagination ??
+    payload?.data?.pagination ??
+    payload?.meta ??
+    {};
+
+  const currentPage =
+    Number(paginationSource.currentPage ?? paginationSource.page) ||
+    Number(page) ||
+    1;
+  const itemsPerPage =
+    Number(paginationSource.itemsPerPage ?? paginationSource.limit) ||
+    Number(limit) ||
+    10;
+  const totalItems =
+    Number(paginationSource.totalItems ?? paginationSource.total) ||
+    items.length ||
+    0;
+  const totalPages =
+    Number(paginationSource.totalPages) ||
+    Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1);
+
+  return {
+    tandaTerimaFakturs: items,
+    pagination: {
+      currentPage,
+      totalPages,
+      totalItems,
+      itemsPerPage,
+    },
+  };
+};
+
 /**
  * Custom hook for fetching tanda terima faktur with server-side filtering, sorting, and pagination
  * 
@@ -37,9 +107,19 @@ export const useTandaTerimaFakturQuery = ({
 
       // Add column filters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
-          params[key] = value;
+        if (value === null || value === undefined) {
+          return;
         }
+
+        if (typeof value === 'string') {
+          const trimmed = value.trim();
+          if (trimmed !== '') {
+            params[key] = trimmed;
+          }
+          return;
+        }
+
+        params[key] = value;
       });
 
       // Add global filter
@@ -48,30 +128,11 @@ export const useTandaTerimaFakturQuery = ({
       }
 
       // Call backend API
-      const response = await tandaTerimaFakturService.getTandaTerimaFaktur(params);
+      const response = await tandaTerimaFakturService.getTandaTerimaFaktur(
+        sanitizeParams(params)
+      );
 
-      // Handle nested response format
-      const responseData = response?.data || response;
-      const ttfData = responseData?.tandaTerimaFakturs || responseData?.data || responseData || [];
-      const paginationData = responseData?.pagination || {
-        currentPage: parseInt(page) || 1,
-        totalPages: 1,
-        totalItems: Array.isArray(ttfData) ? ttfData.length : 0,
-        itemsPerPage: parseInt(limit) || 10,
-      };
-
-      // Normalize pagination values (convert strings to numbers if needed)
-      const normalizedPagination = {
-        currentPage: parseInt(paginationData.currentPage) || page,
-        totalPages: parseInt(paginationData.totalPages) || 1,
-        totalItems: parseInt(paginationData.totalItems) || 0,
-        itemsPerPage: parseInt(paginationData.itemsPerPage) || limit,
-      };
-
-      return {
-        tandaTerimaFakturs: Array.isArray(ttfData) ? ttfData : [],
-        pagination: normalizedPagination,
-      };
+      return parseResponsePayload(response, { page, limit });
     },
     keepPreviousData: true, // Keep previous data while fetching new data
     staleTime: 0, // Always consider data stale to ensure fresh data after mutations
@@ -90,36 +151,16 @@ export const useTandaTerimaFakturByStatus = ({
   return useQuery({
     queryKey: ['tandaTerimaFaktur', 'status', statusCode, { page, limit }],
     queryFn: async () => {
-      const params = {
+      const params = sanitizeParams({
         page,
         limit,
+        statusCode: statusCode,
         status_code: statusCode,
-      };
+      });
 
       const response = await tandaTerimaFakturService.getTandaTerimaFaktur(params);
 
-      // Handle nested response format
-      const responseData = response?.data || response;
-      const ttfData = responseData?.tandaTerimaFakturs || responseData?.data || responseData || [];
-      const paginationData = responseData?.pagination || {
-        currentPage: parseInt(page) || 1,
-        totalPages: 1,
-        totalItems: Array.isArray(ttfData) ? ttfData.length : 0,
-        itemsPerPage: parseInt(limit) || 10,
-      };
-
-      // Normalize pagination values (convert strings to numbers if needed)
-      const normalizedPagination = {
-        currentPage: parseInt(paginationData.currentPage) || page,
-        totalPages: parseInt(paginationData.totalPages) || 1,
-        totalItems: parseInt(paginationData.totalItems) || 0,
-        itemsPerPage: parseInt(paginationData.itemsPerPage) || limit,
-      };
-
-      return {
-        tandaTerimaFakturs: Array.isArray(ttfData) ? ttfData : [],
-        pagination: normalizedPagination,
-      };
+      return parseResponsePayload(response, { page, limit });
     },
     enabled: !!statusCode, // Only run query if statusCode exists
     keepPreviousData: true,

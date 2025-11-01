@@ -15,7 +15,7 @@ const INITIAL_PAGINATION = {
 };
 
 const DEFAULT_FILTERS = {
-  customerId: '',
+  groupCustomerId: '',
   companyId: '',
   code_supplier: '',
   statusId: '',
@@ -53,44 +53,40 @@ const parseTandaTerimaFakturResponse = (response = {}) => {
     );
   }
 
-  const responseData = response?.data || response;
-  const rawData =
-    responseData?.tandaTerimaFakturs ??
-    responseData?.data ??
-    responseData?.results ??
-    responseData ??
-    [];
+  const payload = response?.data ?? response;
+
+  const dataCandidates = [
+    payload?.items,
+    payload?.data?.items,
+    payload?.tandaTerimaFakturs,
+    payload?.data?.tandaTerimaFakturs,
+    payload?.results,
+    payload?.data,
+    Array.isArray(payload) ? payload : null,
+  ];
+
+  const results = dataCandidates.find((candidate) => Array.isArray(candidate)) || [];
 
   const paginationSource =
-    responseData?.pagination ??
-    responseData?.meta ??
-    responseData?.data?.pagination ??
+    payload?.pagination ??
+    payload?.data?.pagination ??
+    payload?.meta ??
     response?.pagination ??
     {};
 
   const currentPage =
-    paginationSource.currentPage ??
-    paginationSource.page ??
+    Number(paginationSource.currentPage ?? paginationSource.page) ||
     INITIAL_PAGINATION.currentPage;
   const itemsPerPage =
-    paginationSource.itemsPerPage ??
-    paginationSource.limit ??
+    Number(paginationSource.itemsPerPage ?? paginationSource.limit) ||
     INITIAL_PAGINATION.itemsPerPage;
   const totalItems =
-    paginationSource.totalItems ??
-    paginationSource.total ??
-    (Array.isArray(rawData) ? rawData.length : 0);
+    Number(paginationSource.totalItems ?? paginationSource.total) ||
+    results.length ||
+    0;
   const totalPages =
-    paginationSource.totalPages ??
+    Number(paginationSource.totalPages) ||
     Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1);
-
-  const results = Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.tandaTerimaFakturs)
-      ? rawData.tandaTerimaFakturs
-      : Array.isArray(rawData?.data)
-        ? rawData.data
-        : [];
 
   return {
     results,
@@ -193,17 +189,13 @@ const useTandaTerimaFakturPage = () => {
       setSearchLoading(hasFilters);
 
       try {
-        let response;
+        const params = {
+          page,
+          limit,
+          ...activeFilters,
+        };
 
-        if (hasFilters) {
-          response = await tandaTerimaFakturService.search(
-            activeFilters,
-            page,
-            limit
-          );
-        } else {
-          response = await tandaTerimaFakturService.getAll(page, limit);
-        }
+        const response = await tandaTerimaFakturService.getAll(params);
 
         setDataFromResponse(response);
       } catch (err) {
@@ -343,6 +335,108 @@ const useTandaTerimaFakturPage = () => {
     [handleAuthError, refreshAfterMutation]
   );
 
+  const assignDocumentsToTandaTerimaFaktur = useCallback(
+    async (id, payload = {}) => {
+      if (!id) {
+        return null;
+      }
+
+      const fakturPajakIds = Array.isArray(payload?.fakturPajakIds)
+        ? payload.fakturPajakIds
+        : [];
+      const laporanIds = Array.isArray(payload?.laporanIds)
+        ? payload.laporanIds
+        : [];
+
+      if (fakturPajakIds.length === 0 && laporanIds.length === 0) {
+        toastService.error('Minimal satu dokumen harus dipilih.');
+        return null;
+      }
+
+      try {
+        const result = await tandaTerimaFakturService.assignDocuments(id, {
+          fakturPajakIds,
+          laporanIds,
+        });
+
+        if (result?.success === false) {
+          throw new Error(
+            result?.error?.message ||
+              'Failed to assign documents to tanda terima faktur'
+          );
+        }
+
+        toastService.success('Dokumen berhasil di-assign ke tanda terima faktur');
+        await refreshAfterMutation();
+        return result?.data || result;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+          return null;
+        }
+
+        const message = resolveTandaTerimaFakturError(
+          err,
+          'Gagal meng-assign dokumen ke tanda terima faktur'
+        );
+        toastService.error(message);
+        throw err;
+      }
+    },
+    [handleAuthError, refreshAfterMutation]
+  );
+
+  const unassignDocumentsFromTandaTerimaFaktur = useCallback(
+    async (id, payload = {}) => {
+      if (!id) {
+        return null;
+      }
+
+      const fakturPajakIds = Array.isArray(payload?.fakturPajakIds)
+        ? payload.fakturPajakIds
+        : [];
+      const laporanIds = Array.isArray(payload?.laporanIds)
+        ? payload.laporanIds
+        : [];
+
+      if (fakturPajakIds.length === 0 && laporanIds.length === 0) {
+        toastService.error('Minimal satu dokumen harus dipilih.');
+        return null;
+      }
+
+      try {
+        const result = await tandaTerimaFakturService.unassignDocuments(id, {
+          fakturPajakIds,
+          laporanIds,
+        });
+
+        if (result?.success === false) {
+          throw new Error(
+            result?.error?.message ||
+              'Failed to unassign documents from tanda terima faktur'
+          );
+        }
+
+        toastService.success('Dokumen berhasil di-unassign dari tanda terima faktur');
+        await refreshAfterMutation();
+        return result?.data || result;
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          handleAuthError();
+          return null;
+        }
+
+        const message = resolveTandaTerimaFakturError(
+          err,
+          'Gagal meng-unassign dokumen dari tanda terima faktur'
+        );
+        toastService.error(message);
+        throw err;
+      }
+    },
+    [handleAuthError, refreshAfterMutation]
+  );
+
   const deleteTandaTerimaFakturRequest = useCallback(
     async (id) => {
       try {
@@ -423,7 +517,7 @@ const useTandaTerimaFakturPage = () => {
     const active = activeFiltersRef.current || {};
     return (
       active.code_supplier ||
-      active.customerId ||
+      active.groupCustomerId ||
       active.companyId ||
       'filter aktif'
     );
@@ -452,6 +546,8 @@ const useTandaTerimaFakturPage = () => {
     deleteTandaTerimaFakturConfirmation,
     fetchTandaTerimaFaktur: performFetch,
     fetchTandaTerimaFakturById,
+    assignDocuments: assignDocumentsToTandaTerimaFaktur,
+    unassignDocuments: unassignDocumentsFromTandaTerimaFaktur,
     handleAuthError,
   };
 };

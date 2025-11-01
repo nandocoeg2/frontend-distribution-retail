@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, LinkIcon, LinkSlashIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useTandaTerimaFakturQuery } from '../../hooks/useTandaTerimaFakturQuery';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
@@ -53,7 +53,11 @@ const TandaTerimaFakturTableServerSide = ({
   onView,
   onEdit,
   onDelete,
+  onAssignDocuments,
+  onUnassignDocuments,
   deleteLoading = false,
+  assignLoading = false,
+  unassignLoading = false,
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
@@ -133,46 +137,62 @@ const TandaTerimaFakturTableServerSide = ({
           );
         },
       }),
-      columnHelper.accessor('customer.namaCustomer', {
-        id: 'customer_name',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nama Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter customer..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || '-',
-      }),
-      columnHelper.accessor('customer.kodeCustomer', {
-        id: 'customer_code',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kode Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter kode..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || '-',
-      }),
+      columnHelper.accessor(
+        (row) =>
+          row?.groupCustomer?.nama_group ??
+          row?.groupCustomer?.namaGroup ??
+          row?.customer?.groupCustomer?.nama_group ??
+          row?.customer?.groupCustomer?.namaGroup ??
+          '',
+        {
+          id: 'customer_name',
+          header: ({ column }) => (
+            <div className="space-y-2">
+              <div className="font-medium">Nama Group Customer</div>
+              <input
+                type="text"
+                value={column.getFilterValue() ?? ''}
+                onChange={(event) => {
+                  column.setFilterValue(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Filter nama group..."
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          ),
+          cell: (info) => info.getValue() || '-',
+        }
+      ),
+      columnHelper.accessor(
+        (row) =>
+          row?.groupCustomer?.kode_group ??
+          row?.groupCustomer?.kodeGroup ??
+          row?.customer?.groupCustomer?.kode_group ??
+          row?.customer?.groupCustomer?.kodeGroup ??
+          '',
+        {
+          id: 'customer_code',
+          header: ({ column }) => (
+            <div className="space-y-2">
+              <div className="font-medium">Kode Group Customer</div>
+              <input
+                type="text"
+                value={column.getFilterValue() ?? ''}
+                onChange={(event) => {
+                  column.setFilterValue(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Filter kode group..."
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          ),
+          cell: (info) => info.getValue() || '-',
+        }
+      ),
       columnHelper.accessor('company.nama_perusahaan', {
         id: 'company_name',
         header: ({ column }) => (
@@ -293,6 +313,60 @@ const TandaTerimaFakturTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.display({
+        id: 'documents',
+        header: 'Dokumen',
+        cell: ({ row }) => {
+          const item = row.original;
+          const laporanCount = Array.isArray(item?.laporanPenerimaanBarang)
+            ? item.laporanPenerimaanBarang.length
+            : 0;
+          const invoiceCount = Array.isArray(item?.invoicePenagihan)
+            ? item.invoicePenagihan.length
+            : 0;
+          const fakturCount = Array.isArray(item?.fakturPajak)
+            ? item.fakturPajak.length
+            : 0;
+          const hasAssignedDocuments =
+            laporanCount > 0 || invoiceCount > 0 || fakturCount > 0;
+          const disableAssign = assignLoading || typeof onAssignDocuments !== 'function';
+          const disableUnassign =
+            unassignLoading ||
+            typeof onUnassignDocuments !== 'function' ||
+            !hasAssignedDocuments;
+
+          return (
+            <div className="flex items-center justify-between space-x-3">
+              <div className="text-xs leading-tight text-gray-500">
+                <div>LPB: {laporanCount}</div>
+                <div>Invoice: {invoiceCount}</div>
+                <div>Faktur: {fakturCount}</div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => onAssignDocuments?.(item)}
+                  className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Assign dokumen"
+                  disabled={disableAssign}
+                >
+                  <LinkIcon className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onUnassignDocuments?.(item)}
+                  className="text-orange-600 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Unassign dokumen"
+                  disabled={disableUnassign}
+                >
+                  <LinkSlashIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          );
+        },
+        enableSorting: false,
+      }),
+      columnHelper.display({
         id: 'actions',
         header: 'Aksi',
         cell: ({ row }) => {
@@ -331,7 +405,19 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: false,
       }),
     ],
-    [tandaTerimaFakturs, onView, onEdit, onDelete, deleteLoading, activeTab, setPage]
+    [
+      tandaTerimaFakturs,
+      onView,
+      onEdit,
+      onDelete,
+      onAssignDocuments,
+      onUnassignDocuments,
+      deleteLoading,
+      assignLoading,
+      unassignLoading,
+      activeTab,
+      setPage,
+    ]
   );
 
   const table = useReactTable({

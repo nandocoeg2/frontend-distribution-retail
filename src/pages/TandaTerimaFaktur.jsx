@@ -5,9 +5,11 @@ import {
   TandaTerimaFakturTableServerSide,
   TandaTerimaFakturModal,
   TandaTerimaFakturDetailModal,
+  TandaTerimaFakturDocumentsModal,
 } from '@/components/tandaTerimaFaktur';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
+import toastService from '@/services/toastService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TAB_STATUS_CONFIG = {
@@ -67,6 +69,8 @@ const TandaTerimaFakturPage = () => {
     deleteTandaTerimaFaktur: triggerDeleteTandaTerimaFaktur,
     deleteTandaTerimaFakturConfirmation,
     fetchTandaTerimaFakturById,
+    assignDocuments: assignDocumentsToTandaTerimaFaktur,
+    unassignDocuments: unassignDocumentsFromTandaTerimaFaktur,
   } = useTandaTerimaFakturPage();
 
   const [selectedTtf, setSelectedTtf] = useState(null);
@@ -75,6 +79,12 @@ const TandaTerimaFakturPage = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [assignModalTarget, setAssignModalTarget] = useState(null);
+  const [unassignModalTarget, setUnassignModalTarget] = useState(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
+  const [assignRequestLoading, setAssignRequestLoading] = useState(false);
+  const [unassignRequestLoading, setUnassignRequestLoading] = useState(false);
 
   const handleTabChange = useCallback((tabId) => {
     setActiveTab(tabId);
@@ -124,6 +134,125 @@ const TandaTerimaFakturPage = () => {
     setDetailLoading(false);
   };
 
+  const resolveTandaTerimaFakturDetail = useCallback(
+    async (ttf) => {
+      if (!ttf?.id) {
+        return ttf || null;
+      }
+
+      try {
+        const detail = await fetchTandaTerimaFakturById(ttf.id);
+        return detail || ttf;
+      } catch (error) {
+        console.error('Failed to fetch tanda terima faktur detail:', error);
+        return ttf;
+      }
+    },
+    [fetchTandaTerimaFakturById]
+  );
+
+  const openAssignDocumentsModal = useCallback(
+    (ttf) => {
+      if (!ttf) {
+        return;
+      }
+
+      setAssignModalTarget(ttf);
+      setIsAssignModalOpen(true);
+
+      (async () => {
+        try {
+          const detail = await resolveTandaTerimaFakturDetail(ttf);
+          setAssignModalTarget(detail);
+        } catch (error) {
+          console.error('Failed to prepare assign dokumen modal:', error);
+        }
+      })();
+    },
+    [resolveTandaTerimaFakturDetail]
+  );
+
+  const openUnassignDocumentsModal = useCallback(
+    (ttf) => {
+      if (!ttf) {
+        return;
+      }
+
+      setUnassignModalTarget(ttf);
+      setIsUnassignModalOpen(true);
+
+      (async () => {
+        try {
+          const detail = await resolveTandaTerimaFakturDetail(ttf);
+          setUnassignModalTarget(detail);
+        } catch (error) {
+          console.error('Failed to prepare unassign dokumen modal:', error);
+        }
+      })();
+    },
+    [resolveTandaTerimaFakturDetail]
+  );
+
+  const closeAssignModal = useCallback(() => {
+    setIsAssignModalOpen(false);
+    setAssignModalTarget(null);
+  }, []);
+
+  const closeUnassignModal = useCallback(() => {
+    setIsUnassignModalOpen(false);
+    setUnassignModalTarget(null);
+  }, []);
+
+  const handleAssignDocumentsSubmit = useCallback(
+    async ({ fakturPajakIds, laporanIds }) => {
+      if (!assignModalTarget?.id) {
+        toastService.error('Data tanda terima faktur tidak ditemukan.');
+        return;
+      }
+
+      setAssignRequestLoading(true);
+      try {
+        await assignDocumentsToTandaTerimaFaktur(assignModalTarget.id, {
+          fakturPajakIds,
+          laporanIds,
+        });
+        closeAssignModal();
+      } catch (error) {
+        console.error('Gagal meng-assign dokumen tanda terima faktur:', error);
+      } finally {
+        setAssignRequestLoading(false);
+      }
+    },
+    [assignModalTarget, assignDocumentsToTandaTerimaFaktur, closeAssignModal]
+  );
+
+  const handleUnassignDocumentsSubmit = useCallback(
+    async ({ fakturPajakIds, laporanIds }) => {
+      if (!unassignModalTarget?.id) {
+        toastService.error('Data tanda terima faktur tidak ditemukan.');
+        return;
+      }
+
+      setUnassignRequestLoading(true);
+      try {
+        await unassignDocumentsFromTandaTerimaFaktur(unassignModalTarget.id, {
+          fakturPajakIds,
+          laporanIds,
+        });
+        closeUnassignModal();
+      } catch (error) {
+        console.error('Gagal meng-unassign dokumen tanda terima faktur:', error);
+      } finally {
+        setUnassignRequestLoading(false);
+      }
+    },
+    [
+      unassignModalTarget,
+      unassignDocumentsFromTandaTerimaFaktur,
+      closeUnassignModal,
+    ]
+  );
+
   const handleModalSuccess = useCallback(() => {
     // Invalidate queries to refresh data
     queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
@@ -160,6 +289,17 @@ const TandaTerimaFakturPage = () => {
     // Invalidate queries to refresh data
     await queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
   }, [deleteTandaTerimaFakturConfirmation, queryClient]);
+
+  const assignActionDisabled =
+    assignRequestLoading ||
+    unassignRequestLoading ||
+    isAssignModalOpen ||
+    isUnassignModalOpen;
+  const unassignActionDisabled =
+    unassignRequestLoading ||
+    assignRequestLoading ||
+    isAssignModalOpen ||
+    isUnassignModalOpen;
 
   const statusTabs = useMemo(
     () =>
@@ -217,7 +357,11 @@ const TandaTerimaFakturPage = () => {
             onView={openDetailModal}
             onEdit={openEditModal}
             onDelete={handleDelete}
+            onAssignDocuments={openAssignDocumentsModal}
+            onUnassignDocuments={openUnassignDocumentsModal}
             deleteLoading={deleteConfirmationProps.loading}
+            assignLoading={assignActionDisabled}
+            unassignLoading={unassignActionDisabled}
             initialPage={1}
             initialLimit={10}
             activeTab={activeTab}
@@ -245,6 +389,24 @@ const TandaTerimaFakturPage = () => {
         onClose={closeDetailModal}
         tandaTerimaFaktur={selectedTtf}
         isLoading={detailLoading}
+      />
+
+      <TandaTerimaFakturDocumentsModal
+        isOpen={isAssignModalOpen}
+        onClose={closeAssignModal}
+        onSubmit={handleAssignDocumentsSubmit}
+        tandaTerimaFaktur={assignModalTarget}
+        mode='assign'
+        loading={assignRequestLoading}
+      />
+
+      <TandaTerimaFakturDocumentsModal
+        isOpen={isUnassignModalOpen}
+        onClose={closeUnassignModal}
+        onSubmit={handleUnassignDocumentsSubmit}
+        tandaTerimaFaktur={unassignModalTarget}
+        mode='unassign'
+        loading={unassignRequestLoading}
       />
 
       <ConfirmationDialog

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
 import Autocomplete from '../common/Autocomplete';
-import useCustomersPage from '../../hooks/useCustomersPage';
 import useSupplierSearch from '../../hooks/useSupplierSearch';
 import useTermOfPaymentAutocomplete from '../../hooks/useTermOfPaymentAutocomplete';
 import supplierService from '../../services/supplierService';
@@ -17,11 +16,6 @@ const TandaTerimaFakturSearch = ({
   onReset,
   loading,
 }) => {
-  const {
-    customers: customerResults = [],
-    loading: customersLoading,
-    searchCustomers,
-  } = useCustomersPage();
   const supplierFilterValue = filters?.code_supplier;
   const {
     searchResults: supplierResults = [],
@@ -107,9 +101,9 @@ const TandaTerimaFakturSearch = ({
     onFiltersChange?.(field, value);
   };
 
-  const handleCustomerChange = (event) => {
+  const handleGroupCustomerChange = (event) => {
     const value = event?.target ? event.target.value : event;
-    onFiltersChange?.('customerId', value);
+    onFiltersChange?.('groupCustomerId', value);
   };
 
   const handleSupplierChange = (event) => {
@@ -156,26 +150,14 @@ const TandaTerimaFakturSearch = ({
 
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Customer ID
+            Group Customer ID
           </label>
-          <Autocomplete
-            label=''
-            options={Array.isArray(customerResults) ? customerResults : []}
-            value={filters.customerId || ''}
-            onChange={handleCustomerChange}
-            placeholder='Cari nama atau ID customer'
-            displayKey='namaCustomer'
-            valueKey='id'
-            name='customerId'
-            loading={customersLoading}
-            onSearch={async (query) => {
-              try {
-                await searchCustomers(query, 1, 20);
-              } catch (error) {
-                console.error('Failed to search customers:', error);
-              }
-            }}
-            showId
+          <input
+            type='text'
+            value={filters.groupCustomerId || ''}
+            onChange={handleGroupCustomerChange}
+            placeholder='Masukkan ID group customer'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
 

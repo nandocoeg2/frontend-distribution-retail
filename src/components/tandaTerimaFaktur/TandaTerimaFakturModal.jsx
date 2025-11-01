@@ -5,7 +5,7 @@ import toastService from '@/services/toastService';
 const DEFAULT_FORM_VALUES = {
   tanggal: '',
   termOfPaymentId: '',
-  customerId: '',
+  groupCustomerId: '',
   companyId: '',
   code_supplier: '',
   grand_total: '',
@@ -29,7 +29,11 @@ const mapInitialValues = (initialValues = {}) => ({
   tanggal: toDateInputValue(initialValues.tanggal),
   termOfPaymentId:
     initialValues.termOfPaymentId || initialValues.termOfPayment?.id || '',
-  customerId: initialValues.customerId || initialValues.customer?.id || '',
+  groupCustomerId:
+    initialValues.groupCustomerId ||
+    initialValues.groupCustomer?.id ||
+    initialValues.customer?.groupCustomer?.id ||
+    '',
   companyId: initialValues.companyId || initialValues.company?.id || '',
   code_supplier: initialValues.code_supplier || '',
   grand_total:
@@ -83,8 +87,8 @@ const TandaTerimaFakturModal = ({
       nextErrors.termOfPaymentId = 'Term of payment ID wajib diisi.';
     }
 
-    if (!formData.customerId.trim()) {
-      nextErrors.customerId = 'Customer ID wajib diisi.';
+    if (!formData.groupCustomerId.trim()) {
+      nextErrors.groupCustomerId = 'Group customer ID wajib diisi.';
     }
 
     if (!formData.companyId.trim()) {
@@ -131,7 +135,7 @@ const TandaTerimaFakturModal = ({
 
     const payload = {
       termOfPaymentId: formData.termOfPaymentId.trim(),
-      customerId: formData.customerId.trim(),
+      groupCustomerId: formData.groupCustomerId.trim(),
       companyId: formData.companyId.trim(),
       code_supplier: formData.code_supplier.trim(),
       grand_total: Number(formData.grand_total),
@@ -208,9 +212,9 @@ const TandaTerimaFakturModal = ({
           type: 'text',
           placeholder: 'Masukkan ID status TTF',
         })}
-        {renderInput('customerId', 'Customer ID', {
+        {renderInput('groupCustomerId', 'Group Customer ID', {
           type: 'text',
-          placeholder: 'Masukkan ID customer',
+          placeholder: 'Masukkan ID group customer',
         })}
         {renderInput('companyId', 'Company ID', {
           type: 'text',
