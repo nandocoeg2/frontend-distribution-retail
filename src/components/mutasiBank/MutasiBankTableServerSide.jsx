@@ -3,6 +3,8 @@ import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
   CheckBadgeIcon,
+  LinkIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { TabContainer, Tab } from '../ui/Tabs.jsx';
@@ -143,6 +145,19 @@ const resolveMutationTypeLabel = (mutation) => {
   return type || '-';
 };
 
+const hasAssignedDocument = (mutation) => {
+  return Boolean(
+    getFirstAvailableValue(mutation, [
+      'invoicePenagihanId',
+      'invoice_penagihan_id',
+      'invoicePengirimanId',
+      'invoice_pengiriman_id',
+      'tandaTerimaFakturId',
+      'tanda_terima_faktur_id',
+    ])
+  );
+};
+
 const resolveMatchedDocument = (mutation) => {
   const matched = getFirstAvailableValue(mutation, [
     'matched_document',
@@ -271,7 +286,11 @@ const MutasiBankTableServerSide = ({
   activeTab = 'all',
   onViewMutation,
   onValidateMutation,
+  onAssignDocument,
+  onUnassignDocument,
   isValidating = false,
+  isAssigning = false,
+  isUnassigning = false,
   initialPage = 1,
   initialLimit = 10,
   onTabChange,
@@ -463,6 +482,7 @@ const MutasiBankTableServerSide = ({
         cell: ({ row }) => {
           const mutation = row.original;
           const mutationId = resolveMutationId(mutation);
+          const hasDocument = hasAssignedDocument(mutation);
 
           return (
             <div className='flex items-center space-x-2'>
@@ -477,6 +497,36 @@ const MutasiBankTableServerSide = ({
               >
                 <EyeIcon className='w-4 h-4 mr-1' />
                 Detail
+              </button>
+
+              <button
+                type='button'
+                onClick={() => {
+                  if (typeof onAssignDocument === 'function') {
+                    onAssignDocument(mutation, mutationId);
+                  }
+                }}
+                disabled={isAssigning}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-40'
+                title='Kaitkan dokumen ke mutasi'
+              >
+                <LinkIcon className='w-4 h-4 mr-1' />
+                Bind
+              </button>
+
+              <button
+                type='button'
+                onClick={() => {
+                  if (typeof onUnassignDocument === 'function') {
+                    onUnassignDocument(mutation, mutationId);
+                  }
+                }}
+                disabled={!hasDocument || isUnassigning}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 hover:text-amber-800 disabled:opacity-40'
+                title={hasDocument ? 'Lepas kaitan dokumen' : 'Tidak ada dokumen terhubung'}
+              >
+                <XMarkIcon className='w-4 h-4 mr-1' />
+                Unbind
               </button>
 
               <button
@@ -504,7 +554,11 @@ const MutasiBankTableServerSide = ({
     mutations,
     onValidateMutation,
     onViewMutation,
+    onAssignDocument,
+    onUnassignDocument,
     isValidating,
+    isAssigning,
+    isUnassigning,
   ]);
 
   const table = useReactTable({

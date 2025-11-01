@@ -156,6 +156,38 @@ class MutasiBankService {
       throw error;
     }
   }
+
+  async assignDocument(id, payload = {}) {
+    if (!id) {
+      throw new Error('Mutation ID is required');
+    }
+
+    if (!payload.invoicePenagihanId) {
+      throw new Error('Invoice Penagihan ID is required');
+    }
+
+    try {
+      const response = await this.api.post(`/${id}/assign-document`, payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning document to bank mutation:', error);
+      throw error;
+    }
+  }
+
+  async unassignDocument(id) {
+    if (!id) {
+      throw new Error('Mutation ID is required');
+    }
+
+    try {
+      const response = await this.api.post(`/${id}/unassign-document`);
+      return response.data;
+    } catch (error) {
+      console.error('Error unassigning document from bank mutation:', error);
+      throw error;
+    }
+  }
 }
 
 const mutasiBankService = new MutasiBankService();

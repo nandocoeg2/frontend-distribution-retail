@@ -11,6 +11,7 @@ import {
   MutasiBankUploadModal,
   MutasiBankDetailModal,
   MutasiBankValidateModal,
+  MutasiBankAssignDocumentModal,
 } from '../components/mutasiBank';
 import useMutasiBankPage from '../hooks/useMutasiBankPage';
 import toastService from '../services/toastService';
@@ -51,6 +52,10 @@ const MutasiBank = () => {
     detailLoading,
     validateMutation,
     validating,
+    assignDocument,
+    assigning,
+    unassignDocument,
+    unassigning,
   } = useMutasiBankPage();
 
   const [activeTab, setActiveTab] = useState('all');
@@ -59,6 +64,8 @@ const MutasiBank = () => {
   const [detailData, setDetailData] = useState(null);
   const [validateModalOpen, setValidateModalOpen] = useState(false);
   const [validationTarget, setValidationTarget] = useState(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState(null);
 
   const invalidateMutations = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['mutasiBank'] });
@@ -150,6 +157,65 @@ const MutasiBank = () => {
     ]
   );
 
+  const handleOpenAssignModal = useCallback((mutation, mutationId) => {
+    const targetId = mutationId || resolveMutationId(mutation);
+    if (!targetId) {
+      toastService.error('Mutasi bank tidak memiliki ID yang valid.');
+      return;
+    }
+
+    setAssignTarget({
+      id: targetId,
+      mutation,
+    });
+    setAssignModalOpen(true);
+  }, []);
+
+  const handleCloseAssignModal = useCallback(() => {
+    setAssignModalOpen(false);
+    setAssignTarget(null);
+  }, []);
+
+  const handleSubmitAssign = useCallback(
+    async (payload) => {
+      if (!assignTarget?.id) {
+        return;
+      }
+
+      try {
+        await assignDocument(assignTarget.id, payload);
+        invalidateMutations();
+        handleCloseAssignModal();
+      } catch (error) {
+        console.error('Gagal mengaitkan dokumen:', error);
+      }
+    },
+    [
+      invalidateMutations,
+      assignDocument,
+      assignTarget,
+      handleCloseAssignModal,
+    ]
+  );
+
+  const handleUnassignDocument = useCallback(
+    async (mutation, mutationId) => {
+      const targetId = mutationId || resolveMutationId(mutation);
+      if (!targetId) {
+        toastService.error('Mutasi bank tidak memiliki ID yang valid.');
+        return;
+      }
+
+      try {
+        await unassignDocument(targetId);
+        invalidateMutations();
+      } catch (error) {
+        console.error('Gagal melepas dokumen:', error);
+      }
+    },
+    [unassignDocument, invalidateMutations]
+  );
+
   return (
     <div className='min-h-screen bg-gray-50 p-6'>
       <div className='mx-auto max-w-7xl space-y-6'>
@@ -197,7 +263,11 @@ const MutasiBank = () => {
             onTabChange={handleTabChange}
             onViewMutation={handleViewMutation}
             onValidateMutation={handleOpenValidateModal}
+            onAssignDocument={handleOpenAssignModal}
+            onUnassignDocument={handleUnassignDocument}
             isValidating={validating}
+            isAssigning={assigning}
+            isUnassigning={unassigning}
             onManualRefresh={invalidateMutations}
           />
         </section>
@@ -229,6 +299,14 @@ const MutasiBank = () => {
           'VALID'
         }
         selectedCount={1}
+      />
+
+      <MutasiBankAssignDocumentModal
+        open={assignModalOpen}
+        onClose={handleCloseAssignModal}
+        onSubmit={handleSubmitAssign}
+        loading={assigning}
+        mutation={assignTarget?.mutation}
       />
     </div>
   );

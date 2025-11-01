@@ -18,6 +18,8 @@ const useMutasiBankPage = () => {
   const [uploading, setUploading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [validating, setValidating] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [unassigning, setUnassigning] = useState(false);
 
   const handleAuthError = useCallback(
     (error) => {
@@ -115,6 +117,63 @@ const useMutasiBankPage = () => {
     [handleAuthError]
   );
 
+  const assignDocument = useCallback(
+    async (id, payload) => {
+      if (!id) {
+        toastService.error('ID mutasi bank tidak valid.');
+        return null;
+      }
+
+      if (!payload?.invoicePenagihanId) {
+        toastService.error('ID Invoice Penagihan wajib diisi.');
+        return null;
+      }
+
+      setAssigning(true);
+      try {
+        const response = await mutasiBankService.assignDocument(id, payload);
+        toastService.success('Dokumen berhasil dikaitkan ke mutasi bank.');
+        return response;
+      } catch (error) {
+        if (!handleAuthError(error)) {
+          toastService.error(
+            resolveErrorMessage(error, 'Gagal mengaitkan dokumen.')
+          );
+        }
+        throw error;
+      } finally {
+        setAssigning(false);
+      }
+    },
+    [handleAuthError]
+  );
+
+  const unassignDocument = useCallback(
+    async (id) => {
+      if (!id) {
+        toastService.error('ID mutasi bank tidak valid.');
+        return null;
+      }
+
+      setUnassigning(true);
+      try {
+        const response = await mutasiBankService.unassignDocument(id);
+        toastService.success('Dokumen berhasil dilepas dari mutasi bank.');
+        return response;
+      } catch (error) {
+        if (!handleAuthError(error)) {
+          toastService.error(
+            resolveErrorMessage(error, 'Gagal melepas dokumen.')
+          );
+        }
+        throw error;
+      } finally {
+        setUnassigning(false);
+      }
+    },
+    [handleAuthError]
+  );
+
   return {
     uploadMutationFile,
     uploading,
@@ -122,6 +181,10 @@ const useMutasiBankPage = () => {
     detailLoading,
     validateMutation,
     validating,
+    assignDocument,
+    assigning,
+    unassignDocument,
+    unassigning,
     handleAuthError,
   };
 };
