@@ -183,10 +183,46 @@ class TandaTerimaFakturService {
 
   async unassignDocuments(id, payload = {}) {
     try {
-      const response = await this.api.post(`/${id}/unassign-documents`, payload);
+      const response = await this.api.post(
+        `/${id}/unassign-documents`,
+        payload
+      );
       return response.data;
     } catch (error) {
-      console.error('Error unassigning documents from tanda terima faktur:', error);
+      console.error(
+        'Error unassigning documents from tanda terima faktur:',
+        error
+      );
+      throw error;
+    }
+  }
+
+  async getGrouped(params = {}) {
+    try {
+      const response = await this.api.get('/grouped', {
+        params: sanitizeParams(params),
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching grouped tanda terima faktur:', error);
+      throw error;
+    }
+  }
+
+  async getGroupedDetail(groupCustomerId, params = {}) {
+    try {
+      const response = await this.api.get(
+        `/grouped/${groupCustomerId}/detail`,
+        {
+          params: sanitizeParams(params),
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error fetching grouped tanda terima faktur detail:',
+        error
+      );
       throw error;
     }
   }

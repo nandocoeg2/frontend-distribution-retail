@@ -48,6 +48,7 @@ import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
 import FakturPajak from './pages/FakturPajak.jsx';
 import Kwitansi from './pages/Kwitansi.jsx';
 import TandaTerimaFaktur from './pages/TandaTerimaFaktur.jsx';
+import TandaTerimaFakturGrouped from './pages/TandaTerimaFakturGrouped.jsx';
 import MutasiBank from './pages/MutasiBank.jsx';
 import Returns from './pages/Returns.jsx';
 import ReturnCreate from './pages/ReturnCreate.jsx';
@@ -197,6 +198,14 @@ const AppRoutes = () => {
       />
       <Route
         path='/invoice/ttf'
+        element={
+          <ProtectedRoute>
+            <TandaTerimaFakturGrouped />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/invoice/ttf-grouped'
         element={
           <ProtectedRoute>
             <TandaTerimaFaktur />
