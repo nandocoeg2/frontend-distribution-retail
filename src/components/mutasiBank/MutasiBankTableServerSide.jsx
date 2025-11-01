@@ -2,9 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
-  LinkIcon,
   CheckBadgeIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { TabContainer, Tab } from '../ui/Tabs.jsx';
@@ -271,15 +269,8 @@ const formatSummaryValue = (keyPath, value) => {
 const MutasiBankTableServerSide = ({
   filters = {},
   activeTab = 'all',
-  selectedMutationIds = [],
-  onSelectMutation,
-  onSelectAllMutations,
   onViewMutation,
-  onMatchMutation,
-  onUnmatchMutation,
   onValidateMutation,
-  isMatching = false,
-  isUnmatching = false,
   isValidating = false,
   initialPage = 1,
   initialLimit = 10,
@@ -327,61 +318,6 @@ const MutasiBankTableServerSide = ({
 
   const tableColumns = useMemo(() => {
     return [
-      columnHelper.display({
-        id: 'select',
-        header: () => {
-          const currentIds = mutations
-            .map((mutation) => resolveMutationId(mutation))
-            .filter(Boolean);
-          const isAllSelected =
-            currentIds.length > 0 &&
-            currentIds.every((id) => selectedMutationIds.includes(id));
-          const isIndeterminate =
-            !isAllSelected &&
-            currentIds.some((id) => selectedMutationIds.includes(id));
-
-          return (
-            <input
-              type='checkbox'
-              checked={isAllSelected}
-              ref={(input) => {
-                if (input) {
-                  input.indeterminate = isIndeterminate;
-                }
-              }}
-              onChange={() => {
-                if (typeof onSelectAllMutations === 'function') {
-                  onSelectAllMutations(currentIds, !isAllSelected);
-                }
-              }}
-              className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
-            />
-          );
-        },
-        cell: ({ row }) => {
-          const mutation = row.original;
-          const mutationId = resolveMutationId(mutation);
-          const isSelected = mutationId
-            ? selectedMutationIds.includes(mutationId)
-            : false;
-          return (
-            <input
-              type='checkbox'
-              checked={isSelected}
-              onChange={(event) => {
-                if (typeof onSelectMutation === 'function') {
-                  onSelectMutation(mutationId, event.target.checked);
-                }
-              }}
-              disabled={!mutationId}
-              className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
-            />
-          );
-        },
-        enableSorting: false,
-        enableHiding: false,
-        enableColumnFilter: false,
-      }),
       columnHelper.accessor(
         (row) =>
           getFirstAvailableValue(row, [
@@ -527,12 +463,6 @@ const MutasiBankTableServerSide = ({
         cell: ({ row }) => {
           const mutation = row.original;
           const mutationId = resolveMutationId(mutation);
-          const mutationType = resolveMutationTypeLabel(mutation);
-          const matched = resolveMatchedDocument(mutation);
-
-          const isCredit =
-            mutationType === 'CR' ||
-            String(mutationType).toUpperCase() === 'CREDIT';
 
           return (
             <div className='flex items-center space-x-2'>
@@ -547,44 +477,6 @@ const MutasiBankTableServerSide = ({
               >
                 <EyeIcon className='w-4 h-4 mr-1' />
                 Detail
-              </button>
-
-              <button
-                type='button'
-                onClick={() => {
-                  if (typeof onMatchMutation === 'function') {
-                    onMatchMutation(mutation, mutationId);
-                  }
-                }}
-                disabled={!isCredit || isMatching}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-40'
-                title={
-                  isCredit
-                    ? 'Lakukan pencocokan mutasi'
-                    : 'Pencocokan hanya tersedia untuk mutasi credit (CR)'
-                }
-              >
-                <LinkIcon className='w-4 h-4 mr-1' />
-                Match
-              </button>
-
-              <button
-                type='button'
-                onClick={() => {
-                  if (typeof onUnmatchMutation === 'function') {
-                    onUnmatchMutation(mutation, mutationId);
-                  }
-                }}
-                disabled={!matched || isUnmatching}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 hover:text-amber-800 disabled:opacity-40'
-                title={
-                  matched
-                    ? 'Lepaskan pencocokan'
-                    : 'Mutasi belum memiliki dokumen terhubung'
-                }
-              >
-                <XMarkIcon className='w-4 h-4 mr-1' />
-                Unmatch
               </button>
 
               <button
@@ -610,15 +502,8 @@ const MutasiBankTableServerSide = ({
     ];
   }, [
     mutations,
-    onMatchMutation,
-    onSelectAllMutations,
-    onSelectMutation,
-    onUnmatchMutation,
     onValidateMutation,
     onViewMutation,
-    selectedMutationIds,
-    isMatching,
-    isUnmatching,
     isValidating,
   ]);
 

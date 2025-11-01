@@ -17,11 +17,7 @@ const useMutasiBankPage = () => {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [matching, setMatching] = useState(false);
-  const [unmatching, setUnmatching] = useState(false);
   const [validating, setValidating] = useState(false);
-  const [bulkValidating, setBulkValidating] = useState(false);
-  const [batchSummaryLoading, setBatchSummaryLoading] = useState(false);
 
   const handleAuthError = useCallback(
     (error) => {
@@ -88,80 +84,6 @@ const useMutasiBankPage = () => {
     [handleAuthError]
   );
 
-  const fetchMatchSuggestions = useCallback(
-    async (id) => {
-      if (!id) {
-        toastService.error('ID mutasi bank tidak valid.');
-        return null;
-      }
-
-      try {
-        const response = await mutasiBankService.getMatchSuggestions(id);
-        return response;
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          toastService.error(
-            resolveErrorMessage(error, 'Gagal memuat saran dokumen.')
-          );
-        }
-        throw error;
-      }
-    },
-    [handleAuthError]
-  );
-
-  const matchMutation = useCallback(
-    async (id, payload) => {
-      if (!id) {
-        toastService.error('ID mutasi bank tidak valid.');
-        return null;
-      }
-
-      setMatching(true);
-      try {
-        const response = await mutasiBankService.matchMutation(id, payload);
-        toastService.success('Mutasi bank berhasil dihubungkan ke dokumen.');
-        return response;
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          toastService.error(
-            resolveErrorMessage(error, 'Gagal melakukan pencocokan mutasi bank.')
-          );
-        }
-        throw error;
-      } finally {
-        setMatching(false);
-      }
-    },
-    [handleAuthError]
-  );
-
-  const unmatchMutation = useCallback(
-    async (id) => {
-      if (!id) {
-        toastService.error('ID mutasi bank tidak valid.');
-        return null;
-      }
-
-      setUnmatching(true);
-      try {
-        const response = await mutasiBankService.unmatchMutation(id);
-        toastService.success('Relasi mutasi bank berhasil dilepas.');
-        return response;
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          toastService.error(
-            resolveErrorMessage(error, 'Gagal melepas pencocokan mutasi bank.')
-          );
-        }
-        throw error;
-      } finally {
-        setUnmatching(false);
-      }
-    },
-    [handleAuthError]
-  );
-
   const validateMutation = useCallback(
     async (id, payload) => {
       if (!id) {
@@ -193,82 +115,13 @@ const useMutasiBankPage = () => {
     [handleAuthError]
   );
 
-  const bulkValidateMutations = useCallback(
-    async ({ mutationIds, status, notes }) => {
-      if (!Array.isArray(mutationIds) || mutationIds.length === 0) {
-        toastService.error('Silakan pilih mutasi bank yang akan divalidasi.');
-        return null;
-      }
-
-      if (!status) {
-        toastService.error('Status validasi wajib dipilih.');
-        return null;
-      }
-
-      setBulkValidating(true);
-      try {
-        const response = await mutasiBankService.bulkValidate({
-          mutationIds,
-          status,
-          notes,
-        });
-        toastService.success('Validasi massal mutasi bank berhasil diproses.');
-        return response;
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          toastService.error(
-            resolveErrorMessage(error, 'Gagal melakukan validasi massal.')
-          );
-        }
-        throw error;
-      } finally {
-        setBulkValidating(false);
-      }
-    },
-    [handleAuthError]
-  );
-
-  const fetchBatchSummary = useCallback(
-    async (batchNumber) => {
-      if (!batchNumber) {
-        toastService.error('Nomor batch wajib diisi.');
-        return null;
-      }
-
-      setBatchSummaryLoading(true);
-      try {
-        const response = await mutasiBankService.getBatchSummary(batchNumber);
-        return response;
-      } catch (error) {
-        if (!handleAuthError(error)) {
-          toastService.error(
-            resolveErrorMessage(error, 'Gagal memuat ringkasan batch.')
-          );
-        }
-        throw error;
-      } finally {
-        setBatchSummaryLoading(false);
-      }
-    },
-    [handleAuthError]
-  );
-
   return {
     uploadMutationFile,
     uploading,
     fetchMutationDetail,
     detailLoading,
-    fetchMatchSuggestions,
-    matchMutation,
-    matching,
-    unmatchMutation,
-    unmatching,
     validateMutation,
     validating,
-    bulkValidateMutations,
-    bulkValidating,
-    fetchBatchSummary,
-    batchSummaryLoading,
     handleAuthError,
   };
 };

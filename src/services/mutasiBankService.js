@@ -103,19 +103,6 @@ class MutasiBankService {
     }
   }
 
-  async listUnmatched(params = {}) {
-    try {
-      const response = await this.api.get('/unmatched/list', {
-        params,
-        paramsSerializer: serializeParams,
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching unmatched bank mutations:', error);
-      throw error;
-    }
-  }
-
   async getMutationById(id) {
     if (!id) {
       throw new Error('Mutation ID is required');
@@ -126,48 +113,6 @@ class MutasiBankService {
       return response.data;
     } catch (error) {
       console.error('Error fetching bank mutation detail:', error);
-      throw error;
-    }
-  }
-
-  async getMatchSuggestions(id) {
-    if (!id) {
-      throw new Error('Mutation ID is required');
-    }
-
-    try {
-      const response = await this.api.get(`/${id}/match-suggestions`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching bank mutation match suggestions:', error);
-      throw error;
-    }
-  }
-
-  async matchMutation(id, payload = {}) {
-    if (!id) {
-      throw new Error('Mutation ID is required');
-    }
-
-    try {
-      const response = await this.api.post(`/${id}/match`, payload);
-      return response.data;
-    } catch (error) {
-      console.error('Error matching bank mutation:', error);
-      throw error;
-    }
-  }
-
-  async unmatchMutation(id) {
-    if (!id) {
-      throw new Error('Mutation ID is required');
-    }
-
-    try {
-      const response = await this.api.post(`/${id}/unmatch`);
-      return response.data;
-    } catch (error) {
-      console.error('Error unmatching bank mutation:', error);
       throw error;
     }
   }
@@ -186,38 +131,6 @@ class MutasiBankService {
       return response.data;
     } catch (error) {
       console.error('Error validating bank mutation:', error);
-      throw error;
-    }
-  }
-
-  async bulkValidate(payload = {}) {
-    if (!Array.isArray(payload.mutationIds) || payload.mutationIds.length === 0) {
-      throw new Error('mutationIds is required');
-    }
-
-    if (!payload.status) {
-      throw new Error('Validation status is required');
-    }
-
-    try {
-      const response = await this.api.post('/bulk-validate', payload);
-      return response.data;
-    } catch (error) {
-      console.error('Error bulk validating bank mutations:', error);
-      throw error;
-    }
-  }
-
-  async getBatchSummary(batchNumber) {
-    if (!batchNumber) {
-      throw new Error('Batch number is required');
-    }
-
-    try {
-      const response = await this.api.get(`/batch/${batchNumber}/summary`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching bank mutation batch summary:', error);
       throw error;
     }
   }
