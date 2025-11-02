@@ -348,19 +348,9 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
       </FormSection>
 
       <FormSection
-        title="Dimensi"
-        description="Isi detail dimensi barang sesuai struktur payload API."
+        title="Dimensi Unit"
+        description="Isi detail dimensi unit barang."
       >
-        <FormField
-          label="Berat (kg)"
-          name="berat"
-          type="number"
-          value={formData.berat}
-          onChange={handleChange}
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-        />
         <FormField
           label="Panjang (cm)"
           name="panjang"
