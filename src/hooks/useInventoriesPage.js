@@ -30,22 +30,70 @@ const parseInventoriesResponse = (response) => {
       return item;
     }
 
-    const dimensionList = Array.isArray(item.dimensiBarang) ? item.dimensiBarang : [];
-    const dimensiKartonEntry = item.dimensiKarton || dimensionList.find((dimension) => dimension?.type === 'KARTON');
-    const dimensiPcsEntry = item.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
-    const legacyDimension = item.dimensiKardus || {};
-    const dimensionSource = dimensiKartonEntry || legacyDimension;
+    const dimensiValue = (() => {
+      if (
+        item.dimensiBarang &&
+        typeof item.dimensiBarang === 'object' &&
+        !Array.isArray(item.dimensiBarang)
+      ) {
+        return item.dimensiBarang;
+      }
+      if (Array.isArray(item.dimensiBarang) && item.dimensiBarang.length > 0) {
+        return item.dimensiBarang[0];
+      }
+      if (item.dimensi && typeof item.dimensi === 'object') {
+        return item.dimensi;
+      }
+      return {};
+    })();
+
+    const dimensiKarton = (() => {
+      if (
+        item.dimensiKarton &&
+        typeof item.dimensiKarton === 'object' &&
+        !Array.isArray(item.dimensiKarton)
+      ) {
+        return item.dimensiKarton;
+      }
+      if (Array.isArray(item.dimensiKarton) && item.dimensiKarton.length > 0) {
+        return item.dimensiKarton[0];
+      }
+      if (item.cartonDimension && typeof item.cartonDimension === 'object') {
+        return item.cartonDimension;
+      }
+      return null;
+    })();
+
+    const itemStock = item.itemStock || item.itemStocks || item.item_stock || {};
+    const itemPrice = (() => {
+      if (item.itemPrice && typeof item.itemPrice === 'object') {
+        return item.itemPrice;
+      }
+      if (Array.isArray(item.itemPrices) && item.itemPrices.length > 0) {
+        return item.itemPrices[0];
+      }
+      if (item.item_price && typeof item.item_price === 'object') {
+        return item.item_price;
+      }
+      return {};
+    })();
 
     return {
       ...item,
       allow_mixed_carton: Boolean(item.allow_mixed_carton ?? true),
-      dimensiKarton: dimensiKartonEntry || null,
-      dimensiPcs: dimensiPcsEntry || null,
-      berat: item.berat ?? dimensionSource?.berat ?? 0,
-      panjang: item.panjang ?? dimensionSource?.panjang ?? 0,
-      lebar: item.lebar ?? dimensionSource?.lebar ?? 0,
-      tinggi: item.tinggi ?? dimensionSource?.tinggi ?? 0,
-      qty_per_carton: item.qty_per_carton ?? dimensionSource?.qty_per_carton ?? 0
+      dimensiBarang: dimensiValue,
+      dimensi: item.dimensi || dimensiValue,
+      dimensiKarton,
+      itemStock,
+      itemStocks: itemStock,
+      itemPrice,
+      stok_quantity: itemStock?.stok_quantity ?? item.stok_quantity ?? 0,
+      min_stok: itemStock?.min_stok ?? item.min_stok ?? 0,
+      berat: item.berat ?? dimensiValue?.berat ?? 0,
+      panjang: item.panjang ?? dimensiValue?.panjang ?? 0,
+      lebar: item.lebar ?? dimensiValue?.lebar ?? 0,
+      tinggi: item.tinggi ?? dimensiValue?.tinggi ?? 0,
+      qty_per_carton: itemStock?.qty_per_carton ?? item.qty_per_carton ?? 0
     };
   };
 

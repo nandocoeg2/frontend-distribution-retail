@@ -16,6 +16,75 @@ const useInventoryDetail = (inventoryId) => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
+  const normalizeInventory = (detail = {}) => {
+    const dimensiValue = (() => {
+      if (
+        detail.dimensiBarang &&
+        typeof detail.dimensiBarang === 'object' &&
+        !Array.isArray(detail.dimensiBarang)
+      ) {
+        return detail.dimensiBarang;
+      }
+      if (Array.isArray(detail.dimensiBarang) && detail.dimensiBarang.length > 0) {
+        return detail.dimensiBarang[0];
+      }
+      if (detail.dimensi && typeof detail.dimensi === 'object') {
+        return detail.dimensi;
+      }
+      return {};
+    })();
+
+    const dimensiKarton = (() => {
+      if (
+        detail.dimensiKarton &&
+        typeof detail.dimensiKarton === 'object' &&
+        !Array.isArray(detail.dimensiKarton)
+      ) {
+        return detail.dimensiKarton;
+      }
+      if (Array.isArray(detail.dimensiKarton) && detail.dimensiKarton.length > 0) {
+        return detail.dimensiKarton[0];
+      }
+      if (detail.cartonDimension && typeof detail.cartonDimension === 'object') {
+        return detail.cartonDimension;
+      }
+      return null;
+    })();
+
+    const itemStock = detail.itemStock || detail.itemStocks || detail.item_stock || {};
+    const itemPrice = (() => {
+      if (detail.itemPrice && typeof detail.itemPrice === 'object') {
+        return detail.itemPrice;
+      }
+      if (Array.isArray(detail.itemPrices) && detail.itemPrices.length > 0) {
+        return detail.itemPrices[0];
+      }
+      if (detail.item_price && typeof detail.item_price === 'object') {
+        return detail.item_price;
+      }
+      return {};
+    })();
+
+    return {
+      ...detail,
+      allow_mixed_carton: Boolean(detail.allow_mixed_carton ?? true),
+      dimensiBarang: dimensiValue,
+      dimensi: detail.dimensi || dimensiValue,
+      dimensiKarton,
+      itemStock,
+      itemStocks: itemStock,
+      itemPrice,
+      stok_quantity: itemStock?.stok_quantity ?? detail.stok_quantity ?? 0,
+      min_stok: itemStock?.min_stok ?? detail.min_stok ?? 0,
+      berat: detail.berat ?? dimensiValue?.berat ?? 0,
+      panjang: detail.panjang ?? dimensiValue?.panjang ?? 0,
+      lebar: detail.lebar ?? dimensiValue?.lebar ?? 0,
+      tinggi: detail.tinggi ?? dimensiValue?.tinggi ?? 0,
+      qty_per_carton: itemStock?.qty_per_carton ?? detail.qty_per_carton ?? 0,
+      harga: itemPrice?.harga ?? detail.harga ?? 0
+    };
+  };
+
   const loadInventory = useCallback(async () => {
     if (!inventoryId) return;
 
@@ -25,24 +94,8 @@ const useInventoryDetail = (inventoryId) => {
       const response = await getInventoryById(inventoryId);
       
       if (response.success) {
-        const detail = response.data || {};
-        const dimensionList = Array.isArray(detail.dimensiBarang) ? detail.dimensiBarang : [];
-        const dimensiKartonEntry = detail.dimensiKarton || dimensionList.find((dimension) => dimension?.type === 'KARTON');
-        const dimensiPcsEntry = detail.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
-        const legacyDimension = detail.dimensiKardus || {};
-        const dimensionSource = dimensiKartonEntry || legacyDimension;
-
-        setInventory({
-          ...detail,
-          allow_mixed_carton: Boolean(detail.allow_mixed_carton ?? true),
-          dimensiKarton: dimensiKartonEntry || null,
-          dimensiPcs: dimensiPcsEntry || null,
-          berat: detail.berat ?? dimensionSource?.berat ?? 0,
-          panjang: detail.panjang ?? dimensionSource?.panjang ?? 0,
-          lebar: detail.lebar ?? dimensionSource?.lebar ?? 0,
-          tinggi: detail.tinggi ?? dimensionSource?.tinggi ?? 0,
-          qty_per_carton: detail.qty_per_carton ?? dimensionSource?.qty_per_carton ?? 0
-        });
+        const detail = normalizeInventory(response.data || {});
+        setInventory(detail);
       } else {
         throw new Error(response.error?.message || 'Failed to load inventory');
       }

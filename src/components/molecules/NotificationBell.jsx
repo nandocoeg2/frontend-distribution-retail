@@ -348,13 +348,31 @@ const NotificationBell = () => {
                       {notification.type === 'LOW_STOCK' &&
                         notification.inventory && (
                           <div className='mt-2 text-xs text-gray-600'>
-                            <span className='font-medium'>Current stock:</span>{' '}
-                            {notification.inventory.stok_barang}
-                            <span className='ml-2'>•</span>
-                            <span className='ml-2 font-medium'>
-                              Min stock:
-                            </span>{' '}
-                            {notification.inventory.min_stok}
+                            {(() => {
+                              const inventoryInfo = notification.inventory;
+                              const itemStocks = inventoryInfo.itemStock || inventoryInfo.itemStocks || {};
+                              const stokQuantity =
+                                itemStocks.stok_quantity ??
+                                inventoryInfo.stok_quantity ??
+                                inventoryInfo.stok_barang ??
+                                0;
+                              const minStock =
+                                itemStocks.min_stok ??
+                                inventoryInfo.min_stok ??
+                                0;
+
+                              return (
+                                <>
+                                  <span className='font-medium'>Current stock:</span>{' '}
+                                  {stokQuantity}
+                                  <span className='ml-2'>•</span>
+                                  <span className='ml-2 font-medium'>
+                                    Min stock:
+                                  </span>{' '}
+                                  {minStock}
+                                </>
+                              );
+                            })()}
                           </div>
                         )}
                     </div>

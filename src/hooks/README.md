@@ -156,14 +156,16 @@ const OperationsComponent = () => {
 
 ## Field Inventory
 
-Berdasarkan API documentation, field inventory yang digunakan:
+Mengikuti API terbaru, struktur payload inventory yang digunakan:
 
 - `plu`: Price Look-Up code (kode barang) - Required
 - `nama_barang`: Nama barang - Required
-- `stok_c`: Stok dalam karton - Required
-- `stok_q`: Stok dalam pcs - Required
-- `harga_barang`: Harga barang - Required
-- `min_stok`: Minimum stok level - Optional (default: 10)
+- `eanBarcode`: Barcode EAN-8 / EAN-13 - Optional
+- `uom`: Unit of Measurement (default `KARTON`) - Optional
+- `allow_mixed_carton`: Apakah barang boleh mixed carton - Required (boolean)
+- `dimensi`: Objek dimensi tunggal (berat, panjang, lebar, tinggi) - Required
+- `itemStock`: Objek stok (stok_quantity, min_stok, qty_per_carton) - Optional (default 0)
+- `itemPrice`: Objek harga (harga, pot1, harga1, pot2, harga2, ppn) - Optional
 
 ## Error Handling
 

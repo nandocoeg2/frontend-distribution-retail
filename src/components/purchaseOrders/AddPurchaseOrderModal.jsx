@@ -407,6 +407,7 @@ const AddPurchaseOrderModal = ({
                           newDetail,
                         ]);
                       }}
+                      customerId={formData.customerId}
                     />
                   </>
                 )}

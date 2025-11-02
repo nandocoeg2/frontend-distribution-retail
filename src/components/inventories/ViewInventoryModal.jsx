@@ -46,41 +46,105 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     return { status: 'In Stock', variant: 'success' };
   };
 
-  const totalCartons = resolvedInventory?.stok_c || 0;
-  const totalPieces = resolvedInventory?.stok_q || 0;
-  const minimumStock = resolvedInventory?.min_stok || 0;
-  const totalStock = totalCartons + totalPieces;
-  const stockStatus = resolveStockStatusVariant(totalStock, minimumStock);
+  const itemStock = resolvedInventory?.itemStock || resolvedInventory?.itemStocks || {};
+  const itemPrice = (() => {
+    if (resolvedInventory?.itemPrice && typeof resolvedInventory.itemPrice === 'object') {
+      return resolvedInventory.itemPrice;
+    }
+    if (Array.isArray(resolvedInventory?.itemPrices) && resolvedInventory.itemPrices.length > 0) {
+      return resolvedInventory.itemPrices[0];
+    }
+    return {};
+  })();
+  const stokQuantity = Number(itemStock?.stok_quantity ?? resolvedInventory?.stok_quantity ?? 0);
+  const minimumStock = Number(itemStock?.min_stok ?? resolvedInventory?.min_stok ?? 0);
+  const qtyPerCarton = Number(itemStock?.qty_per_carton ?? resolvedInventory?.qty_per_carton ?? 0);
+  const stockStatus = resolveStockStatusVariant(stokQuantity, minimumStock);
 
-  const dimensionList = Array.isArray(resolvedInventory?.dimensiBarang) ? resolvedInventory.dimensiBarang : [];
-  const dimensiKarton =
-    resolvedInventory?.dimensiKarton ||
-    dimensionList.find((dimension) => dimension?.type === 'KARTON') ||
-    resolvedInventory?.dimensiKardus ||
-    null;
-  const dimensiPcs =
-    resolvedInventory?.dimensiPcs ||
-    dimensionList.find((dimension) => dimension?.type === 'PCS') ||
-    null;
+  const dimensiBarang = (() => {
+    if (
+      resolvedInventory?.dimensiBarang &&
+      typeof resolvedInventory.dimensiBarang === 'object' &&
+      !Array.isArray(resolvedInventory.dimensiBarang)
+    ) {
+      return resolvedInventory.dimensiBarang;
+    }
+    if (Array.isArray(resolvedInventory?.dimensiBarang) && resolvedInventory.dimensiBarang.length > 0) {
+      return resolvedInventory.dimensiBarang[0];
+    }
+    if (resolvedInventory?.dimensi && typeof resolvedInventory.dimensi === 'object') {
+      return resolvedInventory.dimensi;
+    }
+    return {};
+  })();
 
-  const cartonWeight = dimensiKarton?.berat ?? resolvedInventory?.berat;
-  const cartonLength = dimensiKarton?.panjang ?? resolvedInventory?.panjang;
-  const cartonWidth = dimensiKarton?.lebar ?? resolvedInventory?.lebar;
-  const cartonHeight = dimensiKarton?.tinggi ?? resolvedInventory?.tinggi;
-  const cartonQtyPerCarton = dimensiKarton?.qty_per_carton ?? resolvedInventory?.qty_per_carton;
+  const dimensionValues = {
+    berat: dimensiBarang?.berat ?? resolvedInventory?.berat,
+    panjang: dimensiBarang?.panjang ?? resolvedInventory?.panjang,
+    lebar: dimensiBarang?.lebar ?? resolvedInventory?.lebar,
+    tinggi: dimensiBarang?.tinggi ?? resolvedInventory?.tinggi
+  };
+  const dimensiKarton = resolvedInventory?.dimensiKarton || null;
+  const cartonDimensionValues = dimensiKarton
+    ? {
+        berat: dimensiKarton?.berat,
+        panjang: dimensiKarton?.panjang,
+        lebar: dimensiKarton?.lebar,
+        tinggi: dimensiKarton?.tinggi
+      }
+    : {};
 
-  const pcsWeight = dimensiPcs?.berat;
-  const pcsLength = dimensiPcs?.panjang;
-  const pcsWidth = dimensiPcs?.lebar;
-  const pcsHeight = dimensiPcs?.tinggi;
-
-  const hasCartonDimension = [cartonWeight, cartonLength, cartonWidth, cartonHeight, cartonQtyPerCarton].some(
+  const dimensionExists = Object.values(dimensionValues).some(
     (value) => value !== null && value !== undefined
   );
-  const hasPcsDimension = [pcsWeight, pcsLength, pcsWidth, pcsHeight].some(
+  const cartonDimensionExists = Object.values(cartonDimensionValues).some(
     (value) => value !== null && value !== undefined
   );
-  const dimensionExists = hasCartonDimension || hasPcsDimension;
+
+  const formatNumberWithSuffix = (value, suffix = '') => {
+    if (value === null || value === undefined) {
+      return '—';
+    }
+    if (suffix) {
+      return `${value}${suffix}`;
+    }
+    return String(value);
+  };
+
+  const hasItemPrice = itemPrice && Object.values(itemPrice).some(value => value !== null && value !== undefined);
+  const pricingRows = hasItemPrice
+    ? [
+        {
+          label: 'Harga Dasar',
+          value: itemPrice?.harga !== undefined && itemPrice?.harga !== null ? formatCurrency(itemPrice.harga) : 'Tidak ada data harga'
+        },
+        {
+          label: 'Potongan 1 (%)',
+          value: formatNumberWithSuffix(itemPrice?.pot1, '%')
+        },
+        {
+          label: 'Harga Setelah Potongan 1',
+          value: itemPrice?.harga1 !== undefined && itemPrice?.harga1 !== null ? formatCurrency(itemPrice.harga1) : '—'
+        },
+        {
+          label: 'Potongan 2 (%)',
+          value: formatNumberWithSuffix(itemPrice?.pot2, '%')
+        },
+        {
+          label: 'Harga Setelah Potongan 2',
+          value: itemPrice?.harga2 !== undefined && itemPrice?.harga2 !== null ? formatCurrency(itemPrice.harga2) : '—'
+        },
+        {
+          label: 'PPN (%)',
+          value: formatNumberWithSuffix(itemPrice?.ppn, '%')
+        }
+      ]
+    : [
+        {
+          label: 'Harga',
+          value: 'Tidak ada data harga'
+        }
+      ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -168,6 +232,8 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                           { label: 'PLU', value: resolvedInventory?.plu, copyable: true },
                           { label: 'Nama Barang', value: resolvedInventory?.nama_barang },
                           { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true },
+                          { label: 'EAN Barcode', value: resolvedInventory?.eanBarcode || '—', copyable: Boolean(resolvedInventory?.eanBarcode) },
+                          { label: 'Satuan (UoM)', value: resolvedInventory?.uom || '—' },
                           { label: 'Allow Mixed Carton', value: resolvedInventory?.allow_mixed_carton ? 'Ya' : 'Tidak' }
                         ]}
                       />
@@ -180,12 +246,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                       onToggle={() => setExpandedSections(prev => ({ ...prev, pricingInfo: !prev.pricingInfo }))}
                       bgColor="bg-gradient-to-r from-green-50 to-green-100"
                     >
-                      <InfoTable
-                        data={[
-                          { label: 'Harga Barang', value: formatCurrency(resolvedInventory?.harga_barang) },
-                          { label: 'Total Value', value: formatCurrency((resolvedInventory?.harga_barang || 0) * totalStock) }
-                        ]}
-                      />
+                      <InfoTable data={pricingRows} />
                     </AccordionItem>
 
                     {/* System Information */}
@@ -217,10 +278,9 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                       </div>
                       <InfoTable
                         data={[
-                          { label: 'Stok Karton', value: `${totalCartons} karton` },
-                          { label: 'Stok Pcs', value: `${totalPieces} pcs` },
-                          { label: 'Total Stok', value: `${totalStock} unit` },
+                          { label: 'Stok Quantity', value: `${stokQuantity} unit` },
                           { label: 'Minimum Stock', value: `${minimumStock} unit` },
+                          { label: 'Qty per Carton', value: `${qtyPerCarton} pcs` },
                           {
                             label: 'Stock Status',
                             component: <StatusBadge status={stockStatus.status} variant={stockStatus.variant} size='sm' dot />
@@ -235,7 +295,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                         <div>
                           <h4 className="text-lg font-semibold text-blue-900">Stock Overview</h4>
                           <p className="text-blue-700 mt-1">
-                            Total: {totalStock} unit | Min: {minimumStock} unit
+                            Total: {stokQuantity} unit | Min: {minimumStock} unit
                           </p>
                         </div>
                         <div className="text-right">
@@ -250,55 +310,50 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                 <TabPanel tabId="dimensions">
                   <div className="space-y-6">
                     {dimensionExists ? (
-                      <>
-                        {/* Carton Dimensions */}
-                        {hasCartonDimension && (
-                          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                            <div className="flex items-center mb-4">
-                              <div className="p-2 bg-amber-100 rounded-lg mr-3">
-                                <ArchiveBoxIcon className="h-5 w-5 text-amber-600" />
-                              </div>
-                              <h3 className="text-lg font-semibold text-gray-900">Carton Dimensions</h3>
-                            </div>
-                            <InfoTable
-                              data={[
-                                { label: 'Berat', value: `${cartonWeight || 0} kg` },
-                                { label: 'Panjang', value: `${cartonLength || 0} cm` },
-                                { label: 'Lebar', value: `${cartonWidth || 0} cm` },
-                                { label: 'Tinggi', value: `${cartonHeight || 0} cm` },
-                                { label: 'Qty per Carton', value: `${cartonQtyPerCarton || 0} pcs` }
-                              ]}
-                            />
+                      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                        <div className="flex items-center mb-4">
+                          <div className="p-2 bg-amber-100 rounded-lg mr-3">
+                            <ArchiveBoxIcon className="h-5 w-5 text-amber-600" />
                           </div>
-                        )}
+                          <h3 className="text-lg font-semibold text-gray-900">Dimensi Produk</h3>
+                        </div>
+                        <InfoTable
+                          data={[
+                            { label: 'Berat', value: `${dimensionValues.berat ?? 0} kg` },
+                            { label: 'Panjang', value: `${dimensionValues.panjang ?? 0} cm` },
+                            { label: 'Lebar', value: `${dimensionValues.lebar ?? 0} cm` },
+                            { label: 'Tinggi', value: `${dimensionValues.tinggi ?? 0} cm` }
+                          ]}
+                        />
+                      </div>
+                    ) : null}
 
-                        {/* PCS Dimensions */}
-                        {hasPcsDimension && (
-                          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                            <div className="flex items-center mb-4">
-                              <div className="p-2 bg-green-100 rounded-lg mr-3">
-                                <CubeIcon className="h-5 w-5 text-green-600" />
-                              </div>
-                              <h3 className="text-lg font-semibold text-gray-900">Individual Unit Dimensions</h3>
-                            </div>
-                            <InfoTable
-                              data={[
-                                { label: 'Berat', value: `${pcsWeight || 0} kg` },
-                                { label: 'Panjang', value: `${pcsLength || 0} cm` },
-                                { label: 'Lebar', value: `${pcsWidth || 0} cm` },
-                                { label: 'Tinggi', value: `${pcsHeight || 0} cm` }
-                              ]}
-                            />
+                    {cartonDimensionExists ? (
+                      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                        <div className="flex items-center mb-4">
+                          <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                            <CubeIcon className="h-5 w-5 text-blue-600" />
                           </div>
-                        )}
-                      </>
-                    ) : (
+                          <h3 className="text-lg font-semibold text-gray-900">Dimensi Karton</h3>
+                        </div>
+                        <InfoTable
+                          data={[
+                            { label: 'Berat Karton', value: `${cartonDimensionValues.berat ?? 0} kg` },
+                            { label: 'Panjang Karton', value: `${cartonDimensionValues.panjang ?? 0} cm` },
+                            { label: 'Lebar Karton', value: `${cartonDimensionValues.lebar ?? 0} cm` },
+                            { label: 'Tinggi Karton', value: `${cartonDimensionValues.tinggi ?? 0} cm` }
+                          ]}
+                        />
+                      </div>
+                    ) : null}
+
+                    {!dimensionExists && !cartonDimensionExists ? (
                       <div className="text-center py-10">
                         <ScaleIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-500 mb-2">No Dimension Data</h3>
                         <p className="text-gray-400">Tidak ada data berat atau ukuran untuk inventory ini.</p>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </TabPanel>
 

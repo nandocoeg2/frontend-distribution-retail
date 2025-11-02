@@ -231,18 +231,45 @@ const ReturnDetail = () => {
                     {inventory.kode_barang || inventory.code || '-'}
                   </dd>
                 </div>
-                <div className='flex justify-between'>
-                  <dt className='text-gray-500'>Stok Q</dt>
-                  <dd className='font-medium text-gray-900'>
-                    {inventory.stok_q ?? '-'}
-                  </dd>
-                </div>
-                <div className='flex justify-between'>
-                  <dt className='text-gray-500'>Stok C</dt>
-                  <dd className='font-medium text-gray-900'>
-                    {inventory.stok_c ?? '-'}
-                  </dd>
-                </div>
+                {(() => {
+                  const itemStocks = inventory.itemStock || inventory.itemStocks || {};
+                  const stokQuantity =
+                    itemStocks.stok_quantity ??
+                    inventory.stok_quantity ??
+                    inventory.stok_q ??
+                    '-';
+                  const minStock =
+                    itemStocks.min_stok ??
+                    inventory.min_stok ??
+                    '-';
+                  const qtyPerCarton =
+                    itemStocks.qty_per_carton ??
+                    inventory.qty_per_carton ??
+                    '-';
+
+                  return (
+                    <>
+                      <div className='flex justify-between'>
+                        <dt className='text-gray-500'>Stok Quantity</dt>
+                        <dd className='font-medium text-gray-900'>
+                          {stokQuantity}
+                        </dd>
+                      </div>
+                      <div className='flex justify-between'>
+                        <dt className='text-gray-500'>Minimum Stock</dt>
+                        <dd className='font-medium text-gray-900'>
+                          {minStock}
+                        </dd>
+                      </div>
+                      <div className='flex justify-between'>
+                        <dt className='text-gray-500'>Qty per Carton</dt>
+                        <dd className='font-medium text-gray-900'>
+                          {qtyPerCarton}
+                        </dd>
+                      </div>
+                    </>
+                  );
+                })()}
               </dl>
             </div>
           </div>

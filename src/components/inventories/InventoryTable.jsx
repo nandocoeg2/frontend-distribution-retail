@@ -4,7 +4,7 @@ import {
   PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import { formatCurrency, formatDate } from '../../utils/formatUtils';
+import { formatDate } from '../../utils/formatUtils';
 import { useConfirmationDialog } from '../ui';
 import Pagination from '../common/Pagination';
 
@@ -33,16 +33,33 @@ const InventoryTable = ({
   };
 
   const resolveDimension = (inventory) => {
-    const dimensionList = Array.isArray(inventory.dimensiBarang) ? inventory.dimensiBarang : [];
-    const dimensiKarton =
-      inventory.dimensiKarton ||
-      dimensionList.find((dimension) => dimension?.type === 'KARTON') ||
-      inventory.dimensiKardus ||
-      {};
-    const berat = inventory.berat ?? dimensiKarton?.berat ?? 0;
-    const panjang = inventory.panjang ?? dimensiKarton?.panjang ?? 0;
-    const lebar = inventory.lebar ?? dimensiKarton?.lebar ?? 0;
-    const tinggi = inventory.tinggi ?? dimensiKarton?.tinggi ?? 0;
+    const dimensiValue = (() => {
+      if (!inventory) {
+        return null;
+      }
+      if (
+        inventory.dimensiBarang &&
+        typeof inventory.dimensiBarang === 'object' &&
+        !Array.isArray(inventory.dimensiBarang)
+      ) {
+        return inventory.dimensiBarang;
+      }
+
+      if (Array.isArray(inventory.dimensiBarang) && inventory.dimensiBarang.length > 0) {
+        return inventory.dimensiBarang[0];
+      }
+
+      if (inventory.dimensi && typeof inventory.dimensi === 'object') {
+        return inventory.dimensi;
+      }
+
+      return null;
+    })();
+
+    const berat = inventory?.berat ?? dimensiValue?.berat ?? 0;
+    const panjang = inventory?.panjang ?? dimensiValue?.panjang ?? 0;
+    const lebar = inventory?.lebar ?? dimensiValue?.lebar ?? 0;
+    const tinggi = inventory?.tinggi ?? dimensiValue?.tinggi ?? 0;
 
     return {
       berat: `${formatDecimal(berat)} kg`,
@@ -82,18 +99,6 @@ const InventoryTable = ({
                 Nama Barang
               </th>
               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Stok Karton
-              </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Stok Pcs
-              </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Harga
-              </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Min Stok
-              </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                 Berat (kg)
               </th>
               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
@@ -110,13 +115,13 @@ const InventoryTable = ({
           <tbody className='bg-white divide-y divide-gray-200'>
             {loading ? (
               <tr>
-                <td colSpan='10' className='py-4 text-center'>
+                <td colSpan='6' className='py-4 text-center'>
                   <div className='w-8 h-8 mx-auto border-b-2 border-blue-600 rounded-full animate-spin'></div>
                 </td>
               </tr>
             ) : inventories.length === 0 ? (
               <tr>
-                <td colSpan='10' className='py-4 text-center text-gray-500'>
+                <td colSpan='6' className='py-4 text-center text-gray-500'>
                   No inventory found.
                 </td>
               </tr>
@@ -130,18 +135,6 @@ const InventoryTable = ({
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                       {inventory.nama_barang}
-                    </td>
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                      {inventory.stok_c}
-                    </td>
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                      {inventory.stok_q}
-                    </td>
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                      {formatCurrency(inventory.harga_barang)}
-                    </td>
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                      {inventory.min_stok}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                       {berat}

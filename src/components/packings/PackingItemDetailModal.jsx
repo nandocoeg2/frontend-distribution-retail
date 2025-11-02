@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { InfoCard, StatusBadge, InfoTable } from '../ui';
-import { formatDateTime } from '../../utils/formatUtils';
+import { formatDateTime, formatCurrency } from '../../utils/formatUtils';
 import { getInventoryById } from '../../services/inventoryService';
 import toastService from '../../services/toastService';
 
@@ -46,6 +46,93 @@ const PackingItemDetailModal = ({ item, onClose }) => {
     if (status.includes('IN_PROGRESS')) return 'primary';
     if (status.includes('CANCELLED')) return 'danger';
     return 'default';
+  };
+
+  const buildInventoryInfoRows = () => {
+    if (!inventory) {
+      return [];
+    }
+
+    const itemStock = inventory.itemStock || inventory.itemStocks || {};
+    const stokQuantity =
+      itemStock.stok_quantity ??
+      inventory.stok_quantity ??
+      inventory.stok_q ??
+      0;
+    const minStock =
+      itemStock.min_stok ??
+      inventory.min_stok ??
+      0;
+    const qtyPerCarton =
+      itemStock.qty_per_carton ??
+      inventory.qty_per_carton ??
+      0;
+
+    const itemPrice = (() => {
+      if (inventory.itemPrice && typeof inventory.itemPrice === 'object') {
+        return inventory.itemPrice;
+      }
+      if (Array.isArray(inventory.itemPrices) && inventory.itemPrices.length > 0) {
+        return inventory.itemPrices[0];
+      }
+      return null;
+    })();
+
+    const priceComponent = itemPrice ? (
+      <div className='space-y-1 text-sm'>
+        <div>
+          <span className='font-medium'>Harga:</span> {formatCurrency(itemPrice.harga ?? 0)}
+        </div>
+        <div>
+          <span className='font-medium'>Potongan 1:</span> {(itemPrice.pot1 ?? 0)}% •{' '}
+          <span className='font-medium'>Harga 1:</span> {formatCurrency(itemPrice.harga1 ?? 0)}
+        </div>
+        <div>
+          <span className='font-medium'>Potongan 2:</span> {(itemPrice.pot2 ?? 0)}% •{' '}
+          <span className='font-medium'>Harga 2:</span> {formatCurrency(itemPrice.harga2 ?? 0)}
+        </div>
+        <div>
+          <span className='font-medium'>PPN:</span> {(itemPrice.ppn ?? 0)}%
+        </div>
+      </div>
+    ) : (
+      <span>Tidak ada data harga</span>
+    );
+
+    return [
+      {
+        label: 'Nama Barang',
+        value: inventory.nama_barang || 'N/A',
+      },
+      { label: 'PLU', value: inventory.plu || 'N/A' },
+      { label: 'Item Prices', component: priceComponent },
+      { label: 'Stock Quantity', value: stokQuantity },
+      { label: 'Minimum Stock', value: minStock },
+      { label: 'Qty per Carton', value: qtyPerCarton },
+      {
+        label: 'Created At',
+        value: formatDateTime(inventory.createdAt),
+      },
+      {
+        label: 'Updated At',
+        value: formatDateTime(inventory.updatedAt),
+      },
+      {
+        label: 'Inventory ID',
+        value: inventory.id,
+        copyable: true,
+      },
+      {
+        label: 'Created By',
+        value: inventory.createdBy || 'N/A',
+        copyable: true,
+      },
+      {
+        label: 'Updated By',
+        value: inventory.updatedBy || 'N/A',
+        copyable: true,
+      },
+    ];
   };
 
   return (
@@ -115,47 +202,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
                   <h3 className='mb-4 text-lg font-semibold text-gray-900'>
                     Informasi Inventory
                   </h3>
-                  <InfoTable
-                    data={[
-                      {
-                        label: 'Nama Barang',
-                        value: inventory.nama_barang || 'N/A',
-                      },
-                      { label: 'PLU', value: inventory.plu || 'N/A' },
-                      {
-                        label: 'Harga Barang',
-                        value: inventory.harga_barang
-                          ? `Rp ${inventory.harga_barang.toLocaleString('id-ID')}`
-                          : 'N/A',
-                      },
-                      { label: 'Stok C', value: inventory.stok_c || 0 },
-                      { label: 'Stok Q', value: inventory.stok_q || 0 },
-                      { label: 'Min Stok', value: inventory.min_stok || 0 },
-                      {
-                        label: 'Created At',
-                        value: formatDateTime(inventory.createdAt),
-                      },
-                      {
-                        label: 'Updated At',
-                        value: formatDateTime(inventory.updatedAt),
-                      },
-                      {
-                        label: 'Inventory ID',
-                        value: inventory.id,
-                        copyable: true,
-                      },
-                      {
-                        label: 'Created By',
-                        value: inventory.createdBy || 'N/A',
-                        copyable: true,
-                      },
-                      {
-                        label: 'Updated By',
-                        value: inventory.updatedBy || 'N/A',
-                        copyable: true,
-                      },
-                    ]}
-                  />
+                  <InfoTable data={buildInventoryInfoRows()} />
                 </div>
               )}
 

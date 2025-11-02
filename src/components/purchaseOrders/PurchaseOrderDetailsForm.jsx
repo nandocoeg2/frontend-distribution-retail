@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { searchInventories, getInventories } from '../../services/inventoryService';
 import Autocomplete from '../common/Autocomplete';
 
@@ -28,6 +28,40 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
 
     fetchInitialInventories();
   }, []);
+
+  const resolveInventoryPrice = useMemo(() => {
+    return (inventory) => {
+      if (!inventory || typeof inventory !== 'object') {
+        return 0;
+      }
+
+      const priceSource = (() => {
+        if (inventory.itemPrice && typeof inventory.itemPrice === 'object') {
+          return inventory.itemPrice;
+        }
+        if (Array.isArray(inventory.itemPrices) && inventory.itemPrices.length > 0) {
+          return inventory.itemPrices[0];
+        }
+        if (inventory.item_price && typeof inventory.item_price === 'object') {
+          return inventory.item_price;
+        }
+        return {};
+      })();
+
+      if (priceSource.harga !== undefined && priceSource.harga !== null) {
+        return priceSource.harga;
+      }
+
+      return 0;
+    };
+  }, []);
+
+  const resolveItemStock = (inventory) => {
+    if (!inventory || typeof inventory !== 'object') {
+      return {};
+    }
+    return inventory.itemStock || inventory.itemStocks || inventory.item_stock || {};
+  };
 
   const handleDetailChange = (index, field, value) => {
     const updatedDetails = [...safeDetails];
@@ -79,13 +113,16 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
   const handleInventorySelect = (index, inventoryId) => {
     const inventory = inventories.find(inv => inv.id === inventoryId);
     if (inventory) {
+      const itemStock = resolveItemStock(inventory);
+      const derivedPrice = resolveInventoryPrice(inventory);
       const updatedDetails = [...safeDetails];
       updatedDetails[index] = {
         ...updatedDetails[index],
         inventoryId: inventoryId,
         plu: inventory.plu,
         nama_barang: inventory.nama_barang,
-        harga: inventory.harga_barang || 0
+        harga: derivedPrice || 0,
+        isi: updatedDetails[index]?.isi ?? itemStock.qty_per_carton ?? 1
       };
       
       // Recalculate derived fields

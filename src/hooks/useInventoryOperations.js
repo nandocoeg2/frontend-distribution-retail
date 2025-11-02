@@ -128,47 +128,65 @@ const useInventoryOperations = () => {
       errors.nama_barang = 'Nama barang is required';
     }
 
-    if (data.stok_c === undefined || data.stok_c === null || Number.isNaN(data.stok_c) || data.stok_c < 0) {
-      errors.stok_c = 'Stok karton must be a valid number';
-    }
-
-    if (data.stok_q === undefined || data.stok_q === null || Number.isNaN(data.stok_q) || data.stok_q < 0) {
-      errors.stok_q = 'Stok pcs must be a valid number';
-    }
-
-    if (data.harga_barang === undefined || data.harga_barang === null || Number.isNaN(data.harga_barang) || data.harga_barang < 0) {
-      errors.harga_barang = 'Harga barang must be a valid number';
-    }
-
-    if (data.min_stok === undefined || data.min_stok === null || Number.isNaN(data.min_stok) || data.min_stok < 0) {
-      errors.min_stok = 'Minimum stok must be a valid number';
-    }
-
     if (typeof data.allow_mixed_carton !== 'boolean') {
       errors.allow_mixed_carton = 'Allow mixed carton must be true or false';
     }
 
-    const validateDimensionGroup = (group, label, fields) => {
-      if (!group || typeof group !== 'object') {
-        errors[label] = `${label} payload is required`;
-        return;
-      }
-
-      fields.forEach((field) => {
-        const value = group[field];
+    const dimensi = data.dimensi || data.dimensiBarang;
+    const dimensionFields = ['berat', 'panjang', 'lebar', 'tinggi'];
+    if (!dimensi || typeof dimensi !== 'object') {
+      errors.dimensi = 'Dimensi payload is required';
+    } else {
+      dimensionFields.forEach((field) => {
+        const value = dimensi[field];
         if (value === undefined || value === null || value === '') {
           return;
         }
 
-        if (Number.isNaN(value) || value < 0) {
+        if (Number.isNaN(Number(value)) || Number(value) < 0) {
           const capitalized = field.charAt(0).toUpperCase() + field.slice(1);
-          errors[`${label}.${field}`] = `${capitalized} must be zero or greater`;
+          errors[`dimensi.${field}`] = `${capitalized} must be zero or greater`;
         }
       });
-    };
+    }
 
-    validateDimensionGroup(data.dimensiKarton, 'dimensiKarton', ['berat', 'panjang', 'lebar', 'tinggi', 'qty_per_carton']);
-    validateDimensionGroup(data.dimensiPcs, 'dimensiPcs', ['berat', 'panjang', 'lebar', 'tinggi']);
+    const itemStock = data.itemStock || data.itemStocks || {};
+    const stockFields = ['stok_quantity', 'min_stok', 'qty_per_carton'];
+    stockFields.forEach((field) => {
+      if (itemStock[field] === undefined || itemStock[field] === null || itemStock[field] === '') {
+        return;
+      }
+      if (Number.isNaN(Number(itemStock[field])) || Number(itemStock[field]) < 0) {
+        const label = field.replace('_', ' ');
+        errors[`itemStock.${field}`] = `${label} must be zero or greater`;
+      }
+    });
+
+    const dimensiKarton = data.dimensiKarton;
+    if (dimensiKarton && typeof dimensiKarton === 'object') {
+      dimensionFields.forEach((field) => {
+        const value = dimensiKarton[field];
+        if (value === undefined || value === null || value === '') {
+          return;
+        }
+        if (Number.isNaN(Number(value)) || Number(value) < 0) {
+          const capitalized = field.charAt(0).toUpperCase() + field.slice(1);
+          errors[`dimensiKarton.${field}`] = `${capitalized} must be zero or greater`;
+        }
+      });
+    }
+
+    const itemPrice = data.itemPrice || (Array.isArray(data.itemPrices) ? data.itemPrices[0] : null) || {};
+    const priceFields = ['harga', 'pot1', 'harga1', 'pot2', 'harga2', 'ppn'];
+    priceFields.forEach((field) => {
+      if (itemPrice[field] === undefined || itemPrice[field] === null || itemPrice[field] === '') {
+        return;
+      }
+      if (Number.isNaN(Number(itemPrice[field])) || Number(itemPrice[field]) < 0) {
+        const label = field.replace(/_/g, ' ');
+        errors[`itemPrice.${field}`] = `${label} must be zero or greater`;
+      }
+    });
 
     return errors;
   }, []);

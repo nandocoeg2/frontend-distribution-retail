@@ -5,43 +5,112 @@ import FormSection from '../common/FormSection';
 const DEFAULT_FORM_STATE = {
   plu: '',
   nama_barang: '',
-  stok_c: '',
-  stok_q: '',
-  harga_barang: '',
-  min_stok: '10',
+  eanBarcode: '',
+  uom: 'KARTON',
   allow_mixed_carton: true,
   berat: '0',
   panjang: '0',
   lebar: '0',
   tinggi: '0',
+  karton_berat: '',
+  karton_panjang: '',
+  karton_lebar: '',
+  karton_tinggi: '',
+  stok_quantity: '0',
+  min_stok: '0',
   qty_per_carton: '0',
-  pcs_berat: '0',
-  pcs_panjang: '0',
-  pcs_lebar: '0',
-  pcs_tinggi: '0'
+  harga: '0',
+  pot1: '0',
+  harga1: '0',
+  pot2: '0',
+  harga2: '0',
+  ppn: '0'
 };
 
-const getDimensionValue = (source, field, options = {}) => {
+const legacyDimensionMatchers = ['dimensiBarang', 'dimensi'];
+const itemStockSources = ['itemStock', 'itemStocks', 'item_stock'];
+const itemPriceSources = ['itemPrice', 'itemPrices', 'item_price'];
+
+const getDimensionValue = (source, field) => {
   if (source == null) {
     return '0';
   }
-
-  const { type = 'KARTON' } = options;
 
   const directValue = source[field];
   if (directValue !== undefined && directValue !== null) {
     return String(directValue);
   }
 
-  const dimensionList = Array.isArray(source.dimensiBarang) ? source.dimensiBarang : [];
-  const resolvedDimension =
-    type === 'KARTON'
-      ? source.dimensiKarton || source.dimensiKardus || dimensionList.find((dimension) => dimension?.type === 'KARTON')
-      : source.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
+  for (const key of legacyDimensionMatchers) {
+    const candidate = source[key];
+    if (candidate && typeof candidate === 'object' && candidate[field] !== undefined && candidate[field] !== null) {
+      return String(candidate[field]);
+    }
+  }
 
-  const nestedValue = resolvedDimension?.[field];
-  if (nestedValue !== undefined && nestedValue !== null) {
-    return String(nestedValue);
+  if (Array.isArray(source.dimensiBarang)) {
+    const [firstEntry] = source.dimensiBarang;
+    if (firstEntry && firstEntry[field] !== undefined && firstEntry[field] !== null) {
+      return String(firstEntry[field]);
+    }
+  }
+
+  return '0';
+};
+
+const getCartonDimensionValue = (source, field) => {
+  if (source == null) {
+    return '';
+  }
+
+  const cartonSource =
+    source.dimensiKarton ||
+    source.cartonDimension ||
+    source.dimensionCarton ||
+    source.cargoDimension;
+
+  if (cartonSource && typeof cartonSource === 'object' && cartonSource[field] !== undefined && cartonSource[field] !== null) {
+    return String(cartonSource[field]);
+  }
+
+  return '';
+};
+
+const getStockValue = (source, field) => {
+  if (source == null) {
+    return '0';
+  }
+
+  for (const key of itemStockSources) {
+    const candidate = source?.[key];
+    if (candidate && typeof candidate === 'object' && candidate[field] !== undefined && candidate[field] !== null) {
+      return String(candidate[field]);
+    }
+  }
+
+  return '0';
+};
+
+const getPriceValue = (source, field) => {
+  if (source == null) {
+    return '0';
+  }
+
+  for (const key of itemPriceSources) {
+    const candidate = source?.[key];
+    if (candidate && typeof candidate === 'object') {
+      const value = candidate[field];
+      if (value !== undefined && value !== null) {
+        return String(value);
+      }
+    }
+
+    if (Array.isArray(candidate) && candidate.length > 0) {
+      const [firstEntry] = candidate;
+      if (firstEntry && firstEntry[field] !== undefined && firstEntry[field] !== null) {
+        return String(firstEntry[field]);
+      }
+    }
   }
 
   return '0';
@@ -77,18 +146,8 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
     setFormData({
       plu: memoizedInitialData.plu || '',
       nama_barang: memoizedInitialData.nama_barang || '',
-      stok_c: memoizedInitialData.stok_c !== undefined && memoizedInitialData.stok_c !== null
-        ? String(memoizedInitialData.stok_c)
-        : '',
-      stok_q: memoizedInitialData.stok_q !== undefined && memoizedInitialData.stok_q !== null
-        ? String(memoizedInitialData.stok_q)
-        : '',
-      harga_barang: memoizedInitialData.harga_barang !== undefined && memoizedInitialData.harga_barang !== null
-        ? String(memoizedInitialData.harga_barang)
-        : '',
-      min_stok: memoizedInitialData.min_stok !== undefined && memoizedInitialData.min_stok !== null
-        ? String(memoizedInitialData.min_stok)
-        : '10',
+      eanBarcode: memoizedInitialData.eanBarcode || '',
+      uom: memoizedInitialData.uom || DEFAULT_FORM_STATE.uom,
       allow_mixed_carton: Boolean(
         memoizedInitialData.allow_mixed_carton ?? true
       ),
@@ -96,11 +155,19 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
       panjang: getDimensionValue(memoizedInitialData, 'panjang'),
       lebar: getDimensionValue(memoizedInitialData, 'lebar'),
       tinggi: getDimensionValue(memoizedInitialData, 'tinggi'),
-      qty_per_carton: getDimensionValue(memoizedInitialData, 'qty_per_carton'),
-      pcs_berat: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'berat', { type: 'PCS' }),
-      pcs_panjang: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'panjang', { type: 'PCS' }),
-      pcs_lebar: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'lebar', { type: 'PCS' }),
-      pcs_tinggi: getDimensionValue(memoizedInitialData.dimensiPcs || memoizedInitialData, 'tinggi', { type: 'PCS' })
+      karton_berat: getCartonDimensionValue(memoizedInitialData, 'berat'),
+      karton_panjang: getCartonDimensionValue(memoizedInitialData, 'panjang'),
+      karton_lebar: getCartonDimensionValue(memoizedInitialData, 'lebar'),
+      karton_tinggi: getCartonDimensionValue(memoizedInitialData, 'tinggi'),
+      stok_quantity: getStockValue(memoizedInitialData, 'stok_quantity'),
+      min_stok: getStockValue(memoizedInitialData, 'min_stok'),
+      qty_per_carton: getStockValue(memoizedInitialData, 'qty_per_carton'),
+      harga: getPriceValue(memoizedInitialData, 'harga'),
+      pot1: getPriceValue(memoizedInitialData, 'pot1'),
+      harga1: getPriceValue(memoizedInitialData, 'harga1'),
+      pot2: getPriceValue(memoizedInitialData, 'pot2'),
+      harga2: getPriceValue(memoizedInitialData, 'harga2'),
+      ppn: getPriceValue(memoizedInitialData, 'ppn')
     });
   }, [memoizedInitialData]);
 
@@ -117,25 +184,54 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
     const dataToSubmit = {
       plu: formData.plu?.trim(),
       nama_barang: formData.nama_barang?.trim(),
-      stok_c: parseInteger(formData.stok_c),
-      stok_q: parseInteger(formData.stok_q),
-      harga_barang: parseDecimal(formData.harga_barang),
-      min_stok: parseInteger(formData.min_stok, 10),
-      allow_mixed_carton: Boolean(formData.allow_mixed_carton),
-      dimensiKarton: {
-        berat: parseDecimal(formData.berat),
-        panjang: parseDecimal(formData.panjang),
-        lebar: parseDecimal(formData.lebar),
-        tinggi: parseDecimal(formData.tinggi),
-        qty_per_carton: parseInteger(formData.qty_per_carton)
-      },
-      dimensiPcs: {
-        berat: parseDecimal(formData.pcs_berat),
-        panjang: parseDecimal(formData.pcs_panjang),
-        lebar: parseDecimal(formData.pcs_lebar),
-        tinggi: parseDecimal(formData.pcs_tinggi)
-      }
+      allow_mixed_carton: Boolean(formData.allow_mixed_carton)
     };
+
+    const eanBarcode = formData.eanBarcode?.trim();
+    if (eanBarcode) {
+      dataToSubmit.eanBarcode = eanBarcode;
+    }
+
+    const uom = formData.uom?.trim();
+    if (uom) {
+      dataToSubmit.uom = uom.toUpperCase();
+    }
+
+    dataToSubmit.dimensi = {
+      berat: parseDecimal(formData.berat),
+      panjang: parseDecimal(formData.panjang),
+      lebar: parseDecimal(formData.lebar),
+      tinggi: parseDecimal(formData.tinggi)
+    };
+
+    dataToSubmit.itemStock = {
+      stok_quantity: parseInteger(formData.stok_quantity),
+      min_stok: parseInteger(formData.min_stok),
+      qty_per_carton: parseInteger(formData.qty_per_carton)
+    };
+
+    const dimensiKartonPayload = {
+      berat: parseDecimal(formData.karton_berat),
+      panjang: parseDecimal(formData.karton_panjang),
+      lebar: parseDecimal(formData.karton_lebar),
+      tinggi: parseDecimal(formData.karton_tinggi)
+    };
+    const hasDimensiKarton = ['karton_berat', 'karton_panjang', 'karton_lebar', 'karton_tinggi'].some(
+      key => formData[key] !== '' && formData[key] !== null && formData[key] !== undefined
+    );
+    if (hasDimensiKarton) {
+      dataToSubmit.dimensiKarton = dimensiKartonPayload;
+    }
+
+    dataToSubmit.itemPrice = {
+      harga: parseDecimal(formData.harga),
+      pot1: parseDecimal(formData.pot1),
+      harga1: parseDecimal(formData.harga1),
+      pot2: parseDecimal(formData.pot2),
+      harga2: parseDecimal(formData.harga2),
+      ppn: parseDecimal(formData.ppn)
+    };
+
     onSubmit(dataToSubmit);
   };
 
@@ -170,6 +266,21 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
           required
           placeholder="Contoh: Tas Belanja Premium"
         />
+        <FormField
+          label="EAN Barcode"
+          name="eanBarcode"
+          value={formData.eanBarcode}
+          onChange={handleChange}
+          placeholder="Opsional, EAN-8 atau EAN-13"
+        />
+        <FormField
+          label="Satuan (UoM)"
+          name="uom"
+          value={formData.uom}
+          onChange={handleChange}
+          placeholder="Contoh: KARTON"
+          helperText="Nilai disimpan dalam huruf besar."
+        />
         <div className="flex items-start gap-2 pt-2">
           <input
             id="allow_mixed_carton"
@@ -191,68 +302,54 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
       </FormSection>
 
       <FormSection
-        title="Informasi Stok"
-        description="Gunakan angka non-negatif untuk stok karton dan stok pcs."
-        columns={3}
+        title="Dimensi Karton (Opsional)"
+        description="Isi jika dimensi karton berbeda dengan dimensi produk."
       >
         <FormField
-          label="Stok Karton"
-          name="stok_c"
+          label="Berat Karton (kg)"
+          name="karton_berat"
           type="number"
-          value={formData.stok_c}
+          value={formData.karton_berat}
           onChange={handleChange}
-          required
-          min={0}
-          step={1}
-          inputMode="numeric"
-        />
-        <FormField
-          label="Stok Pcs"
-          name="stok_q"
-          type="number"
-          value={formData.stok_q}
-          onChange={handleChange}
-          required
-          min={0}
-          step={1}
-          inputMode="numeric"
-        />
-        <FormField
-          label="Minimal Stok"
-          name="min_stok"
-          type="number"
-          value={formData.min_stok}
-          onChange={handleChange}
-          required
-          min={0}
-          step={1}
-          inputMode="numeric"
-          helperText="Sistem akan mengirim notifikasi jika stok berada di bawah angka ini."
-        />
-      </FormSection>
-
-      <FormSection
-        title="Harga & Nilai"
-        description="Masukkan harga satuan barang dalam Rupiah."
-        columns={1}
-      >
-        <FormField
-          label="Harga Barang"
-          name="harga_barang"
-          type="number"
-          value={formData.harga_barang}
-          onChange={handleChange}
-          required
           min={0}
           step="0.01"
           inputMode="decimal"
-          helperText="Gunakan titik sebagai pemisah desimal jika diperlukan."
+        />
+        <FormField
+          label="Panjang Karton (cm)"
+          name="karton_panjang"
+          type="number"
+          value={formData.karton_panjang}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Lebar Karton (cm)"
+          name="karton_lebar"
+          type="number"
+          value={formData.karton_lebar}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Tinggi Karton (cm)"
+          name="karton_tinggi"
+          type="number"
+          value={formData.karton_tinggi}
+          onChange={handleChange}
+          min={0}
+          step="0.1"
+          inputMode="decimal"
         />
       </FormSection>
 
       <FormSection
-        title="Dimensi Karton"
-        description="Isi detail dimensi karton sesuai struktur payload API."
+        title="Dimensi"
+        description="Isi detail dimensi barang sesuai struktur payload API."
       >
         <FormField
           label="Berat (kg)"
@@ -294,8 +391,34 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
           step="0.1"
           inputMode="decimal"
         />
+      </FormSection>
+
+      <FormSection
+        title="Stok"
+        description="Masukkan data stok dalam itemStock (opsional)."
+      >
         <FormField
-          label="Qty per Carton"
+          label="Stok Quantity (pcs)"
+          name="stok_quantity"
+          type="number"
+          value={formData.stok_quantity}
+          onChange={handleChange}
+          min={0}
+          step={1}
+          inputMode="numeric"
+        />
+        <FormField
+          label="Minimum Stok (pcs)"
+          name="min_stok"
+          type="number"
+          value={formData.min_stok}
+          onChange={handleChange}
+          min={0}
+          step={1}
+          inputMode="numeric"
+        />
+        <FormField
+          label="Isi per Karton"
           name="qty_per_carton"
           type="number"
           value={formData.qty_per_carton}
@@ -303,52 +426,72 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
           min={0}
           step={1}
           inputMode="numeric"
-          helperText="Jumlah isi dalam satu karton (opsional, default 0)."
+          helperText="Digunakan untuk menghitung estimasi stok karton."
         />
       </FormSection>
 
       <FormSection
-        title="Dimensi PCS"
-        description="Wajib diisi saat membuat inventory baru sesuai dokumentasi API."
+        title="Harga"
+        description="Konfigurasi itemPrice. Biarkan nilai 0 jika tidak digunakan."
       >
         <FormField
-          label="Berat (kg)"
-          name="pcs_berat"
+          label="Harga Dasar"
+          name="harga"
           type="number"
-          value={formData.pcs_berat}
+          value={formData.harga}
           onChange={handleChange}
           min={0}
           step="0.01"
           inputMode="decimal"
         />
         <FormField
-          label="Panjang (cm)"
-          name="pcs_panjang"
+          label="Potongan 1 (%)"
+          name="pot1"
           type="number"
-          value={formData.pcs_panjang}
+          value={formData.pot1}
           onChange={handleChange}
           min={0}
-          step="0.1"
+          step="0.01"
           inputMode="decimal"
         />
         <FormField
-          label="Lebar (cm)"
-          name="pcs_lebar"
+          label="Harga Setelah Potongan 1"
+          name="harga1"
           type="number"
-          value={formData.pcs_lebar}
+          value={formData.harga1}
           onChange={handleChange}
           min={0}
-          step="0.1"
+          step="0.01"
           inputMode="decimal"
         />
         <FormField
-          label="Tinggi (cm)"
-          name="pcs_tinggi"
+          label="Potongan 2 (%)"
+          name="pot2"
           type="number"
-          value={formData.pcs_tinggi}
+          value={formData.pot2}
           onChange={handleChange}
           min={0}
-          step="0.1"
+          step="0.01"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Harga Setelah Potongan 2"
+          name="harga2"
+          type="number"
+          value={formData.harga2}
+          onChange={handleChange}
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+        />
+        <FormField
+          label="PPN (%)"
+          name="ppn"
+          type="number"
+          value={formData.ppn}
+          onChange={handleChange}
+          min={0}
+          step="0.01"
           inputMode="decimal"
         />
       </FormSection>

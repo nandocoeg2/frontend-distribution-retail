@@ -95,11 +95,26 @@ const ReturnCreate = () => {
         item.inventory_id_id ||
         '';
 
+      const itemStock = item.itemStock || item.itemStocks || item.item_stock || {};
+
       return {
         id,
         label: item.nama_barang || item.name || item.productName || 'Tanpa Nama',
-        stokQ: item.stok_q ?? item.stokQ ?? item.stockQty ?? null,
-        stokC: item.stok_c ?? item.stokC ?? item.stockCarton ?? null,
+        stokQuantity:
+          itemStock.stok_quantity ??
+          item.stok_quantity ??
+          item.stok_q ??
+          item.stokQ ??
+          item.stockQty ??
+          null,
+        minStock:
+          itemStock.min_stok ??
+          item.min_stok ??
+          null,
+        qtyPerCarton:
+          itemStock.qty_per_carton ??
+          item.qty_per_carton ??
+          null,
         raw: item,
       };
     });
@@ -229,8 +244,21 @@ const ReturnCreate = () => {
             ) : (
               selectedInventory && (
                 <p className='mt-1 text-sm text-gray-500'>
-                  Stok Gudang: Q {selectedInventory.stokQ ?? '-'} &bull; C{' '}
-                  {selectedInventory.stokC ?? '-'}
+                  Stok Gudang: {selectedInventory.stokQuantity ?? '-'} unit
+                  {selectedInventory.minStock !== null &&
+                    selectedInventory.minStock !== undefined && (
+                      <>
+                        {' '}
+                        &bull; Min {selectedInventory.minStock}
+                      </>
+                    )}
+                  {selectedInventory.qtyPerCarton !== null &&
+                    selectedInventory.qtyPerCarton !== undefined && (
+                      <>
+                        {' '}
+                        &bull; Qty/Carton {selectedInventory.qtyPerCarton}
+                      </>
+                    )}
                 </p>
               )
             )}

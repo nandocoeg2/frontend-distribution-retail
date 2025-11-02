@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import InventoryForm from './InventoryForm';
 import { useInventoryOperations } from '../../hooks/useInventory';
 import { getInventoryById } from '../../services/inventoryService';
@@ -12,7 +12,71 @@ const EditInventoryModal = ({ inventory, onClose }) => {
     clearError,
     validateInventoryData
   } = useInventoryOperations();
-  const [initialData, setInitialData] = useState(inventory);
+  const normalizeInventoryPayload = useCallback((payload = {}) => {
+    const dimensiValue = (() => {
+      if (
+        payload.dimensiBarang &&
+        typeof payload.dimensiBarang === 'object' &&
+        !Array.isArray(payload.dimensiBarang)
+      ) {
+        return payload.dimensiBarang;
+      }
+      if (Array.isArray(payload.dimensiBarang) && payload.dimensiBarang.length > 0) {
+        return payload.dimensiBarang[0];
+      }
+      if (payload.dimensi && typeof payload.dimensi === 'object') {
+        return payload.dimensi;
+      }
+      return {};
+    })();
+
+    const dimensiKarton = (() => {
+      if (
+        payload.dimensiKarton &&
+        typeof payload.dimensiKarton === 'object' &&
+        !Array.isArray(payload.dimensiKarton)
+      ) {
+        return payload.dimensiKarton;
+      }
+      if (Array.isArray(payload.dimensiKarton) && payload.dimensiKarton.length > 0) {
+        return payload.dimensiKarton[0];
+      }
+      if (payload.cartonDimension && typeof payload.cartonDimension === 'object') {
+        return payload.cartonDimension;
+      }
+      return null;
+    })();
+
+    const itemStock = payload.itemStock || payload.itemStocks || payload.item_stock || {};
+    const itemPrice = (() => {
+      if (payload.itemPrice && typeof payload.itemPrice === 'object') {
+        return payload.itemPrice;
+      }
+      if (Array.isArray(payload.itemPrices) && payload.itemPrices.length > 0) {
+        return payload.itemPrices[0];
+      }
+      if (payload.item_price && typeof payload.item_price === 'object') {
+        return payload.item_price;
+      }
+      return {};
+    })();
+
+    return {
+      ...payload,
+      allow_mixed_carton: Boolean(payload.allow_mixed_carton ?? true),
+      dimensiBarang: dimensiValue,
+      dimensi: payload.dimensi || dimensiValue,
+      dimensiKarton,
+      itemStock,
+      itemStocks: itemStock,
+      itemPrice,
+      berat: payload.berat ?? dimensiValue?.berat ?? 0,
+      panjang: payload.panjang ?? dimensiValue?.panjang ?? 0,
+      lebar: payload.lebar ?? dimensiValue?.lebar ?? 0,
+      tinggi: payload.tinggi ?? dimensiValue?.tinggi ?? 0
+    };
+  }, []);
+  const [initialData, setInitialData] = useState(() => normalizeInventoryPayload(inventory));
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -20,9 +84,20 @@ const EditInventoryModal = ({ inventory, onClose }) => {
   }, [clearError]);
 
   useEffect(() => {
-    const shouldFetchDetail = inventory && (!inventory.dimensiKarton || inventory.berat === undefined);
-    if (!inventory?.id || !shouldFetchDetail) {
-      setInitialData(inventory);
+    setInitialData(normalizeInventoryPayload(inventory));
+
+    if (!inventory?.id) {
+      return;
+    }
+
+    const hasDimensiObject =
+      inventory.dimensiBarang &&
+      typeof inventory.dimensiBarang === 'object' &&
+      !Array.isArray(inventory.dimensiBarang);
+    const hasItemStock = Boolean(inventory.itemStock || inventory.itemStocks);
+
+    const shouldFetchDetail = !hasDimensiObject || !hasItemStock;
+    if (!shouldFetchDetail) {
       return;
     }
 
@@ -31,24 +106,8 @@ const EditInventoryModal = ({ inventory, onClose }) => {
         setDetailLoading(true);
         const response = await getInventoryById(inventory.id);
         if (response.success) {
-          const detail = response.data || {};
-          const dimensionList = Array.isArray(detail.dimensiBarang) ? detail.dimensiBarang : [];
-          const dimensiKartonEntry = detail.dimensiKarton || dimensionList.find((dimension) => dimension?.type === 'KARTON');
-          const dimensiPcsEntry = detail.dimensiPcs || dimensionList.find((dimension) => dimension?.type === 'PCS');
-          const legacyDimension = detail.dimensiKardus || {};
-          const dimensionSource = dimensiKartonEntry || legacyDimension;
-
-          setInitialData({
-            ...detail,
-            allow_mixed_carton: Boolean(detail.allow_mixed_carton ?? true),
-            dimensiKarton: dimensiKartonEntry || null,
-            dimensiPcs: dimensiPcsEntry || null,
-            berat: detail.berat ?? dimensionSource?.berat ?? 0,
-            panjang: detail.panjang ?? dimensionSource?.panjang ?? 0,
-            lebar: detail.lebar ?? dimensionSource?.lebar ?? 0,
-            tinggi: detail.tinggi ?? dimensionSource?.tinggi ?? 0,
-            qty_per_carton: detail.qty_per_carton ?? dimensionSource?.qty_per_carton ?? 0
-          });
+          const detail = normalizeInventoryPayload(response.data || {});
+          setInitialData(detail);
         }
       } catch (err) {
         console.error('Failed to fetch inventory detail:', err);
@@ -58,7 +117,7 @@ const EditInventoryModal = ({ inventory, onClose }) => {
     };
 
     loadDetail();
-  }, [inventory]);
+  }, [inventory, normalizeInventoryPayload]);
 
   const handleSubmit = async (formData) => {
     const validationErrors = validateInventoryData(formData);

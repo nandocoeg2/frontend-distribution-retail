@@ -88,40 +88,60 @@ const formatMultilineText = (value) => {
 };
 
 const getDimension = (item, suratJalan, detail) => {
-  // Try to get from item inventory
-  const inventory = item?.inventory || detail?.inventory || null;
-  
-  if (inventory && Array.isArray(inventory.dimensiBarang) && inventory.dimensiBarang.length > 0) {
-    // Find CARTON dimension
-    const cartonDim = inventory.dimensiBarang.find(dim => dim?.type === 'CARTON');
-    if (cartonDim) {
-      return cartonDim;
+  const resolveDimensi = (source) => {
+    if (!source || typeof source !== 'object') {
+      return null;
     }
-    // Fallback to first dimension
-    return inventory.dimensiBarang[0];
+
+    if (
+      source.dimensiKarton &&
+      typeof source.dimensiKarton === 'object' &&
+      !Array.isArray(source.dimensiKarton)
+    ) {
+      return source.dimensiKarton;
+    }
+
+    if (source.cartonDimension && typeof source.cartonDimension === 'object') {
+      return source.cartonDimension;
+    }
+
+    if (
+      source.dimensiBarang &&
+      typeof source.dimensiBarang === 'object' &&
+      !Array.isArray(source.dimensiBarang)
+    ) {
+      return source.dimensiBarang;
+    }
+
+    if (Array.isArray(source.dimensiBarang) && source.dimensiBarang.length > 0) {
+      return source.dimensiBarang[0];
+    }
+
+    if (source.dimensi && typeof source.dimensi === 'object') {
+      return source.dimensi;
+    }
+
+    return null;
+  };
+
+  const inventory = item?.inventory || detail?.inventory || null;
+  const resolvedInventoryDim = resolveDimensi(inventory);
+  if (resolvedInventoryDim) {
+    return resolvedInventoryDim;
   }
-  
-  // Try from packing purchaseOrder packingItems
+
   const packing = suratJalan?.purchaseOrder?.packing || suratJalan?.packing;
   if (packing && Array.isArray(packing.packingItems)) {
-    const packingItem = packing.packingItems.find(pi => 
-      pi?.inventoryId === item?.inventoryId || 
+    const packingItem = packing.packingItems.find((pi) =>
+      pi?.inventoryId === item?.inventoryId ||
       pi?.nama_barang === item?.nama_barang
     );
-    if (packingItem?.inventory?.dimensiBarang) {
-      const dimensiArray = Array.isArray(packingItem.inventory.dimensiBarang) 
-        ? packingItem.inventory.dimensiBarang 
-        : [];
-      const cartonDim = dimensiArray.find(dim => dim?.type === 'CARTON');
-      if (cartonDim) {
-        return cartonDim;
-      }
-      if (dimensiArray.length > 0) {
-        return dimensiArray[0];
-      }
+    const packingInventoryDim = resolveDimensi(packingItem?.inventory);
+    if (packingInventoryDim) {
+      return packingInventoryDim;
     }
   }
-  
+
   return null;
 };
 
