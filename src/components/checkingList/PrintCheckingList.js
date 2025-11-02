@@ -87,6 +87,77 @@ const formatMultilineText = (value) => {
   return text.replace(/\r?\n/g, '\n');
 };
 
+const getDimension = (item, suratJalan, detail) => {
+  // Try to get from item inventory
+  const inventory = item?.inventory || detail?.inventory || null;
+  
+  if (inventory && Array.isArray(inventory.dimensiBarang) && inventory.dimensiBarang.length > 0) {
+    // Find CARTON dimension
+    const cartonDim = inventory.dimensiBarang.find(dim => dim?.type === 'CARTON');
+    if (cartonDim) {
+      return cartonDim;
+    }
+    // Fallback to first dimension
+    return inventory.dimensiBarang[0];
+  }
+  
+  // Try from packing purchaseOrder packingItems
+  const packing = suratJalan?.purchaseOrder?.packing || suratJalan?.packing;
+  if (packing && Array.isArray(packing.packingItems)) {
+    const packingItem = packing.packingItems.find(pi => 
+      pi?.inventoryId === item?.inventoryId || 
+      pi?.nama_barang === item?.nama_barang
+    );
+    if (packingItem?.inventory?.dimensiBarang) {
+      const dimensiArray = Array.isArray(packingItem.inventory.dimensiBarang) 
+        ? packingItem.inventory.dimensiBarang 
+        : [];
+      const cartonDim = dimensiArray.find(dim => dim?.type === 'CARTON');
+      if (cartonDim) {
+        return cartonDim;
+      }
+      if (dimensiArray.length > 0) {
+        return dimensiArray[0];
+      }
+    }
+  }
+  
+  return null;
+};
+
+const calculateBerat = (dimension, quantity) => {
+  if (!dimension || quantity === null || quantity === undefined) {
+    return null;
+  }
+
+  const berat = parseNumber(dimension.berat);
+  const qty = parseNumber(quantity);
+
+  if (berat !== null && qty !== null) {
+    return berat * qty;
+  }
+
+  return null;
+};
+
+const calculateKubikasi = (dimension, quantity) => {
+  if (!dimension || quantity === null || quantity === undefined) {
+    return null;
+  }
+
+  const panjang = parseNumber(dimension.panjang);
+  const lebar = parseNumber(dimension.lebar);
+  const tinggi = parseNumber(dimension.tinggi);
+  const qty = parseNumber(quantity);
+
+  if (panjang !== null && lebar !== null && tinggi !== null && qty !== null) {
+    // (panjang x lebar x tinggi) / 1.000.000 x koli/karton
+    return (panjang * lebar * tinggi) / 1000000 * qty;
+  }
+
+  return null;
+};
+
 const formatDateLong = (value) => {
   if (!value) {
     return '-';
@@ -332,6 +403,11 @@ const collectChecklistRows = (suratJalanList) => {
       const items = getDetailItems(detail);
 
       if (items.length === 0) {
+        const dimension = getDimension(detail, suratJalan, detail);
+        const totalBoxQty = parseNumber(detail?.total_box);
+        const beratValue = calculateBerat(dimension, totalBoxQty);
+        const kubikasiValue = calculateKubikasi(dimension, totalBoxQty);
+        
         counter += 1;
         rows.push({
           no: String(counter),
@@ -344,12 +420,19 @@ const collectChecklistRows = (suratJalanList) => {
             detail?.total_box,
             'Box'
           ),
+          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
+          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
           keterangan: formatMultilineText(detail?.keterangan || ''),
         });
         return;
       }
 
       items.forEach((item) => {
+        const dimension = getDimension(item, suratJalan, detail);
+        const itemBoxQty = parseNumber(item?.total_box);
+        const beratValue = calculateBerat(dimension, itemBoxQty);
+        const kubikasiValue = calculateKubikasi(dimension, itemBoxQty);
+        
         counter += 1;
         rows.push({
           no: String(counter),
@@ -367,6 +450,8 @@ const collectChecklistRows = (suratJalanList) => {
             item?.total_box ?? item?.quantity,
             item?.satuan || 'Qty'
           ),
+          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
+          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
           keterangan: formatMultilineText(item?.keterangan || detail?.keterangan || ''),
         });
       });
@@ -376,6 +461,11 @@ const collectChecklistRows = (suratJalanList) => {
 
     if (!detailRowsAdded && packingItems.length > 0) {
       packingItems.forEach((item) => {
+        const dimension = getDimension(item, suratJalan, null);
+        const cartonQty = parseNumber(item?.jumlah_carton ?? item?.total_box);
+        const beratValue = calculateBerat(dimension, cartonQty);
+        const kubikasiValue = calculateKubikasi(dimension, cartonQty);
+        
         counter += 1;
         rows.push({
           no: String(counter),
@@ -393,6 +483,8 @@ const collectChecklistRows = (suratJalanList) => {
             item?.jumlah_carton ?? item?.total_box,
             'Box'
           ),
+          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
+          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
           keterangan: formatMultilineText(buildPackingKeterangan(item)),
         });
       });
@@ -544,11 +636,13 @@ const drawChecklistTable = (pdf, tableRows, startY) => {
     'Nama Barang',
     'Jumlah',
     'Total Quantity',
+    'Berat',
+    'Kubikasi',
     'Keterangan',
   ];
 
-  const columnWidths = [10, 20, 60, 22, 40, 18];
-  const alignments = ['center', 'center', 'left', 'center', 'left', 'left'];
+  const columnWidths = [8, 15, 45, 18, 25, 16, 16, 15];
+  const alignments = ['center', 'center', 'left', 'center', 'left', 'right', 'right', 'left'];
 
   const rows = tableRows.map((row) => [
     row.no,
@@ -556,6 +650,8 @@ const drawChecklistTable = (pdf, tableRows, startY) => {
     row.namaBarang || '-',
     row.jumlah || '-',
     row.totalQuantity || '-',
+    row.berat || '-',
+    row.kubikasi || '-',
     row.keterangan || '',
   ]);
 
@@ -568,7 +664,7 @@ const drawChecklistTable = (pdf, tableRows, startY) => {
     {
       columnWidths,
       alignments,
-      headerAlignments: ['center', 'center', 'left', 'center', 'left', 'left'],
+      headerAlignments: ['center', 'center', 'left', 'center', 'left', 'right', 'right', 'left'],
       fontSize: PDF_FONT_SIZES.tableBody,
       headerFontSize: PDF_FONT_SIZES.tableHeader,
     },

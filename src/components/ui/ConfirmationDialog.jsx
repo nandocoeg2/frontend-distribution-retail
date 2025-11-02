@@ -170,7 +170,7 @@ export const useConfirmationDialog = () => {
     <ConfirmationDialog
       {...dialogState}
       onClose={hideDialog}
-      onConfirm={onConfirm}
+      onConfirm={onConfirm || dialogState.onConfirm}
     />
   );
 
