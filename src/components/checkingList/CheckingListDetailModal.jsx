@@ -109,9 +109,7 @@ const CheckingListDetailModal = ({
   const statusDisplay =
     typeof statusData === 'string'
       ? statusData
-      : statusData?.status_name ||
-        statusData?.status_code ||
-        'UNKNOWN';
+      : statusData?.status_name || statusData?.status_code || 'UNKNOWN';
   const statusVariant = resolveStatusVariant(
     typeof statusData === 'string'
       ? statusData
@@ -330,10 +328,7 @@ const CheckingListDetailModal = ({
                       },
                       {
                         label: 'Status ID',
-                        value:
-                          checklist?.statusId ||
-                          statusData?.id ||
-                          '-',
+                        value: checklist?.statusId || statusData?.id || '-',
                         copyable: Boolean(
                           checklist?.statusId || statusData?.id
                         ),
@@ -411,9 +406,7 @@ const CheckingListDetailModal = ({
                         },
                         {
                           label: 'Tanggal Masuk PO',
-                          value: formatDateTime(
-                            purchaseOrder.tanggal_masuk_po
-                          ),
+                          value: formatDateTime(purchaseOrder.tanggal_masuk_po),
                         },
                         {
                           label: 'Tanggal Batas Kirim',
@@ -521,7 +514,8 @@ const CheckingListDetailModal = ({
                       >
                         <div className='px-6 py-4 border-b border-gray-200 bg-gray-50'>
                           <h4 className='text-lg font-semibold text-gray-900'>
-                            Surat Jalan #{index + 1}: {suratJalan.no_surat_jalan}
+                            Surat Jalan #{index + 1}:{' '}
+                            {suratJalan.no_surat_jalan}
                           </h4>
                         </div>
                         <div className='px-6 py-4'>
@@ -686,7 +680,10 @@ const CheckingListDetailModal = ({
                                     <div key={idx} className='mb-1'>
                                       {item.nama_barang} ({item.quantity} pcs)
                                       {item.keterangan && (
-                                        <span className='text-xs text-gray-500'> - {item.keterangan}</span>
+                                        <span className='text-xs text-gray-500'>
+                                          {' '}
+                                          - {item.keterangan}
+                                        </span>
                                       )}
                                     </div>
                                   ))}
@@ -825,10 +822,7 @@ const CheckingListDetailModal = ({
                         },
                         {
                           label: 'Supplier Name',
-                          value:
-                            supplier.nama_supplier ||
-                            supplier.name ||
-                            '-',
+                          value: supplier.nama_supplier || supplier.name || '-',
                         },
                         {
                           label: 'Supplier Code',

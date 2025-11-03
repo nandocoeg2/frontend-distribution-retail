@@ -49,7 +49,12 @@ const buildQuantityString = (numeric, unit) => {
   return formattedNumber;
 };
 
-const formatQuantity = (primaryValue, primaryUnit, fallbackValue, fallbackUnit) => {
+const formatQuantity = (
+  primaryValue,
+  primaryUnit,
+  fallbackValue,
+  fallbackUnit
+) => {
   const primaryNumeric = parseNumber(primaryValue);
   if (primaryNumeric !== null) {
     return buildQuantityString(primaryNumeric, primaryUnit);
@@ -113,7 +118,10 @@ const getDimension = (item, suratJalan, detail) => {
       return source.dimensiBarang;
     }
 
-    if (Array.isArray(source.dimensiBarang) && source.dimensiBarang.length > 0) {
+    if (
+      Array.isArray(source.dimensiBarang) &&
+      source.dimensiBarang.length > 0
+    ) {
       return source.dimensiBarang[0];
     }
 
@@ -133,9 +141,10 @@ const getDimension = (item, suratJalan, detail) => {
   const packing = suratJalan?.purchaseOrder?.packing || suratJalan?.packing;
   if (packing && Array.isArray(packing.packingBoxes)) {
     for (const box of packing.packingBoxes) {
-      const packingItem = box.packingBoxItems?.find((pi) =>
-        pi?.inventoryId === item?.inventoryId ||
-        pi?.nama_barang === item?.nama_barang
+      const packingItem = box.packingBoxItems?.find(
+        (pi) =>
+          pi?.inventoryId === item?.inventoryId ||
+          pi?.nama_barang === item?.nama_barang
       );
       if (packingItem) {
         const packingInventoryDim = resolveDimensi(packingItem?.inventory);
@@ -176,7 +185,7 @@ const calculateKubikasi = (dimension, quantity) => {
 
   if (panjang !== null && lebar !== null && tinggi !== null && qty !== null) {
     // (panjang x lebar x tinggi) / 1.000.000 x koli/karton
-    return (panjang * lebar * tinggi) / 1000000 * qty;
+    return ((panjang * lebar * tinggi) / 1000000) * qty;
   }
 
   return null;
@@ -205,7 +214,11 @@ const extractField = (source, fields = []) => {
   }
 
   for (const field of fields) {
-    if (field in source && source[field] !== null && source[field] !== undefined) {
+    if (
+      field in source &&
+      source[field] !== null &&
+      source[field] !== undefined
+    ) {
       const candidate = source[field];
       if (typeof candidate === 'string') {
         const trimmed = candidate.trim();
@@ -278,9 +291,7 @@ const getPackingBoxes = (suratJalan) => {
   }
 
   const packing =
-    suratJalan?.purchaseOrder?.packing ||
-    suratJalan?.packing ||
-    null;
+    suratJalan?.purchaseOrder?.packing || suratJalan?.packing || null;
 
   if (!packing) {
     return [];
@@ -424,21 +435,32 @@ const collectChecklistRows = (suratJalanList) => {
         const totalBoxQty = parseNumber(detail?.total_box);
         const beratValue = calculateBerat(dimension, totalBoxQty);
         const kubikasiValue = calculateKubikasi(dimension, totalBoxQty);
-        
+
         counter += 1;
         rows.push({
           no: String(counter),
           noBox: detail?.no_box || '-',
           namaBarang: detail?.nama_barang || '-',
-          jumlah: formatQuantity(detail?.total_box, 'Box', detail?.total_quantity_in_box, 'Qty'),
+          jumlah: formatQuantity(
+            detail?.total_box,
+            'Box',
+            detail?.total_quantity_in_box,
+            'Qty'
+          ),
           totalQuantity: formatQuantity(
             detail?.total_quantity_in_box,
             'Qty',
             detail?.total_box,
             'Box'
           ),
-          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
-          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
+          berat:
+            beratValue !== null
+              ? `${numberFormatter.format(beratValue)} kg`
+              : '-',
+          kubikasi:
+            kubikasiValue !== null
+              ? `${numberFormatter.format(kubikasiValue)} m³`
+              : '-',
           keterangan: formatMultilineText(detail?.keterangan || ''),
         });
         return;
@@ -449,7 +471,7 @@ const collectChecklistRows = (suratJalanList) => {
         const itemBoxQty = parseNumber(item?.total_box);
         const beratValue = calculateBerat(dimension, itemBoxQty);
         const kubikasiValue = calculateKubikasi(dimension, itemBoxQty);
-        
+
         counter += 1;
         rows.push({
           no: String(counter),
@@ -467,9 +489,17 @@ const collectChecklistRows = (suratJalanList) => {
             item?.total_box ?? item?.quantity,
             item?.satuan || 'Qty'
           ),
-          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
-          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
-          keterangan: formatMultilineText(item?.keterangan || detail?.keterangan || ''),
+          berat:
+            beratValue !== null
+              ? `${numberFormatter.format(beratValue)} kg`
+              : '-',
+          kubikasi:
+            kubikasiValue !== null
+              ? `${numberFormatter.format(kubikasiValue)} m³`
+              : '-',
+          keterangan: formatMultilineText(
+            item?.keterangan || detail?.keterangan || ''
+          ),
         });
       });
     });
@@ -479,13 +509,13 @@ const collectChecklistRows = (suratJalanList) => {
     if (!detailRowsAdded && packingBoxes.length > 0) {
       packingBoxes.forEach((box) => {
         const boxItems = box.packingBoxItems || [];
-        const itemNames = boxItems.map(item => item.nama_barang).join(' + ');
+        const itemNames = boxItems.map((item) => item.nama_barang).join(' + ');
         const totalQty = box.total_quantity_in_box;
-        
+
         const dimension = getDimension(box, suratJalan, null);
         const beratValue = calculateBerat(dimension, 1);
         const kubikasiValue = calculateKubikasi(dimension, 1);
-        
+
         counter += 1;
         rows.push({
           no: String(counter),
@@ -493,9 +523,18 @@ const collectChecklistRows = (suratJalanList) => {
           namaBarang: itemNames || '-',
           jumlah: `${totalQty} Qty`,
           totalQuantity: `${totalQty} Qty`,
-          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
-          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
-          keterangan: boxItems.length > 1 ? 'Mixed Carton' : (boxItems[0]?.keterangan || '-'),
+          berat:
+            beratValue !== null
+              ? `${numberFormatter.format(beratValue)} kg`
+              : '-',
+          kubikasi:
+            kubikasiValue !== null
+              ? `${numberFormatter.format(kubikasiValue)} m³`
+              : '-',
+          keterangan:
+            boxItems.length > 1
+              ? 'Mixed Carton'
+              : boxItems[0]?.keterangan || '-',
         });
       });
     }
@@ -518,12 +557,22 @@ const createInfoRows = (checklist, suratJalanList) => {
     primarySuratJalan?.company,
     primarySuratJalan?.companyProfile,
     checklist,
-    primarySuratJalan,
+    primarySuratJalan
   );
 
   const origin =
-    extractField(checklist, ['origin', 'asal', 'companyName', 'company', 'dari']) ||
-    extractField(primarySuratJalan, ['deliver_from', 'asal', 'warehouseName']) ||
+    extractField(checklist, [
+      'origin',
+      'asal',
+      'companyName',
+      'company',
+      'dari',
+    ]) ||
+    extractField(primarySuratJalan, [
+      'deliver_from',
+      'asal',
+      'warehouseName',
+    ]) ||
     companyName;
 
   const formattedDate =
@@ -605,7 +654,7 @@ const drawCheckingListHeader = (pdf, infoRows) => {
       valueStartX,
       yPosition,
       valueWidth,
-      { fontSize: PDF_FONT_SIZES.body },
+      { fontSize: PDF_FONT_SIZES.body }
     );
 
     yPosition = Math.max(nextY, yPosition + 6);
@@ -618,7 +667,7 @@ const drawCheckingListHeader = (pdf, infoRows) => {
     PDF_MARGINS.left,
     yPosition,
     PDF_PAGE.width - PDF_MARGINS.right,
-    yPosition,
+    yPosition
   );
 
   yPosition += 6;
@@ -652,7 +701,16 @@ const drawChecklistTable = (pdf, tableRows, startY) => {
   ];
 
   const columnWidths = [8, 15, 45, 18, 25, 16, 16, 15];
-  const alignments = ['center', 'center', 'left', 'center', 'left', 'right', 'right', 'left'];
+  const alignments = [
+    'center',
+    'center',
+    'left',
+    'center',
+    'left',
+    'right',
+    'right',
+    'left',
+  ];
 
   const rows = tableRows.map((row) => [
     row.no,
@@ -665,34 +723,30 @@ const drawChecklistTable = (pdf, tableRows, startY) => {
     row.keterangan || '',
   ]);
 
-  return drawTable(
-    pdf,
-    headers,
-    rows,
-    PDF_MARGINS.left,
-    startY,
-    {
-      columnWidths,
-      alignments,
-      headerAlignments: ['center', 'center', 'left', 'center', 'left', 'right', 'right', 'left'],
-      fontSize: PDF_FONT_SIZES.tableBody,
-      headerFontSize: PDF_FONT_SIZES.tableHeader,
-    },
-  );
+  return drawTable(pdf, headers, rows, PDF_MARGINS.left, startY, {
+    columnWidths,
+    alignments,
+    headerAlignments: [
+      'center',
+      'center',
+      'left',
+      'center',
+      'left',
+      'right',
+      'right',
+      'left',
+    ],
+    fontSize: PDF_FONT_SIZES.tableBody,
+    headerFontSize: PDF_FONT_SIZES.tableHeader,
+  });
 };
 
 const drawDateLocation = (pdf, dateLocation, startY) => {
   const yPosition = startY + 12;
-  drawText(
-    pdf,
-    dateLocation,
-    PDF_PAGE.width - PDF_MARGINS.right,
-    yPosition,
-    {
-      fontSize: PDF_FONT_SIZES.body,
-      align: 'right',
-    },
-  );
+  drawText(pdf, dateLocation, PDF_PAGE.width - PDF_MARGINS.right, yPosition, {
+    fontSize: PDF_FONT_SIZES.body,
+    align: 'right',
+  });
 
   return yPosition + 6;
 };
@@ -709,23 +763,19 @@ const applyFooter = (pdf, origin) => {
       PDF_MARGINS.left,
       footerY - 4,
       PDF_PAGE.width - PDF_MARGINS.right,
-      footerY - 4,
+      footerY - 4
     );
 
-    drawText(
-      pdf,
-      origin,
-      PDF_MARGINS.left,
-      footerY,
-      { fontSize: PDF_FONT_SIZES.small },
-    );
+    drawText(pdf, origin, PDF_MARGINS.left, footerY, {
+      fontSize: PDF_FONT_SIZES.small,
+    });
 
     drawText(
       pdf,
       `Page ${pageNumber} of ${pageCount}`,
       PDF_PAGE.width - PDF_MARGINS.right,
       footerY,
-      { fontSize: PDF_FONT_SIZES.small, align: 'right' },
+      { fontSize: PDF_FONT_SIZES.small, align: 'right' }
     );
   }
 };
@@ -746,14 +796,20 @@ export const exportCheckingListToPDF = async (checklist) => {
       throw new Error('Tidak ada detail checklist untuk dicetak');
     }
 
-    const { rows: infoRows, origin, formattedDate, companyName } = createInfoRows(
-      checklist,
-      suratJalanList,
-    );
+    const {
+      rows: infoRows,
+      origin,
+      formattedDate,
+      companyName,
+    } = createInfoRows(checklist, suratJalanList);
 
     const primarySuratJalan = suratJalanList[0] || null;
     const destinationHeader = buildDestinationHeaderText(primarySuratJalan, 0);
-    const dateLocation = getDateLocation(checklist, primarySuratJalan, formattedDate);
+    const dateLocation = getDateLocation(
+      checklist,
+      primarySuratJalan,
+      formattedDate
+    );
 
     const pdf = createPDFDocument();
     let yPosition = drawCheckingListHeader(pdf, infoRows);
@@ -767,14 +823,22 @@ export const exportCheckingListToPDF = async (checklist) => {
     yPosition = drawDateLocation(pdf, dateLocation, yPosition);
 
     yPosition = checkAndAddPage(pdf, yPosition, 60);
-    drawSignatureArea(pdf, yPosition, [`Checker ${companyName}`, 'Checker Ekspedisi'], {
-      columns: 2,
-      spacing: 45,
-    });
+    drawSignatureArea(
+      pdf,
+      yPosition,
+      [`Checker ${companyName}`, 'Checker Ekspedisi'],
+      {
+        columns: 2,
+        spacing: 45,
+      }
+    );
 
     applyFooter(pdf, origin);
 
-    const fileName = generateFileName('CHECKING_LIST', getChecklistIdentifier(checklist));
+    const fileName = generateFileName(
+      'CHECKING_LIST',
+      getChecklistIdentifier(checklist)
+    );
     pdf.save(fileName);
 
     toast.success('Checking List berhasil di-export ke PDF', {

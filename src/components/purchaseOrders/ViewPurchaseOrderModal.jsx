@@ -70,15 +70,28 @@ const ViewPurchaseOrderModal = ({
     order?.po_is_printed ??
     order?.poIsPrinted ??
     null;
-  if (purchaseOrderPrintedRaw !== null && purchaseOrderPrintedRaw !== undefined) {
+  if (
+    purchaseOrderPrintedRaw !== null &&
+    purchaseOrderPrintedRaw !== undefined
+  ) {
     let isPrinted = null;
     if (typeof purchaseOrderPrintedRaw === 'boolean') {
       isPrinted = purchaseOrderPrintedRaw;
     } else if (typeof purchaseOrderPrintedRaw === 'string') {
       const normalized = purchaseOrderPrintedRaw.trim().toLowerCase();
-      if (normalized === 'yes' || normalized === 'y' || normalized === 'printed' || normalized === '1') {
+      if (
+        normalized === 'yes' ||
+        normalized === 'y' ||
+        normalized === 'printed' ||
+        normalized === '1'
+      ) {
         isPrinted = true;
-      } else if (normalized === 'no' || normalized === 'n' || normalized === '0' || normalized === 'unprinted') {
+      } else if (
+        normalized === 'no' ||
+        normalized === 'n' ||
+        normalized === '0' ||
+        normalized === 'unprinted'
+      ) {
         isPrinted = false;
       }
     } else if (typeof purchaseOrderPrintedRaw === 'number') {
@@ -331,9 +344,8 @@ const ViewPurchaseOrderModal = ({
       }
 
       exportTasks.push(async () => {
-        const response = await suratJalanService.getSuratJalanById(
-          suratJalanId
-        );
+        const response =
+          await suratJalanService.getSuratJalanById(suratJalanId);
         const suratJalanData = unwrapServiceResponse(response);
 
         if (!suratJalanData) {
@@ -347,13 +359,13 @@ const ViewPurchaseOrderModal = ({
 
     if (exportTasks.length === 0) {
       const specificMessage =
-        (selectedDocuments.PURCHASE_ORDER && !purchaseOrderTaskCreated)
+        selectedDocuments.PURCHASE_ORDER && !purchaseOrderTaskCreated
           ? 'Purchase order data is not available to export'
-          : (selectedDocuments.PACKING && !packingTaskCreated)
+          : selectedDocuments.PACKING && !packingTaskCreated
             ? 'Packing data is not available to print'
-            : (selectedDocuments.INVOICE_PENGIRIMAN && !invoiceTaskCreated)
+            : selectedDocuments.INVOICE_PENGIRIMAN && !invoiceTaskCreated
               ? 'Invoice pengiriman data is not available to print'
-              : (selectedDocuments.SURAT_JALAN && !suratJalanTaskCreated)
+              : selectedDocuments.SURAT_JALAN && !suratJalanTaskCreated
                 ? 'Surat jalan data is not available to print'
                 : 'Selected documents are not available to print';
 
@@ -1087,8 +1099,12 @@ const ViewPurchaseOrderModal = ({
                           },
                           {
                             label: 'Total Items',
-                            value: order.packing.packingBoxes?.reduce((sum, box) => 
-                              sum + (box.packingBoxItems?.length || 0), 0) || 0,
+                            value:
+                              order.packing.packingBoxes?.reduce(
+                                (sum, box) =>
+                                  sum + (box.packingBoxItems?.length || 0),
+                                0
+                              ) || 0,
                           },
                           {
                             label: 'Status',
