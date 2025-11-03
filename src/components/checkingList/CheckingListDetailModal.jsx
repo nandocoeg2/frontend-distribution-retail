@@ -100,11 +100,9 @@ const CheckingListDetailModal = ({
   const customer = purchaseOrder?.customer;
   const supplier = purchaseOrder?.supplier;
   const packing = purchaseOrder?.packing;
-  const packingItems = Array.isArray(packing?.packingItems)
-    ? packing.packingItems
-    : packing?.packingItems
-      ? [packing.packingItems]
-      : [];
+  const packingBoxes = Array.isArray(packing?.packingBoxes)
+    ? packing.packingBoxes
+    : [];
 
   // Status handling
   const statusData = checklist?.status;
@@ -645,58 +643,53 @@ const CheckingListDetailModal = ({
                     />
                   </AccordionItem>
 
-                  {packingItems.length > 0 && (
+                  {packingBoxes.length > 0 && (
                     <div>
                       <h3 className='mb-4 text-lg font-semibold text-gray-900'>
-                        Packing Items ({packingItems.length})
+                        Packing Boxes ({packingBoxes.length})
                       </h3>
                       <div className='overflow-x-auto bg-white border border-gray-200 rounded-lg'>
                         <table className='min-w-full divide-y divide-gray-200'>
                           <thead className='bg-gray-50'>
                             <tr>
                               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Nama Barang
+                                Box Number
                               </th>
                               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                                 Total Qty
                               </th>
                               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Jumlah Carton
+                                Status
                               </th>
                               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Isi per Carton
-                              </th>
-                              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                No Box
-                              </th>
-                              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Mixed Carton
+                                Items
                               </th>
                             </tr>
                           </thead>
                           <tbody className='bg-white divide-y divide-gray-200'>
-                            {packingItems.map((item, itemIndex) => (
+                            {packingBoxes.map((box, boxIndex) => (
                               <tr
-                                key={item.id || itemIndex}
+                                key={box.id || boxIndex}
                                 className='hover:bg-gray-50'
                               >
                                 <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-                                  {item.nama_barang || '-'}
+                                  {box.no_box || '-'}
                                 </td>
                                 <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {formatNumberValue(item.total_qty)}
+                                  {formatNumberValue(box.total_quantity_in_box)}
                                 </td>
                                 <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {formatNumberValue(item.jumlah_carton)}
+                                  {box.status?.status_name || '-'}
                                 </td>
-                                <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {formatNumberValue(item.isi_per_carton)}
-                                </td>
-                                <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {item.no_box || '-'}
-                                </td>
-                                <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {formatBooleanValue(item.is_mixed_carton)}
+                                <td className='px-6 py-4 text-sm text-gray-900'>
+                                  {box.packingBoxItems?.map((item, idx) => (
+                                    <div key={idx} className='mb-1'>
+                                      {item.nama_barang} ({item.quantity} pcs)
+                                      {item.keterangan && (
+                                        <span className='text-xs text-gray-500'> - {item.keterangan}</span>
+                                      )}
+                                    </div>
+                                  ))}
                                 </td>
                               </tr>
                             ))}

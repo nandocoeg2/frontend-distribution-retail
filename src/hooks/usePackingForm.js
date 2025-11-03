@@ -7,14 +7,18 @@ const usePackingForm = (initialData = null) => {
     tanggal_packing: '',
     statusId: '',
     purchaseOrderId: '',
-    packingItems: []
+    packingBoxes: [],
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load dependencies
-  const { packingStatuses, loading: statusLoading, fetchPackingStatuses } = useStatuses();
+  const {
+    packingStatuses,
+    loading: statusLoading,
+    fetchPackingStatuses,
+  } = useStatuses();
   const { inventories, loading: inventoryLoading } = useInventories();
 
   // Load packing statuses on mount
@@ -26,59 +30,119 @@ const usePackingForm = (initialData = null) => {
   useEffect(() => {
     if (initialData) {
       setFormData({
-        tanggal_packing: initialData.tanggal_packing ? new Date(initialData.tanggal_packing).toISOString().split('T')[0] : '',
+        tanggal_packing: initialData.tanggal_packing
+          ? new Date(initialData.tanggal_packing).toISOString().split('T')[0]
+          : '',
         statusId: initialData.statusId || '',
         purchaseOrderId: initialData.purchaseOrderId || '',
-        packingItems: initialData.packingItems || []
+        packingBoxes: initialData.packingBoxes || [],
       });
     }
   }, [initialData]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
 
-  const addPackingItem = () => {
-    setFormData(prev => ({
+  const addPackingBox = () => {
+    setFormData((prev) => ({
       ...prev,
-      packingItems: [
-        ...prev.packingItems,
+      packingBoxes: [
+        ...prev.packingBoxes,
         {
-          nama_barang: '',
-          total_qty: '',
-          jumlah_carton: '',
-          isi_per_carton: '',
           no_box: '',
-          inventoryId: ''
-        }
-      ]
+          statusId: '',
+          packingBoxItems: [
+            {
+              nama_barang: '',
+              quantity: '',
+              inventoryId: '',
+              keterangan: '',
+            },
+          ],
+        },
+      ],
     }));
   };
 
-  const updatePackingItem = (index, field, value) => {
-    setFormData(prev => ({
+  const updatePackingBox = (boxIndex, field, value) => {
+    setFormData((prev) => ({
       ...prev,
-      packingItems: prev.packingItems.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
-      )
+      packingBoxes: prev.packingBoxes.map((box, i) =>
+        i === boxIndex ? { ...box, [field]: value } : box
+      ),
     }));
   };
 
-  const removePackingItem = (index) => {
-    setFormData(prev => ({
+  const addItemToBox = (boxIndex) => {
+    setFormData((prev) => ({
       ...prev,
-      packingItems: prev.packingItems.filter((_, i) => i !== index)
+      packingBoxes: prev.packingBoxes.map((box, i) =>
+        i === boxIndex
+          ? {
+              ...box,
+              packingBoxItems: [
+                ...box.packingBoxItems,
+                {
+                  nama_barang: '',
+                  quantity: '',
+                  inventoryId: '',
+                  keterangan: '',
+                },
+              ],
+            }
+          : box
+      ),
+    }));
+  };
+
+  const updateBoxItem = (boxIndex, itemIndex, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      packingBoxes: prev.packingBoxes.map((box, i) =>
+        i === boxIndex
+          ? {
+              ...box,
+              packingBoxItems: box.packingBoxItems.map((item, j) =>
+                j === itemIndex ? { ...item, [field]: value } : item
+              ),
+            }
+          : box
+      ),
+    }));
+  };
+
+  const removeBoxItem = (boxIndex, itemIndex) => {
+    setFormData((prev) => ({
+      ...prev,
+      packingBoxes: prev.packingBoxes.map((box, i) =>
+        i === boxIndex
+          ? {
+              ...box,
+              packingBoxItems: box.packingBoxItems.filter(
+                (_, j) => j !== itemIndex
+              ),
+            }
+          : box
+      ),
+    }));
+  };
+
+  const removePackingBox = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      packingBoxes: prev.packingBoxes.filter((_, i) => i !== index),
     }));
   };
 
@@ -100,28 +164,37 @@ const usePackingForm = (initialData = null) => {
       newErrors.purchaseOrderId = 'Purchase Order harus dipilih';
     }
 
-    // Validate packingItems
-    if (!formData.packingItems || formData.packingItems.length === 0) {
-      newErrors.packingItems = 'Minimal satu item packing harus ditambahkan';
+    // Validate packingBoxes
+    if (!formData.packingBoxes || formData.packingBoxes.length === 0) {
+      newErrors.packingBoxes = 'Minimal satu box packing harus ditambahkan';
     } else {
-      formData.packingItems.forEach((item, index) => {
-        if (!item.nama_barang) {
-          newErrors[`packingItems.${index}.nama_barang`] = 'Nama barang harus diisi';
+      formData.packingBoxes.forEach((box, boxIndex) => {
+        if (!box.no_box) {
+          newErrors[`packingBoxes.${boxIndex}.no_box`] =
+            'Nomor box harus diisi';
         }
-        if (!item.total_qty || item.total_qty <= 0) {
-          newErrors[`packingItems.${index}.total_qty`] = 'Total qty harus lebih dari 0';
-        }
-        if (!item.jumlah_carton || item.jumlah_carton <= 0) {
-          newErrors[`packingItems.${index}.jumlah_carton`] = 'Jumlah carton harus lebih dari 0';
-        }
-        if (!item.isi_per_carton || item.isi_per_carton <= 0) {
-          newErrors[`packingItems.${index}.isi_per_carton`] = 'Isi per carton harus lebih dari 0';
-        }
-        if (!item.no_box) {
-          newErrors[`packingItems.${index}.no_box`] = 'No box harus diisi';
-        }
-        if (!item.inventoryId) {
-          newErrors[`packingItems.${index}.inventoryId`] = 'Inventory harus dipilih';
+
+        if (!box.packingBoxItems || box.packingBoxItems.length === 0) {
+          newErrors[`packingBoxes.${boxIndex}.items`] =
+            'Minimal satu item per box';
+        } else {
+          box.packingBoxItems.forEach((item, itemIndex) => {
+            if (!item.nama_barang) {
+              newErrors[
+                `packingBoxes.${boxIndex}.items.${itemIndex}.nama_barang`
+              ] = 'Nama barang harus diisi';
+            }
+            if (!item.quantity || item.quantity <= 0) {
+              newErrors[
+                `packingBoxes.${boxIndex}.items.${itemIndex}.quantity`
+              ] = 'Quantity harus lebih dari 0';
+            }
+            if (!item.inventoryId) {
+              newErrors[
+                `packingBoxes.${boxIndex}.items.${itemIndex}.inventoryId`
+              ] = 'Inventory harus dipilih';
+            }
+          });
         }
       });
     }
@@ -135,7 +208,7 @@ const usePackingForm = (initialData = null) => {
       tanggal_packing: '',
       statusId: '',
       purchaseOrderId: '',
-      packingItems: []
+      packingBoxes: [],
     });
     setErrors({});
   };
@@ -144,12 +217,13 @@ const usePackingForm = (initialData = null) => {
     return {
       ...formData,
       tanggal_packing: new Date(formData.tanggal_packing).toISOString(),
-      packingItems: formData.packingItems.map(item => ({
-        ...item,
-        total_qty: parseInt(item.total_qty),
-        jumlah_carton: parseInt(item.jumlah_carton),
-        isi_per_carton: parseInt(item.isi_per_carton)
-      }))
+      packingBoxes: formData.packingBoxes.map((box) => ({
+        ...box,
+        packingBoxItems: box.packingBoxItems.map((item) => ({
+          ...item,
+          quantity: parseInt(item.quantity),
+        })),
+      })),
     };
   };
 
@@ -163,12 +237,15 @@ const usePackingForm = (initialData = null) => {
     statusLoading,
     inventoryLoading,
     handleInputChange,
-    addPackingItem,
-    updatePackingItem,
-    removePackingItem,
+    addPackingBox,
+    updatePackingBox,
+    addItemToBox,
+    updateBoxItem,
+    removeBoxItem,
+    removePackingBox,
     validateForm,
     resetForm,
-    getFormattedData
+    getFormattedData,
   };
 };
 

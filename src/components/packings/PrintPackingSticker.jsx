@@ -1,38 +1,46 @@
 import jsPDF from 'jspdf';
 import { getActiveCompanyName } from '../../utils/companyUtils';
 
-const exportStickerToPDF = (packing, packingItems) => {
-  if (!packing || !packingItems || packingItems.length === 0) {
+const exportStickerToPDF = (packing, packingBoxes) => {
+  if (!packing || !packingBoxes || packingBoxes.length === 0) {
     alert('Tidak ada data untuk dicetak');
     return;
   }
 
-  // Generate stickers for each packing item
+  // Generate stickers for each box
   const stickers = [];
-  packingItems.forEach((item) => {
-    const quantity = item.total_qty || item.quantity || 0;
-    const itemName =
-      item.nama_barang || item.purchaseOrderItem?.item?.item_name || 'N/A';
-    const itemDescription =
-      item.purchaseOrderItem?.item?.item_description || '';
-    const jumlahCarton = item.jumlah_carton || 1;
+  packingBoxes.forEach((box) => {
+    const boxItems = box.packingBoxItems || [];
 
-    // Create one sticker per carton
-    for (let i = 0; i < jumlahCarton; i++) {
-      const qtyPerCarton = Math.ceil(quantity / jumlahCarton);
+    // For mixed carton (multiple items in box)
+    if (boxItems.length > 1) {
+      const itemNames = boxItems.map((item) => item.nama_barang).join(' + ');
+      const totalQty = box.total_quantity_in_box;
+
       stickers.push({
-        itemName,
-        itemDescription,
-        quantity: qtyPerCarton,
+        boxNumber: box.no_box,
+        itemName: itemNames,
+        itemDescription: 'Mixed Carton',
+        quantity: totalQty,
         stickerNumber: stickers.length + 1,
+        isMixed: true,
+      });
+    } else if (boxItems.length === 1) {
+      // Full or partial carton (single item)
+      const item = boxItems[0];
+      stickers.push({
+        boxNumber: box.no_box,
+        itemName: item.nama_barang,
+        itemDescription: item.keterangan || '',
+        quantity: item.quantity,
+        stickerNumber: stickers.length + 1,
+        isMixed: false,
       });
     }
   });
 
   if (stickers.length === 0) {
-    alert(
-      'Tidak ada stiker yang dapat digenerate. Pastikan ada data quantity/carton.'
-    );
+    alert('Tidak ada stiker yang dapat digenerate.');
     return;
   }
 
@@ -45,15 +53,17 @@ const exportStickerToPDF = (packing, packingItems) => {
     packing?.purchaseOrder?.company,
     packing?.purchaseOrder?.companyProfile,
     packing?.purchaseOrder,
-    packing,
+    packing
   );
-  const customerName = packing.purchaseOrder?.customer?.namaCustomer ||
-                       packing.purchaseOrder?.customer?.customer_name ||
-                       packing.purchaseOrder?.customer?.name ||
-                       'N/A';
-  const customerAddress = packing.purchaseOrder?.customer?.alamatPengiriman ||
-                          packing.purchaseOrder?.customer?.alamat ||
-                          '';
+  const customerName =
+    packing.purchaseOrder?.customer?.namaCustomer ||
+    packing.purchaseOrder?.customer?.customer_name ||
+    packing.purchaseOrder?.customer?.name ||
+    'N/A';
+  const customerAddress =
+    packing.purchaseOrder?.customer?.alamatPengiriman ||
+    packing.purchaseOrder?.customer?.alamat ||
+    '';
 
   // Create PDF with custom size: 27cm x 21cm
   const pdf = new jsPDF({
@@ -100,6 +110,24 @@ const exportStickerToPDF = (packing, packingItems) => {
     const headerY = y + 10;
     pdf.text(companyName, x + stickerWidth / 2, headerY, { align: 'center' });
 
+    // Mixed Carton Badge (if applicable)
+    if (sticker.isMixed) {
+      pdf.setFillColor(255, 165, 0); // Orange
+      pdf.rect(x + 5, y + 3, 25, 7, 'F');
+      pdf.setFontSize(8);
+      pdf.setTextColor(255, 255, 255); // White text
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('MIXED', x + 17.5, y + 7.5, { align: 'center' });
+      pdf.setTextColor(0, 0, 0); // Reset to black
+    }
+
+    // Box Number (top right)
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(sticker.boxNumber || '', x + stickerWidth - 7, y + 7, {
+      align: 'right',
+    });
+
     // Line below header
     pdf.setLineWidth(0.3);
     pdf.line(x + 5, headerY + 3, x + stickerWidth - 5, headerY + 3);
@@ -137,7 +165,9 @@ const exportStickerToPDF = (packing, packingItems) => {
     // Draw PO number (right column - right aligned)
     currentY = titleY;
     poLines.forEach((line, i) => {
-      pdf.text(line, x + stickerWidth - 7, currentY + i * 5, { align: 'right' });
+      pdf.text(line, x + stickerWidth - 7, currentY + i * 5, {
+        align: 'right',
+      });
     });
 
     // Calculate the tallest column height
@@ -170,7 +200,7 @@ const exportStickerToPDF = (packing, packingItems) => {
     const titleEndY = titleY + titleSectionHeight;
     const footerStartY = y + stickerHeight - 13;
     const availableSpace = footerStartY - titleEndY;
-    const contentY = titleEndY + (availableSpace / 2) - (totalContentHeight / 2);
+    const contentY = titleEndY + availableSpace / 2 - totalContentHeight / 2;
 
     lines.forEach((line, i) => {
       pdf.text(line, x + stickerWidth / 2, contentY + i * lineHeight, {
@@ -198,38 +228,46 @@ const exportStickerToPDF = (packing, packingItems) => {
   return pdf;
 };
 
-const printSticker = (packing, packingItems) => {
-  if (!packing || !packingItems || packingItems.length === 0) {
+const printSticker = (packing, packingBoxes) => {
+  if (!packing || !packingBoxes || packingBoxes.length === 0) {
     alert('Tidak ada data untuk dicetak');
     return;
   }
 
-  // Generate stickers HTML for print
+  // Generate stickers for each box
   const stickers = [];
-  packingItems.forEach((item) => {
-    const quantity = item.total_qty || item.quantity || 0;
-    const itemName =
-      item.nama_barang || item.purchaseOrderItem?.item?.item_name || 'N/A';
-    const itemDescription =
-      item.purchaseOrderItem?.item?.item_description || '';
-    const jumlahCarton = item.jumlah_carton || 1;
+  packingBoxes.forEach((box) => {
+    const boxItems = box.packingBoxItems || [];
 
-    // Create one sticker per carton
-    for (let i = 0; i < jumlahCarton; i++) {
-      const qtyPerCarton = Math.ceil(quantity / jumlahCarton);
+    // For mixed carton (multiple items in box)
+    if (boxItems.length > 1) {
+      const itemNames = boxItems.map((item) => item.nama_barang).join(' + ');
+      const totalQty = box.total_quantity_in_box;
+
       stickers.push({
-        itemName,
-        itemDescription,
-        quantity: qtyPerCarton,
+        boxNumber: box.no_box,
+        itemName: itemNames,
+        itemDescription: 'Mixed Carton',
+        quantity: totalQty,
         stickerNumber: stickers.length + 1,
+        isMixed: true,
+      });
+    } else if (boxItems.length === 1) {
+      // Full or partial carton (single item)
+      const item = boxItems[0];
+      stickers.push({
+        boxNumber: box.no_box,
+        itemName: item.nama_barang,
+        itemDescription: item.keterangan || '',
+        quantity: item.quantity,
+        stickerNumber: stickers.length + 1,
+        isMixed: false,
       });
     }
   });
 
   if (stickers.length === 0) {
-    alert(
-      'Tidak ada stiker yang dapat digenerate. Pastikan ada data quantity/carton.'
-    );
+    alert('Tidak ada stiker yang dapat digenerate.');
     return;
   }
 
@@ -242,15 +280,17 @@ const printSticker = (packing, packingItems) => {
     packing?.purchaseOrder?.company,
     packing?.purchaseOrder?.companyProfile,
     packing?.purchaseOrder,
-    packing,
+    packing
   );
-  const customerName = packing.purchaseOrder?.customer?.namaCustomer ||
-                       packing.purchaseOrder?.customer?.customer_name ||
-                       packing.purchaseOrder?.customer?.name ||
-                       'N/A';
-  const customerAddress = packing.purchaseOrder?.customer?.alamatPengiriman ||
-                          packing.purchaseOrder?.customer?.alamat ||
-                          '';
+  const customerName =
+    packing.purchaseOrder?.customer?.namaCustomer ||
+    packing.purchaseOrder?.customer?.customer_name ||
+    packing.purchaseOrder?.customer?.name ||
+    'N/A';
+  const customerAddress =
+    packing.purchaseOrder?.customer?.alamatPengiriman ||
+    packing.purchaseOrder?.customer?.alamat ||
+    '';
 
   // Generate HTML for stickers
   const generateStickersHTML = () => {

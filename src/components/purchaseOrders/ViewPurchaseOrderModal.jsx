@@ -269,15 +269,15 @@ const ViewPurchaseOrderModal = ({
           throw new Error('Failed to fetch packing data');
         }
 
-        const items = Array.isArray(packingData.packingItems)
-          ? packingData.packingItems
+        const boxes = Array.isArray(packingData.packingBoxes)
+          ? packingData.packingBoxes
           : [];
 
-        if (!items.length) {
-          throw new Error('Packing items data is empty');
+        if (!boxes.length) {
+          throw new Error('Packing boxes data is empty');
         }
 
-        exportStickerToPDF(packingData, items);
+        exportStickerToPDF(packingData, boxes);
       });
       packingTaskCreated = true;
     }
@@ -1082,8 +1082,13 @@ const ViewPurchaseOrderModal = ({
                             value: formatDate(order.packing.tanggal_packing),
                           },
                           {
+                            label: 'Total Boxes',
+                            value: order.packing.packingBoxes?.length || 0,
+                          },
+                          {
                             label: 'Total Items',
-                            value: order.packing.packingItems?.length || 0,
+                            value: order.packing.packingBoxes?.reduce((sum, box) => 
+                              sum + (box.packingBoxItems?.length || 0), 0) || 0,
                           },
                           {
                             label: 'Status',

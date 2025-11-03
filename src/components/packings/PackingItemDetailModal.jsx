@@ -59,20 +59,18 @@ const PackingItemDetailModal = ({ item, onClose }) => {
       inventory.stok_quantity ??
       inventory.stok_q ??
       0;
-    const minStock =
-      itemStock.min_stok ??
-      inventory.min_stok ??
-      0;
+    const minStock = itemStock.min_stok ?? inventory.min_stok ?? 0;
     const qtyPerCarton =
-      itemStock.qty_per_carton ??
-      inventory.qty_per_carton ??
-      0;
+      itemStock.qty_per_carton ?? inventory.qty_per_carton ?? 0;
 
     const itemPrice = (() => {
       if (inventory.itemPrice && typeof inventory.itemPrice === 'object') {
         return inventory.itemPrice;
       }
-      if (Array.isArray(inventory.itemPrices) && inventory.itemPrices.length > 0) {
+      if (
+        Array.isArray(inventory.itemPrices) &&
+        inventory.itemPrices.length > 0
+      ) {
         return inventory.itemPrices[0];
       }
       return null;
@@ -81,18 +79,21 @@ const PackingItemDetailModal = ({ item, onClose }) => {
     const priceComponent = itemPrice ? (
       <div className='space-y-1 text-sm'>
         <div>
-          <span className='font-medium'>Harga:</span> {formatCurrency(itemPrice.harga ?? 0)}
+          <span className='font-medium'>Harga:</span>{' '}
+          {formatCurrency(itemPrice.harga ?? 0)}
         </div>
         <div>
-          <span className='font-medium'>Potongan 1:</span> {(itemPrice.pot1 ?? 0)}% •{' '}
-          <span className='font-medium'>Harga 1:</span> {formatCurrency(itemPrice.harga1 ?? 0)}
+          <span className='font-medium'>Potongan 1:</span> {itemPrice.pot1 ?? 0}
+          % • <span className='font-medium'>Harga 1:</span>{' '}
+          {formatCurrency(itemPrice.harga1 ?? 0)}
         </div>
         <div>
-          <span className='font-medium'>Potongan 2:</span> {(itemPrice.pot2 ?? 0)}% •{' '}
-          <span className='font-medium'>Harga 2:</span> {formatCurrency(itemPrice.harga2 ?? 0)}
+          <span className='font-medium'>Potongan 2:</span> {itemPrice.pot2 ?? 0}
+          % • <span className='font-medium'>Harga 2:</span>{' '}
+          {formatCurrency(itemPrice.harga2 ?? 0)}
         </div>
         <div>
-          <span className='font-medium'>PPN:</span> {(itemPrice.ppn ?? 0)}%
+          <span className='font-medium'>PPN:</span> {itemPrice.ppn ?? 0}%
         </div>
       </div>
     ) : (
@@ -213,15 +214,17 @@ const PackingItemDetailModal = ({ item, onClose }) => {
                 </h3>
                 <InfoTable
                   data={[
-                    { label: 'Nama Barang (Packing)', value: item.nama_barang },
-                    { label: 'Total Qty', value: item.total_qty },
-                    { label: 'Jumlah Carton', value: item.jumlah_carton },
-                    { label: 'Isi per Carton', value: item.isi_per_carton },
-                    { label: 'No Box', value: item.no_box || 'Not assigned' },
+                    { label: 'Nama Barang', value: item.nama_barang },
+                    { label: 'Quantity', value: item.quantity },
+                    { label: 'Keterangan', value: item.keterangan || '-' },
                     {
                       label: 'Inventory ID',
                       value: item.inventoryId,
                       copyable: true,
+                    },
+                    {
+                      label: 'Box Number',
+                      value: item.packingBox?.no_box || 'N/A',
                     },
                   ]}
                 />

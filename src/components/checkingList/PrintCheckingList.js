@@ -131,14 +131,18 @@ const getDimension = (item, suratJalan, detail) => {
   }
 
   const packing = suratJalan?.purchaseOrder?.packing || suratJalan?.packing;
-  if (packing && Array.isArray(packing.packingItems)) {
-    const packingItem = packing.packingItems.find((pi) =>
-      pi?.inventoryId === item?.inventoryId ||
-      pi?.nama_barang === item?.nama_barang
-    );
-    const packingInventoryDim = resolveDimensi(packingItem?.inventory);
-    if (packingInventoryDim) {
-      return packingInventoryDim;
+  if (packing && Array.isArray(packing.packingBoxes)) {
+    for (const box of packing.packingBoxes) {
+      const packingItem = box.packingBoxItems?.find((pi) =>
+        pi?.inventoryId === item?.inventoryId ||
+        pi?.nama_barang === item?.nama_barang
+      );
+      if (packingItem) {
+        const packingInventoryDim = resolveDimensi(packingItem?.inventory);
+        if (packingInventoryDim) {
+          return packingInventoryDim;
+        }
+      }
     }
   }
 
@@ -268,7 +272,7 @@ const getDetailItems = (detail) => {
   return [];
 };
 
-const getPackingItems = (suratJalan) => {
+const getPackingBoxes = (suratJalan) => {
   if (!suratJalan) {
     return [];
   }
@@ -282,12 +286,8 @@ const getPackingItems = (suratJalan) => {
     return [];
   }
 
-  if (Array.isArray(packing?.packingItems)) {
-    return packing.packingItems.filter(Boolean);
-  }
-
-  if (packing?.packingItems) {
-    return [packing.packingItems];
+  if (Array.isArray(packing?.packingBoxes)) {
+    return packing.packingBoxes.filter(Boolean);
   }
 
   return [];
@@ -309,7 +309,7 @@ const buildPackingKeterangan = (item) => {
 
 const calculateTotals = (suratJalan) => {
   const details = getSuratJalanDetails(suratJalan);
-  const packingItems = getPackingItems(suratJalan);
+  const packingBoxes = getPackingBoxes(suratJalan);
 
   let totalBoxes = 0;
   let totalQuantity = 0;
@@ -338,16 +338,13 @@ const calculateTotals = (suratJalan) => {
     }
   });
 
-  packingItems.forEach((item) => {
-    const itemBox = parseNumber(item?.jumlah_carton ?? item?.total_box);
-    if (itemBox !== null) {
-      totalBoxes += itemBox;
-      hasBox = true;
-    }
+  packingBoxes.forEach((box) => {
+    totalBoxes += 1;
+    hasBox = true;
 
-    const itemQuantity = parseNumber(item?.total_qty ?? item?.quantity);
-    if (itemQuantity !== null) {
-      totalQuantity += itemQuantity;
+    const boxQuantity = parseNumber(box?.total_quantity_in_box);
+    if (boxQuantity !== null) {
+      totalQuantity += boxQuantity;
       hasQuantity = true;
     }
   });
@@ -415,7 +412,7 @@ const collectChecklistRows = (suratJalanList) => {
 
   suratJalanList.forEach((suratJalan) => {
     const details = getSuratJalanDetails(suratJalan);
-    const packingItems = getPackingItems(suratJalan);
+    const packingBoxes = getPackingBoxes(suratJalan);
 
     const beforeCount = rows.length;
 
@@ -479,33 +476,26 @@ const collectChecklistRows = (suratJalanList) => {
 
     const detailRowsAdded = rows.length > beforeCount;
 
-    if (!detailRowsAdded && packingItems.length > 0) {
-      packingItems.forEach((item) => {
-        const dimension = getDimension(item, suratJalan, null);
-        const cartonQty = parseNumber(item?.jumlah_carton ?? item?.total_box);
-        const beratValue = calculateBerat(dimension, cartonQty);
-        const kubikasiValue = calculateKubikasi(dimension, cartonQty);
+    if (!detailRowsAdded && packingBoxes.length > 0) {
+      packingBoxes.forEach((box) => {
+        const boxItems = box.packingBoxItems || [];
+        const itemNames = boxItems.map(item => item.nama_barang).join(' + ');
+        const totalQty = box.total_quantity_in_box;
+        
+        const dimension = getDimension(box, suratJalan, null);
+        const beratValue = calculateBerat(dimension, 1);
+        const kubikasiValue = calculateKubikasi(dimension, 1);
         
         counter += 1;
         rows.push({
           no: String(counter),
-          noBox: item?.no_box || '-',
-          namaBarang: item?.nama_barang || '-',
-          jumlah: formatQuantity(
-            item?.jumlah_carton ?? item?.total_box,
-            'Box',
-            item?.total_qty ?? item?.quantity,
-            item?.satuan || 'Qty'
-          ),
-          totalQuantity: formatQuantity(
-            item?.total_qty ?? item?.quantity,
-            item?.satuan || 'Qty',
-            item?.jumlah_carton ?? item?.total_box,
-            'Box'
-          ),
+          noBox: box.no_box || '-',
+          namaBarang: itemNames || '-',
+          jumlah: `${totalQty} Qty`,
+          totalQuantity: `${totalQty} Qty`,
           berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
           kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
-          keterangan: formatMultilineText(buildPackingKeterangan(item)),
+          keterangan: boxItems.length > 1 ? 'Mixed Carton' : (boxItems[0]?.keterangan || '-'),
         });
       });
     }

@@ -33,7 +33,11 @@ const resolveStatusVariant = (status) => {
     return 'success';
   }
 
-  if (value.includes('cancelled') || value.includes('failed') || value.includes('error')) {
+  if (
+    value.includes('cancelled') ||
+    value.includes('failed') ||
+    value.includes('error')
+  ) {
     return 'danger';
   }
 
@@ -52,7 +56,10 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
-const processingStatusVariants = ['processing packing', 'processing packing order'];
+const processingStatusVariants = [
+  'processing packing',
+  'processing packing order',
+];
 
 const normalizeStatusValue = (value) => {
   if (!value) {
@@ -137,26 +144,27 @@ const PackingTableServerSide = ({
           const isAllSelected =
             packings.length > 0 && selectedPackings.length === packings.length;
           const isIndeterminate =
-            selectedPackings.length > 0 && selectedPackings.length < packings.length;
+            selectedPackings.length > 0 &&
+            selectedPackings.length < packings.length;
 
           return (
             <input
-              type="checkbox"
+              type='checkbox'
               checked={isAllSelected}
               ref={(input) => {
                 if (input) input.indeterminate = isIndeterminate;
               }}
               onChange={onSelectAllPackings}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
             />
           );
         },
         cell: ({ row }) => (
           <input
-            type="checkbox"
+            type='checkbox'
             checked={selectedPackings.includes(row.original.id)}
             onChange={() => onSelectPacking(row.original.id)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
           />
         ),
         enableSorting: false,
@@ -165,17 +173,17 @@ const PackingTableServerSide = ({
       }),
       columnHelper.accessor('packing_number', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Packing Number</div>
+          <div className='space-y-2'>
+            <div className='font-medium'>Packing Number</div>
             <input
-              type="text"
+              type='text'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder='Filter...'
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -185,17 +193,17 @@ const PackingTableServerSide = ({
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">PO Number</div>
+          <div className='space-y-2'>
+            <div className='font-medium'>PO Number</div>
             <input
-              type="text"
+              type='text'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder='Filter...'
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -204,16 +212,16 @@ const PackingTableServerSide = ({
       }),
       columnHelper.accessor('tanggal_packing', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal Packing</div>
+          <div className='space-y-2'>
+            <div className='font-medium'>Tanggal Packing</div>
             <input
-              type="date"
+              type='date'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -227,10 +235,10 @@ const PackingTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className='space-y-2'>
+              <div className='font-medium'>Status</div>
               {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                <div className='w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700'>
                   {statusConfig?.label || 'N/A'}
                 </div>
               ) : (
@@ -240,14 +248,14 @@ const PackingTableServerSide = ({
                     column.setFilterValue(event.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
                   onClick={(event) => event.stopPropagation()}
                 >
-                  <option value="">Semua</option>
-                  <option value="PENDING PACKING">Pending</option>
-                  <option value="PROCESSING PACKING">Processing</option>
-                  <option value="COMPLETED PACKING">Completed</option>
-                  <option value="FAILED PACKING">Failed</option>
+                  <option value=''>Semua</option>
+                  <option value='PENDING PACKING'>Pending</option>
+                  <option value='PROCESSING PACKING'>Processing</option>
+                  <option value='COMPLETED PACKING'>Completed</option>
+                  <option value='FAILED PACKING'>Failed</option>
                 </select>
               )}
             </div>
@@ -257,15 +265,29 @@ const PackingTableServerSide = ({
           <StatusBadge
             status={info.getValue() || 'Unknown'}
             variant={resolveStatusVariant(info.getValue())}
-            size="sm"
+            size='sm'
             dot
           />
         ),
       }),
-      columnHelper.accessor('packingItems', {
+      columnHelper.accessor('packingBoxes', {
+        id: 'total_boxes',
+        header: 'Total Boxes',
+        cell: (info) => info.getValue()?.length || 0,
+        enableColumnFilter: false,
+        enableSorting: false,
+      }),
+      columnHelper.display({
         id: 'total_items',
         header: 'Total Items',
-        cell: (info) => info.getValue()?.length || 0,
+        cell: ({ row }) => {
+          const boxes = row.original.packingBoxes || [];
+          const totalItems = boxes.reduce(
+            (sum, box) => sum + (box.packingBoxItems?.length || 0),
+            0
+          );
+          return totalItems;
+        },
         enableColumnFilter: false,
         enableSorting: false,
       }),
@@ -277,17 +299,17 @@ const PackingTableServerSide = ({
           const processing = isProcessingStatus(packing);
 
           return (
-            <div className="flex space-x-2">
+            <div className='flex space-x-2'>
               <button
-                type="button"
+                type='button'
                 onClick={() => onViewById(packing.id)}
-                className="text-indigo-600 hover:text-indigo-900"
-                title="View Details"
+                className='text-indigo-600 hover:text-indigo-900'
+                title='View Details'
               >
-                <EyeIcon className="h-5 w-5" />
+                <EyeIcon className='h-5 w-5' />
               </button>
               <button
-                type="button"
+                type='button'
                 onClick={() => !processing && onEdit(packing)}
                 className={`p-1 ${
                   processing
@@ -301,16 +323,16 @@ const PackingTableServerSide = ({
                 }
                 disabled={processing}
               >
-                <PencilIcon className="h-5 w-5" />
+                <PencilIcon className='h-5 w-5' />
               </button>
               <button
-                type="button"
+                type='button'
                 onClick={() => onDelete(packing.id)}
                 disabled={deleteLoading}
-                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Delete"
+                className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
+                title='Delete'
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className='h-5 w-5' />
               </button>
             </div>
           );
@@ -340,12 +362,12 @@ const PackingTableServerSide = ({
   const actionDisabled = isProcessing || isCompleting;
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {hasActiveFilters && (
-        <div className="flex justify-end">
+        <div className='flex justify-end'>
           <button
             onClick={resetFilters}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            className='px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50'
           >
             Reset Semua Filter
           </button>
@@ -353,28 +375,30 @@ const PackingTableServerSide = ({
       )}
 
       {hasSelectedPackings && (
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-blue-900">
+        <div className='flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4'>
+          <div className='flex items-center space-x-2'>
+            <span className='text-sm font-medium text-blue-900'>
               {selectedPackings.length} packing dipilih
             </span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className='flex items-center space-x-2'>
             <button
               onClick={onProcessSelected}
               disabled={actionDisabled}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className='flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
             >
-              <PlayIcon className="h-4 w-4" />
+              <PlayIcon className='h-4 w-4' />
               <span>{isProcessing ? 'Memproses...' : 'Proses Packing'}</span>
             </button>
             <button
               onClick={onCompleteSelected}
               disabled={actionDisabled}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className='flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
             >
-              <CheckIcon className="h-4 w-4" />
-              <span>{isCompleting ? 'Menyelesaikan...' : 'Selesaikan Packing'}</span>
+              <CheckIcon className='h-4 w-4' />
+              <span>
+                {isCompleting ? 'Menyelesaikan...' : 'Selesaikan Packing'}
+              </span>
             </button>
           </div>
         </div>
@@ -385,28 +409,28 @@ const PackingTableServerSide = ({
         isLoading={isLoading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage="Memuat data packing..."
-        emptyMessage="Tidak ada data packing"
-        emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian"
-        tableClassName="min-w-full bg-white border border-gray-200"
-        headerRowClassName="bg-gray-50"
-        headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        loadingMessage='Memuat data packing...'
+        emptyMessage='Tidak ada data packing'
+        emptyFilteredMessage='Tidak ada data yang sesuai dengan pencarian'
+        tableClassName='min-w-full bg-white border border-gray-200'
+        headerRowClassName='bg-gray-50'
+        headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
+        bodyClassName='bg-white divide-y divide-gray-200'
+        rowClassName='hover:bg-gray-50'
         getRowClassName={({ row }) =>
           selectedPackings.includes(row.original.id)
             ? 'bg-blue-50 hover:bg-blue-100'
             : undefined
         }
-        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-        emptyCellClassName="px-6 py-4 text-center text-gray-500"
+        cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
+        emptyCellClassName='px-6 py-4 text-center text-gray-500'
       />
 
       {!isLoading && !error && (
         <DataTablePagination
           table={table}
           pagination={pagination}
-          itemLabel="packing"
+          itemLabel='packing'
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}
