@@ -23,10 +23,22 @@ class FakturPajakService {
     });
   }
 
-  async getAllFakturPajak(page = 1, limit = 10) {
+  /**
+   * Get all faktur pajak with unified filtering, sorting, and pagination
+   * Supports all parameters: page, limit, sortBy, sortOrder, filters, and global search
+   * This replaces the deprecated /search endpoint
+   */
+  async getAllFakturPajak(params = {}) {
     try {
+      // Normalize parameters
+      const normalizedParams = { ...params };
+
+      // Ensure page and limit have default values
+      if (!normalizedParams.page) normalizedParams.page = 1;
+      if (!normalizedParams.limit) normalizedParams.limit = 10;
+
       const response = await this.api.get('/', {
-        params: { page, limit },
+        params: normalizedParams,
       });
       return response.data;
     } catch (error) {
@@ -35,21 +47,27 @@ class FakturPajakService {
     }
   }
 
+  /**
+   * @deprecated Use getAllFakturPajak() instead. The /search endpoint is deprecated.
+   * This method is kept for backward compatibility but now calls getAllFakturPajak.
+   */
   async searchFakturPajak(searchParams = {}, page = 1, limit = 10) {
+    console.warn(
+      'searchFakturPajak is deprecated. Use getAllFakturPajak with parameters instead.'
+    );
+
     try {
       let params = searchParams;
       if (typeof searchParams === 'string' && searchParams.trim()) {
         params = { no_pajak: searchParams.trim() };
       }
 
-      const response = await this.api.get('/search', {
-        params: {
-          ...params,
-          page,
-          limit,
-        },
+      // Use unified endpoint instead of deprecated /search
+      return await this.getAllFakturPajak({
+        ...params,
+        page,
+        limit,
       });
-      return response.data;
     } catch (error) {
       console.error('Error searching faktur pajak:', error);
       throw error;

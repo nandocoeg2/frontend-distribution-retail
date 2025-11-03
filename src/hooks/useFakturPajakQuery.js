@@ -3,7 +3,8 @@ import fakturPajakService from '../services/fakturPajakService';
 
 /**
  * Custom hook for fetching faktur pajak with server-side filtering, sorting, and pagination
- * 
+ * Uses the unified GET / endpoint that supports all features (filtering, sorting, global search)
+ *
  * @param {Object} params - Query parameters
  * @param {number} params.page - Current page number
  * @param {number} params.limit - Items per page
@@ -22,17 +23,21 @@ export const useFakturPajakQuery = ({
   return useQuery({
     queryKey: ['fakturPajak', { page, limit, sorting, filters, globalFilter }],
     queryFn: async () => {
-      // Build query parameters for backend
+      // Build query parameters for unified endpoint
       const params = {
         page,
         limit,
       };
 
-      // Add sorting
+      // Add sorting (default: createdAt desc)
       if (sorting.length > 0) {
         const sort = sorting[0]; // Take first sort for now
         params.sortBy = sort.id;
         params.sortOrder = sort.desc ? 'desc' : 'asc';
+      } else {
+        // Default sorting from API docs
+        params.sortBy = 'createdAt';
+        params.sortOrder = 'desc';
       }
 
       // Add column filters
@@ -42,24 +47,24 @@ export const useFakturPajakQuery = ({
         }
       });
 
-      // Add global filter
+      // Add global filter (searches in no_pajak and customer.namaCustomer)
       if (globalFilter) {
         params.search = globalFilter;
       }
 
-      // Call backend API - if filters exist, use search, otherwise get all
-      const hasFilters = Object.keys(filters).length > 0 || globalFilter;
-      const response = hasFilters
-        ? await fakturPajakService.searchFakturPajak(params, page, limit)
-        : await fakturPajakService.getAllFakturPajak(page, limit);
+      // Call unified endpoint (GET /) that supports all features
+      const response = await fakturPajakService.getAllFakturPajak(params);
 
-      // Handle nested response format: { success: true, data: { fakturPajaks: [...], pagination: {...} } }
+      // Handle nested response format: { success: true, data: { data: [...], pagination: {...} } }
       const responseData = response?.data || response;
-      const fakturPajaksData = responseData?.fakturPajaks || responseData?.data || responseData || [];
+      const fakturPajaksData =
+        responseData?.data || responseData?.fakturPajaks || responseData || [];
       const paginationData = responseData?.pagination || {
         currentPage: parseInt(page) || 1,
         totalPages: 1,
-        totalItems: Array.isArray(fakturPajaksData) ? fakturPajaksData.length : 0,
+        totalItems: Array.isArray(fakturPajaksData)
+          ? fakturPajaksData.length
+          : 0,
         itemsPerPage: parseInt(limit) || 10,
       };
 
@@ -84,6 +89,7 @@ export const useFakturPajakQuery = ({
 
 /**
  * Custom hook for fetching faktur pajak by status (for tabs)
+ * Uses the unified GET / endpoint with status filter
  */
 export const useFakturPajakByStatus = ({
   statusCode,
@@ -96,23 +102,28 @@ export const useFakturPajakByStatus = ({
       const params = {
         page,
         limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
       };
 
+      // Add status filter if provided
       if (statusCode) {
         params.status_code = statusCode;
       }
 
-      const response = statusCode
-        ? await fakturPajakService.searchFakturPajak(params, page, limit)
-        : await fakturPajakService.getAllFakturPajak(page, limit);
+      // Use unified endpoint (GET /)
+      const response = await fakturPajakService.getAllFakturPajak(params);
 
-      // Handle nested response format: { success: true, data: { fakturPajaks: [...], pagination: {...} } }
+      // Handle nested response format: { success: true, data: { data: [...], pagination: {...} } }
       const responseData = response?.data || response;
-      const fakturPajaksData = responseData?.fakturPajaks || responseData?.data || responseData || [];
+      const fakturPajaksData =
+        responseData?.data || responseData?.fakturPajaks || responseData || [];
       const paginationData = responseData?.pagination || {
         currentPage: parseInt(page) || 1,
         totalPages: 1,
-        totalItems: Array.isArray(fakturPajaksData) ? fakturPajaksData.length : 0,
+        totalItems: Array.isArray(fakturPajaksData)
+          ? fakturPajaksData.length
+          : 0,
         itemsPerPage: parseInt(limit) || 10,
       };
 
@@ -136,4 +147,3 @@ export const useFakturPajakByStatus = ({
 };
 
 export default useFakturPajakQuery;
-
