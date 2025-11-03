@@ -290,17 +290,50 @@ const getPackingBoxes = (suratJalan) => {
     return [];
   }
 
+  // Try multiple paths to find packing data
   const packing =
     suratJalan?.purchaseOrder?.packing || suratJalan?.packing || null;
 
   if (!packing) {
+    console.log('No packing found for suratJalan:', suratJalan?.id);
     return [];
   }
 
-  if (Array.isArray(packing?.packingBoxes)) {
-    return packing.packingBoxes.filter(Boolean);
+  console.log('Found packing:', {
+    packingId: packing.id,
+    hasPackingBoxes: !!packing.packingBoxes,
+    hasPackingItems: !!packing.packingItems,
+    packingBoxesType: Array.isArray(packing.packingBoxes)
+      ? 'array'
+      : typeof packing.packingBoxes,
+    packingItemsType: Array.isArray(packing.packingItems)
+      ? 'array'
+      : typeof packing.packingItems,
+    packingBoxesLength: packing.packingBoxes?.length,
+    packingItemsLength: packing.packingItems?.length,
+  });
+
+  if (Array.isArray(packing?.packingBoxes) && packing.packingBoxes.length > 0) {
+    const boxes = packing.packingBoxes.filter(Boolean);
+    console.log(`Returning ${boxes.length} packing boxes from packingBoxes`);
+    return boxes;
   }
 
+  // Check if backend returned packingItems but not packingBoxes
+  if (
+    packing.hasOwnProperty('packingItems') &&
+    !packing.hasOwnProperty('packingBoxes')
+  ) {
+    console.error('⚠️ Backend returned packingItems but NOT packingBoxes!');
+    console.error(
+      '⚠️ The backend API needs to be updated to include packingBoxes relation.'
+    );
+    console.error(
+      '⚠️ Backend query should include: packing: { include: { packingBoxes: { include: { packingBoxItems: true } } } }'
+    );
+  }
+
+  console.log('packingBoxes is not an array or is empty');
   return [];
 };
 
@@ -421,9 +454,15 @@ const collectChecklistRows = (suratJalanList) => {
   const rows = [];
   let counter = 0;
 
-  suratJalanList.forEach((suratJalan) => {
+  suratJalanList.forEach((suratJalan, sjIndex) => {
     const details = getSuratJalanDetails(suratJalan);
     const packingBoxes = getPackingBoxes(suratJalan);
+
+    console.log(`Processing SJ ${sjIndex + 1}:`, {
+      detailsCount: details.length,
+      packingBoxesCount: packingBoxes.length,
+      suratJalanId: suratJalan?.id,
+    });
 
     const beforeCount = rows.length;
 
@@ -506,11 +545,32 @@ const collectChecklistRows = (suratJalanList) => {
 
     const detailRowsAdded = rows.length > beforeCount;
 
-    if (!detailRowsAdded && packingBoxes.length > 0) {
-      packingBoxes.forEach((box) => {
+    console.log(`SJ ${sjIndex + 1} after details:`, {
+      detailRowsAdded,
+      rowsCount: rows.length,
+      beforeCount,
+      willProcessPackingBoxes:
+        !detailRowsAdded && packingBoxes && packingBoxes.length > 0,
+    });
+
+    // Always process packing boxes if available and no detail rows were added
+    // This handles the case where surat jalan has packing but no detail items
+    if (!detailRowsAdded && packingBoxes && packingBoxes.length > 0) {
+      console.log(
+        `Processing ${packingBoxes.length} packing boxes for SJ ${sjIndex + 1}`
+      );
+      packingBoxes.forEach((box, boxIdx) => {
+        console.log(`  Box ${boxIdx + 1}:`, {
+          no_box: box.no_box,
+          total_quantity_in_box: box.total_quantity_in_box,
+          itemsCount: box.packingBoxItems?.length || 0,
+        });
         const boxItems = box.packingBoxItems || [];
-        const itemNames = boxItems.map((item) => item.nama_barang).join(' + ');
-        const totalQty = box.total_quantity_in_box;
+        const itemNames =
+          boxItems.length > 0
+            ? boxItems.map((item) => item.nama_barang).join(' + ')
+            : box.nama_barang || 'Unknown Item';
+        const totalQty = box.total_quantity_in_box || 0;
 
         const dimension = getDimension(box, suratJalan, null);
         const beratValue = calculateBerat(dimension, 1);
@@ -537,9 +597,18 @@ const collectChecklistRows = (suratJalanList) => {
               : boxItems[0]?.keterangan || '-',
         });
       });
+
+      console.log(
+        `After processing packing boxes: rows.length = ${rows.length}`
+      );
+    } else {
+      console.log(
+        `Skipping packing boxes: detailRowsAdded=${detailRowsAdded}, packingBoxes.length=${packingBoxes?.length || 0}`
+      );
     }
   });
 
+  console.log(`Total rows collected: ${rows.length}`);
   return rows;
 };
 
@@ -791,9 +860,48 @@ export const exportCheckingListToPDF = async (checklist) => {
       throw new Error('Tidak ada surat jalan terkait checklist');
     }
 
+    console.log('Surat Jalan List:', suratJalanList.length);
+
+    // Debug: Check what data we have
+    suratJalanList.forEach((sj, idx) => {
+      const details = getSuratJalanDetails(sj);
+      const packingBoxes = getPackingBoxes(sj);
+      console.log(
+        `SJ ${idx + 1}: details=${details.length}, packingBoxes=${packingBoxes.length}`
+      );
+    });
+
     const tableRows = collectChecklistRows(suratJalanList);
+    console.log('Table Rows collected:', tableRows.length);
+
     if (!tableRows.length) {
-      throw new Error('Tidak ada detail checklist untuk dicetak');
+      // Provide detailed error info
+      const debugInfo = suratJalanList
+        .map((sj, idx) => {
+          const details = getSuratJalanDetails(sj);
+          const boxes = getPackingBoxes(sj);
+          const packing = sj?.purchaseOrder?.packing || sj?.packing;
+          const hasPackingItems = packing?.packingItems !== undefined;
+          const hasPackingBoxes = packing?.packingBoxes !== undefined;
+
+          return `SJ ${idx + 1}: ${details.length} details, ${boxes.length} boxes${
+            hasPackingItems && !hasPackingBoxes
+              ? ' [⚠️ API missing packingBoxes]'
+              : ''
+          }`;
+        })
+        .join('; ');
+
+      throw new Error(
+        `Tidak ada detail checklist untuk dicetak. ` +
+          `Debug: ${debugInfo}. ` +
+          `\n\nKemungkinan penyebab:\n` +
+          `1. Backend API tidak mengembalikan relasi "packingBoxes"\n` +
+          `2. Packing belum memiliki boxes/items\n` +
+          `3. Surat jalan belum memiliki detail items\n\n` +
+          `Solusi: Periksa console log untuk detail lebih lanjut. ` +
+          `Jika ada "[⚠️ API missing packingBoxes]", backend perlu diupdate untuk include packingBoxes relation.`
+      );
     }
 
     const {
