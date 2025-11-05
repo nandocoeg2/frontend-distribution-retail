@@ -23,7 +23,6 @@ import {
   useAlert,
 } from '../ui';
 import { exportInvoicePengirimanToPDF } from '../invoicePengiriman/PrintInvoicePengiriman';
-import { exportSuratJalanToPDF } from '../suratJalan/PrintSuratJalan';
 import { getPackingById, exportPackingSticker } from '../../services/packingService';
 import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
@@ -374,7 +373,33 @@ const ViewPurchaseOrderModal = ({
           throw new Error('Failed to fetch surat jalan data');
         }
 
-        await exportSuratJalanToPDF(suratJalanData);
+        if (!suratJalanData.suratJalanDetails || suratJalanData.suratJalanDetails.length === 0) {
+          throw new Error('Tidak ada detail surat jalan untuk dicetak');
+        }
+
+        // Get company ID from auth
+        const companyData = authService.getCompanyData();
+        if (!companyData || !companyData.id) {
+          throw new Error('Company ID tidak ditemukan. Silakan login ulang.');
+        }
+
+        // Call backend API to get HTML
+        const html = await suratJalanService.exportSuratJalan(suratJalanId, companyData.id);
+
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+          };
+        } else {
+          throw new Error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+        }
       });
       suratJalanTaskCreated = true;
     }

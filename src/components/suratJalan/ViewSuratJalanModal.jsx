@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ArchiveBoxIcon,
   ChevronDownIcon,
@@ -14,7 +14,9 @@ import { AccordionItem, StatusBadge, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
 
 import ActivityTimeline from '../common/ActivityTimeline';
-import { exportSuratJalanToPDF } from './PrintSuratJalan';
+import authService from '../../services/authService';
+import suratJalanService from '../../services/suratJalanService';
+import toastService from '../../services/toastService';
 
 const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -43,8 +45,46 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
     }));
   };
 
-  const handleExportPDF = () => {
-    exportSuratJalanToPDF(suratJalan);
+  const handleExportPDF = async () => {
+    try {
+      // Validate surat jalan data
+      if (!suratJalan || !suratJalan.suratJalanDetails || suratJalan.suratJalanDetails.length === 0) {
+        toastService.error('Tidak ada detail surat jalan untuk dicetak');
+        return;
+      }
+
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info('Generating surat jalan...');
+
+      // Call backend API to get HTML
+      const html = await suratJalanService.exportSuratJalan(suratJalan.id, companyData.id);
+
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Surat jalan berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+      }
+    } catch (error) {
+      console.error('Error exporting surat jalan:', error);
+      toastService.error(error.message || 'Gagal mengekspor surat jalan');
+    }
   };
 
   const checklistData = suratJalan?.checklistSuratJalan;

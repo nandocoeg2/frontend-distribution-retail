@@ -109,6 +109,34 @@ class SuratJalanService {
       throw error;
     }
   }
+
+  async exportSuratJalan(suratJalanId, companyId) {
+    try {
+      const token = authService.getToken();
+      const response = await fetch(
+        `${API_BASE_URL}/surat-jalan/${suratJalanId}/export?companyId=${companyId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/html',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to export surat jalan');
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error exporting surat jalan:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SuratJalanService();
