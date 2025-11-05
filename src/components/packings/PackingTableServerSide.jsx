@@ -233,21 +233,20 @@ const PackingTableServerSide = ({
       }),
       columnHelper.display({
         id: 'is_printed',
-        header: 'Print',
+        header: 'Status Print',
+        enableColumnFilter: false,
+        enableSorting: true,
         cell: ({ row }) => {
           const isPrinted = row.original.is_printed;
-          return isPrinted ? (
-            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'>
-              Sudah di Print
-            </span>
-          ) : (
-            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'>
-              Belum Print
-            </span>
+          return (
+            <StatusBadge
+              dot={true}
+              status={isPrinted ? 'Sudah di Print' : 'Belum Print'}
+              variant={isPrinted ? 'success' : 'secondary'}
+              size='sm'
+            />
           );
         },
-        enableColumnFilter: false,
-        enableSorting: false,
       }),
       columnHelper.accessor('updatedAt', {
         id: 'print_date',
@@ -264,8 +263,6 @@ const PackingTableServerSide = ({
               })
             : '-';
         },
-        enableColumnFilter: false,
-        enableSorting: false,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
