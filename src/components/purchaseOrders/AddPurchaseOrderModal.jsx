@@ -37,10 +37,12 @@ const AddPurchaseOrderModal = ({
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeTab, setActiveTab] = useState('manual');
+  const [uploadMode, setUploadMode] = useState('files');
 
   // Refs for file inputs
   const manualFileInputRef = useRef(null);
   const bulkFileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   // Get purchase order statuses using hook
   const {
@@ -75,6 +77,7 @@ const AddPurchaseOrderModal = ({
       console.log(`Active tab changed to: ${activeTab}`);
       // Force clear selected file when tab changes to prevent cross-tab contamination
       setSelectedFile(null);
+      setUploadMode('files');
     }
   }, [activeTab, isOpen]);
 
@@ -95,18 +98,41 @@ const AddPurchaseOrderModal = ({
         return;
       }
       const allowedExtensions = ['.pdf', '.edi'];
-      const allAllowed = Array.from(files).every((file) =>
+      
+      // Filter files based on allowed extensions
+      const filteredFiles = Array.from(files).filter((file) =>
         allowedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
       );
-      if (!allAllowed) {
-        setError('Please select PDF (.pdf) or EDI (.edi) files only.');
-        setSelectedFile(null);
-        if (bulkFileInputRef.current) {
-          bulkFileInputRef.current.value = '';
+      
+      // If in folder mode, automatically filter and allow upload
+      if (uploadMode === 'folder') {
+        if (filteredFiles.length === 0) {
+          setError('No PDF (.pdf) or EDI (.edi) files found in the selected folder.');
+          setSelectedFile(null);
+          if (folderInputRef.current) {
+            folderInputRef.current.value = '';
+          }
+          return;
         }
-        return;
+        // Create a new FileList-like object with filtered files
+        const dataTransfer = new DataTransfer();
+        filteredFiles.forEach(file => dataTransfer.items.add(file));
+        setSelectedFile(dataTransfer.files);
+      } else {
+        // In files mode, all files must be valid
+        const allAllowed = Array.from(files).every((file) =>
+          allowedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+        );
+        if (!allAllowed) {
+          setError('Please select PDF (.pdf) or EDI (.edi) files only.');
+          setSelectedFile(null);
+          if (bulkFileInputRef.current) {
+            bulkFileInputRef.current.value = '';
+          }
+          return;
+        }
+        setSelectedFile(files);
       }
-      setSelectedFile(files);
     } else {
       setSelectedFile(files && files.length > 0 ? files[0] : null);
     }
@@ -230,6 +256,11 @@ const AddPurchaseOrderModal = ({
       bulkFileInputRef.current.value = '';
       console.log('Cleared bulk file input');
     }
+    if (folderInputRef.current) {
+      folderInputRef.current.value = '';
+      console.log('Cleared folder input');
+    }
+    setUploadMode('files');
 
     console.log('Form reset completed');
   };
@@ -478,56 +509,72 @@ const AddPurchaseOrderModal = ({
 
               <div className='space-y-4'>
                 <div>
-                  <label className='block mb-1 text-sm font-medium text-gray-700'>
+                  <label className='block mb-2 text-sm font-medium text-gray-700'>
                     Upload Bulk Purchase Orders (PDF / EDI)
                   </label>
-                  <div className='flex items-center space-x-2'>
-                    <input
-                      ref={bulkFileInputRef}
-                      type='file'
-                      multiple
-                      onChange={handleFileChange}
-                      accept='.pdf,.edi'
-                      className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
-                    />
+                  
+                  {/* Upload Mode Selection */}
+                  <div className='flex items-center space-x-6 mb-3'>
+                    <label className='flex items-center space-x-2 cursor-pointer'>
+                      <input
+                        type='radio'
+                        name='uploadMode'
+                        value='files'
+                        checked={uploadMode === 'files'}
+                        onChange={(e) => {
+                          setUploadMode(e.target.value);
+                          setSelectedFile(null);
+                          if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+                          if (folderInputRef.current) folderInputRef.current.value = '';
+                        }}
+                        className='w-4 h-4 text-blue-600'
+                      />
+                      <span className='text-sm text-gray-700'>Upload Files</span>
+                    </label>
+                    <label className='flex items-center space-x-2 cursor-pointer'>
+                      <input
+                        type='radio'
+                        name='uploadMode'
+                        value='folder'
+                        checked={uploadMode === 'folder'}
+                        onChange={(e) => {
+                          setUploadMode(e.target.value);
+                          setSelectedFile(null);
+                          if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+                          if (folderInputRef.current) folderInputRef.current.value = '';
+                        }}
+                        className='w-4 h-4 text-blue-600'
+                      />
+                      <span className='text-sm text-gray-700'>Upload Folder</span>
+                    </label>
                   </div>
-                  {selectedFile && selectedFile.length > 0 && (
-                    <div className='p-3 mt-2 border rounded-md bg-gray-50'>
-                      <p className='mb-2 text-sm text-gray-600'>
-                        <strong>{selectedFile.length}</strong> file dipilih
-                        untuk upload:
-                      </p>
-                      <div className='space-y-1'>
-                        {Array.from(selectedFile).map((file, index) => (
-                          <div
-                            key={index}
-                            className='flex items-center space-x-2 text-sm'
-                          >
-                            <svg
-                              className='flex-shrink-0 w-4 h-4 text-blue-500'
-                              fill='none'
-                              stroke='currentColor'
-                              viewBox='0 0 24 24'
-                            >
-                              <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                              />
-                            </svg>
-                            <span
-                              className='text-gray-700 truncate'
-                              title={file.name}
-                            >
-                              {file.name}
-                            </span>
-                            <span className='text-xs text-gray-500'>
-                              ({(file.size / 1024).toFixed(1)} KB)
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+
+                  {/* File Input */}
+                  {uploadMode === 'files' && (
+                    <div className='flex items-center space-x-2'>
+                      <input
+                        ref={bulkFileInputRef}
+                        type='file'
+                        multiple
+                        onChange={handleFileChange}
+                        accept='.pdf,.edi'
+                        className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
+                      />
+                    </div>
+                  )}
+
+                  {/* Folder Input */}
+                  {uploadMode === 'folder' && (
+                    <div className='flex items-center space-x-2'>
+                      <input
+                        ref={folderInputRef}
+                        type='file'
+                        webkitdirectory=''
+                        directory=''
+                        multiple
+                        onChange={handleFileChange}
+                        className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100'
+                      />
                     </div>
                   )}
                 </div>
@@ -549,10 +596,13 @@ const AddPurchaseOrderModal = ({
                     </svg>
                     <div>
                       <h4 className='text-sm font-medium text-yellow-800'>
-                        Format File yang Didukung
+                        Informasi Upload
                       </h4>
                       <p className='mt-1 text-sm text-yellow-700'>
-                        PDF (.pdf) atau EDI (.edi)
+                        <strong>Upload Files:</strong> Pilih satu atau beberapa file PDF (.pdf) atau EDI (.edi)
+                      </p>
+                      <p className='mt-1 text-sm text-yellow-700'>
+                        <strong>Upload Folder:</strong> Pilih folder yang berisi file PDF/EDI. Hanya file dengan ekstensi .pdf dan .edi yang akan diupload.
                       </p>
                     </div>
                   </div>
