@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
@@ -6,11 +6,15 @@ import {
   TrashIcon,
   PlayIcon,
   CheckIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import { exportPackingSticker } from '../../services/packingService';
+import authService from '../../services/authService';
+import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
@@ -100,6 +104,81 @@ const PackingTableServerSide = ({
   initialLimit = 10,
   activeTab = 'all',
 }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handleBulkPrintSticker = async () => {
+    if (!selectedPackings || selectedPackings.length === 0) {
+      toastService.error('Tidak ada packing yang dipilih');
+      return;
+    }
+
+    setIsPrinting(true);
+    try {
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info(`Memproses ${selectedPackings.length} sticker...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Loop through selected packings and fetch stickers
+      for (let i = 0; i < selectedPackings.length; i++) {
+        const packingId = selectedPackings[i];
+        
+        try {
+          // Call backend API to get HTML
+          const html = await exportPackingSticker(packingId, companyData.id);
+
+          // Open HTML in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            // Wait for content to load, then trigger print dialog
+            printWindow.onload = () => {
+              printWindow.focus();
+              // Auto print for first window, manual for others
+              if (i === 0) {
+                printWindow.print();
+              }
+            };
+
+            successCount++;
+          } else {
+            failCount++;
+            console.error(`Failed to open print window for packing ${packingId}`);
+          }
+
+          // Small delay between opening windows to prevent browser blocking
+          if (i < selectedPackings.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error printing sticker for packing ${packingId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil membuka ${successCount} sticker${failCount > 0 ? `. ${failCount} gagal.` : ''}`
+        );
+      } else {
+        toastService.error('Gagal membuka sticker');
+      }
+    } catch (error) {
+      console.error('Error in bulk print:', error);
+      toastService.error(error.message || 'Gagal mencetak sticker');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
     if (!statusCode || activeTab === 'all') {
@@ -176,6 +255,26 @@ const PackingTableServerSide = ({
         header: ({ column }) => (
           <div className='space-y-2'>
             <div className='font-medium'>PO Number</div>
+            <input
+              type='text'
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder='Filter...'
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => info.getValue() || 'N/A',
+      }),
+      columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
+        id: 'customer_name',
+        header: ({ column }) => (
+          <div className='space-y-2'>
+            <div className='font-medium'>Customer Name</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -418,6 +517,14 @@ const PackingTableServerSide = ({
             </span>
           </div>
           <div className='flex items-center space-x-2'>
+            <button
+              onClick={handleBulkPrintSticker}
+              disabled={isPrinting || actionDisabled}
+              className='flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+            >
+              <PrinterIcon className='h-4 w-4' />
+              <span>{isPrinting ? 'Mencetak...' : 'Print Stiker'}</span>
+            </button>
             <button
               onClick={onProcessSelected}
               disabled={actionDisabled}
