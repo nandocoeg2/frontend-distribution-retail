@@ -82,6 +82,15 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     isCreating ||
     isUpdating;
 
+  // Check if packing date should be editable based on status
+  const currentStatus = packingStatuses.find(
+    (status) => status.id === formData.statusId
+  );
+  const isDateEditable =
+    !currentStatus ||
+    currentStatus.status_code === 'PENDING PACKING' ||
+    currentStatus.status_code === 'PROCESSING PACKING';
+
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -98,8 +107,13 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
             }
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               errors.tanggal_packing ? 'border-red-500' : 'border-gray-300'
-            }`}
-            disabled={isLoading}
+            } ${!isDateEditable ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+            disabled={isLoading || !isDateEditable}
+            title={
+              !isDateEditable
+                ? 'Tanggal packing tidak dapat diubah karena status sudah Complete'
+                : ''
+            }
           />
           {errors.tanggal_packing && (
             <p className='mt-1 text-sm text-red-600'>

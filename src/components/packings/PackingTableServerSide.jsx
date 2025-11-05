@@ -171,25 +171,6 @@ const PackingTableServerSide = ({
         enableHiding: false,
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('packing_number', {
-        header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Packing Number</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || 'N/A',
-      }),
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
@@ -227,6 +208,64 @@ const PackingTableServerSide = ({
           </div>
         ),
         cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+      }),
+      columnHelper.accessor('purchaseOrder.delivery_date', {
+        id: 'tanggal_expired',
+        header: ({ column }) => (
+          <div className='space-y-2'>
+            <div className='font-medium'>Tanggal Expired</div>
+            <input
+              type='date'
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) =>
+          info.getValue()
+            ? new Date(info.getValue()).toLocaleDateString()
+            : 'N/A',
+      }),
+      columnHelper.display({
+        id: 'is_printed',
+        header: 'Print',
+        cell: ({ row }) => {
+          const isPrinted = row.original.is_printed;
+          return isPrinted ? (
+            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+              Sudah di Print
+            </span>
+          ) : (
+            <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800'>
+              Belum Print
+            </span>
+          );
+        },
+        enableColumnFilter: false,
+        enableSorting: false,
+      }),
+      columnHelper.accessor('updatedAt', {
+        id: 'print_date',
+        header: 'Tanggal Print Terakhir',
+        cell: (info) => {
+          const isPrinted = info.row.original.is_printed;
+          return isPrinted
+            ? new Date(info.getValue()).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '-';
+        },
+        enableColumnFilter: false,
+        enableSorting: false,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
