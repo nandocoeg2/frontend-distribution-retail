@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ArchiveBoxIcon,
   ClockIcon,
@@ -8,9 +8,11 @@ import {
 import ActivityTimeline from '../common/ActivityTimeline';
 import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
-import { exportStickerToPDF, printSticker } from './PrintPackingSticker';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import { formatDate, formatDateTime } from '../../utils/formatUtils';
+import { exportPackingSticker } from '../../services/packingService';
+import authService from '../../services/authService';
+import toastService from '../../services/toastService';
 import {
   TabContainer,
   Tab,
@@ -84,12 +86,46 @@ const ViewPackingModal = ({ packing, onClose }) => {
     setSelectedItem(null);
   };
 
-  const handleExportPDF = () => {
-    exportStickerToPDF(packing, packing.packingBoxes);
-  };
+  const handleExportPDF = async () => {
+    try {
+      // Validate packing data
+      if (!packing || !packing.packingBoxes || packing.packingBoxes.length === 0) {
+        toastService.error('Tidak ada data box untuk dicetak');
+        return;
+      }
 
-  const handlePrintSticker = () => {
-    printSticker(packing, packing.packingBoxes);
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info('Generating sticker...');
+
+      // Call backend API to get HTML
+      const html = await exportPackingSticker(packing.id, companyData.id);
+
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Sticker berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+      }
+    } catch (error) {
+      console.error('Error exporting sticker:', error);
+      toastService.error(error.message || 'Gagal mengekspor sticker');
+    }
   };
 
   const resolveStatusVariant = (status) => {

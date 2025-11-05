@@ -65,6 +65,35 @@ export const completePackings = (ids) => {
   return post(`${API_URL}/complete`, { ids });
 };
 
+// Export packing sticker to HTML for printing
+export const exportPackingSticker = async (packingId, companyId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `http://localhost:5050/api/v1${API_URL}/${packingId}/export-sticker?companyId=${companyId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to export sticker');
+    }
+
+    const html = await response.text();
+    return html;
+  } catch (error) {
+    console.error('Error exporting packing sticker:', error);
+    throw error;
+  }
+};
+
 export default {
   getPackings,
   getPackingById,
@@ -76,4 +105,5 @@ export default {
   searchPackingsAdvanced,
   processPackings,
   completePackings,
+  exportPackingSticker,
 };

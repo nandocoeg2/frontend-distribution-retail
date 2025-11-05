@@ -22,10 +22,10 @@ import {
   InfoTable,
   useAlert,
 } from '../ui';
-import { exportStickerToPDF } from '../packings/PrintPackingSticker';
 import { exportInvoicePengirimanToPDF } from '../invoicePengiriman/PrintInvoicePengiriman';
 import { exportSuratJalanToPDF } from '../suratJalan/PrintSuratJalan';
-import { getPackingById } from '../../services/packingService';
+import { getPackingById, exportPackingSticker } from '../../services/packingService';
+import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
 import { exportPurchaseOrderToPDF } from './PrintPurchaseOrder';
@@ -290,7 +290,29 @@ const ViewPurchaseOrderModal = ({
           throw new Error('Packing boxes data is empty');
         }
 
-        exportStickerToPDF(packingData, boxes);
+        // Get company ID from auth
+        const companyData = authService.getCompanyData();
+        if (!companyData || !companyData.id) {
+          throw new Error('Company ID tidak ditemukan. Silakan login ulang.');
+        }
+
+        // Call backend API to get HTML
+        const html = await exportPackingSticker(packingId, companyData.id);
+
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+          };
+        } else {
+          throw new Error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+        }
       });
       packingTaskCreated = true;
     }
