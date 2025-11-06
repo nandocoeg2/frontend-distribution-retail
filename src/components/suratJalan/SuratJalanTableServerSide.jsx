@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { EyeIcon, PencilIcon, TrashIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PencilIcon, TrashIcon, TruckIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import authService from '../../services/authService';
+import suratJalanService from '../../services/suratJalanService';
+import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
@@ -57,6 +60,75 @@ const SuratJalanTableServerSide = ({
   initialLimit = 10,
   activeTab = 'all',
 }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handleBulkPrint = async () => {
+    try {
+      // Validate selected surat jalan
+      if (!selectedSuratJalan || selectedSuratJalan.length === 0) {
+        toastService.error('Tidak ada surat jalan yang dipilih');
+        return;
+      }
+
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      setIsPrinting(true);
+      toastService.info(`Memproses ${selectedSuratJalan.length} surat jalan untuk di-print...`);
+
+      // Loop through selected surat jalan and print each one
+      for (let i = 0; i < selectedSuratJalan.length; i++) {
+        const suratJalan = selectedSuratJalan[i];
+        const suratJalanId = typeof suratJalan === 'string' ? suratJalan : suratJalan?.id;
+
+        if (!suratJalanId) {
+          console.warn('Skipping surat jalan without ID:', suratJalan);
+          continue;
+        }
+
+        try {
+          // Call backend API to get HTML
+          const html = await suratJalanService.exportSuratJalan(suratJalanId, companyData.id);
+
+          // Open HTML in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            // Wait for content to load, then trigger print dialog
+            printWindow.onload = () => {
+              printWindow.focus();
+              printWindow.print();
+            };
+          } else {
+            toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+            break;
+          }
+
+          // Small delay between prints to avoid overwhelming the browser
+          if (i < selectedSuratJalan.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          console.error(`Error printing surat jalan ${suratJalanId}:`, error);
+          toastService.error(`Gagal mencetak surat jalan: ${error.message}`);
+        }
+      }
+
+      toastService.success(`${selectedSuratJalan.length} surat jalan berhasil dikirim ke printer`);
+    } catch (error) {
+      console.error('Error bulk printing surat jalan:', error);
+      toastService.error(error.message || 'Gagal mencetak surat jalan');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
     if (!statusCode || activeTab === 'all') {
@@ -155,31 +227,18 @@ const SuratJalanTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => info.getValue() || 'N/A',
+        cell: (info) => <span className="font-medium">{info.getValue() || 'N/A'}</span>,
+      }),
+      columnHelper.accessor('purchaseOrder.po_number', {
+        id: 'po_number',
+        header: 'No PO',
+        cell: (info) => <span className="font-medium">{info.getValue() || 'N/A'}</span>,
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('deliver_to', {
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">Deliver To</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || 'N/A',
-      }),
-      columnHelper.accessor('PIC', {
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">PIC</div>
+            <div className="font-medium">Deliver</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -197,13 +256,7 @@ const SuratJalanTableServerSide = ({
       }),
       columnHelper.accessor('invoice.no_invoice', {
         id: 'no_invoice',
-        header: 'Invoice Number',
-        cell: (info) => info.getValue() || 'N/A',
-        enableColumnFilter: false,
-      }),
-      columnHelper.accessor('purchaseOrder.po_number', {
-        id: 'po_number',
-        header: 'PO Number',
+        header: 'Invoice',
         cell: (info) => info.getValue() || 'N/A',
         enableColumnFilter: false,
       }),
@@ -252,27 +305,18 @@ const SuratJalanTableServerSide = ({
       columnHelper.accessor('is_printed', {
         header: 'Printed',
         cell: (info) => (
-          <span className={info.getValue() ? 'text-green-600' : 'text-gray-400'}>
-            {info.getValue() ? 'Yes' : 'No'}
-          </span>
+          <StatusBadge
+            status={info.getValue() ? 'Yes' : 'No'}
+            variant={info.getValue() ? 'success' : 'secondary'}
+            size="sm"
+            dot
+          />
         ),
-        enableColumnFilter: false,
-      }),
-      columnHelper.accessor('createdAt', {
-        header: 'Created At',
-        cell: (info) => {
-          const date = new Date(info.getValue());
-          return date.toLocaleDateString('id-ID', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          });
-        },
         enableColumnFilter: false,
       }),
       columnHelper.display({
         id: 'actions',
-        header: 'Actions',
+        header: 'Action',
         cell: ({ row }) => {
           const suratJalanItem = row.original;
 
@@ -358,6 +402,14 @@ const SuratJalanTableServerSide = ({
             >
               <TruckIcon className="h-4 w-4" />
               <span>{isProcessing ? 'Memproses...' : 'Proses Pengiriman'}</span>
+            </button>
+            <button
+              onClick={handleBulkPrint}
+              disabled={isPrinting}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <PrinterIcon className="h-4 w-4" />
+              <span>{isPrinting ? 'Mencetak...' : 'Print Surat Jalan'}</span>
             </button>
           </div>
         </div>
