@@ -94,6 +94,35 @@ export const exportPackingSticker = async (packingId, companyId) => {
   }
 };
 
+// Export packing tanda terima to HTML for printing
+export const exportPackingTandaTerima = async (packingId, companyId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `http://localhost:5050/api/v1${API_URL}/${packingId}/export-tanda-terima?companyId=${companyId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to export tanda terima');
+    }
+
+    const html = await response.text();
+    return html;
+  } catch (error) {
+    console.error('Error exporting packing tanda terima:', error);
+    throw error;
+  }
+};
+
 export default {
   getPackings,
   getPackingById,
@@ -106,4 +135,5 @@ export default {
   processPackings,
   completePackings,
   exportPackingSticker,
+  exportPackingTandaTerima,
 };

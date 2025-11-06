@@ -10,7 +10,7 @@ import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import { formatDate, formatDateTime } from '../../utils/formatUtils';
-import { exportPackingSticker } from '../../services/packingService';
+import { exportPackingSticker, exportPackingTandaTerima } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import {
@@ -128,6 +128,48 @@ const ViewPackingModal = ({ packing, onClose }) => {
     }
   };
 
+  const handleExportTandaTerima = async () => {
+    try {
+      // Validate packing data
+      if (!packing || !packing.packingBoxes || packing.packingBoxes.length === 0) {
+        toastService.error('Tidak ada data box untuk dicetak');
+        return;
+      }
+
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info('Generating tanda terima...');
+
+      // Call backend API to get HTML
+      const html = await exportPackingTandaTerima(packing.id, companyData.id);
+
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Tanda terima berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+      }
+    } catch (error) {
+      console.error('Error exporting tanda terima:', error);
+      toastService.error(error.message || 'Gagal mengekspor tanda terima');
+    }
+  };
+
   const resolveStatusVariant = (status) => {
     const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -231,6 +273,26 @@ const ViewPackingModal = ({ packing, onClose }) => {
                 />
               </svg>
               <span>Print Stiker</span>
+            </button>
+            <button
+              type='button'
+              onClick={handleExportTandaTerima}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700'
+            >
+              <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                />
+              </svg>
+              <span>Print Tanda Terima</span>
             </button>
             <button
               onClick={onClose}
