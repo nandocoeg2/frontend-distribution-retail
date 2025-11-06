@@ -82,7 +82,7 @@ const KwitansiDetailModal = ({
                 ) : (
                   <ArrowDownTrayIcon className='h-5 w-5' />
                 )}
-                <span>Export PDF</span>
+                <span>Print Kwitansi</span>
               </button>
             )}
             <button

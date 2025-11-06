@@ -6,10 +6,11 @@ import {
   KwitansiModal,
   KwitansiDetailModal,
 } from '@/components/kwitansi';
-import { exportKwitansiToPDF } from '@/components/kwitansi/PrintKwitansi';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import toastService from '@/services/toastService';
+import kwitansiService from '@/services/kwitansiService';
+import authService from '@/services/authService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const TAB_STATUS_CONFIG = {
@@ -138,23 +139,42 @@ const KwitansiPage = () => {
       setExportingId(kwitansiId);
 
       try {
-        const detail = await fetchKwitansiById(kwitansiId);
-        if (!detail) {
+        // Get company ID from auth
+        const companyData = authService.getCompanyData();
+        if (!companyData || !companyData.id) {
+          toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
           return;
         }
 
-        if (selectedKwitansi?.id === kwitansiId) {
-          setSelectedKwitansi(detail);
-        }
+        toastService.info('Generating kwitansi...');
 
-        await exportKwitansiToPDF(detail);
+        // Call backend API to get HTML
+        const html = await kwitansiService.exportKwitansi(kwitansiId, companyData.id);
+
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+          };
+
+          toastService.success('Kwitansi berhasil di-generate. Silakan print.');
+        } else {
+          toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+        }
       } catch (error) {
         console.error('Failed to export kwitansi:', error);
+        toastService.error(error.message || 'Gagal mengekspor kwitansi');
       } finally {
         setExportingId(null);
       }
     },
-    [fetchKwitansiById, selectedKwitansi]
+    []
   );
 
   const handleTabChange = useCallback(

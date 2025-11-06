@@ -100,6 +100,34 @@ class KwitansiService {
       throw error;
     }
   }
+
+  async exportKwitansi(kwitansiId, companyId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_BASE_URL}/${kwitansiId}/export?companyId=${companyId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/html',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to export kwitansi');
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error exporting kwitansi:', error);
+      throw error;
+    }
+  }
 }
 
 export default new KwitansiService();
