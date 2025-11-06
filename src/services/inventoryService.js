@@ -132,3 +132,96 @@ export const deleteInventory = async (id) => {
   return response.json();
 };
 
+// Bulk Upload Methods
+
+export const downloadBulkTemplate = async () => {
+  const token = authService.getToken();
+  const response = await fetch(`${API_URL}/bulk/template`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorMessage(response, 'Failed to download template');
+    throw new Error(errorMessage);
+  }
+
+  // Get filename from Content-Disposition header or use default
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = 'Inventory_Template.xlsx';
+  
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  // Convert response to blob and trigger download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+
+  return { success: true, filename };
+};
+
+export const uploadBulkInventory = async (file) => {
+  const token = authService.getToken();
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_URL}/bulk/upload`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorMessage(response, 'Failed to upload file');
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
+export const getBulkUploadStatus = async (bulkId) => {
+  const response = await fetch(`${API_URL}/bulk/status/${bulkId}`, {
+    headers: getHeaders()
+  });
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorMessage(response, 'Failed to get bulk upload status');
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
+export const getAllBulkFiles = async (status = null) => {
+  const url = status 
+    ? `${API_URL}/bulk/files?status=${encodeURIComponent(status)}`
+    : `${API_URL}/bulk/files`;
+    
+  const response = await fetch(url, {
+    headers: getHeaders()
+  });
+
+  if (!response.ok) {
+    const errorMessage = await parseErrorMessage(response, 'Failed to get bulk files');
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
