@@ -6,4 +6,5 @@ export { default as TandaTerimaFakturDetailModal } from './TandaTerimaFakturDeta
 export { default as TandaTerimaFakturDocumentsModal } from './TandaTerimaFakturDocumentsModal';
 export { default as TandaTerimaFakturGroupedTable } from './TandaTerimaFakturGroupedTable';
 export { default as TandaTerimaFakturGroupedDetailModal } from './TandaTerimaFakturGroupedDetailModal';
+export { default as PrintTandaTerimaFakturByGroupModal } from './PrintTandaTerimaFakturByGroupModal';
 export { exportTandaTerimaFakturToPDF } from './PrintTandaTerimaFaktur';

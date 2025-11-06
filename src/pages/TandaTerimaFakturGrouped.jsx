@@ -3,12 +3,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   TandaTerimaFakturGroupedTable,
   TandaTerimaFakturGroupedDetailModal,
+  PrintTandaTerimaFakturByGroupModal,
 } from '@/components/tandaTerimaFaktur';
 import HeroIcon from '@/components/atoms/HeroIcon';
+import { PrinterIcon } from '@heroicons/react/24/outline';
 
 const TandaTerimaFakturGroupedPage = () => {
   const [selectedGroupedItem, setSelectedGroupedItem] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [tanggal, setTanggal] = useState(null);
   const [tanggalStart, setTanggalStart] = useState(null);
   const [tanggalEnd, setTanggalEnd] = useState(null);
@@ -22,6 +25,14 @@ const TandaTerimaFakturGroupedPage = () => {
   const handleCloseDetail = useCallback(() => {
     setIsDetailModalOpen(false);
     setSelectedGroupedItem(null);
+  }, []);
+
+  const handleOpenPrintModal = useCallback(() => {
+    setIsPrintModalOpen(true);
+  }, []);
+
+  const handleClosePrintModal = useCallback(() => {
+    setIsPrintModalOpen(false);
   }, []);
 
   const handleFilterModeChange = useCallback((mode) => {
@@ -71,9 +82,18 @@ const TandaTerimaFakturGroupedPage = () => {
           {/* Filter Section */}
           <div className='mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200'>
             <div className='mb-4'>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Mode Filter
-              </label>
+              <div className='flex items-center justify-between mb-2'>
+                <label className='block text-sm font-medium text-gray-700'>
+                  Mode Filter
+                </label>
+                <button
+                  onClick={handleOpenPrintModal}
+                  className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition'
+                >
+                  <PrinterIcon className='w-5 h-5' />
+                  Print By Group & TOP
+                </button>
+              </div>
               <div className='flex gap-2'>
                 <button
                   onClick={() => handleFilterModeChange('all')}
@@ -166,6 +186,12 @@ const TandaTerimaFakturGroupedPage = () => {
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetail}
         groupedItem={selectedGroupedItem}
+      />
+
+      {/* Print Modal */}
+      <PrintTandaTerimaFakturByGroupModal
+        isOpen={isPrintModalOpen}
+        onClose={handleClosePrintModal}
       />
     </div>
   );

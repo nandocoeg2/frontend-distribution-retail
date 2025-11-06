@@ -226,6 +226,35 @@ class TandaTerimaFakturService {
       throw error;
     }
   }
+
+  async exportByGroup(params = {}) {
+    try {
+      const token = authService.getToken();
+      const queryParams = new URLSearchParams(sanitizeParams(params)).toString();
+      const response = await fetch(
+        `${API_BASE_URL}/export?${queryParams}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/html',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error?.message || 'Failed to export tanda terima faktur');
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error exporting tanda terima faktur by group:', error);
+      throw error;
+    }
+  }
 }
 
 export default new TandaTerimaFakturService();
