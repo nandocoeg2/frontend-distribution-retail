@@ -111,6 +111,23 @@ class InvoicePengirimanService {
       throw error;
     }
   }
+
+  async exportInvoicePengiriman(id) {
+    try {
+      const token = authService.getToken();
+      const response = await axios.get(`${API_BASE_URL}/${id}/export`, {
+        headers: {
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${token}`
+        },
+        withCredentials: true
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting invoice pengiriman:', error);
+      throw error;
+    }
+  }
 }
 
 export default new InvoicePengirimanService();

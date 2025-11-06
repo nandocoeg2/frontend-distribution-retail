@@ -1,9 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable } from '../ui';
-import printInvoicePengiriman, {
-  exportInvoicePengirimanToPDF,
-} from './PrintInvoicePengiriman';
+import invoicePengirimanService from '../../services/invoicePengirimanService';
+import { toast } from 'react-toastify';
 
 const ViewInvoicePengirimanModal = ({
   show,
@@ -33,15 +32,34 @@ const ViewInvoicePengirimanModal = ({
   const hasError = Boolean(error);
   const detailCount = invoice?.invoiceDetails?.length ?? 0;
 
-  const handlePrintInvoice = () => {
-    if (invoice && !hasError && !isLoading) {
-      printInvoicePengiriman(invoice);
-    }
-  };
+  const handlePrintInvoice = async () => {
+    if (!invoice || hasError || isLoading) return;
 
-  const handleExportPdf = () => {
-    if (invoice && !hasError && !isLoading) {
-      exportInvoicePengirimanToPDF(invoice);
+    try {
+      const html = await invoicePengirimanService.exportInvoicePengiriman(invoice.id);
+      const printWindow = window.open('', '_blank');
+      
+      if (!printWindow) {
+        toast.error('Tidak dapat membuka jendela cetak. Periksa pengaturan pop-up browser.', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+        return;
+      }
+
+      printWindow.document.write(html);
+      printWindow.document.close();
+
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+    } catch (error) {
+      console.error('Error printing invoice:', error);
+      toast.error('Gagal mencetak invoice pengiriman', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     }
   };
 
@@ -75,27 +93,6 @@ const ViewInvoicePengirimanModal = ({
             </div>
           </div>
           <div className='flex items-center space-x-2'>
-            <button
-              type='button'
-              onClick={handleExportPdf}
-              disabled={hasError || isLoading || !invoice}
-              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60'
-            >
-              <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 11.5v9m0 0l-3.5-3.5M12 20.5l3.5-3.5M6 15v-2a2 2 0 012-2h2m4 0h2a2 2 0 012 2v2m1-5V6a2 2 0 00-2-2H7a2 2 0 00-2 2v4'
-                />
-              </svg>
-              <span>Export PDF</span>
-            </button>
             <button
               type='button'
               onClick={handlePrintInvoice}

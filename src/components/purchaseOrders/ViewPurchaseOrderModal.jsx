@@ -22,7 +22,6 @@ import {
   InfoTable,
   useAlert,
 } from '../ui';
-import { exportInvoicePengirimanToPDF } from '../invoicePengiriman/PrintInvoicePengiriman';
 import { getPackingById, exportPackingSticker } from '../../services/packingService';
 import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
@@ -340,7 +339,20 @@ const ViewPurchaseOrderModal = ({
           throw new Error('Failed to fetch invoice pengiriman data');
         }
 
-        await exportInvoicePengirimanToPDF(invoiceData);
+        const html = await invoicePengirimanService.exportInvoicePengiriman(invoiceId);
+        const printWindow = window.open('', '_blank');
+        
+        if (!printWindow) {
+          throw new Error('Tidak dapat membuka jendela cetak. Periksa pengaturan pop-up browser.');
+        }
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
       });
       invoiceTaskCreated = true;
     }
