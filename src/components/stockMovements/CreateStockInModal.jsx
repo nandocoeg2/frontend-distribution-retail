@@ -12,14 +12,14 @@ import {
 const initialFormState = {
   supplierId: '',
   notes: '',
-  items: [{ inventoryId: '', quantity: '' }],
+  items: [{ itemId: '', quantity: '' }],
 };
 
 const CreateStockInModal = ({
   show,
   onClose,
   onSubmit,
-  inventories = [],
+  itemOptions = [],
   suppliers = [],
   optionsLoading = false,
 }) => {
@@ -99,16 +99,16 @@ const CreateStockInModal = ({
     }
 
     if (!Array.isArray(form.items) || form.items.length === 0) {
-      return 'Minimal tambahkan satu item inventory.';
+      return 'Minimal tambahkan satu item.';
     }
 
     for (let index = 0; index < form.items.length; index += 1) {
       const item = form.items[index];
-      const inventoryId = (item.inventoryId || '').trim();
+      const itemId = (item.itemId || '').trim();
       const quantity = Number(item.quantity);
 
-      if (!inventoryId) {
-        return `Inventory pada baris ${index + 1} wajib diisi.`;
+      if (!itemId) {
+        return `Item pada baris ${index + 1} wajib diisi.`;
       }
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -132,7 +132,7 @@ const CreateStockInModal = ({
       supplierId: form.supplierId.trim(),
       notes: form.notes.trim(),
       items: form.items.map((item) => ({
-        inventoryId: item.inventoryId.trim(),
+        itemId: item.itemId.trim(),
         quantity: Number(item.quantity),
       })),
     };
@@ -247,7 +247,7 @@ const CreateStockInModal = ({
           <StockMovementItemsInput
             items={form.items}
             onChange={handleItemsChange}
-            inventories={inventories}
+            itemCatalog={itemOptions}
             loading={optionsLoading}
           />
 

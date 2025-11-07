@@ -156,12 +156,12 @@ const useScheduledPriceOperations = () => {
     }
   }, [handleAuthError]);
 
-  const getEffectivePrice = useCallback(async (inventoryId, date) => {
+  const getEffectivePrice = useCallback(async (itemId, date) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await scheduledPriceService.getEffectivePrice(inventoryId, date);
+      const response = await scheduledPriceService.getEffectivePrice(itemId, date);
       
       if (response.success) {
         return response.data;

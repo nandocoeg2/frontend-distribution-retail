@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { 
-  createInventory, 
-  updateInventory, 
-  deleteInventory, 
-  getInventoryById 
-} from '../services/inventoryService';
+  createItem, 
+  updateItem, 
+  deleteItem, 
+  getItemById 
+} from '../services/itemService';
 
-const useInventoryOperations = () => {
+const useItemOperations = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -19,25 +19,25 @@ const useInventoryOperations = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const createInventoryItem = useCallback(async (inventoryData) => {
+  const createItemData = useCallback(async (itemData) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await createInventory(inventoryData);
+      const response = await createItem(itemData);
       
       if (response.success) {
-        toastService.success('Inventory item created successfully');
+        toastService.success('Item created successfully');
         return response.data;
       } else {
-        throw new Error(response.error?.message || 'Failed to create inventory');
+        throw new Error(response.error?.message || 'Failed to create item');
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to create inventory');
+        toastService.error(err.message || 'Failed to create item');
       }
       throw err;
     } finally {
@@ -45,25 +45,25 @@ const useInventoryOperations = () => {
     }
   }, [handleAuthError]);
 
-  const updateInventoryItem = useCallback(async (id, inventoryData) => {
+  const updateItemData = useCallback(async (id, itemData) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await updateInventory(id, inventoryData);
+      const response = await updateItem(id, itemData);
       
       if (response.success) {
-        toastService.success('Inventory item updated successfully');
+        toastService.success('Item updated successfully');
         return response.data;
       } else {
-        throw new Error(response.error?.message || 'Failed to update inventory');
+        throw new Error(response.error?.message || 'Failed to update item');
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to update inventory');
+        toastService.error(err.message || 'Failed to update item');
       }
       throw err;
     } finally {
@@ -71,20 +71,20 @@ const useInventoryOperations = () => {
     }
   }, [handleAuthError]);
 
-  const deleteInventoryItem = useCallback(async (id) => {
+  const deleteItemData = useCallback(async (id) => {
     try {
       setLoading(true);
       setError(null);
       
-      await deleteInventory(id);
-      toastService.success('Inventory item deleted successfully');
+      await deleteItem(id);
+      toastService.success('Item deleted successfully');
       return true;
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to delete inventory');
+        toastService.error(err.message || 'Failed to delete item');
       }
       return false;
     } finally {
@@ -92,24 +92,24 @@ const useInventoryOperations = () => {
     }
   }, [handleAuthError]);
 
-  const getInventoryItem = useCallback(async (id) => {
+  const getItemData = useCallback(async (id) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await getInventoryById(id);
+      const response = await getItemById(id);
       
       if (response.success) {
         return response.data;
       } else {
-        throw new Error(response.error?.message || 'Failed to get inventory');
+        throw new Error(response.error?.message || 'Failed to get item');
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to get inventory');
+        toastService.error(err.message || 'Failed to get item');
       }
       throw err;
     } finally {
@@ -117,7 +117,7 @@ const useInventoryOperations = () => {
     }
   }, [handleAuthError]);
 
-  const validateInventoryData = useCallback((data) => {
+  const validateItemData = useCallback((data) => {
     const errors = {};
 
     if (!data.plu || !data.plu.trim()) {
@@ -200,12 +200,12 @@ const useInventoryOperations = () => {
     error,
     setError,
     clearError,
-    createInventoryItem,
-    updateInventoryItem,
-    deleteInventoryItem,
-    getInventoryItem,
-    validateInventoryData
+    createItemData,
+    updateItemData,
+    deleteItemData,
+    getItemData,
+    validateItemData
   };
 };
 
-export default useInventoryOperations;
+export default useItemOperations;

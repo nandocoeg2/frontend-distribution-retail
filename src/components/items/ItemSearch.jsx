@@ -1,6 +1,6 @@
 import React from 'react';
 
-const InventorySearch = ({ searchQuery, handleSearchChange, searchLoading }) => {
+const ItemSearch = ({ searchQuery, handleSearchChange, searchLoading }) => {
   return (
     <div className='mb-6 relative'>
       <input
@@ -33,4 +33,4 @@ const InventorySearch = ({ searchQuery, handleSearchChange, searchLoading }) => 
   );
 };
 
-export default InventorySearch;
+export default ItemSearch;

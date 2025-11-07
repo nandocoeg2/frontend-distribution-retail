@@ -20,7 +20,7 @@ export { default as FakturPajak } from './FakturPajak';
 export { default as SuratJalan } from './SuratJalan';
 export { default as TermOfPayments } from './TermOfPayments';
 export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';
-export { default as Inventories } from './Inventories';
+export { default as Items } from './Items';
 export { default as StockMovements } from './StockMovements';
 export { default as GroupCustomers } from './GroupCustomers';
 export { default as Companies } from './Companies';

@@ -1,18 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import InventoryForm from './InventoryForm';
-import { useInventoryOperations } from '../../hooks/useInventory';
-import { getInventoryById } from '../../services/inventoryService';
+import ItemForm from './ItemForm';
+import { useItemOperations } from '../../hooks/useItem';
+import { getItemById } from '../../services/itemService';
 
-const EditInventoryModal = ({ inventory, onClose }) => {
+const EditItemModal = ({ item, onClose }) => {
   const {
-    updateInventoryItem,
+    updateItemData,
     loading,
     error,
     setError,
     clearError,
-    validateInventoryData
-  } = useInventoryOperations();
-  const normalizeInventoryPayload = useCallback((payload = {}) => {
+    validateItemData
+  } = useItemOperations();
+  const normalizeItemPayload = useCallback((payload = {}) => {
     const dimensiValue = (() => {
       if (
         payload.dimensiBarang &&
@@ -76,7 +76,7 @@ const EditInventoryModal = ({ inventory, onClose }) => {
       tinggi: payload.tinggi ?? dimensiValue?.tinggi ?? 0
     };
   }, []);
-  const [initialData, setInitialData] = useState(() => normalizeInventoryPayload(inventory));
+  const [initialData, setInitialData] = useState(() => normalizeItemPayload(item));
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -84,17 +84,17 @@ const EditInventoryModal = ({ inventory, onClose }) => {
   }, [clearError]);
 
   useEffect(() => {
-    setInitialData(normalizeInventoryPayload(inventory));
+    setInitialData(normalizeItemPayload(item));
 
-    if (!inventory?.id) {
+    if (!item?.id) {
       return;
     }
 
     const hasDimensiObject =
-      inventory.dimensiBarang &&
-      typeof inventory.dimensiBarang === 'object' &&
-      !Array.isArray(inventory.dimensiBarang);
-    const hasItemStock = Boolean(inventory.itemStock || inventory.itemStocks);
+      item.dimensiBarang &&
+      typeof item.dimensiBarang === 'object' &&
+      !Array.isArray(item.dimensiBarang);
+    const hasItemStock = Boolean(item.itemStock || item.itemStocks);
 
     const shouldFetchDetail = !hasDimensiObject || !hasItemStock;
     if (!shouldFetchDetail) {
@@ -104,23 +104,23 @@ const EditInventoryModal = ({ inventory, onClose }) => {
     const loadDetail = async () => {
       try {
         setDetailLoading(true);
-        const response = await getInventoryById(inventory.id);
+        const response = await getItemById(item.id);
         if (response.success) {
-          const detail = normalizeInventoryPayload(response.data || {});
+          const detail = normalizeItemPayload(response.data || {});
           setInitialData(detail);
         }
       } catch (err) {
-        console.error('Failed to fetch inventory detail:', err);
+        console.error('Failed to fetch item detail:', err);
       } finally {
         setDetailLoading(false);
       }
     };
 
     loadDetail();
-  }, [inventory, normalizeInventoryPayload]);
+  }, [item, normalizeItemPayload]);
 
   const handleSubmit = async (formData) => {
-    const validationErrors = validateInventoryData(formData);
+    const validationErrors = validateItemData(formData);
     if (Object.keys(validationErrors).length > 0) {
       const [firstErrorMessage] = Object.values(validationErrors);
       setError(firstErrorMessage);
@@ -128,10 +128,10 @@ const EditInventoryModal = ({ inventory, onClose }) => {
     }
 
     try {
-      await updateInventoryItem(inventory.id, formData);
+      await updateItemData(item.id, formData);
       onClose();
     } catch (error) {
-      console.error('Update inventory error:', error);
+      console.error('Update item error:', error);
     }
   };
 
@@ -140,7 +140,7 @@ const EditInventoryModal = ({ inventory, onClose }) => {
       <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Ubah Inventory</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Edit Item</h2>
             <p className="text-sm text-gray-600">Perbarui data barang dan pastikan konsisten dengan API.</p>
           </div>
           <button
@@ -152,7 +152,7 @@ const EditInventoryModal = ({ inventory, onClose }) => {
           </button>
         </div>
         <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
-          <InventoryForm
+          <ItemForm
             onSubmit={handleSubmit}
             onClose={onClose}
             initialData={initialData}
@@ -165,4 +165,4 @@ const EditInventoryModal = ({ inventory, onClose }) => {
   );
 };
 
-export default EditInventoryModal;
+export default EditItemModal;

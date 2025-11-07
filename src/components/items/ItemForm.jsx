@@ -132,7 +132,7 @@ const parseDecimal = (value, fallback = 0) => {
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
-const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
+const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
   const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
 
   const memoizedInitialData = useMemo(() => initialData, [initialData]);
@@ -247,7 +247,7 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
 
       <FormSection
         title="Informasi Dasar"
-        description="Lengkapi identitas utama inventory. PLU tidak dapat diubah setelah data dibuat."
+        description="Lengkapi identitas utama item. PLU tidak dapat diubah setelah data dibuat."
       >
         <FormField
           label="PLU (Price Look-Up)"
@@ -500,12 +500,11 @@ const InventoryForm = ({ onSubmit, onClose, initialData = {}, loading = false, e
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={loading}
         >
-          {loading ? 'Menyimpan...' : isEditMode ? 'Simpan Perubahan' : 'Buat Inventory'}
+          {loading ? 'Menyimpan...' : isEditMode ? 'Simpan Perubahan' : 'Buat Item'}
         </button>
       </div>
     </form>
   );
 };
 
-export default InventoryForm;
-
+export default ItemForm;

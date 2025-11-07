@@ -1,26 +1,25 @@
-# Inventory Hooks Documentation
+# Item Hooks Documentation
 
-Dokumentasi hooks untuk manajemen inventory yang telah diperbaiki sesuai dengan API documentation.
+Dokumentasi hooks untuk manajemen data item yang menggantikan modul inventory lama.
 
 ## Hooks yang Tersedia
 
-### 1. useInventoriesPage
-Hook utama untuk halaman daftar inventory dengan pagination dan search.
+### 1. useItemsPage
+Hook utama untuk halaman daftar item lengkap dengan pagination, pencarian, dan delete.
 
 **Fitur:**
-- Fetch daftar inventory dengan pagination
-- Search inventory dengan debounce
-- Delete inventory
-- Error handling dan loading states
-- Auto refresh setelah operasi
+- Ambil daftar item dengan pagination
+- Pencarian dengan debounce
+- Delete item dan refresh otomatis
+- Penanganan error dan state loading terpusat
 
 **Penggunaan:**
 ```jsx
-import { useInventoriesPage } from '../hooks/useInventory';
+import { useItemsPage } from '../hooks/useItem';
 
-const InventoriesPage = () => {
+const ItemsPage = () => {
   const {
-    inventories,
+    items,
     pagination,
     loading,
     error,
@@ -29,28 +28,28 @@ const InventoriesPage = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteInventory,
-    fetchInventories
-  } = useInventoriesPage();
+    deleteItem,
+    fetchItems,
+  } = useItemsPage();
 
   // ... komponen
 };
 ```
 
-### 2. useInventoryForm
-Hook untuk form create dan edit inventory.
+### 2. useItemForm
+Hook untuk form create & edit item.
 
 **Fitur:**
-- Form state management
-- Validation
-- Auto load data untuk edit mode
-- Error handling
+- Manajemen state form lengkap
+- Validasi input
+- Auto load data pada edit mode
+- Penanganan error & redirect auth
 
 **Penggunaan:**
 ```jsx
-import { useInventoryForm } from '../hooks/useInventory';
+import { useItemForm } from '../hooks/useItem';
 
-const InventoryFormComponent = ({ inventoryId = null }) => {
+const ItemFormComponent = ({ itemId = null }) => {
   const {
     formData,
     setFormData,
@@ -60,53 +59,53 @@ const InventoryFormComponent = ({ inventoryId = null }) => {
     handleInputChange,
     handleSubmit,
     resetForm,
-    loadInventoryData,
-    validateForm
-  } = useInventoryForm(inventoryId);
+    loadItemData,
+    validateForm,
+  } = useItemForm(itemId);
 
   // ... komponen
 };
 ```
 
-### 3. useInventoryDetail
-Hook untuk menampilkan detail inventory individual.
+### 3. useItemDetail
+Hook untuk detail item tunggal.
 
 **Fitur:**
-- Load detail inventory
-- Delete inventory
+- Load detail item
+- Delete item
 - Refresh data
-- Error handling
+- Penanganan error & redirect auth
 
 **Penggunaan:**
 ```jsx
-import { useInventoryDetail } from '../hooks/useInventory';
+import { useItemDetail } from '../hooks/useItem';
 
-const InventoryDetailComponent = ({ inventoryId }) => {
+const ItemDetailComponent = ({ itemId }) => {
   const {
-    inventory,
+    item,
     loading,
     error,
     deleteLoading,
     handleDelete,
-    refreshInventory
-  } = useInventoryDetail(inventoryId);
+    refreshItem,
+  } = useItemDetail(itemId);
 
   // ... komponen
 };
 ```
 
-### 4. useInventorySearch
-Hook khusus untuk search inventory.
+### 4. useItemSearch
+Hook khusus pencarian item.
 
 **Fitur:**
-- Search dengan debounce
-- Pagination untuk hasil search
-- Clear search
-- Error handling
+- Pencarian dengan debounce
+- Pagination hasil pencarian
+- Clear state pencarian
+- Penanganan error & auth
 
 **Penggunaan:**
 ```jsx
-import { useInventorySearch } from '../hooks/useInventory';
+import { useItemSearch } from '../hooks/useItem';
 
 const SearchComponent = () => {
   const {
@@ -117,67 +116,65 @@ const SearchComponent = () => {
     searchQuery,
     handleSearchChange,
     handlePageChange,
-    clearSearch
-  } = useInventorySearch();
+    clearSearch,
+  } = useItemSearch();
 
   // ... komponen
 };
 ```
 
-### 5. useInventoryOperations
-Hook untuk operasi CRUD inventory.
+### 5. useItemOperations
+Hook utilitas CRUD item.
 
 **Fitur:**
-- Create inventory
-- Update inventory
-- Delete inventory
-- Get inventory by ID
-- Validation
-- Error handling
+- Create / Update / Delete item
+- Get item by ID
+- Validasi payload
+- Penanganan error & auth
 
 **Penggunaan:**
 ```jsx
-import { useInventoryOperations } from '../hooks/useInventory';
+import { useItemOperations } from '../hooks/useItem';
 
 const OperationsComponent = () => {
   const {
     loading,
     error,
-    createInventoryItem,
-    updateInventoryItem,
-    deleteInventoryItem,
-    getInventoryItem,
-    validateInventoryData
-  } = useInventoryOperations();
+    createItemData,
+    updateItemData,
+    deleteItemData,
+    getItemData,
+    validateItemData,
+  } = useItemOperations();
 
   // ... komponen
 };
 ```
 
-## Field Inventory
+## Field Item
 
-Mengikuti API terbaru, struktur payload inventory yang digunakan:
+Mengikuti API terbaru, struktur payload item yang digunakan:
 
-- `plu`: Price Look-Up code (kode barang) - Required
-- `nama_barang`: Nama barang - Required
-- `eanBarcode`: Barcode EAN-8 / EAN-13 - Optional
-- `uom`: Unit of Measurement (default `KARTON`) - Optional
-- `allow_mixed_carton`: Apakah barang boleh mixed carton - Required (boolean)
-- `dimensi`: Objek dimensi tunggal (berat, panjang, lebar, tinggi) - Required
-- `itemStock`: Objek stok (stok_quantity, min_stok, qty_per_carton) - Optional (default 0)
-- `itemPrice`: Objek harga (harga, pot1, harga1, pot2, harga2, ppn) - Optional
+- `plu`: Kode barang (wajib)
+- `nama_barang`: Nama barang (wajib)
+- `eanBarcode`: Barcode EAN-8 / EAN-13 (opsional)
+- `uom`: Unit of Measurement (default `KARTON`, opsional)
+- `allow_mixed_carton`: Boolean apakah boleh mixed carton (wajib)
+- `dimensi`: Objek dimensi tunggal (berat, panjang, lebar, tinggi)
+- `itemStock`: Objek stok (`stok_quantity`, `min_stok`, `qty_per_carton`)
+- `itemPrice`: Objek harga (`harga`, `pot1`, `harga1`, `pot2`, `harga2`, `ppn`)
 
 ## Error Handling
 
-Semua hooks menggunakan error handling yang konsisten:
-- Auto redirect ke login jika token expired (401/403)
-- Toast notification untuk error messages
-- Error state management
-- Loading state management
+Semua hooks item menggunakan pola berikut:
+- Redirect ke login saat token kadaluarsa (401/403)
+- Toast notification untuk pesan error
+- State `error` dan `loading` konsisten
 
 ## Response Format
 
-Semua hooks mengharapkan response format dari API:
+Semua hooks mengharapkan response API dengan format:
+
 ```json
 {
   "success": true,
@@ -189,6 +186,7 @@ Semua hooks mengharapkan response format dari API:
 ```
 
 Atau untuk single item:
+
 ```json
 {
   "success": true,
@@ -198,16 +196,14 @@ Atau untuk single item:
 
 ## Import
 
-```jsx
-// Import individual hooks
-import { 
-  useInventoriesPage, 
-  useInventoryForm, 
-  useInventoryDetail, 
-  useInventorySearch, 
-  useInventoryOperations 
-} from '../hooks/useInventory';
+Gunakan entry point `src/hooks/useItem.js` untuk mengimpor seluruh hooks item:
 
-// Atau import default (useInventoriesPage)
-import useInventoriesPage from '../hooks/useInventoriesPage';
+```jsx
+import {
+  useItemsPage,
+  useItemForm,
+  useItemDetail,
+  useItemSearch,
+  useItemOperations,
+} from '../hooks/useItem';
 ```

@@ -1,25 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import InventoryForm from './InventoryForm';
-import BulkUploadInventory from './BulkUploadInventory';
-import { useInventoryOperations } from '../../hooks/useInventory';
+import ItemForm from './ItemForm';
+import BulkUploadItem from './BulkUploadItem';
+import { useItemOperations } from '../../hooks/useItem';
 
-const AddInventoryModal = ({ onClose }) => {
+const AddItemModal = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState('manual');
   const {
-    createInventoryItem,
+    createItemData,
     loading,
     error,
     setError,
     clearError,
-    validateInventoryData
-  } = useInventoryOperations();
+    validateItemData
+  } = useItemOperations();
 
   useEffect(() => {
     clearError();
   }, [clearError]);
 
   const handleSubmit = async (formData) => {
-    const validationErrors = validateInventoryData(formData);
+    const validationErrors = validateItemData(formData);
     if (Object.keys(validationErrors).length > 0) {
       const [firstErrorMessage] = Object.values(validationErrors);
       setError(firstErrorMessage);
@@ -27,10 +27,10 @@ const AddInventoryModal = ({ onClose }) => {
     }
 
     try {
-      await createInventoryItem(formData);
+      await createItemData(formData);
       onClose();
     } catch (error) {
-      console.error('Create inventory error:', error);
+      console.error('Create item error:', error);
     }
   };
 
@@ -39,11 +39,11 @@ const AddInventoryModal = ({ onClose }) => {
       <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Tambah Inventory</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Tambah Item</h2>
             <p className="text-sm text-gray-600">
               {activeTab === 'manual' 
                 ? 'Lengkapi detail barang sesuai dokumentasi API terbaru.' 
-                : 'Upload file Excel untuk menambahkan inventory secara massal.'}
+                : 'Upload file Excel untuk menambahkan item secara massal.'}
             </p>
           </div>
           <button
@@ -94,14 +94,13 @@ const AddInventoryModal = ({ onClose }) => {
         {/* Tab Content */}
         <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
           {activeTab === 'manual' ? (
-            <InventoryForm
+            <ItemForm
               onSubmit={handleSubmit}
-              onClose={onClose}
               loading={loading}
               error={error}
             />
           ) : (
-            <BulkUploadInventory onClose={onClose} />
+            <BulkUploadItem onClose={onClose} />
           )}
         </div>
       </div>
@@ -109,4 +108,4 @@ const AddInventoryModal = ({ onClose }) => {
   );
 };
 
-export default AddInventoryModal;
+export default AddItemModal;

@@ -14,7 +14,7 @@ import {
 import {
   getOperationalReporting,
   getFinancialReporting,
-  getInventoryReporting,
+  getItemReporting,
 } from '../services/reportingService';
 import {
   ChartBarIcon,
@@ -138,8 +138,8 @@ const tabs = [
     description: 'Revenue, PPN, dan Outstanding',
   },
   {
-    id: 'inventory',
-    label: 'Inventory',
+    id: 'items',
+    label: 'Items',
     description: 'Stok, peringatan, dan pergerakan',
   },
 ];
@@ -158,16 +158,16 @@ const Reporting = () => {
   const [endDate, setEndDate] = useState('');
   const [operationalData, setOperationalData] = useState(null);
   const [financialData, setFinancialData] = useState(null);
-  const [inventoryData, setInventoryData] = useState(null);
+  const [itemMetrics, setItemMetrics] = useState(null);
   const [loadingState, setLoadingState] = useState({
     operational: false,
     financial: false,
-    inventory: false,
+    items: false,
   });
   const [errorState, setErrorState] = useState({
     operational: '',
     financial: '',
-    inventory: '',
+    items: '',
   });
   const navigate = useNavigate();
 
@@ -258,26 +258,26 @@ const Reporting = () => {
     }
   }, [period, startDate, endDate, ensureValidDateRange]);
 
-  const fetchInventory = useCallback(async () => {
-    setErrorState((prev) => ({ ...prev, inventory: '' }));
-    setLoadingState((prev) => ({ ...prev, inventory: true }));
+  const fetchItemMetrics = useCallback(async () => {
+    setErrorState((prev) => ({ ...prev, items: '' }));
+    setLoadingState((prev) => ({ ...prev, items: true }));
 
     try {
-      const response = await getInventoryReporting();
+      const response = await getItemReporting();
       if (!response?.success) {
         throw new Error(
-          response?.error?.message || 'Gagal memuat data laporan inventory.'
+          response?.error?.message || 'Gagal memuat data laporan item.'
         );
       }
 
-      setInventoryData(response.data);
+      setItemMetrics(response.data);
     } catch (error) {
-      const message = error.message || 'Gagal memuat data laporan inventory.';
-      setInventoryData(null);
-      setErrorState((prev) => ({ ...prev, inventory: message }));
+      const message = error.message || 'Gagal memuat data laporan item.';
+      setItemMetrics(null);
+      setErrorState((prev) => ({ ...prev, items: message }));
       toastService.error(message);
     } finally {
-      setLoadingState((prev) => ({ ...prev, inventory: false }));
+      setLoadingState((prev) => ({ ...prev, items: false }));
     }
   }, []);
 
@@ -290,10 +290,10 @@ const Reporting = () => {
       fetchOperational();
     } else if (activeTab === 'financial') {
       fetchFinancial();
-    } else if (activeTab === 'inventory') {
-      fetchInventory();
+    } else if (activeTab === 'items') {
+      fetchItemMetrics();
     }
-  }, [activeTab, fetchOperational, fetchFinancial, fetchInventory, userData]);
+  }, [activeTab, fetchOperational, fetchFinancial, fetchItemMetrics, userData]);
 
   const handleResetFilters = () => {
     setPeriod('monthly');
@@ -781,25 +781,25 @@ const Reporting = () => {
       </div>
     );
   };
-  const renderInventorySection = () => {
-    if (loadingState.inventory) {
+  const renderItemSection = () => {
+    if (loadingState.items) {
       return (
         <Card padding='lg'>
-          <LoadingState message='Memuat metrik inventory...' />
+          <LoadingState message='Memuat metrik item...' />
         </Card>
       );
     }
 
-    if (errorState.inventory) {
+    if (errorState.items) {
       return (
         <Card padding='lg' variant='warning'>
           <CardHeader
-            title='Tidak dapat memuat data inventory'
-            subtitle={errorState.inventory}
+            title='Tidak dapat memuat data item'
+            subtitle={errorState.items}
             action={
               <button
                 type='button'
-                onClick={fetchInventory}
+                onClick={fetchItemMetrics}
                 className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
                 <ArrowPathIcon className='w-4 h-4 mr-2' />
@@ -811,16 +811,16 @@ const Reporting = () => {
       );
     }
 
-    if (!inventoryData) {
+    if (!itemMetrics) {
       return (
         <Card padding='lg'>
           <CardHeader
-            title='Data inventory belum tersedia'
+            title='Data item belum tersedia'
             subtitle='Silakan muat ulang untuk mendapatkan data terbaru.'
             action={
               <button
                 type='button'
-                onClick={fetchInventory}
+                onClick={fetchItemMetrics}
                 className='inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 transition border border-blue-500 rounded-lg hover:bg-blue-50'
               >
                 <ArrowPathIcon className='w-4 h-4 mr-2' />
@@ -832,7 +832,7 @@ const Reporting = () => {
       );
     }
 
-    const { metrics = {} } = inventoryData;
+    const { metrics = {} } = itemMetrics;
     const {
       overview = {},
       stockStatus = {},
@@ -849,7 +849,7 @@ const Reporting = () => {
       <div className='space-y-6'>
         <Card padding='lg'>
           <CardHeader
-            title='Ringkasan Inventory'
+            title='Ringkasan Item'
             subtitle='Gambaran umum stok dan nilai aset'
           />
 
@@ -873,7 +873,7 @@ const Reporting = () => {
               variant='success'
             />
             <StatCard
-              title='Nilai Inventory'
+              title='Nilai Stok'
               value={formatCurrency(overview.totalInventoryValue)}
               icon={<CurrencyDollarIcon className='w-8 h-8 text-emerald-600' />}
             />
@@ -1147,12 +1147,10 @@ const Reporting = () => {
 
         {activeTab === 'operational' && renderOperationalSection()}
         {activeTab === 'financial' && renderFinancialSection()}
-        {activeTab === 'inventory' && renderInventorySection()}
+        {activeTab === 'items' && renderItemSection()}
       </div>
     </>
   );
 };
 
 export default Reporting;
-
-

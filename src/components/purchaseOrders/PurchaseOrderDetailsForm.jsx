@@ -1,49 +1,49 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { searchInventories, getInventories } from '../../services/inventoryService';
+import { searchItems, getItems } from '../../services/itemService';
 import Autocomplete from '../common/Autocomplete';
 
 const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, onAddDetail }) => {
-  const [inventories, setInventories] = useState([]);
+  const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
   // Ensure details is always an array
   const safeDetails = details || [];
 
-  // Fetch initial inventories for autocomplete
+  // Fetch initial items for autocomplete
   useEffect(() => {
-    const fetchInitialInventories = async () => {
+    const fetchInitialItems = async () => {
       try {
         setIsLoading(true);
-        const response = await getInventories(1, 50);
+        const response = await getItems(1, 50);
         if (response.success && Array.isArray(response.data.data)) {
-          setInventories(response.data.data);
+          setItems(response.data.data);
         }
       } catch (error) {
-        console.error('Failed to fetch initial inventories:', error);
-        setInventories([]);
+        console.error('Failed to fetch initial items:', error);
+        setItems([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInitialInventories();
+    fetchInitialItems();
   }, []);
 
-  const resolveInventoryPrice = useMemo(() => {
-    return (inventory) => {
-      if (!inventory || typeof inventory !== 'object') {
+  const resolveItemPrice = useMemo(() => {
+    return (item) => {
+      if (!item || typeof item !== 'object') {
         return 0;
       }
 
       const priceSource = (() => {
-        if (inventory.itemPrice && typeof inventory.itemPrice === 'object') {
-          return inventory.itemPrice;
+        if (item.itemPrice && typeof item.itemPrice === 'object') {
+          return item.itemPrice;
         }
-        if (Array.isArray(inventory.itemPrices) && inventory.itemPrices.length > 0) {
-          return inventory.itemPrices[0];
+        if (Array.isArray(item.itemPrices) && item.itemPrices.length > 0) {
+          return item.itemPrices[0];
         }
-        if (inventory.item_price && typeof inventory.item_price === 'object') {
-          return inventory.item_price;
+        if (item.item_price && typeof item.item_price === 'object') {
+          return item.item_price;
         }
         return {};
       })();
@@ -56,11 +56,11 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
     };
   }, []);
 
-  const resolveItemStock = (inventory) => {
-    if (!inventory || typeof inventory !== 'object') {
+  const resolveItemStock = (item) => {
+    if (!item || typeof item !== 'object') {
       return {};
     }
-    return inventory.itemStock || inventory.itemStocks || inventory.item_stock || {};
+    return item.itemStock || item.itemStocks || item.item_stock || {};
   };
 
   const handleDetailChange = (index, field, value) => {
@@ -110,17 +110,17 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
     }
   };
 
-  const handleInventorySelect = (index, inventoryId) => {
-    const inventory = inventories.find(inv => inv.id === inventoryId);
-    if (inventory) {
-      const itemStock = resolveItemStock(inventory);
-      const derivedPrice = resolveInventoryPrice(inventory);
+  const handleItemSelect = (index, itemId) => {
+    const item = items.find(inv => inv.id === itemId);
+    if (item) {
+      const itemStock = resolveItemStock(item);
+      const derivedPrice = resolveItemPrice(item);
       const updatedDetails = [...safeDetails];
       updatedDetails[index] = {
         ...updatedDetails[index],
-        inventoryId: inventoryId,
-        plu: inventory.plu,
-        nama_barang: inventory.nama_barang,
+        itemId: itemId,
+        plu: item.plu,
+        nama_barang: item.nama_barang,
         harga: derivedPrice || 0,
         isi: updatedDetails[index]?.isi ?? itemStock.qty_per_carton ?? 1
       };
@@ -131,17 +131,17 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
     }
   };
 
-  // Function to search inventories dynamically
-  const searchInventoryItems = async (query) => {
+  // Function to search items dynamically
+  const searchItemOptions = async (query) => {
     try {
       setIsLoading(true);
-      const response = await searchInventories(query, 1, 50);
+      const response = await searchItems(query, 1, 50);
       if (response.success && Array.isArray(response.data.data)) {
-        setInventories(response.data.data);
+        setItems(response.data.data);
       }
     } catch (error) {
-      console.error('Failed to search inventories:', error);
-      setInventories([]);
+      console.error('Failed to search items:', error);
+      setItems([]);
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +160,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
       total_pembelian: 0,
       potongan_b: 0,
       harga_after_potongan_b: 0,
-      inventoryId: ''
+      itemId: ''
     };
     onAddDetail(newDetail);
   };
@@ -205,24 +205,24 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Inventory Selection */}
+                {/* Item Selection */}
                 <div className="lg:col-span-3">
                   <Autocomplete
-                    label="Inventory *"
-                    options={inventories}
-                    value={detail.inventoryId}
-                    onChange={(e) => handleInventorySelect(index, e.target.value)}
-                    placeholder="Search inventory by PLU or name"
+                    label="Item *"
+                    options={items}
+                    value={detail.itemId}
+                    onChange={(e) => handleItemSelect(index, e.target.value)}
+                    placeholder="Search item by PLU or name"
                     displayKey="nama_barang"
                     valueKey="id"
-                    name={`inventoryId_${index}`}
+                    name={`itemId_${index}`}
                     required
                     disabled={isLoading}
                     loading={isLoading}
-                    onSearch={searchInventoryItems}
+                    onSearch={searchItemOptions}
                     showId={true}
                   />
-                  {detail.inventoryId && (
+                  {detail.itemId && (
                     <div className="mt-1 text-xs text-gray-500">
                       Selected: {detail.plu} - {detail.nama_barang}
                     </div>
@@ -239,9 +239,9 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
                     value={detail.plu}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-                    placeholder="PLU akan terisi otomatis dari inventory"
+                    placeholder="PLU akan terisi otomatis dari item"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Otomatis terisi dari inventory yang dipilih</p>
+                  <p className="mt-1 text-xs text-gray-500">Otomatis terisi dari item yang dipilih</p>
                 </div>
 
                 {/* Nama Barang */}
@@ -254,9 +254,9 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
                     value={detail.nama_barang}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
-                    placeholder="Nama barang akan terisi otomatis dari inventory"
+                    placeholder="Nama barang akan terisi otomatis dari item"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Otomatis terisi dari inventory yang dipilih</p>
+                  <p className="mt-1 text-xs text-gray-500">Otomatis terisi dari item yang dipilih</p>
                 </div>
 
                 {/* Quantity */}

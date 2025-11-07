@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { downloadBulkTemplate, uploadBulkInventory, getBulkUploadStatus } from '../../services/inventoryService';
+import { downloadBulkTemplate, uploadBulkItem, getBulkUploadStatus } from '../../services/itemService';
 import toastService from '../../services/toastService';
 
-const BulkUploadInventory = ({ onClose }) => {
+const BulkUploadItem = ({ onClose }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
@@ -73,7 +73,7 @@ const BulkUploadInventory = ({ onClose }) => {
 
     try {
       setUploading(true);
-      const response = await uploadBulkInventory(selectedFile);
+      const response = await uploadBulkItem(selectedFile);
 
       if (response.success && response.data) {
         toastService.success(response.data.message || 'File berhasil diupload dan sedang diproses');
@@ -164,7 +164,7 @@ const BulkUploadInventory = ({ onClose }) => {
           <div className="flex-1">
             <h3 className="text-sm font-medium text-blue-900">Langkah 1: Download Template</h3>
             <p className="mt-1 text-sm text-blue-700">
-              Download template Excel terlebih dahulu, isi data inventory sesuai format yang tersedia.
+              Download template Excel terlebih dahulu, isi data item sesuai format yang tersedia.
             </p>
             <button
               type="button"
@@ -320,4 +320,4 @@ const BulkUploadInventory = ({ onClose }) => {
   );
 };
 
-export default BulkUploadInventory;
+export default BulkUploadItem;

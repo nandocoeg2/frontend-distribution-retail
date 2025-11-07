@@ -226,7 +226,7 @@ const ReturnDetail = () => {
                   </dd>
                 </div>
                 <div className='flex justify-between'>
-                  <dt className='text-gray-500'>Kode Inventaris</dt>
+                  <dt className='text-gray-500'>Kode Item</dt>
                   <dd className='font-medium text-gray-900'>
                     {inventory.kode_barang || inventory.code || '-'}
                   </dd>

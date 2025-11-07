@@ -11,16 +11,16 @@ import {
   TabPanel
 } from '../ui';
 import { formatCurrency, formatDateTime } from '../../utils/formatUtils';
-import useInventoryDetail from '../../hooks/useInventoryDetail';
+import useItemDetail from '../../hooks/useItemDetail';
 import ActivityTimeline from '../common/ActivityTimeline';
 
-const ViewInventoryModal = ({ show, inventory, onClose }) => {
-  const inventoryId = show ? inventory?.id : null;
+const ViewItemModal = ({ show, item, onClose }) => {
+  const itemId = show ? item?.id : null;
   const {
-    inventory: detailedInventory,
+    item: detailedItem,
     loading,
     error
-  } = useInventoryDetail(inventoryId);
+  } = useItemDetail(itemId);
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
@@ -28,13 +28,13 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     metaInfo: false
   });
 
-  if (!show || !inventory) {
+  if (!show || !item) {
     return null;
   }
 
-  const resolvedInventory = useMemo(() => {
-    return detailedInventory || inventory;
-  }, [detailedInventory, inventory]);
+  const resolvedItem = useMemo(() => {
+    return detailedItem || item;
+  }, [detailedItem, item]);
 
 
   const resolveStockStatusVariant = (currentStock, minStock) => {
@@ -46,45 +46,45 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
     return { status: 'In Stock', variant: 'success' };
   };
 
-  const itemStock = resolvedInventory?.itemStock || resolvedInventory?.itemStocks || {};
+  const itemStock = resolvedItem?.itemStock || resolvedItem?.itemStocks || {};
   const itemPrice = (() => {
-    if (resolvedInventory?.itemPrice && typeof resolvedInventory.itemPrice === 'object') {
-      return resolvedInventory.itemPrice;
+    if (resolvedItem?.itemPrice && typeof resolvedItem.itemPrice === 'object') {
+      return resolvedItem.itemPrice;
     }
-    if (Array.isArray(resolvedInventory?.itemPrices) && resolvedInventory.itemPrices.length > 0) {
-      return resolvedInventory.itemPrices[0];
+    if (Array.isArray(resolvedItem?.itemPrices) && resolvedItem.itemPrices.length > 0) {
+      return resolvedItem.itemPrices[0];
     }
     return {};
   })();
-  const stokQuantity = Number(itemStock?.stok_quantity ?? resolvedInventory?.stok_quantity ?? 0);
-  const minimumStock = Number(itemStock?.min_stok ?? resolvedInventory?.min_stok ?? 0);
-  const qtyPerCarton = Number(itemStock?.qty_per_carton ?? resolvedInventory?.qty_per_carton ?? 0);
+  const stokQuantity = Number(itemStock?.stok_quantity ?? resolvedItem?.stok_quantity ?? 0);
+  const minimumStock = Number(itemStock?.min_stok ?? resolvedItem?.min_stok ?? 0);
+  const qtyPerCarton = Number(itemStock?.qty_per_carton ?? resolvedItem?.qty_per_carton ?? 0);
   const stockStatus = resolveStockStatusVariant(stokQuantity, minimumStock);
 
   const dimensiBarang = (() => {
     if (
-      resolvedInventory?.dimensiBarang &&
-      typeof resolvedInventory.dimensiBarang === 'object' &&
-      !Array.isArray(resolvedInventory.dimensiBarang)
+      resolvedItem?.dimensiBarang &&
+      typeof resolvedItem.dimensiBarang === 'object' &&
+      !Array.isArray(resolvedItem.dimensiBarang)
     ) {
-      return resolvedInventory.dimensiBarang;
+      return resolvedItem.dimensiBarang;
     }
-    if (Array.isArray(resolvedInventory?.dimensiBarang) && resolvedInventory.dimensiBarang.length > 0) {
-      return resolvedInventory.dimensiBarang[0];
+    if (Array.isArray(resolvedItem?.dimensiBarang) && resolvedItem.dimensiBarang.length > 0) {
+      return resolvedItem.dimensiBarang[0];
     }
-    if (resolvedInventory?.dimensi && typeof resolvedInventory.dimensi === 'object') {
-      return resolvedInventory.dimensi;
+    if (resolvedItem?.dimensi && typeof resolvedItem.dimensi === 'object') {
+      return resolvedItem.dimensi;
     }
     return {};
   })();
 
   const dimensionValues = {
-    berat: dimensiBarang?.berat ?? resolvedInventory?.berat,
-    panjang: dimensiBarang?.panjang ?? resolvedInventory?.panjang,
-    lebar: dimensiBarang?.lebar ?? resolvedInventory?.lebar,
-    tinggi: dimensiBarang?.tinggi ?? resolvedInventory?.tinggi
+    berat: dimensiBarang?.berat ?? resolvedItem?.berat,
+    panjang: dimensiBarang?.panjang ?? resolvedItem?.panjang,
+    lebar: dimensiBarang?.lebar ?? resolvedItem?.lebar,
+    tinggi: dimensiBarang?.tinggi ?? resolvedItem?.tinggi
   };
-  const dimensiKarton = resolvedInventory?.dimensiKarton || null;
+  const dimensiKarton = resolvedItem?.dimensiKarton || null;
   const cartonDimensionValues = dimensiKarton
     ? {
         berat: dimensiKarton?.berat,
@@ -156,8 +156,8 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
               <ArchiveBoxIcon className="h-8 w-8 text-orange-500" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Inventory Details</h2>
-              <p className="text-sm text-gray-600">{resolvedInventory?.nama_barang}</p>
+              <h2 className="text-2xl font-bold text-gray-900">Item Details</h2>
+              <p className="text-sm text-gray-600">{resolvedItem?.nama_barang}</p>
             </div>
           </div>
           <button 
@@ -229,12 +229,12 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                     >
                       <InfoTable
                         data={[
-                          { label: 'PLU', value: resolvedInventory?.plu, copyable: true },
-                          { label: 'Nama Barang', value: resolvedInventory?.nama_barang },
-                          { label: 'Inventory ID', value: resolvedInventory?.id, copyable: true },
-                          { label: 'EAN Barcode', value: resolvedInventory?.eanBarcode || '—', copyable: Boolean(resolvedInventory?.eanBarcode) },
-                          { label: 'Satuan (UoM)', value: resolvedInventory?.uom || '—' },
-                          { label: 'Allow Mixed Carton', value: resolvedInventory?.allow_mixed_carton ? 'Ya' : 'Tidak' }
+                          { label: 'PLU', value: resolvedItem?.plu, copyable: true },
+                          { label: 'Nama Barang', value: resolvedItem?.nama_barang },
+                          { label: 'Item ID', value: resolvedItem?.id, copyable: true },
+                          { label: 'EAN Barcode', value: resolvedItem?.eanBarcode || '—', copyable: Boolean(resolvedItem?.eanBarcode) },
+                          { label: 'Satuan (UoM)', value: resolvedItem?.uom || '—' },
+                          { label: 'Allow Mixed Carton', value: resolvedItem?.allow_mixed_carton ? 'Ya' : 'Tidak' }
                         ]}
                       />
                     </AccordionItem>
@@ -258,8 +258,8 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                     >
                       <InfoTable
                         data={[
-                          { label: 'Created At', value: formatDateTime(resolvedInventory?.createdAt) },
-                          { label: 'Updated At', value: formatDateTime(resolvedInventory?.updatedAt) }
+                          { label: 'Created At', value: formatDateTime(resolvedItem?.createdAt) },
+                          { label: 'Updated At', value: formatDateTime(resolvedItem?.updatedAt) }
                         ]}
                       />
                     </AccordionItem>
@@ -351,7 +351,7 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                       <div className="text-center py-10">
                         <ScaleIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-500 mb-2">No Dimension Data</h3>
-                        <p className="text-gray-400">Tidak ada data berat atau ukuran untuk inventory ini.</p>
+                        <p className="text-gray-400">Tidak ada data berat atau ukuran untuk item ini.</p>
                       </div>
                     ) : null}
                   </div>
@@ -367,10 +367,10 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
                         <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
                       </div>
                       <ActivityTimeline
-                        auditTrails={resolvedInventory?.auditTrails || []}
+                        auditTrails={resolvedItem?.auditTrails || []}
                         title=""
                         showCount={true}
-                        emptyMessage="No activity found for this inventory item."
+                        emptyMessage="No activity found for this item."
                       />
                     </div>
                   </div>
@@ -396,4 +396,4 @@ const ViewInventoryModal = ({ show, inventory, onClose }) => {
   );
 };
 
-export default ViewInventoryModal;
+export default ViewItemModal;

@@ -2,34 +2,34 @@ import React, { useMemo } from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 
-const defaultItem = { inventoryId: '', quantity: '' };
+const defaultItem = { itemId: '', quantity: '' };
 
 const StockMovementItemsInput = ({
   items,
   onChange,
-  inventories = [],
+  itemCatalog = [],
   loading = false,
 }) => {
-  const inventoryOptions = useMemo(() => {
-    if (!Array.isArray(inventories)) {
+  const itemOptions = useMemo(() => {
+    if (!Array.isArray(itemCatalog)) {
       return [];
     }
 
-    return inventories
-      .map((inventory) => ({
-        id: inventory?.id || '',
+    return itemCatalog
+      .map((item) => ({
+        id: item?.id || '',
         label:
-          inventory?.nama_barang ||
-          inventory?.name ||
-          inventory?.inventoryName ||
-          inventory?.inventory_name ||
-          inventory?.sku ||
-          inventory?.plu ||
-          inventory?.id ||
+          item?.nama_barang ||
+          item?.name ||
+          item?.inventoryName ||
+          item?.inventory_name ||
+          item?.sku ||
+          item?.plu ||
+          item?.id ||
           '',
       }))
       .filter((option) => option.id && option.label);
-  }, [inventories]);
+  }, [itemCatalog]);
 
   const handleItemChange = (index, field, value) => {
     const nextItems = items.map((item, currentIndex) =>
@@ -59,7 +59,7 @@ const StockMovementItemsInput = ({
             Detail Item
           </h2>
           <p className='text-xs text-gray-500'>
-            Pilih inventory dan isi quantity sesuai barang yang bergerak. Kamu bisa menambahkan lebih
+            Pilih item dan isi quantity sesuai barang yang bergerak. Kamu bisa menambahkan lebih
             dari satu item sekaligus.
           </p>
         </div>
@@ -76,7 +76,7 @@ const StockMovementItemsInput = ({
       {loading && (
         <div className='flex items-center gap-2 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/60 px-3 py-2 text-xs text-indigo-700'>
           <span className='inline-flex h-2 w-2 animate-pulse rounded-full bg-indigo-500' />
-          Memuat data inventory terbaru...
+          Memuat data item terbaru...
         </div>
       )}
 
@@ -94,7 +94,7 @@ const StockMovementItemsInput = ({
                     Item #{itemIndex}
                   </span>
                   <p className='mt-2 text-xs text-gray-500'>
-                    Masukkan ID inventory dan quantity sesuai dokumen sumber.
+                    Masukkan ID item dan quantity sesuai dokumen sumber.
                   </p>
                 </div>
                 {items.length > 1 && (
@@ -113,20 +113,20 @@ const StockMovementItemsInput = ({
               <div className='grid gap-4 sm:grid-cols-2'>
                 <div>
                   <label
-                    htmlFor={`inventory-id-${index}`}
+                    htmlFor={`item-id-${index}`}
                     className='block text-sm font-medium text-gray-700'
                   >
-                    Inventory
+                    Item
                   </label>
                   <Autocomplete
                     label=''
-                    name={`inventoryId-${index}`}
-                    options={inventoryOptions}
-                    value={item.inventoryId ? String(item.inventoryId) : ''}
+                    name={`itemId-${index}`}
+                    options={itemOptions}
+                    value={item.itemId ? String(item.itemId) : ''}
                     onChange={(event) =>
-                      handleItemChange(index, 'inventoryId', event.target.value)
+                      handleItemChange(index, 'itemId', event.target.value)
                     }
-                    placeholder='Cari nama barang atau ID inventory'
+                    placeholder='Cari nama barang atau ID item'
                     displayKey='label'
                     valueKey='id'
                     loading={loading}
@@ -135,23 +135,23 @@ const StockMovementItemsInput = ({
                     inputClassName='rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500'
                   />
                   <p
-                    id={`inventory-helper-${index}`}
+                    id={`item-helper-${index}`}
                     className='mt-1 text-xs text-gray-500'
                   >
-                    Ketik untuk mencari inventory, lalu pilih dari daftar yang muncul.
+                    Ketik untuk mencari item, lalu pilih dari daftar yang muncul.
                   </p>
                 </div>
 
                 <div>
                   <label
-                    htmlFor={`inventory-quantity-${index}`}
+                    htmlFor={`item-quantity-${index}`}
                     className='block text-sm font-medium text-gray-700'
                   >
                     Quantity
                   </label>
                   <div className='mt-1 flex rounded-lg border border-gray-300 bg-white shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500'>
                     <input
-                      id={`inventory-quantity-${index}`}
+                      id={`item-quantity-${index}`}
                       name={`quantity-${index}`}
                       type='number'
                       min='1'

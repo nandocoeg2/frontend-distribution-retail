@@ -9,14 +9,14 @@ import Autocomplete from '@/components/common/Autocomplete';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import useReturnForm from '@/hooks/useReturnForm';
 import {
-  getInventories,
-  searchInventories,
-} from '@/services/inventoryService';
+  getItems,
+  searchItems,
+} from '@/services/itemService';
 import toastService from '@/services/toastService';
 
-const INVENTORY_FETCH_LIMIT = 20;
+const ITEM_FETCH_LIMIT = 20;
 
-const extractInventoryList = (response) => {
+const extractItemList = (response) => {
   if (!response) {
     return [];
   }
@@ -46,8 +46,8 @@ const extractInventoryList = (response) => {
 
 const ReturnCreate = () => {
   const navigate = useNavigate();
-  const [inventoryOptions, setInventoryOptions] = useState([]);
-  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [itemOptions, setItemOptions] = useState([]);
+  const [itemLoading, setItemLoading] = useState(false);
 
   const {
     formData,
@@ -63,34 +63,34 @@ const ReturnCreate = () => {
     },
   });
 
-  const loadInventories = useCallback(
+  const loadItems = useCallback(
     async (query = '') => {
-      setInventoryLoading(true);
+      setItemLoading(true);
       try {
         const response = query
-          ? await searchInventories(query, 1, INVENTORY_FETCH_LIMIT)
-          : await getInventories(1, INVENTORY_FETCH_LIMIT);
-        const list = extractInventoryList(response);
-        setInventoryOptions(Array.isArray(list) ? list : []);
+          ? await searchItems(query, 1, ITEM_FETCH_LIMIT)
+          : await getItems(1, ITEM_FETCH_LIMIT);
+        const list = extractItemList(response);
+        setItemOptions(Array.isArray(list) ? list : []);
       } catch (err) {
-        toastService.error(err.message || 'Gagal memuat data inventaris.');
-        setInventoryOptions([]);
+        toastService.error(err.message || 'Gagal memuat data item.');
+        setItemOptions([]);
       } finally {
-        setInventoryLoading(false);
+        setItemLoading(false);
       }
     },
     []
   );
 
   useEffect(() => {
-    loadInventories();
-  }, [loadInventories]);
+    loadItems();
+  }, [loadItems]);
 
-  const normalizedInventoryOptions = useMemo(() => {
-    return inventoryOptions.map((item) => {
+  const normalizedItemOptions = useMemo(() => {
+    return itemOptions.map((item) => {
       const id =
         item.id ||
-        item.inventoryId ||
+        item.itemId ||
         item.inventory_id ||
         item.inventory_id_id ||
         '';
@@ -118,32 +118,32 @@ const ReturnCreate = () => {
         raw: item,
       };
     });
-  }, [inventoryOptions]);
+  }, [itemOptions]);
 
-  const selectedInventory = useMemo(() => {
-    return normalizedInventoryOptions.find(
-      (option) => option.id === formData.inventoryId
+  const selectedItem = useMemo(() => {
+    return normalizedItemOptions.find(
+      (option) => option.id === formData.itemId
     );
-  }, [formData.inventoryId, normalizedInventoryOptions]);
+  }, [formData.itemId, normalizedItemOptions]);
 
-  const handleInventoryChange = useCallback(
+  const handleItemChange = useCallback(
     (event) => {
       handleChange(event);
       if (!event.target.value) {
         setErrors((prev) => ({
           ...prev,
-          inventoryId: 'Produk wajib dipilih.',
+          itemId: 'Produk wajib dipilih.',
         }));
       }
     },
     [handleChange, setErrors]
   );
 
-  const handleInventorySearch = useCallback(
+  const handleItemSearch = useCallback(
     async (query) => {
-      await loadInventories(query);
+      await loadItems(query);
     },
-    [loadInventories]
+    [loadItems]
   );
 
   const handleQuantityInput = (event) => {
@@ -225,38 +225,38 @@ const ReturnCreate = () => {
       >
         <div>
           <label className='block text-sm font-medium text-gray-700'>
-            Produk / Inventaris
+            Produk / Item
           </label>
           <div className='mt-2'>
             <Autocomplete
-              options={normalizedInventoryOptions}
-              value={formData.inventoryId}
-              onChange={handleInventoryChange}
+              options={normalizedItemOptions}
+              value={formData.itemId}
+              onChange={handleItemChange}
               placeholder='Cari dan pilih produk'
               displayKey='label'
               valueKey='id'
-              name='inventoryId'
-              loading={inventoryLoading}
-              onSearch={handleInventorySearch}
+              name='itemId'
+              loading={itemLoading}
+              onSearch={handleItemSearch}
             />
-            {errors.inventoryId ? (
-              <p className='mt-1 text-sm text-red-600'>{errors.inventoryId}</p>
+            {errors.itemId ? (
+              <p className='mt-1 text-sm text-red-600'>{errors.itemId}</p>
             ) : (
-              selectedInventory && (
+              selectedItem && (
                 <p className='mt-1 text-sm text-gray-500'>
-                  Stok Gudang: {selectedInventory.stokQuantity ?? '-'} unit
-                  {selectedInventory.minStock !== null &&
-                    selectedInventory.minStock !== undefined && (
+                  Stok Gudang: {selectedItem.stokQuantity ?? '-'} unit
+                  {selectedItem.minStock !== null &&
+                    selectedItem.minStock !== undefined && (
                       <>
                         {' '}
-                        &bull; Min {selectedInventory.minStock}
+                        &bull; Min {selectedItem.minStock}
                       </>
                     )}
-                  {selectedInventory.qtyPerCarton !== null &&
-                    selectedInventory.qtyPerCarton !== undefined && (
+                  {selectedItem.qtyPerCarton !== null &&
+                    selectedItem.qtyPerCarton !== undefined && (
                       <>
                         {' '}
-                        &bull; Qty/Carton {selectedInventory.qtyPerCarton}
+                        &bull; Qty/Carton {selectedItem.qtyPerCarton}
                       </>
                     )}
                 </p>

@@ -1,4 +1,4 @@
-﻿// Core components
+// Core components
 export { default as ProtectedRoute } from './ProtectedRoute';
 
 // Common/Reusable components
@@ -14,8 +14,8 @@ export * from './customers';
 // Supplier components
 export * from './suppliers';
 
-// Inventory components
-export * from './inventories';
+// Item components
+export * from './items';
 
 // Stock Movement components
 export * from './stockMovements';

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
-import { createInventory, updateInventory, getInventoryById } from '../services/inventoryService';
+import { createItem, updateItem, getItemById } from '../services/itemService';
 
 const DEFAULT_FORM_STATE = {
   plu: '',
@@ -98,11 +98,11 @@ const parseInteger = (value) => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-const useInventoryForm = (inventoryId = null) => {
+const useItemForm = (itemId = null) => {
   const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(!!inventoryId);
+  const [isEditMode, setIsEditMode] = useState(!!itemId);
   const navigate = useNavigate();
 
   const handleAuthError = useCallback(() => {
@@ -111,38 +111,38 @@ const useInventoryForm = (inventoryId = null) => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const loadInventoryData = useCallback(async () => {
-    if (!inventoryId) return;
+  const loadItemData = useCallback(async () => {
+    if (!itemId) return;
 
     try {
       setLoading(true);
       setError(null);
-      const response = await getInventoryById(inventoryId);
+      const response = await getItemById(itemId);
       
       if (response.success) {
-        const inventory = response.data || {};
-        const dimensiBarang = resolveDimensiBarang(inventory);
-        const dimensiKarton = resolveDimensiKarton(inventory);
-        const itemStock = resolveItemStock(inventory);
-        const itemPrice = resolveItemPrice(inventory);
+        const item = response.data || {};
+        const dimensiBarang = resolveDimensiBarang(item);
+        const dimensiKarton = resolveDimensiKarton(item);
+        const itemStock = resolveItemStock(item);
+        const itemPrice = resolveItemPrice(item);
 
         setFormData({
-          plu: inventory.plu || '',
-          nama_barang: inventory.nama_barang || '',
-          eanBarcode: inventory.eanBarcode || '',
-          uom: inventory.uom || DEFAULT_FORM_STATE.uom,
-          allow_mixed_carton: Boolean(inventory.allow_mixed_carton ?? true),
-          berat: toStringValue(inventory.berat ?? dimensiBarang?.berat),
-          panjang: toStringValue(inventory.panjang ?? dimensiBarang?.panjang),
-          lebar: toStringValue(inventory.lebar ?? dimensiBarang?.lebar),
-          tinggi: toStringValue(inventory.tinggi ?? dimensiBarang?.tinggi),
+          plu: item.plu || '',
+          nama_barang: item.nama_barang || '',
+          eanBarcode: item.eanBarcode || '',
+          uom: item.uom || DEFAULT_FORM_STATE.uom,
+          allow_mixed_carton: Boolean(item.allow_mixed_carton ?? true),
+          berat: toStringValue(item.berat ?? dimensiBarang?.berat),
+          panjang: toStringValue(item.panjang ?? dimensiBarang?.panjang),
+          lebar: toStringValue(item.lebar ?? dimensiBarang?.lebar),
+          tinggi: toStringValue(item.tinggi ?? dimensiBarang?.tinggi),
           karton_berat: toStringValue(dimensiKarton?.berat, ''),
           karton_panjang: toStringValue(dimensiKarton?.panjang, ''),
           karton_lebar: toStringValue(dimensiKarton?.lebar, ''),
           karton_tinggi: toStringValue(dimensiKarton?.tinggi, ''),
-          stok_quantity: toStringValue(itemStock?.stok_quantity ?? inventory.stok_quantity),
-          min_stok: toStringValue(itemStock?.min_stok ?? inventory.min_stok),
-          qty_per_carton: toStringValue(itemStock?.qty_per_carton ?? inventory.qty_per_carton),
+          stok_quantity: toStringValue(itemStock?.stok_quantity ?? item.stok_quantity),
+          min_stok: toStringValue(itemStock?.min_stok ?? item.min_stok),
+          qty_per_carton: toStringValue(itemStock?.qty_per_carton ?? item.qty_per_carton),
           harga: toStringValue(itemPrice?.harga, '0'),
           pot1: toStringValue(itemPrice?.pot1, '0'),
           harga1: toStringValue(itemPrice?.harga1, '0'),
@@ -151,19 +151,19 @@ const useInventoryForm = (inventoryId = null) => {
           ppn: toStringValue(itemPrice?.ppn, '0')
         });
       } else {
-        throw new Error(response.error?.message || 'Failed to load inventory data');
+        throw new Error(response.error?.message || 'Failed to load item data');
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to load inventory data');
+        toastService.error(err.message || 'Failed to load item data');
       }
     } finally {
       setLoading(false);
     }
-  }, [inventoryId, handleAuthError]);
+  }, [itemId, handleAuthError]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -232,7 +232,7 @@ const useInventoryForm = (inventoryId = null) => {
       setLoading(true);
       setError(null);
 
-      const inventoryData = {
+      const itemData = {
         plu: formData.plu.trim(),
         nama_barang: formData.nama_barang.trim(),
         allow_mixed_carton: Boolean(formData.allow_mixed_carton),
@@ -260,48 +260,48 @@ const useInventoryForm = (inventoryId = null) => {
 
       const eanBarcode = formData.eanBarcode.trim();
       if (eanBarcode) {
-        inventoryData.eanBarcode = eanBarcode;
+        itemData.eanBarcode = eanBarcode;
       }
 
       const uom = formData.uom.trim();
       if (uom) {
-        inventoryData.uom = uom.toUpperCase();
+        itemData.uom = uom.toUpperCase();
       }
 
       const hasDimensiKarton = ['karton_berat', 'karton_panjang', 'karton_lebar', 'karton_tinggi'].some(
         key => formData[key] !== '' && formData[key] !== null && formData[key] !== undefined
       );
       if (hasDimensiKarton) {
-        inventoryData.dimensiKarton = {
+        itemData.dimensiKarton = {
           berat: parseDecimal(formData.karton_berat),
           panjang: parseDecimal(formData.karton_panjang),
           lebar: parseDecimal(formData.karton_lebar),
           tinggi: parseDecimal(formData.karton_tinggi)
         };
       } else {
-        delete inventoryData.dimensiKarton;
+        delete itemData.dimensiKarton;
       }
 
       let response;
       if (isEditMode) {
-        response = await updateInventory(inventoryId, inventoryData);
+        response = await updateItem(itemId, itemData);
       } else {
-        response = await createInventory(inventoryData);
+        response = await createItem(itemData);
       }
 
       if (response.success) {
         const action = isEditMode ? 'updated' : 'created';
-        toastService.success(`Inventory item ${action} successfully`);
+        toastService.success(`Item ${action} successfully`);
         return response.data;
       } else {
-        throw new Error(response.error?.message || `Failed to ${isEditMode ? 'update' : 'create'} inventory`);
+        throw new Error(response.error?.message || `Failed to ${isEditMode ? 'update' : 'create'} item`);
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || `Failed to ${isEditMode ? 'update' : 'create'} inventory`);
+        toastService.error(err.message || `Failed to ${isEditMode ? 'update' : 'create'} item`);
       }
       throw err;
     } finally {
@@ -324,10 +324,10 @@ const useInventoryForm = (inventoryId = null) => {
     handleInputChange,
     handleSubmit,
     resetForm,
-    loadInventoryData,
+    loadItemData,
     validateForm,
     setIsEditMode
   };
 };
 
-export default useInventoryForm;
+export default useItemForm;

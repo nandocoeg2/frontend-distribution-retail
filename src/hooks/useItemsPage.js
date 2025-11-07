@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
-import { getInventories, searchInventories, deleteInventory } from '../services/inventoryService';
+import { getItems, searchItems, deleteItem } from '../services/itemService';
 import usePaginatedSearch from './usePaginatedSearch';
 
 const INITIAL_PAGINATION = {
@@ -14,9 +14,9 @@ const INITIAL_PAGINATION = {
   total: 0
 };
 
-const parseInventoriesResponse = (response) => {
+const parseItemsResponse = (response) => {
   if (response?.success === false) {
-    throw new Error(response?.error?.message || 'Failed to load inventories');
+    throw new Error(response?.error?.message || 'Failed to load items');
   }
 
   const rawData = response?.data?.data || response?.data || [];
@@ -25,7 +25,7 @@ const parseInventoriesResponse = (response) => {
   const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
   const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
 
-  const normalizeInventory = (item) => {
+  const normalizeItem = (item) => {
     if (!item || typeof item !== 'object') {
       return item;
     }
@@ -100,7 +100,7 @@ const parseInventoriesResponse = (response) => {
   const list = Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [];
 
   return {
-    results: list.map(normalizeInventory),
+    results: list.map(normalizeItem),
     pagination: {
       currentPage,
       page: currentPage,
@@ -113,11 +113,11 @@ const parseInventoriesResponse = (response) => {
   };
 };
 
-const resolveInventoryError = (error) => {
-  return error?.response?.data?.error?.message || error?.message || 'Failed to load inventories';
+const resolveItemError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Failed to load items';
 };
 
-const useInventoriesPage = () => {
+const useItemsPage = () => {
   const navigate = useNavigate();
 
   const handleAuthRedirect = useCallback(() => {
@@ -129,8 +129,8 @@ const useInventoriesPage = () => {
   const {
     input: searchQuery,
     setInput: setSearchQuery,
-    searchResults: inventories,
-    setSearchResults: setInventories,
+    searchResults: items,
+    setSearchResults: setItems,
     pagination,
     setPagination,
     loading,
@@ -147,12 +147,12 @@ const useInventoriesPage = () => {
     searchFn: (query, page, limit) => {
       const trimmedQuery = typeof query === 'string' ? query.trim() : '';
       if (!trimmedQuery) {
-        return getInventories(page, limit);
+        return getItems(page, limit);
       }
-      return searchInventories(trimmedQuery, page, limit);
+      return searchItems(trimmedQuery, page, limit);
     },
-    parseResponse: parseInventoriesResponse,
-    resolveErrorMessage: resolveInventoryError,
+    parseResponse: parseItemsResponse,
+    resolveErrorMessage: resolveItemError,
     onAuthError: handleAuthRedirect
   });
 
@@ -163,7 +163,7 @@ const useInventoriesPage = () => {
     return loading && Boolean(searchQuery.trim());
   }, [loading, searchQuery]);
 
-  const fetchInventories = useCallback((page = 1, limit = resolveLimit()) => {
+  const fetchItems = useCallback((page = 1, limit = resolveLimit()) => {
     return performSearch('', page, limit);
   }, [performSearch, resolveLimit]);
 
@@ -173,15 +173,15 @@ const useInventoriesPage = () => {
     debouncedSearch(query, 1, resolveLimit());
   }, [debouncedSearch, resolveLimit, setSearchQuery]);
 
-  const handleDeleteInventory = useCallback(async (id) => {
+  const handleDeleteItem = useCallback(async (id) => {
     try {
-      await deleteInventory(id);
-      toastService.success('Inventory item deleted successfully');
+      await deleteItem(id);
+      toastService.success('Item deleted successfully');
 
       const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
       const itemsPerPage = resolveLimit();
       const currentPage = pagination.currentPage || pagination.page || 1;
-      const totalItems = pagination.totalItems || pagination.total || inventories.length;
+      const totalItems = pagination.totalItems || pagination.total || items.length;
       const newTotalItems = Math.max(totalItems - 1, 0);
       const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
       const nextPage = Math.min(currentPage, newTotalPages);
@@ -192,19 +192,19 @@ const useInventoriesPage = () => {
         authHandler();
         return;
       }
-      const message = resolveInventoryError(err) || 'Failed to delete inventory item';
+      const message = resolveItemError(err) || 'Failed to delete item';
       setError(message);
       toastService.error(message);
     }
-  }, [authHandler, inventories.length, pagination, performSearch, resolveLimit, searchQuery, setError]);
+  }, [authHandler, items.length, pagination, performSearch, resolveLimit, searchQuery, setError]);
 
   useEffect(() => {
-    fetchInventories(1, INITIAL_PAGINATION.itemsPerPage);
-  }, [fetchInventories]);
+    fetchItems(1, INITIAL_PAGINATION.itemsPerPage);
+  }, [fetchItems]);
 
   return {
-    inventories,
-    setInventories,
+    items,
+    setItems,
     pagination,
     setPagination,
     loading,
@@ -214,10 +214,10 @@ const useInventoriesPage = () => {
     handleSearchChange,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
-    deleteInventory: handleDeleteInventory,
-    fetchInventories,
+    deleteItem: handleDeleteItem,
+    fetchItems,
     handleAuthError: authHandler
   };
 };
 
-export default useInventoriesPage;
+export default useItemsPage;

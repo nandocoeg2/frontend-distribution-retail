@@ -40,7 +40,7 @@ import BulkUploadHistory from './pages/BulkUploadHistory.jsx';
 import PurchaseOrderHistory from './pages/PurchaseOrderHistory.jsx';
 import Customers from './pages/Customers.jsx';
 import Suppliers from './pages/Suppliers.jsx';
-import Inventories from './pages/Inventories.jsx';
+import Items from './pages/Items.jsx';
 import Packings from './pages/Packings.jsx';
 import LaporanPenerimaanBarang from './pages/LaporanPenerimaanBarang.jsx';
 import InvoicePengiriman from './pages/InvoicePengiriman.jsx';
@@ -254,10 +254,10 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path='/master/inventories'
+        path='/master/items'
         element={
           <ProtectedRoute>
-            <Inventories />
+            <Items />
           </ProtectedRoute>
         }
       />

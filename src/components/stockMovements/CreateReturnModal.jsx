@@ -4,14 +4,14 @@ import StockMovementItemsInput from './StockMovementItemsInput.jsx';
 
 const initialFormState = {
   reason: '',
-  items: [{ inventoryId: '', quantity: '' }],
+  items: [{ itemId: '', quantity: '' }],
 };
 
 const CreateReturnModal = ({
   show,
   onClose,
   onSubmit,
-  inventories = [],
+  itemOptions = [],
   optionsLoading = false,
 }) => {
   const [form, setForm] = useState(initialFormState);
@@ -43,16 +43,16 @@ const CreateReturnModal = ({
 
   const validateForm = () => {
     if (!Array.isArray(form.items) || form.items.length === 0) {
-      return 'Minimal tambahkan satu item inventory.';
+      return 'Minimal tambahkan satu item.';
     }
 
     for (let index = 0; index < form.items.length; index += 1) {
       const item = form.items[index];
-      const inventoryId = (item.inventoryId || '').trim();
+      const itemId = (item.itemId || '').trim();
       const quantity = Number(item.quantity);
 
-      if (!inventoryId) {
-        return `Inventory pada baris ${index + 1} wajib diisi.`;
+      if (!itemId) {
+        return `Item pada baris ${index + 1} wajib diisi.`;
       }
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -75,7 +75,7 @@ const CreateReturnModal = ({
     const payload = {
       reason: form.reason.trim(),
       items: form.items.map((item) => ({
-        inventoryId: item.inventoryId.trim(),
+        itemId: item.itemId.trim(),
         quantity: Number(item.quantity),
       })),
     };
@@ -151,7 +151,7 @@ const CreateReturnModal = ({
           <StockMovementItemsInput
             items={form.items}
             onChange={handleItemsChange}
-            inventories={inventories}
+            itemCatalog={itemOptions}
             loading={optionsLoading}
           />
 

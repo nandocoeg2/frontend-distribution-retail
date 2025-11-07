@@ -1,34 +1,34 @@
-﻿import React, { useState, useEffect } from 'react';
-import { InfoCard, StatusBadge, InfoTable } from '../ui';
+import React, { useState, useEffect } from 'react';
+import { InfoTable } from '../ui';
 import { formatDateTime, formatCurrency } from '../../utils/formatUtils';
-import { getInventoryById } from '../../services/inventoryService';
+import { getItemById } from '../../services/itemService';
 import toastService from '../../services/toastService';
 
 const PackingItemDetailModal = ({ item, onClose }) => {
-  const [inventory, setInventory] = useState(null);
+  const [itemDetail, setItemDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (item?.inventoryId) {
-      fetchInventoryData();
+    if (item?.itemId) {
+      fetchItemData();
     }
-  }, [item?.inventoryId]);
+  }, [item?.itemId]);
 
-  const fetchInventoryData = async () => {
-    if (!item?.inventoryId) return;
+  const fetchItemData = async () => {
+    if (!item?.itemId) return;
 
     setLoading(true);
     setError(null);
     try {
-      const response = await getInventoryById(item.inventoryId);
-      console.log('Inventory response:', response); // Debug log
+      const response = await getItemById(item.itemId);
+      console.log('Item response:', response); // Debug log
 
       // Handle API response structure: { success: true, data: {...} }
-      const inventoryData = response?.success ? response.data : response;
-      setInventory(inventoryData);
+      const itemData = response?.success ? response.data : response;
+      setItemDetail(itemData);
     } catch (err) {
-      const errorMessage = err.message || 'Gagal mengambil data inventory';
+      const errorMessage = err.message || 'Gagal mengambil data item';
       setError(errorMessage);
       toastService.error(errorMessage);
     } finally {
@@ -48,30 +48,30 @@ const PackingItemDetailModal = ({ item, onClose }) => {
     return 'default';
   };
 
-  const buildInventoryInfoRows = () => {
-    if (!inventory) {
+  const buildItemInfoRows = () => {
+    if (!itemDetail) {
       return [];
     }
 
-    const itemStock = inventory.itemStock || inventory.itemStocks || {};
+    const itemStock = itemDetail.itemStock || itemDetail.itemStocks || {};
     const stokQuantity =
       itemStock.stok_quantity ??
-      inventory.stok_quantity ??
-      inventory.stok_q ??
+      itemDetail.stok_quantity ??
+      itemDetail.stok_q ??
       0;
-    const minStock = itemStock.min_stok ?? inventory.min_stok ?? 0;
+    const minStock = itemStock.min_stok ?? itemDetail.min_stok ?? 0;
     const qtyPerCarton =
-      itemStock.qty_per_carton ?? inventory.qty_per_carton ?? 0;
+      itemStock.qty_per_carton ?? itemDetail.qty_per_carton ?? 0;
 
     const itemPrice = (() => {
-      if (inventory.itemPrice && typeof inventory.itemPrice === 'object') {
-        return inventory.itemPrice;
+      if (itemDetail.itemPrice && typeof itemDetail.itemPrice === 'object') {
+        return itemDetail.itemPrice;
       }
       if (
-        Array.isArray(inventory.itemPrices) &&
-        inventory.itemPrices.length > 0
+        Array.isArray(itemDetail.itemPrices) &&
+        itemDetail.itemPrices.length > 0
       ) {
-        return inventory.itemPrices[0];
+        return itemDetail.itemPrices[0];
       }
       return null;
     })();
@@ -84,12 +84,12 @@ const PackingItemDetailModal = ({ item, onClose }) => {
         </div>
         <div>
           <span className='font-medium'>Potongan 1:</span> {itemPrice.pot1 ?? 0}
-          % • <span className='font-medium'>Harga 1:</span>{' '}
+          % - <span className='font-medium'>Harga 1:</span>{' '}
           {formatCurrency(itemPrice.harga1 ?? 0)}
         </div>
         <div>
           <span className='font-medium'>Potongan 2:</span> {itemPrice.pot2 ?? 0}
-          % • <span className='font-medium'>Harga 2:</span>{' '}
+          % - <span className='font-medium'>Harga 2:</span>{' '}
           {formatCurrency(itemPrice.harga2 ?? 0)}
         </div>
         <div>
@@ -103,34 +103,34 @@ const PackingItemDetailModal = ({ item, onClose }) => {
     return [
       {
         label: 'Nama Barang',
-        value: inventory.nama_barang || 'N/A',
+        value: itemDetail.nama_barang || 'N/A',
       },
-      { label: 'PLU', value: inventory.plu || 'N/A' },
+      { label: 'PLU', value: itemDetail.plu || 'N/A' },
       { label: 'Item Prices', component: priceComponent },
       { label: 'Stock Quantity', value: stokQuantity },
       { label: 'Minimum Stock', value: minStock },
       { label: 'Qty per Carton', value: qtyPerCarton },
       {
         label: 'Created At',
-        value: formatDateTime(inventory.createdAt),
+        value: formatDateTime(itemDetail.createdAt),
       },
       {
         label: 'Updated At',
-        value: formatDateTime(inventory.updatedAt),
+        value: formatDateTime(itemDetail.updatedAt),
       },
       {
-        label: 'Inventory ID',
-        value: inventory.id,
+        label: 'Item ID',
+        value: itemDetail.id,
         copyable: true,
       },
       {
         label: 'Created By',
-        value: inventory.createdBy || 'N/A',
+        value: itemDetail.createdBy || 'N/A',
         copyable: true,
       },
       {
         label: 'Updated By',
-        value: inventory.updatedBy || 'N/A',
+        value: itemDetail.updatedBy || 'N/A',
         copyable: true,
       },
     ];
@@ -143,7 +143,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
         <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-green-100 rounded-lg'>
-              <span className='text-2xl'>📦</span>
+              <span className='text-2xl font-semibold text-green-700'>BOX</span>
             </div>
             <div>
               <h2 className='text-2xl font-bold text-gray-900'>
@@ -178,7 +178,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
             <div className='flex items-center justify-center py-8'>
               <div className='flex items-center space-x-2'>
                 <div className='w-6 h-6 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-                <span className='text-gray-600'>Memuat data inventory...</span>
+                <span className='text-gray-600'>Memuat data item...</span>
               </div>
             </div>
           )}
@@ -186,7 +186,7 @@ const PackingItemDetailModal = ({ item, onClose }) => {
           {error && (
             <div className='p-4 mb-6 border border-red-200 rounded-lg bg-red-50'>
               <div className='flex items-center'>
-                <div className='mr-2 text-xl text-red-500'>âš ï¸</div>
+                <div className='mr-2 text-xl text-red-500'>!</div>
                 <div>
                   <h3 className='text-sm font-medium text-red-800'>Error</h3>
                   <p className='mt-1 text-sm text-red-700'>{error}</p>
@@ -197,13 +197,13 @@ const PackingItemDetailModal = ({ item, onClose }) => {
 
           {!loading && !error && (
             <div className='space-y-6'>
-              {/* Inventory Information */}
-              {inventory && (
+              {/* Item Information */}
+              {itemDetail && (
                 <div className='p-6 rounded-lg bg-blue-50'>
                   <h3 className='mb-4 text-lg font-semibold text-gray-900'>
-                    Informasi Inventory
+                    Informasi Item
                   </h3>
-                  <InfoTable data={buildInventoryInfoRows()} />
+                  <InfoTable data={buildItemInfoRows()} />
                 </div>
               )}
 
@@ -218,8 +218,8 @@ const PackingItemDetailModal = ({ item, onClose }) => {
                     { label: 'Quantity', value: item.quantity },
                     { label: 'Keterangan', value: item.keterangan || '-' },
                     {
-                      label: 'Inventory ID',
-                      value: item.inventoryId,
+                      label: 'Item ID',
+                      value: item.itemId,
                       copyable: true,
                     },
                     {

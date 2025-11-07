@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   EyeIcon,
   PencilSquareIcon,
@@ -8,8 +8,8 @@ import { formatDate } from '../../utils/formatUtils';
 import { useConfirmationDialog } from '../ui';
 import Pagination from '../common/Pagination';
 
-const InventoryTable = ({
-  inventories,
+const ItemTable = ({
+  items,
   pagination,
   onPageChange,
   onLimitChange,
@@ -32,34 +32,34 @@ const InventoryTable = ({
     }).format(numericValue);
   };
 
-  const resolveDimension = (inventory) => {
+  const resolveDimension = (item) => {
     const dimensiValue = (() => {
-      if (!inventory) {
+      if (!item) {
         return null;
       }
       if (
-        inventory.dimensiBarang &&
-        typeof inventory.dimensiBarang === 'object' &&
-        !Array.isArray(inventory.dimensiBarang)
+        item.dimensiBarang &&
+        typeof item.dimensiBarang === 'object' &&
+        !Array.isArray(item.dimensiBarang)
       ) {
-        return inventory.dimensiBarang;
+        return item.dimensiBarang;
       }
 
-      if (Array.isArray(inventory.dimensiBarang) && inventory.dimensiBarang.length > 0) {
-        return inventory.dimensiBarang[0];
+      if (Array.isArray(item.dimensiBarang) && item.dimensiBarang.length > 0) {
+        return item.dimensiBarang[0];
       }
 
-      if (inventory.dimensi && typeof inventory.dimensi === 'object') {
-        return inventory.dimensi;
+      if (item.dimensi && typeof item.dimensi === 'object') {
+        return item.dimensi;
       }
 
       return null;
     })();
 
-    const berat = inventory?.berat ?? dimensiValue?.berat ?? 0;
-    const panjang = inventory?.panjang ?? dimensiValue?.panjang ?? 0;
-    const lebar = inventory?.lebar ?? dimensiValue?.lebar ?? 0;
-    const tinggi = inventory?.tinggi ?? dimensiValue?.tinggi ?? 0;
+    const berat = item?.berat ?? dimensiValue?.berat ?? 0;
+    const panjang = item?.panjang ?? dimensiValue?.panjang ?? 0;
+    const lebar = item?.lebar ?? dimensiValue?.lebar ?? 0;
+    const tinggi = item?.tinggi ?? dimensiValue?.tinggi ?? 0;
 
     return {
       berat: `${formatDecimal(berat)} kg`,
@@ -67,8 +67,8 @@ const InventoryTable = ({
     };
   };
 
-  const handleDelete = (inventoryId) => {
-    setDeleteId(inventoryId);
+  const handleDelete = (itemId) => {
+    setDeleteId(itemId);
     showDialog({
       title: 'Hapus Item',
       message: 'Apakah Anda yakin ingin menghapus item ini?',
@@ -119,22 +119,22 @@ const InventoryTable = ({
                   <div className='w-8 h-8 mx-auto border-b-2 border-blue-600 rounded-full animate-spin'></div>
                 </td>
               </tr>
-            ) : inventories.length === 0 ? (
+            ) : items.length === 0 ? (
               <tr>
                 <td colSpan='6' className='py-4 text-center text-gray-500'>
-                  No inventory found.
+                  No items found.
                 </td>
               </tr>
             ) : (
-              inventories.map((inventory) => {
-                const { berat, formattedSize } = resolveDimension(inventory);
+              items.map((item) => {
+                const { berat, formattedSize } = resolveDimension(item);
                 return (
-                  <tr key={inventory.id} className='hover:bg-gray-50'>
+                  <tr key={item.id} className='hover:bg-gray-50'>
                     <td className='px-6 py-4 font-mono text-sm text-gray-900 whitespace-nowrap'>
-                      {inventory.plu}
+                      {item.plu}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                      {inventory.nama_barang}
+                      {item.nama_barang}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                       {berat}
@@ -143,26 +143,26 @@ const InventoryTable = ({
                       {formattedSize}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>
-                      {formatDate(inventory.updatedAt)}
+                      {formatDate(item.updatedAt)}
                     </td>
                     <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
                       <div className='flex items-center justify-end space-x-2'>
                         <button
-                          onClick={() => onView(inventory)}
+                          onClick={() => onView(item)}
                           className='text-gray-600 hover:text-gray-900'
                           title='View'
                         >
                           <EyeIcon className='w-5 h-5' />
                         </button>
                         <button
-                          onClick={() => onEdit(inventory)}
+                          onClick={() => onEdit(item)}
                           className='text-blue-600 hover:text-blue-900'
                           title='Edit'
                         >
                           <PencilSquareIcon className='w-5 h-5' />
                         </button>
                         <button
-                          onClick={() => handleDelete(inventory.id)}
+                          onClick={() => handleDelete(item.id)}
                           className='text-red-600 hover:text-red-900'
                           title='Delete'
                         >
@@ -189,4 +189,4 @@ const InventoryTable = ({
   );
 };
 
-export default InventoryTable;
+export default ItemTable;

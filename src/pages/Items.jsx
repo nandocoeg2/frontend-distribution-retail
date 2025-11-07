@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import useInventoriesPage from '../hooks/useInventoriesPage';
-import InventorySearch from '../components/inventories/InventorySearch';
-import InventoryTable from '../components/inventories/InventoryTable';
-import AddInventoryModal from '../components/inventories/AddInventoryModal';
-import EditInventoryModal from '../components/inventories/EditInventoryModal';
-import ViewInventoryModal from '../components/inventories/ViewInventoryModal';
+import useItemsPage from '../hooks/useItemsPage';
+import ItemSearch from '../components/items/ItemSearch';
+import ItemTable from '../components/items/ItemTable';
+import AddItemModal from '../components/items/AddItemModal';
+import EditItemModal from '../components/items/EditItemModal';
+import ViewItemModal from '../components/items/ViewItemModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { ConfirmationDialog } from '../components/ui';
 
-const Inventories = () => {
+const Items = () => {
   const {
-    inventories,
+    items,
     pagination,
     loading,
     error,
@@ -19,37 +19,37 @@ const Inventories = () => {
     handleSearchChange,
     handlePageChange,
     handleLimitChange,
-    deleteInventory,
-    fetchInventories
-  } = useInventoriesPage();
+    deleteItem,
+    fetchItems
+  } = useItemsPage();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedInventory, setSelectedInventory] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    fetchInventories(pagination.currentPage, pagination.itemsPerPage);
+    fetchItems(pagination.currentPage, pagination.itemsPerPage);
   };
 
-  const openEditModal = (inventory) => {
-    setSelectedInventory(inventory);
+  const openEditModal = (item) => {
+    setSelectedItem(item);
     setIsEditModalOpen(true);
   };
   const closeEditModal = () => {
-    setSelectedInventory(null);
+    setSelectedItem(null);
     setIsEditModalOpen(false);
-    fetchInventories(pagination.currentPage, pagination.itemsPerPage);
+    fetchItems(pagination.currentPage, pagination.itemsPerPage);
   };
 
-  const openViewModal = (inventory) => {
-    setSelectedInventory(inventory);
+  const openViewModal = (item) => {
+    setSelectedItem(item);
     setIsViewModalOpen(true);
   };
   const closeViewModal = () => {
-    setSelectedInventory(null);
+    setSelectedItem(null);
     setIsViewModalOpen(false);
   };
 
@@ -68,7 +68,7 @@ const Inventories = () => {
       <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
         <p className='text-red-800'>Error: {error}</p>
         <button
-          onClick={() => fetchInventories()}
+          onClick={() => fetchItems()}
           className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
         >
           Retry
@@ -82,44 +82,44 @@ const Inventories = () => {
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Inventories</h1>
+            <h1 className="text-2xl font-bold">Items</h1>
             <button
               onClick={openAddModal}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Inventory
+              Add Item
             </button>
           </div>
-          <InventorySearch
+          <ItemSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
             searchLoading={searchLoading}
           />
-          <InventoryTable
-            inventories={inventories}
+          <ItemTable
+            items={items}
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
             onEdit={openEditModal}
-            onDelete={deleteInventory}
+            onDelete={deleteItem}
             onView={openViewModal}
             loading={loading || searchLoading}
           />
         </div>
       </div>
 
-      {isAddModalOpen && <AddInventoryModal onClose={closeAddModal} />}
-      {isEditModalOpen && selectedInventory && (
-        <EditInventoryModal
-          inventory={selectedInventory}
+      {isAddModalOpen && <AddItemModal onClose={closeAddModal} />}
+      {isEditModalOpen && selectedItem && (
+        <EditItemModal
+          item={selectedItem}
           onClose={closeEditModal}
         />
       )}
-      {isViewModalOpen && selectedInventory && (
-        <ViewInventoryModal
+      {isViewModalOpen && selectedItem && (
+        <ViewItemModal
           show={isViewModalOpen}
-          inventory={selectedInventory}
+          item={selectedItem}
           onClose={closeViewModal}
         />
       )}
@@ -140,4 +140,4 @@ const Inventories = () => {
   );
 };
 
-export default Inventories;
+export default Items;

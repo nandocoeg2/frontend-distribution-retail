@@ -58,11 +58,11 @@ const scheduledPriceService = {
     return get(`/item-price-schedules/item-price/${itemPriceId}`);
   },
 
-  // Get effective price for a specific date and inventory
-  getEffectivePrice: (inventoryId, date) => {
+  // Get effective price for a specific date and item
+  getEffectivePrice: (itemId, date) => {
     const dateStr = date instanceof Date ? date.toISOString() : date;
     return get('/item-price-schedules/effective-price', {
-      inventoryId,
+      itemId,
       date: dateStr
     });
   }

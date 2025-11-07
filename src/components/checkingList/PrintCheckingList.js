@@ -143,7 +143,7 @@ const getDimension = (item, suratJalan, detail) => {
     for (const box of packing.packingBoxes) {
       const packingItem = box.packingBoxItems?.find(
         (pi) =>
-          pi?.inventoryId === item?.inventoryId ||
+          pi?.itemId === item?.itemId ||
           pi?.nama_barang === item?.nama_barang
       );
       if (packingItem) {

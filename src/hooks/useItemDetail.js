@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
-import { getInventoryById, deleteInventory } from '../services/inventoryService';
+import { getItemById, deleteItem } from '../services/itemService';
 
-const useInventoryDetail = (inventoryId) => {
-  const [inventory, setInventory] = useState(null);
+const useItemDetail = (itemId) => {
+  const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -16,7 +16,7 @@ const useInventoryDetail = (inventoryId) => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
-  const normalizeInventory = (detail = {}) => {
+  const normalizeItem = (detail = {}) => {
     const dimensiValue = (() => {
       if (
         detail.dimensiBarang &&
@@ -85,46 +85,46 @@ const useInventoryDetail = (inventoryId) => {
     };
   };
 
-  const loadInventory = useCallback(async () => {
-    if (!inventoryId) return;
+  const loadItem = useCallback(async () => {
+    if (!itemId) return;
 
     try {
       setLoading(true);
       setError(null);
-      const response = await getInventoryById(inventoryId);
+      const response = await getItemById(itemId);
       
       if (response.success) {
-        const detail = normalizeInventory(response.data || {});
-        setInventory(detail);
+        const detail = normalizeItem(response.data || {});
+        setItem(detail);
       } else {
-        throw new Error(response.error?.message || 'Failed to load inventory');
+        throw new Error(response.error?.message || 'Failed to load item');
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to load inventory');
+        toastService.error(err.message || 'Failed to load item');
       }
     } finally {
       setLoading(false);
     }
-  }, [inventoryId, handleAuthError]);
+  }, [itemId, handleAuthError]);
 
   const handleDelete = async () => {
-    if (!inventoryId) return;
+    if (!itemId) return;
 
     try {
       setDeleteLoading(true);
-      await deleteInventory(inventoryId);
-      toastService.success('Inventory item deleted successfully');
+      await deleteItem(itemId);
+      toastService.success('Item deleted successfully');
       return true;
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
         setError(err.message);
-        toastService.error(err.message || 'Failed to delete inventory');
+        toastService.error(err.message || 'Failed to delete item');
       }
       return false;
     } finally {
@@ -132,25 +132,25 @@ const useInventoryDetail = (inventoryId) => {
     }
   };
 
-  const refreshInventory = useCallback(() => {
-    loadInventory();
-  }, [loadInventory]);
+  const refreshItem = useCallback(() => {
+    loadItem();
+  }, [loadItem]);
 
   useEffect(() => {
-    loadInventory();
-  }, [loadInventory]);
+    loadItem();
+  }, [loadItem]);
 
   return {
-    inventory,
-    setInventory,
+    item,
+    setItem,
     loading,
     error,
     setError,
     deleteLoading,
     handleDelete,
-    refreshInventory,
-    loadInventory
+    refreshItem,
+    loadItem
   };
 };
 
-export default useInventoryDetail;
+export default useItemDetail;

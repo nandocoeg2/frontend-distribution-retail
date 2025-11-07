@@ -26,12 +26,12 @@ export const getFinancialReporting = (filters = {}) => {
   return get(FINANCIAL_ENDPOINT, buildParams(filters));
 };
 
-export const getInventoryReporting = () => {
+export const getItemReporting = () => {
   return get(INVENTORY_ENDPOINT);
 };
 
 export default {
   getOperationalReporting,
   getFinancialReporting,
-  getInventoryReporting,
+  getItemReporting,
 };

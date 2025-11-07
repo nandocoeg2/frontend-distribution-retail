@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import usePaginatedSearch from './usePaginatedSearch';
-import { searchInventories } from '../services/inventoryService';
+import { searchItems } from '../services/itemService';
 
 const INITIAL_PAGINATION = {
   currentPage: 1,
@@ -9,9 +9,9 @@ const INITIAL_PAGINATION = {
   itemsPerPage: 10
 };
 
-const parseInventoryResponse = (response) => {
+const parseItemResponse = (response) => {
   if (!response?.success) {
-    throw new Error(response?.error?.message || 'Failed to search inventories');
+    throw new Error(response?.error?.message || 'Failed to search items');
   }
 
   return {
@@ -20,11 +20,11 @@ const parseInventoryResponse = (response) => {
   };
 };
 
-const resolveInventoryError = (error) => {
-  return error?.response?.data?.error?.message || error?.message || 'Failed to search inventories';
+const resolveItemError = (error) => {
+  return error?.response?.data?.error?.message || error?.message || 'Failed to search items';
 };
 
-const useInventorySearch = () => {
+const useItemSearch = () => {
   const {
     input: searchQuery,
     setInput: setSearchQuery,
@@ -45,9 +45,9 @@ const useInventorySearch = () => {
   } = usePaginatedSearch({
     initialInput: '',
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => searchInventories(query, page, limit),
-    parseResponse: parseInventoryResponse,
-    resolveErrorMessage: resolveInventoryError,
+    searchFn: (query, page, limit) => searchItems(query, page, limit),
+    parseResponse: parseItemResponse,
+    resolveErrorMessage: resolveItemError,
     requireInput: true
   });
 
@@ -80,4 +80,4 @@ const useInventorySearch = () => {
   };
 };
 
-export default useInventorySearch;
+export default useItemSearch;

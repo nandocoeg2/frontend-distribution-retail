@@ -1,6 +1,6 @@
 import authService from './authService';
 
-const API_URL = 'http://localhost:5050/api/v1/inventories';
+const API_URL = 'http://localhost:5050/api/v1/items';
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
   if (!errorData) {
@@ -55,66 +55,66 @@ const getHeaders = () => {
   };
 };
 
-export const getInventories = async (page = 1, limit = 10) => {
+export const getItems = async (page = 1, limit = 10) => {
   const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
     headers: getHeaders()
   });
   if (!response.ok) {
-    const errorMessage = await parseErrorMessage(response, 'Failed to fetch inventories');
+    const errorMessage = await parseErrorMessage(response, 'Failed to fetch items');
     throw new Error(errorMessage);
   }
   return response.json();
 };
 
-export const getInventoryById = async (id) => {
+export const getItemById = async (id) => {
   const response = await fetch(`${API_URL}/${id}`, {
     headers: getHeaders()
   });
   if (!response.ok) {
-    const errorMessage = await parseErrorMessage(response, 'Failed to fetch inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to fetch item');
     throw new Error(errorMessage);
   }
   return response.json();
 };
 
-export const searchInventories = async (query, page = 1, limit = 10) => {
+export const searchItems = async (query, page = 1, limit = 10) => {
   const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
     headers: getHeaders()
   });
   if (!response.ok) {
-    const errorMessage = await parseErrorMessage(response, 'Failed to search inventories');
+    const errorMessage = await parseErrorMessage(response, 'Failed to search items');
     throw new Error(errorMessage);
   }
   return response.json();
 };
 
-export const createInventory = async (inventoryData) => {
+export const createItem = async (itemData) => {
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify(inventoryData)
+    body: JSON.stringify(itemData)
   });
   if (!response.ok) {
-    const errorMessage = await parseErrorMessage(response, 'Failed to create inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to create item');
     throw new Error(errorMessage);
   }
   return response.json();
 };
 
-export const updateInventory = async (id, inventoryData) => {
+export const updateItem = async (id, itemData) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
     headers: getHeaders(),
-    body: JSON.stringify(inventoryData)
+    body: JSON.stringify(itemData)
   });
   if (!response.ok) {
-    const errorMessage = await parseErrorMessage(response, 'Failed to update inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to update item');
     throw new Error(errorMessage);
   }
   return response.json();
 };
 
-export const deleteInventory = async (id) => {
+export const deleteItem = async (id) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: 'DELETE',
     headers: getHeaders()
@@ -125,7 +125,7 @@ export const deleteInventory = async (id) => {
   }
 
   if (!response.ok) {
-    const errorMessage = await parseErrorMessage(response, 'Failed to delete inventory');
+    const errorMessage = await parseErrorMessage(response, 'Failed to delete item');
     throw new Error(errorMessage);
   }
 
@@ -150,7 +150,7 @@ export const downloadBulkTemplate = async () => {
 
   // Get filename from Content-Disposition header or use default
   const contentDisposition = response.headers.get('Content-Disposition');
-  let filename = 'Inventory_Template.xlsx';
+  let filename = 'Item_Template.xlsx';
   
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
@@ -174,7 +174,7 @@ export const downloadBulkTemplate = async () => {
   return { success: true, filename };
 };
 
-export const uploadBulkInventory = async (file) => {
+export const uploadBulkItem = async (file) => {
   const token = authService.getToken();
   const formData = new FormData();
   formData.append('file', file);

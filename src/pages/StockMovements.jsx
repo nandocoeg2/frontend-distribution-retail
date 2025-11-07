@@ -10,7 +10,7 @@ import { Spinner } from '../components/ui/Loading.jsx';
 import { useConfirmationDialog } from '../components/ui';
 import CreateStockInModal from '../components/stockMovements/CreateStockInModal.jsx';
 import CreateReturnModal from '../components/stockMovements/CreateReturnModal.jsx';
-import { getInventories } from '../services/inventoryService';
+import { getItems } from '../services/itemService';
 import supplierService from '../services/supplierService';
 import toastService from '../services/toastService';
 
@@ -34,7 +34,7 @@ const StockMovements = () => {
 
   const [showStockInModal, setShowStockInModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
-  const [inventoryOptions, setInventoryOptions] = useState([]);
+  const [itemOptions, setItemOptions] = useState([]);
   const [supplierOptions, setSupplierOptions] = useState([]);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [classifyLoadingId, setClassifyLoadingId] = useState(null);
@@ -51,36 +51,35 @@ const StockMovements = () => {
   const loadReferenceData = useCallback(async () => {
     setOptionsLoading(true);
     try {
-      const [inventoryResult, supplierResult] = await Promise.allSettled([
-        getInventories(1, 100),
+      const [itemResult, supplierResult] = await Promise.allSettled([
+        getItems(1, 100),
         supplierService.getAllSuppliers(1, 100),
       ]);
 
-      if (inventoryResult.status === 'fulfilled') {
-        const payload = inventoryResult.value;
+      if (itemResult.status === 'fulfilled') {
+        const payload = itemResult.value;
         if (payload?.success === false) {
           toastService.error(
-            payload?.message || 'Gagal memuat daftar inventory.'
+            payload?.message || 'Gagal memuat daftar item.'
           );
         } else {
-          const rawInventories =
+          const rawItems =
             payload?.data?.data ||
             payload?.data?.items ||
             payload?.data ||
             payload?.items ||
             payload?.inventories ||
             [];
-          const inventoriesArray = Array.isArray(rawInventories)
-            ? rawInventories
-            : Array.isArray(rawInventories?.data)
-            ? rawInventories.data
+          const itemsArray = Array.isArray(rawItems)
+            ? rawItems
+            : Array.isArray(rawItems?.data)
+            ? rawItems.data
             : [];
-          setInventoryOptions(inventoriesArray);
+          setItemOptions(itemsArray);
         }
       } else {
         toastService.error(
-          inventoryResult.reason?.message ||
-            'Gagal memuat daftar inventory.'
+          itemResult.reason?.message || 'Gagal memuat daftar item.'
         );
       }
 
@@ -144,8 +143,8 @@ const StockMovements = () => {
       const actionLabel = action === 'restock' ? 'Restock' : 'Reject';
       const message =
         action === 'restock'
-          ? `Return ${movement.movementNumber || movement.id} akan diklasifikasikan sebagai restock. Stok inventory akan bertambah.`
-          : `Return ${movement.movementNumber || movement.id} akan ditolak. Stok inventory tidak berubah.`;
+          ? `Return ${movement.movementNumber || movement.id} akan diklasifikasikan sebagai restock. Stok item akan bertambah.`
+          : `Return ${movement.movementNumber || movement.id} akan ditolak. Stok item tidak berubah.`;
 
       showDialog({
         title: 'Konfirmasi Klasifikasi Return',
@@ -259,7 +258,7 @@ const StockMovements = () => {
         show={showStockInModal}
         onClose={() => setShowStockInModal(false)}
         onSubmit={createStockInMovement}
-        inventories={inventoryOptions}
+        itemOptions={itemOptions}
         suppliers={supplierOptions}
         optionsLoading={optionsLoading}
       />
@@ -268,7 +267,7 @@ const StockMovements = () => {
         show={showReturnModal}
         onClose={() => setShowReturnModal(false)}
         onSubmit={createReturnMovement}
-        inventories={inventoryOptions}
+        itemOptions={itemOptions}
         optionsLoading={optionsLoading}
       />
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import useStatuses from './useStatuses';
-import useInventories from './useInventories';
+import useItemsLookup from './useItemsLookup';
 
 const usePackingForm = (initialData = null) => {
   const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ const usePackingForm = (initialData = null) => {
     loading: statusLoading,
     fetchPackingStatuses,
   } = useStatuses();
-  const { inventories, loading: inventoryLoading } = useInventories();
+  const { items, loading: itemsLoading } = useItemsLookup();
 
   // Load packing statuses on mount
   useEffect(() => {
@@ -67,7 +67,7 @@ const usePackingForm = (initialData = null) => {
             {
               nama_barang: '',
               quantity: '',
-              inventoryId: '',
+              itemId: '',
               keterangan: '',
             },
           ],
@@ -97,7 +97,7 @@ const usePackingForm = (initialData = null) => {
                 {
                   nama_barang: '',
                   quantity: '',
-                  inventoryId: '',
+                  itemId: '',
                   keterangan: '',
                 },
               ],
@@ -189,10 +189,10 @@ const usePackingForm = (initialData = null) => {
                 `packingBoxes.${boxIndex}.items.${itemIndex}.quantity`
               ] = 'Quantity harus lebih dari 0';
             }
-            if (!item.inventoryId) {
+            if (!item.itemId) {
               newErrors[
-                `packingBoxes.${boxIndex}.items.${itemIndex}.inventoryId`
-              ] = 'Inventory harus dipilih';
+                `packingBoxes.${boxIndex}.items.${itemIndex}.itemId`
+              ] = 'Item harus dipilih';
             }
           });
         }
@@ -233,9 +233,9 @@ const usePackingForm = (initialData = null) => {
     isSubmitting,
     setIsSubmitting,
     packingStatuses,
-    inventories,
+    items,
     statusLoading,
-    inventoryLoading,
+    itemsLoading,
     handleInputChange,
     addPackingBox,
     updatePackingBox,

@@ -11,9 +11,9 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     isSubmitting,
     setIsSubmitting,
     packingStatuses,
-    inventories,
+    items,
     statusLoading,
-    inventoryLoading,
+    itemsLoading,
     handleInputChange,
     addPackingBox,
     updatePackingBox,
@@ -77,7 +77,7 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
   const isLoading =
     statusLoading ||
     purchaseOrderLoading ||
-    inventoryLoading ||
+    itemsLoading ||
     isSubmitting ||
     isCreating ||
     isUpdating;
@@ -337,35 +337,35 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
                           />
                         </div>
 
-                        {/* Inventory */}
+                        {/* Item */}
                         <div>
                           <label className='block text-xs font-medium text-gray-700 mb-1'>
-                            Inventory *
+                            Item *
                           </label>
                           <select
-                            value={item.inventoryId}
+                            value={item.itemId}
                             onChange={(e) =>
                               updateBoxItem(
                                 boxIndex,
                                 itemIndex,
-                                'inventoryId',
+                                'itemId',
                                 e.target.value
                               )
                             }
                             className={`w-full px-2 py-1 text-sm border rounded ${
                               errors[
-                                `packingBoxes.${boxIndex}.items.${itemIndex}.inventoryId`
+                                `packingBoxes.${boxIndex}.items.${itemIndex}.itemId`
                               ]
                                 ? 'border-red-500'
                                 : 'border-gray-300'
                             }`}
                             disabled={isLoading}
                           >
-                            <option value=''>Pilih Inventory</option>
-                            {Array.isArray(inventories) &&
-                              inventories.map((inv) => (
+                            <option value=''>Pilih Item</option>
+                            {Array.isArray(items) &&
+                              items.map((inv) => (
                                 <option key={inv.id} value={inv.id}>
-                                  {inv.product_name}
+                                  {inv.nama_barang || inv.product_name || inv.name || inv.plu}
                                 </option>
                               ))}
                           </select>

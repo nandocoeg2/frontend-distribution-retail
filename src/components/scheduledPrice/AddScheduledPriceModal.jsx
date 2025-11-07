@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
-import { searchInventories } from '../../services/inventoryService';
+import { searchItems } from '../../services/itemService';
 import Autocomplete from '../common/Autocomplete';
 
 const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
@@ -9,7 +9,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   
   const [formData, setFormData] = useState({
     itemPriceId: '',
-    inventoryId: '',
+    itemId: '',
     effectiveDate: '',
     harga: '',
     pot1: '',
@@ -21,9 +21,9 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   });
 
   const [errors, setErrors] = useState({});
-  const [inventoryOptions, setInventoryOptions] = useState([]);
-  const [searchingInventory, setSearchingInventory] = useState(false);
-  const [selectedInventory, setSelectedInventory] = useState(null);
+  const [itemOptions, setItemOptions] = useState([]);
+  const [searchingItem, setSearchingItem] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   // Auto-calculate harga1 (after pot1)
   useEffect(() => {
@@ -49,53 +49,53 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
     }
   }, [formData.harga1, formData.pot2]);
 
-  const handleSearchInventory = async (query) => {
+  const handleSearchItem = async (query) => {
     if (query.length >= 2) {
-      setSearchingInventory(true);
+      setSearchingItem(true);
       try {
-        const response = await searchInventories(query, 1, 10);
+        const response = await searchItems(query, 1, 10);
         // Handle nested data structure: response.data.data
-        const inventories = response.data?.data || response.data || [];
+        const items = response.data?.data || response.data || [];
         
         // Transform to include display format
-        const formattedInventories = inventories.map(inv => ({
-          ...inv,
-          displayName: `${inv.plu} - ${inv.nama_barang}`,
-          currentPrice: inv.itemPrice?.harga
+        const formattedItems = items.map(item => ({
+          ...item,
+          displayName: `${item.plu} - ${item.nama_barang}`,
+          currentPrice: item.itemPrice?.harga
         }));
         
-        setInventoryOptions(formattedInventories);
+        setItemOptions(formattedItems);
       } catch (error) {
         console.error('Search error:', error);
-        setInventoryOptions([]);
+        setItemOptions([]);
       } finally {
-        setSearchingInventory(false);
+        setSearchingItem(false);
       }
     } else {
-      setInventoryOptions([]);
+      setItemOptions([]);
     }
   };
 
-  const handleInventoryChange = (e) => {
-    const inventoryId = e.target.value;
-    setFormData(prev => ({ ...prev, inventoryId }));
+  const handleItemChange = (e) => {
+    const itemId = e.target.value;
+    setFormData(prev => ({ ...prev, itemId }));
     
-    if (inventoryId) {
-      const inventory = inventoryOptions.find(inv => inv.id === inventoryId);
-      if (inventory) {
-        setSelectedInventory(inventory);
+    if (itemId) {
+      const item = itemOptions.find(itm => itm.id === itemId);
+      if (item) {
+        setSelectedItem(item);
         
-        // Set itemPriceId from inventory
-        if (inventory.itemPrice && inventory.itemPrice.id) {
+        // Set itemPriceId from item
+        if (item.itemPrice && item.itemPrice.id) {
           setFormData(prev => ({
             ...prev,
-            itemPriceId: inventory.itemPrice.id,
-            inventoryId: inventory.id
+            itemPriceId: item.itemPrice.id,
+            itemId: item.id
           }));
         }
       }
     } else {
-      setSelectedInventory(null);
+      setSelectedItem(null);
       setFormData(prev => ({ ...prev, itemPriceId: '' }));
     }
     
@@ -167,22 +167,22 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
               <Autocomplete
                 label="Item / Product"
                 placeholder="Search by PLU or item name..."
-                value={formData.inventoryId}
-                onChange={handleInventoryChange}
-                options={inventoryOptions}
+                value={formData.itemId}
+                onChange={handleItemChange}
+                options={itemOptions}
                 displayKey="displayName"
                 valueKey="id"
-                onSearch={handleSearchInventory}
-                loading={searchingInventory}
+                onSearch={handleSearchItem}
+                loading={searchingItem}
                 required={true}
-                name="inventoryId"
+                name="itemId"
               />
               {errors.itemPriceId && (
                 <p className="text-sm text-red-600 mt-1">{errors.itemPriceId}</p>
               )}
-              {selectedInventory && selectedInventory.itemPrice && (
+              {selectedItem && selectedItem.itemPrice && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Current Price: Rp {selectedInventory.itemPrice.harga?.toLocaleString('id-ID')}
+                  Current Price: Rp {selectedItem.itemPrice.harga?.toLocaleString('id-ID')}
                 </p>
               )}
             </div>

@@ -3,7 +3,7 @@ import { createReturn } from '@/services/returnsService';
 import toastService from '@/services/toastService';
 
 const DEFAULT_FORM = {
-  inventoryId: '',
+  itemId: '',
   quantity: '',
   reason: '',
 };
@@ -17,8 +17,8 @@ const useReturnForm = ({ onSuccess } = {}) => {
     const nextErrors = {};
     const quantityValue = Number(formData.quantity);
 
-    if (!formData.inventoryId) {
-      nextErrors.inventoryId = 'Produk wajib dipilih.';
+    if (!formData.itemId) {
+      nextErrors.itemId = 'Produk wajib dipilih.';
     }
 
     if (!formData.quantity || Number.isNaN(quantityValue) || quantityValue <= 0) {
@@ -60,7 +60,7 @@ const useReturnForm = ({ onSuccess } = {}) => {
 
     try {
       const payload = {
-        inventoryId: formData.inventoryId,
+        itemId: formData.itemId,
         quantity: Number(formData.quantity),
         reason: formData.reason.trim(),
       };
