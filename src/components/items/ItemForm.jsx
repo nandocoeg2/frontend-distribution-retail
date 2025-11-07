@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import FormField from '../common/FormField';
 import FormSection from '../common/FormSection';
+import { MultiSelect } from '../ui';
+import { getMixableItems } from '../../services/itemService';
 
 const DEFAULT_FORM_STATE = {
   plu: '',
@@ -8,6 +10,7 @@ const DEFAULT_FORM_STATE = {
   eanBarcode: '',
   uom: 'KARTON',
   allow_mixed_carton: true,
+  mixedWithItemIds: [],
   berat: '0',
   panjang: '0',
   lebar: '0',
@@ -134,14 +137,46 @@ const parseDecimal = (value, fallback = 0) => {
 
 const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
   const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
+  const [mixableItems, setMixableItems] = useState([]);
+  const [loadingMixableItems, setLoadingMixableItems] = useState(false);
 
   const memoizedInitialData = useMemo(() => initialData, [initialData]);
+
+  // Load mixable items when allow_mixed_carton is true
+  useEffect(() => {
+    const loadMixableItems = async () => {
+      if (!formData.allow_mixed_carton) {
+        setMixableItems([]);
+        return;
+      }
+
+      setLoadingMixableItems(true);
+      try {
+        const response = await getMixableItems();
+        const items = response.data || [];
+        // Filter out current item if editing
+        const filtered = items.filter(item => item.id !== memoizedInitialData?.id);
+        setMixableItems(filtered);
+      } catch (error) {
+        console.error('Failed to load mixable items:', error);
+      } finally {
+        setLoadingMixableItems(false);
+      }
+    };
+
+    loadMixableItems();
+  }, [formData.allow_mixed_carton, memoizedInitialData?.id]);
 
   useEffect(() => {
     if (!memoizedInitialData || Object.keys(memoizedInitialData).length === 0) {
       setFormData({ ...DEFAULT_FORM_STATE });
       return;
     }
+
+    // Extract mixedWithItemIds from relationships
+    const mixedWithItemIds = memoizedInitialData.mixedWithItems?.map(
+      rel => rel.mixedWithItemId
+    ) || [];
 
     setFormData({
       plu: memoizedInitialData.plu || '',
@@ -151,6 +186,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
       allow_mixed_carton: Boolean(
         memoizedInitialData.allow_mixed_carton ?? true
       ),
+      mixedWithItemIds,
       berat: getDimensionValue(memoizedInitialData, 'berat'),
       panjang: getDimensionValue(memoizedInitialData, 'panjang'),
       lebar: getDimensionValue(memoizedInitialData, 'lebar'),
@@ -176,6 +212,18 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    // Clear mixedWithItemIds when allow_mixed_carton is disabled
+    if (name === 'allow_mixed_carton' && !checked) {
+      setFormData(prev => ({ ...prev, mixedWithItemIds: [] }));
+    }
+  };
+
+  const handleMixedItemsChange = (selectedIds) => {
+    setFormData(prev => ({
+      ...prev,
+      mixedWithItemIds: selectedIds
     }));
   };
 
@@ -231,6 +279,11 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
       harga2: parseDecimal(formData.harga2),
       ppn: parseDecimal(formData.ppn)
     };
+
+    // Add mixed carton relationships if allowed
+    if (formData.allow_mixed_carton && formData.mixedWithItemIds.length > 0) {
+      dataToSubmit.mixedWithItemIds = formData.mixedWithItemIds;
+    }
 
     onSubmit(dataToSubmit);
   };
@@ -299,6 +352,42 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
             </p>
           </div>
         </div>
+        
+        {/* Mixed Carton Relationships */}
+        {formData.allow_mixed_carton && (
+          <div className="mt-4">
+            <MultiSelect
+              label="Item yang Boleh Dicampur"
+              options={mixableItems.map(item => ({
+                value: item.id,
+                label: `${item.plu} - ${item.nama_barang}`
+              }))}
+              value={formData.mixedWithItemIds}
+              onChange={handleMixedItemsChange}
+              placeholder="Pilih item yang boleh dicampur dengan item ini..."
+              loading={loadingMixableItems}
+              disabled={loading}
+              helperText="Pilih item mana saja yang boleh dicampur dalam satu karton dengan item ini. Hanya item dengan 'Allow Mixed Carton' yang ditampilkan."
+            />
+            
+            {/* Display current relationships if editing */}
+            {memoizedInitialData?.mixedWithItems && memoizedInitialData.mixedWithItems.length > 0 && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs font-medium text-blue-900 mb-1">Relasi Saat Ini:</p>
+                <ul className="text-xs text-blue-800 space-y-1">
+                  {memoizedInitialData.mixedWithItems.map(rel => (
+                    <li key={rel.id} className="flex items-center">
+                      <svg className="h-3 w-3 mr-1 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      {rel.mixedWithItem?.plu} - {rel.mixedWithItem?.nama_barang}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </FormSection>
 
       <FormSection

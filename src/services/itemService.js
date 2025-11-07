@@ -55,8 +55,20 @@ const getHeaders = () => {
   };
 };
 
-export const getItems = async (page = 1, limit = 10) => {
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+export const getItems = async (page = 1, limit = 10, filters = {}) => {
+  // Build query params, only include filters if they have values
+  const params = new URLSearchParams();
+  params.append('page', page);
+  params.append('limit', limit);
+  
+  // Add filters only if they exist and have values
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, value);
+    }
+  });
+  
+  const response = await fetch(`${API_URL}?${params}`, {
     headers: getHeaders()
   });
   if (!response.ok) {
@@ -64,6 +76,66 @@ export const getItems = async (page = 1, limit = 10) => {
     throw new Error(errorMessage);
   }
   return response.json();
+};
+
+// Get items that allow mixed carton for relationship configuration
+// Note: Backend limits max 100 items per request
+// If you have more than 100 mixable items, this will fetch multiple pages
+export const getMixableItems = async () => {
+  try {
+    // First, get first page to check total
+    const firstPage = await getItems(1, 100, { allow_mixed_carton: true });
+    
+    // Handle different response structures
+    let allItems = [];
+    let totalItems = 0;
+    
+    if (firstPage?.data?.data && Array.isArray(firstPage.data.data)) {
+      // Paginated response: {success, data: {data: [...], pagination: {...}}}
+      allItems = firstPage.data.data;
+      totalItems = firstPage.data.pagination?.total || allItems.length;
+    } else if (firstPage?.data && Array.isArray(firstPage.data)) {
+      // Response: {success, data: [...]}
+      allItems = firstPage.data;
+      totalItems = allItems.length;
+    } else if (Array.isArray(firstPage)) {
+      // Direct array response
+      allItems = firstPage;
+      totalItems = allItems.length;
+    }
+    
+    // If there are more items, fetch remaining pages
+    if (totalItems > 100) {
+      const totalPages = Math.ceil(totalItems / 100);
+      const remainingPages = [];
+      
+      for (let page = 2; page <= totalPages; page++) {
+        remainingPages.push(getItems(page, 100, { allow_mixed_carton: true }));
+      }
+      
+      const results = await Promise.all(remainingPages);
+      
+      // Combine all results
+      results.forEach(result => {
+        if (result?.data?.data && Array.isArray(result.data.data)) {
+          allItems = allItems.concat(result.data.data);
+        } else if (result?.data && Array.isArray(result.data)) {
+          allItems = allItems.concat(result.data);
+        } else if (Array.isArray(result)) {
+          allItems = allItems.concat(result);
+        }
+      });
+    }
+    
+    // Return in consistent format
+    return {
+      success: true,
+      data: allItems
+    };
+  } catch (error) {
+    console.error('Failed to fetch mixable items:', error);
+    throw error;
+  }
 };
 
 export const getItemById = async (id) => {

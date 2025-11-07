@@ -70,3 +70,9 @@ export {
 
 // Table Components
 export { default as InfoTable } from './InfoTable';
+
+// MultiSelect Component
+export { default as MultiSelect } from './MultiSelect';
+
+// MixedBadge Component
+export { default as MixedBadge } from './MixedBadge';

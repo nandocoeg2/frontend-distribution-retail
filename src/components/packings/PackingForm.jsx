@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Autocomplete from '../common/Autocomplete';
 import usePackingForm from '../../hooks/usePackingForm';
 import usePackingOperations from '../../hooks/usePackingOperations';
 import usePurchaseOrderAutocomplete from '../../hooks/usePurchaseOrderAutocomplete';
+import useMixedCartonValidation from '../../hooks/useMixedCartonValidation';
+import { MixedBadge } from '../ui';
 
 const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
   const {
@@ -35,6 +37,28 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
   } = usePurchaseOrderAutocomplete({
     selectedValue: formData.purchaseOrderId,
   });
+  
+  const {
+    loadItemsRelationships,
+    canAddItemToBox,
+    getCompatibleItems,
+    getMixingInfo,
+    loading: relationshipsLoading
+  } = useMixedCartonValidation();
+
+  // Load relationships when items are available (non-blocking)
+  useEffect(() => {
+    if (items && items.length > 0) {
+      const itemIds = items.map(item => item.id).filter(Boolean);
+      if (itemIds.length > 0) {
+        // Load relationships asynchronously without blocking
+        loadItemsRelationships(itemIds).catch(err => {
+          console.warn('Failed to preload item relationships:', err);
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items?.length]); // Only re-run when items length changes
 
   const handlePurchaseOrderChange = (eventOrValue) => {
     const value = eventOrValue?.target
@@ -74,6 +98,7 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     onCancel?.();
   };
 
+  // Don't include relationshipsLoading in main isLoading to prevent blocking the entire form
   const isLoading =
     statusLoading ||
     purchaseOrderLoading ||
@@ -205,9 +230,20 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
               className='p-6 border-2 border-gray-300 rounded-lg bg-gray-50'
             >
               <div className='flex justify-between items-center mb-4'>
-                <h4 className='font-semibold text-gray-900'>
-                  Box {boxIndex + 1}
-                </h4>
+                <div className='flex items-center gap-2'>
+                  <h4 className='font-semibold text-gray-900'>
+                    Box {boxIndex + 1}
+                  </h4>
+                  {/* Show MIXED badge if box has multiple different items */}
+                  {(() => {
+                    const uniqueItemIds = new Set(
+                      box.packingBoxItems
+                        .map(item => item.itemId)
+                        .filter(Boolean)
+                    );
+                    return uniqueItemIds.size > 1 ? <MixedBadge /> : null;
+                  })()}
+                </div>
                 <button
                   type='button'
                   onClick={() => removePackingBox(boxIndex)}
@@ -360,15 +396,58 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
                                 : 'border-gray-300'
                             }`}
                             disabled={isLoading}
+                            title={relationshipsLoading ? 'Loading item relationships...' : ''}
                           >
                             <option value=''>Pilih Item</option>
                             {Array.isArray(items) &&
-                              items.map((inv) => (
-                                <option key={inv.id} value={inv.id}>
-                                  {inv.nama_barang || inv.product_name || inv.name || inv.plu}
-                                </option>
-                              ))}
+                              items.map((inv) => {
+                                // Get existing item IDs in this box (excluding current item)
+                                const boxItemIds = box.packingBoxItems
+                                  .filter((_, idx) => idx !== itemIndex)
+                                  .map(bi => bi.itemId)
+                                  .filter(Boolean);
+                                
+                                const { canAdd, reason } = canAddItemToBox(inv.id, boxItemIds);
+                                const mixingInfo = getMixingInfo(inv.id);
+                                
+                                return (
+                                  <option 
+                                    key={inv.id} 
+                                    value={inv.id}
+                                    disabled={!canAdd}
+                                    title={!canAdd ? reason : (mixingInfo?.allowMixed ? 'Dapat dicampur' : 'Tidak dapat dicampur')}
+                                  >
+                                    {inv.nama_barang || inv.product_name || inv.name || inv.plu}
+                                    {!canAdd ? ' (tidak kompatibel)' : ''}
+                                  </option>
+                                );
+                              })}
                           </select>
+                          
+                          {/* Show mixing info for selected item */}
+                          {item.itemId && (() => {
+                            const mixingInfo = getMixingInfo(item.itemId);
+                            const boxItemIds = box.packingBoxItems
+                              .map(bi => bi.itemId)
+                              .filter(Boolean);
+                            
+                            if (boxItemIds.length > 1 && mixingInfo) {
+                              return (
+                                <div className='mt-1 text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-200'>
+                                  {mixingInfo.allowMixed ? (
+                                    <span className='text-blue-700'>
+                                      ✓ Dapat dicampur dengan {mixingInfo.mixedWithItemIds.length} item lain
+                                    </span>
+                                  ) : (
+                                    <span className='text-orange-700'>
+                                      ⚠ Tidak mengizinkan mixed carton
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
 
                         {/* Quantity */}

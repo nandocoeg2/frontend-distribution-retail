@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { StatusBadge } from '../ui';
+import React from 'react';
+import { StatusBadge, MixedBadge } from '../ui';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const PackingItemsTable = ({ packingBoxes, onItemClick }) => {
@@ -31,6 +31,15 @@ const PackingItemsTable = ({ packingBoxes, onItemClick }) => {
                   size='sm'
                   dot
                 />
+                {/* Show MIXED badge if box has multiple different items */}
+                {(() => {
+                  const uniqueItemIds = new Set(
+                    box.packingBoxItems
+                      ?.map(item => item.itemId)
+                      .filter(Boolean) || []
+                  );
+                  return uniqueItemIds.size > 1 ? <MixedBadge /> : null;
+                })()}
               </div>
               <div className='text-xs text-gray-600'>
                 Total Qty:{' '}

@@ -16,9 +16,12 @@ const usePackingForm = (initialData = null) => {
   // Load dependencies
   const {
     packingStatuses,
-    loading: statusLoading,
+    loading: statusLoadingObj,
     fetchPackingStatuses,
   } = useStatuses();
+  
+  // Extract specific loading state for packing (statusLoadingObj is an object)
+  const statusLoading = statusLoadingObj?.packing || false;
   const { items, loading: itemsLoading } = useItemsLookup();
 
   // Load packing statuses on mount
