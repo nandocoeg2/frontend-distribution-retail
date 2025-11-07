@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 
 import {
   HashRouter as Router,
@@ -62,6 +62,7 @@ import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import CheckingList from './pages/CheckingList.jsx';
 import StockMovements from './pages/StockMovements.jsx';
+import ScheduledPrice from './pages/ScheduledPrice.jsx';
 
 // Component untuk routes yang menggunakan useAuth
 const AppRoutes = () => {
@@ -265,6 +266,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <StockMovements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/scheduled-price'
+        element={
+          <ProtectedRoute>
+            <ScheduledPrice />
           </ProtectedRoute>
         }
       />
