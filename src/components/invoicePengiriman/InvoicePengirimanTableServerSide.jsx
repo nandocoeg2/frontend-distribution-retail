@@ -1,11 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  EyeIcon,
+  PencilIcon,
+  TrashIcon,
+  PrinterIcon,
+} from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
-import { formatCurrency, formatDate } from '../../utils/formatUtils';
+import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { useInvoicePengirimanQuery } from '../../hooks/useInvoicePengirimanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import invoicePengirimanService from '../../services/invoicePengirimanService';
+import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
@@ -17,58 +24,13 @@ const TAB_STATUS_CONFIG = {
   overdue: { label: 'Overdue', statusCode: 'OVERDUE INVOICE' },
 };
 
-const resolveStatusVariant = (status) => {
-  const statusText =
-    typeof status === 'string'
-      ? status
-      : status?.status_name || status?.status_code || '';
-
-  const value = statusText.toLowerCase();
-
-  if (!value) {
-    return 'secondary';
-  }
-
-  if (
-    value.includes('paid') ||
-    value.includes('completed') ||
-    value.includes('selesai')
-  ) {
-    return 'success';
-  }
-
-  if (
-    value.includes('cancelled') ||
-    value.includes('canceled') ||
-    value.includes('failed') ||
-    value.includes('batal')
-  ) {
-    return 'danger';
-  }
-
-  if (value.includes('overdue')) {
-    return 'danger';
-  }
-
-  if (
-    value.includes('pending') ||
-    value.includes('menunggu') ||
-    value.includes('waiting')
-  ) {
-    return 'secondary';
-  }
-
+const getStatusVariant = (status) => {
+  const value = (status?.status_name || status?.status_code || '').toLowerCase();
+  if (value.includes('paid') || value.includes('completed')) return 'success';
+  if (value.includes('cancelled') || value.includes('failed')) return 'danger';
+  if (value.includes('overdue')) return 'danger';
+  if (value.includes('pending')) return 'secondary';
   return 'default';
-};
-
-const resolveStatusText = (status) => {
-  if (typeof status === 'string') {
-    return status;
-  }
-  if (!status) {
-    return null;
-  }
-  return status.status_name || status.status_code || null;
 };
 
 const InvoicePengirimanTableServerSide = ({
@@ -76,10 +38,82 @@ const InvoicePengirimanTableServerSide = ({
   onEdit,
   onDelete,
   deleteLoading = false,
+  selectedInvoices = [],
+  onSelectInvoice,
+  onSelectAllInvoices,
+  hasSelectedInvoices = false,
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
 }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handleBulkPrintInvoice = async () => {
+    if (!selectedInvoices || selectedInvoices.length === 0) {
+      toastService.error('Tidak ada invoice yang dipilih');
+      return;
+    }
+
+    setIsPrinting(true);
+    try {
+      toastService.info(`Memproses ${selectedInvoices.length} invoice...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Loop through selected invoices and fetch print HTML
+      for (let i = 0; i < selectedInvoices.length; i++) {
+        const invoiceId = selectedInvoices[i];
+        
+        try {
+          // Call backend API to get HTML
+          const html = await invoicePengirimanService.exportInvoicePengiriman(invoiceId);
+
+          // Open HTML in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            // Wait for content to load, then trigger print dialog
+            printWindow.onload = () => {
+              printWindow.focus();
+              // Auto print for first window, manual for others
+              if (i === 0) {
+                printWindow.print();
+              }
+            };
+
+            successCount++;
+          } else {
+            failCount++;
+            console.error(`Failed to open print window for invoice ${invoiceId}`);
+          }
+
+          // Small delay between opening windows to prevent browser blocking
+          if (i < selectedInvoices.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error printing invoice ${invoiceId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil membuka ${successCount} invoice${failCount > 0 ? `. ${failCount} gagal.` : ''}`
+        );
+      } else {
+        toastService.error('Gagal membuka invoice');
+      }
+    } catch (error) {
+      console.error('Error in bulk print:', error);
+      toastService.error(error.message || 'Gagal mencetak invoice');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
     if (!statusCode || activeTab === 'all') {
@@ -119,6 +153,39 @@ const InvoicePengirimanTableServerSide = ({
 
   const columns = useMemo(
     () => [
+      columnHelper.display({
+        id: 'select',
+        header: () => {
+          const isAllSelected =
+            invoices.length > 0 && selectedInvoices.length === invoices.length;
+          const isIndeterminate =
+            selectedInvoices.length > 0 &&
+            selectedInvoices.length < invoices.length;
+
+          return (
+            <input
+              type='checkbox'
+              checked={isAllSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = isIndeterminate;
+              }}
+              onChange={() => onSelectAllInvoices(invoices)}
+              className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            />
+          );
+        },
+        cell: ({ row }) => (
+          <input
+            type='checkbox'
+            checked={selectedInvoices.includes(row.original.id)}
+            onChange={() => onSelectInvoice(row.original.id)}
+            className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+      }),
       columnHelper.accessor('no_invoice', {
         header: ({ column }) => (
           <div className='space-y-2'>
@@ -142,23 +209,29 @@ const InvoicePengirimanTableServerSide = ({
           </div>
         ),
       }),
-      columnHelper.accessor('tanggal', {
+      columnHelper.accessor('purchaseOrder.po_number', {
+        id: 'po_number',
         header: ({ column }) => (
           <div className='space-y-2'>
-            <div className='font-medium'>Tanggal Invoice</div>
+            <div className='font-medium'>No PO</div>
             <input
-              type='date'
+              type='text'
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
+              placeholder='Filter...'
               className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
               onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) => formatDate(info.getValue()),
+        cell: (info) => (
+          <div className='font-medium text-gray-900'>
+            {info.getValue() || '-'}
+          </div>
+        ),
       }),
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'nama_customer',
@@ -180,9 +253,53 @@ const InvoicePengirimanTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
+      columnHelper.accessor('tanggal', {
+        header: ({ column }) => (
+          <div className='space-y-2'>
+            <div className='font-medium'>Tanggal Invoice</div>
+            <input
+              type='date'
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => formatDate(info.getValue()),
+      }),
       columnHelper.accessor('grand_total', {
         header: 'Jumlah',
         cell: (info) => formatCurrency(info.getValue()),
+        enableColumnFilter: false,
+      }),
+      columnHelper.display({
+        id: 'is_printed',
+        header: 'Print',
+        cell: ({ row }) => {
+          const isPrinted = row.original.is_printed;
+          return (
+            <StatusBadge
+              dot={true}
+              status={isPrinted ? 'Sudah di Print' : 'Belum Print'}
+              variant={isPrinted ? 'success' : 'secondary'}
+              size='sm'
+            />
+          );
+        },
+        enableColumnFilter: false,
+        enableSorting: true,
+      }),
+      columnHelper.accessor('updatedAt', {
+        id: 'print_date',
+        header: 'Tanggal Print',
+        cell: (info) => {
+          const isPrinted = info.row.original.is_printed;
+          return isPrinted ? formatDateTime(info.getValue()) : '-';
+        },
         enableColumnFilter: false,
       }),
       columnHelper.accessor('statusPembayaran.status_name', {
@@ -219,10 +336,8 @@ const InvoicePengirimanTableServerSide = ({
           );
         },
         cell: (info) => {
-          const statusValue = info.getValue();
-          const rowStatus = info.row.original?.statusPembayaran;
-          const status = statusValue || rowStatus;
-          const statusText = resolveStatusText(status);
+          const status = info.row.original?.statusPembayaran;
+          const statusText = status?.status_name || status?.status_code;
 
           if (!statusText) {
             return <span className='text-sm text-gray-400'>-</span>;
@@ -231,7 +346,7 @@ const InvoicePengirimanTableServerSide = ({
           return (
             <StatusBadge
               status={statusText}
-              variant={resolveStatusVariant(status)}
+              variant={getStatusVariant(status)}
               size='sm'
               dot
             />
@@ -270,7 +385,18 @@ const InvoicePengirimanTableServerSide = ({
         enableSorting: false,
       }),
     ],
-    [invoices, onView, onEdit, onDelete, deleteLoading, activeTab, setPage]
+    [
+      invoices,
+      selectedInvoices,
+      onSelectInvoice,
+      onSelectAllInvoices,
+      onView,
+      onEdit,
+      onDelete,
+      deleteLoading,
+      activeTab,
+      setPage,
+    ]
   );
 
   const table = useReactTable({
@@ -293,6 +419,26 @@ const InvoicePengirimanTableServerSide = ({
         </div>
       )}
 
+      {hasSelectedInvoices && (
+        <div className='flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4'>
+          <div className='flex items-center space-x-2'>
+            <span className='text-sm font-medium text-blue-900'>
+              {selectedInvoices.length} invoice dipilih
+            </span>
+          </div>
+          <div className='flex items-center space-x-2'>
+            <button
+              onClick={handleBulkPrintInvoice}
+              disabled={isPrinting}
+              className='flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+            >
+              <PrinterIcon className='h-4 w-4' />
+              <span>{isPrinting ? 'Mencetak...' : 'Print Invoice'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <DataTable
         table={table}
         isLoading={loading}
@@ -307,6 +453,11 @@ const InvoicePengirimanTableServerSide = ({
         headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
         bodyClassName='divide-y divide-gray-200'
         rowClassName='hover:bg-gray-50'
+        getRowClassName={({ row }) =>
+          selectedInvoices.includes(row.original.id)
+            ? 'bg-blue-50 hover:bg-blue-100'
+            : undefined
+        }
         cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
         emptyCellClassName='px-6 py-4 text-center text-sm text-gray-500'
       />

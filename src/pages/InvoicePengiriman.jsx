@@ -57,6 +57,7 @@ const InvoicePengirimanPage = () => {
   const [viewModalError, setViewModalError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
 
   const fetchInvoiceDetail = useCallback(
     async (id) => {
@@ -112,6 +113,7 @@ const InvoicePengirimanPage = () => {
 
   const handleTabChange = useCallback((newTab) => {
     setActiveTab(newTab);
+    setSelectedInvoices([]); // Clear selection when changing tabs
     // The server-side table will handle filtering automatically based on activeTab
   }, []);
 
@@ -267,6 +269,25 @@ const InvoicePengirimanPage = () => {
     }
   }, [deleteInvoiceConfirmation, refreshActiveTab, queryClient]);
 
+  const handleSelectInvoice = useCallback((invoiceId) => {
+    setSelectedInvoices((prev) => {
+      if (prev.includes(invoiceId)) {
+        return prev.filter((id) => id !== invoiceId);
+      }
+      return [...prev, invoiceId];
+    });
+  }, []);
+
+  const handleSelectAllInvoices = useCallback((currentInvoices) => {
+    if (selectedInvoices.length === currentInvoices.length) {
+      setSelectedInvoices([]);
+    } else {
+      setSelectedInvoices(currentInvoices.map((invoice) => invoice.id));
+    }
+  }, [selectedInvoices.length]);
+
+  const hasSelectedInvoices = selectedInvoices.length > 0;
+
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
@@ -331,6 +352,10 @@ const InvoicePengirimanPage = () => {
             onEdit={openEditModal}
             onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
             deleteLoading={deleteInvoiceConfirmation.loading}
+            selectedInvoices={selectedInvoices}
+            onSelectInvoice={handleSelectInvoice}
+            onSelectAllInvoices={handleSelectAllInvoices}
+            hasSelectedInvoices={hasSelectedInvoices}
             initialPage={resolvedPagination.currentPage}
             initialLimit={resolvedPagination.itemsPerPage}
             activeTab={activeTab}
