@@ -90,7 +90,7 @@ export const ConfirmationDialog = ({
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-gray-700 leading-relaxed">
+          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
             {message}
           </p>
         </div>

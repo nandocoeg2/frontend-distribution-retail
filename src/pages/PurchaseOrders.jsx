@@ -11,6 +11,7 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
+import { getItemById } from '../services/itemService';
 import { TabContainer, Tab } from '../components/ui/Tabs';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 
@@ -204,8 +205,74 @@ const PurchaseOrders = () => {
     }
   }, []);
 
+  // Validasi harga item
+  const validateItemPrices = async (purchaseOrderIds) => {
+    try {
+      const priceDiscrepancies = [];
+
+      // Fetch semua purchase order yang dipilih
+      for (const poId of purchaseOrderIds) {
+        const poResponse = await purchaseOrderService.getPurchaseOrderById(poId);
+        const poData = poResponse?.data || poResponse;
+        
+        if (!poData?.purchaseOrderDetails || !Array.isArray(poData.purchaseOrderDetails)) {
+          continue;
+        }
+
+        // Check setiap item di purchase order
+        for (const detail of poData.purchaseOrderDetails) {
+          if (!detail.itemId) continue;
+
+          try {
+            // Fetch item master data
+            const itemResponse = await getItemById(detail.itemId);
+            const itemData = itemResponse?.data || itemResponse;
+            
+            const poPrice = parseFloat(detail.harga) || 0;
+            const masterPrice = parseFloat(itemData?.itemPrice?.harga) || 0;
+
+            // Jika harga berbeda, catat discrepancy
+            if (poPrice !== masterPrice) {
+              priceDiscrepancies.push({
+                poNumber: poData.po_number,
+                itemName: detail.nama_barang,
+                plu: detail.plu,
+                poPrice: poPrice,
+                masterPrice: masterPrice,
+                difference: Math.abs(poPrice - masterPrice)
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching item ${detail.itemId}:`, error);
+          }
+        }
+      }
+
+      return priceDiscrepancies;
+    } catch (error) {
+      console.error('Error validating item prices:', error);
+      throw error;
+    }
+  };
+
+  // Format pesan perbedaan harga
+  const formatPriceDiscrepancyMessage = (discrepancies) => {
+    if (discrepancies.length === 0) return '';
+
+    const summary = `Ditemukan ${discrepancies.length} item dengan perbedaan harga antara PO dan master data:\n\n`;
+    const details = discrepancies.slice(0, 5).map(item => 
+      `• ${item.itemName} (${item.plu})\n` +
+      `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
+      `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}`
+    ).join('\n\n');
+    
+    const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
+    
+    return summary + details + more + '\n\nApakah Anda yakin ingin melanjutkan proses?';
+  };
+
   // Bulk process handlers
-  const handleBulkProcess = () => {
+  const handleBulkProcess = async () => {
     if (selectedOrders.length === 0) {
       showWarning('Pilih minimal satu purchase order untuk diproses.');
       return;
@@ -213,13 +280,35 @@ const PurchaseOrders = () => {
 
     const idsSnapshot = [...selectedOrders];
 
-    openConfirmationDialog({
-      title: "Proses Purchase Orders",
-      message: `Apakah Anda yakin ingin memproses ${idsSnapshot.length} purchase order yang dipilih?`,
-      confirmText: "Proses",
-      cancelText: "Batal",
-      type: "warning"
-    }, () => handleConfirmBulkProcess(idsSnapshot));
+    // Validasi harga item
+    try {
+      setLoading(true);
+      const priceDiscrepancies = await validateItemPrices(idsSnapshot);
+      setLoading(false);
+
+      // Jika ada perbedaan harga, tampilkan konfirmasi
+      if (priceDiscrepancies.length > 0) {
+        openConfirmationDialog({
+          title: "Perbedaan Harga Ditemukan",
+          message: formatPriceDiscrepancyMessage(priceDiscrepancies),
+          confirmText: "Lanjutkan Proses",
+          cancelText: "Batal",
+          type: "warning"
+        }, () => handleConfirmBulkProcess(idsSnapshot));
+      } else {
+        // Tidak ada perbedaan, lanjutkan proses
+        openConfirmationDialog({
+          title: "Proses Purchase Orders",
+          message: `Apakah Anda yakin ingin memproses ${idsSnapshot.length} purchase order yang dipilih?`,
+          confirmText: "Proses",
+          cancelText: "Batal",
+          type: "warning"
+        }, () => handleConfirmBulkProcess(idsSnapshot));
+      }
+    } catch (error) {
+      setLoading(false);
+      showError(`Gagal memvalidasi harga item: ${error.message}`);
+    }
   };
 
   const handleConfirmBulkProcess = async (ids = [], options = {}) => {
