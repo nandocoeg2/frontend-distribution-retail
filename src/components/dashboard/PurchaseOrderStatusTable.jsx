@@ -164,6 +164,18 @@ const createDefaultColumnGroups = (onPoNumberClick) => [
         align: 'center',
         render: (order) => renderDateDisplay(order.tanggal_tagihan),
       },
+      {
+        id: 'status_ttf',
+        label: 'Status TTF',
+        align: 'center',
+        render: (order) => renderStatus(order.tanda_terima_faktur?.status, 'warning'),
+      },
+      {
+        id: 'tanggal_ttf',
+        label: 'Tanggal TTF',
+        align: 'center',
+        render: (order) => renderDateDisplay(order.tanda_terima_faktur?.tanggal),
+      },
     ],
   },
   {
