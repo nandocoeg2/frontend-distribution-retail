@@ -205,6 +205,43 @@ const PurchaseOrders = () => {
     }
   }, []);
 
+  // Helper: Dapatkan harga yang tepat berdasarkan targetDate dan schedules
+  const getEffectivePrice = (itemPrice, targetDate) => {
+    if (!itemPrice) return { harga: 0, source: 'none' };
+
+    const schedules = itemPrice.schedules || [];
+    const target = new Date(targetDate);
+
+    // Filter schedules yang effectiveDate <= targetDate dan status PENDING atau ACTIVE
+    const validSchedules = schedules.filter(schedule => {
+      const effectiveDate = new Date(schedule.effectiveDate);
+      const status = schedule.status?.toUpperCase();
+      return effectiveDate <= target && (status === 'PENDING' || status === 'ACTIVE');
+    });
+
+    // Jika ada schedule yang valid, ambil yang paling baru (effectiveDate terbesar)
+    if (validSchedules.length > 0) {
+      const latestSchedule = validSchedules.reduce((latest, current) => {
+        const latestDate = new Date(latest.effectiveDate);
+        const currentDate = new Date(current.effectiveDate);
+        return currentDate > latestDate ? current : latest;
+      });
+
+      return {
+        harga: parseFloat(latestSchedule.harga) || 0,
+        source: 'scheduled',
+        effectiveDate: latestSchedule.effectiveDate,
+        scheduleId: latestSchedule.id
+      };
+    }
+
+    // Fallback ke harga current dari itemPrice
+    return {
+      harga: parseFloat(itemPrice.harga) || 0,
+      source: 'current'
+    };
+  };
+
   // Validasi harga item
   const validateItemPrices = async (purchaseOrderIds) => {
     try {
@@ -219,6 +256,9 @@ const PurchaseOrders = () => {
           continue;
         }
 
+        // Gunakan tanggal PO sebagai targetDate untuk validasi harga
+        const poDate = poData.po_date || poData.tanggal_po || new Date();
+
         // Check setiap item di purchase order
         for (const detail of poData.purchaseOrderDetails) {
           if (!detail.itemId) continue;
@@ -229,16 +269,25 @@ const PurchaseOrders = () => {
             const itemData = itemResponse?.data || itemResponse;
             
             const poPrice = parseFloat(detail.harga) || 0;
-            const masterPrice = parseFloat(itemData?.itemPrice?.harga) || 0;
+            
+            // Dapatkan harga efektif berdasarkan tanggal PO dan schedules
+            const effectivePrice = getEffectivePrice(itemData?.itemPrice, poDate);
+            const masterPrice = effectivePrice.harga;
 
             // Jika harga berbeda, catat discrepancy
             if (poPrice !== masterPrice) {
               priceDiscrepancies.push({
                 poNumber: poData.po_number,
+                poDate: poDate,
                 itemName: detail.nama_barang,
                 plu: detail.plu,
                 poPrice: poPrice,
                 masterPrice: masterPrice,
+                priceSource: effectivePrice.source,
+                scheduleInfo: effectivePrice.source === 'scheduled' ? {
+                  effectiveDate: effectivePrice.effectiveDate,
+                  scheduleId: effectivePrice.scheduleId
+                } : null,
                 difference: Math.abs(poPrice - masterPrice)
               });
             }
@@ -260,11 +309,12 @@ const PurchaseOrders = () => {
     if (discrepancies.length === 0) return '';
 
     const summary = `Ditemukan ${discrepancies.length} item dengan perbedaan harga antara PO dan master data:\n\n`;
-    const details = discrepancies.slice(0, 5).map(item => 
-      `• ${item.itemName} (${item.plu})\n` +
-      `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
-      `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}`
-    ).join('\n\n');
+    const details = discrepancies.slice(0, 5).map(item => {
+      const sourceLabel = item.priceSource === 'scheduled' ? ' (Scheduled)' : ' (Current)';
+      return `• ${item.itemName} (${item.plu})\n` +
+        `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
+        `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}${sourceLabel}`;
+    }).join('\n\n');
     
     const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
     
