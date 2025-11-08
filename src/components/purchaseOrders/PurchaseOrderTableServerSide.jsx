@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
@@ -84,6 +84,30 @@ const PurchaseOrderTableServerSide = ({
     []
   );
 
+  const handleSelectAllInternalToggle = useCallback(() => {
+    const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
+    
+    const allCurrentPageSelected = currentPageOrderIds.every((id) =>
+      selectedOrders.includes(id)
+    );
+
+    if (allCurrentPageSelected) {
+      // Deselect all on current page
+      currentPageOrderIds.forEach((id) => {
+        if (selectedOrders.includes(id) && onSelectionChange) {
+          onSelectionChange(id, false);
+        }
+      });
+    } else {
+      // Select all on current page
+      currentPageOrderIds.forEach((id) => {
+        if (!selectedOrders.includes(id) && onSelectionChange) {
+          onSelectionChange(id, true);
+        }
+      });
+    }
+  }, [orders, selectedOrders, onSelectionChange]);
+
   const getQueryParams = useMemo(
     () => ({ filters, ...rest }) => {
       const mappedFilters = { ...filters };
@@ -132,10 +156,16 @@ const PurchaseOrderTableServerSide = ({
       columnHelper.display({
         id: 'select',
         header: () => {
+          const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
+          
           const isAllSelected =
-            orders.length > 0 && selectedOrders.length === orders.length;
+            orders.length > 0 &&
+            currentPageOrderIds.length > 0 &&
+            currentPageOrderIds.every((id) => selectedOrders.includes(id));
+          
           const isIndeterminate =
-            selectedOrders.length > 0 && selectedOrders.length < orders.length;
+            currentPageOrderIds.some((id) => selectedOrders.includes(id)) &&
+            !isAllSelected;
 
           return (
             <input
@@ -144,7 +174,8 @@ const PurchaseOrderTableServerSide = ({
               ref={(input) => {
                 if (input) input.indeterminate = isIndeterminate;
               }}
-              onChange={() => onSelectAll && onSelectAll(!isAllSelected)}
+              onChange={handleSelectAllInternalToggle}
+              onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
@@ -157,6 +188,7 @@ const PurchaseOrderTableServerSide = ({
               onSelectionChange &&
               onSelectionChange(row.original.id, event.target.checked)
             }
+            onClick={(e) => e.stopPropagation()}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
         ),
@@ -419,7 +451,7 @@ const PurchaseOrderTableServerSide = ({
       orders,
       selectedOrders,
       onSelectionChange,
-      onSelectAll,
+      handleSelectAllInternalToggle,
       onView,
       onEdit,
       onDelete,

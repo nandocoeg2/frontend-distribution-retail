@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
@@ -206,15 +206,49 @@ const LaporanPenerimaanBarangTableServerSide = ({
     setLpbToUnassign(null);
   };
 
+  const handleSelectAllInternalToggle = useCallback(() => {
+    const currentPageReportIds = reports
+      .map((report) => resolveReportId(report))
+      .filter(Boolean);
+    
+    const allCurrentPageSelected = currentPageReportIds.every((id) =>
+      selectedReports.includes(id)
+    );
+
+    if (allCurrentPageSelected) {
+      // Deselect all on current page
+      currentPageReportIds.forEach((id) => {
+        if (selectedReports.includes(id)) {
+          onSelectReport(id, false);
+        }
+      });
+    } else {
+      // Select all on current page
+      currentPageReportIds.forEach((id) => {
+        if (!selectedReports.includes(id)) {
+          onSelectReport(id, true);
+        }
+      });
+    }
+  }, [reports, selectedReports, onSelectReport]);
+
   const columns = useMemo(
     () => [
       columnHelper.display({
         id: 'select',
         header: () => {
+          const currentPageReportIds = reports
+            .map((report) => resolveReportId(report))
+            .filter(Boolean);
+          
           const isAllSelected =
-            reports.length > 0 && selectedReports.length === reports.length;
+            reports.length > 0 &&
+            currentPageReportIds.length > 0 &&
+            currentPageReportIds.every((id) => selectedReports.includes(id));
+          
           const isIndeterminate =
-            selectedReports.length > 0 && selectedReports.length < reports.length;
+            currentPageReportIds.some((id) => selectedReports.includes(id)) &&
+            !isAllSelected;
 
           return (
             <input
@@ -223,7 +257,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
               ref={(input) => {
                 if (input) input.indeterminate = isIndeterminate;
               }}
-              onChange={onSelectAllReports}
+              onChange={handleSelectAllInternalToggle}
+              onClick={(e) => e.stopPropagation()}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
@@ -237,6 +272,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
               onChange={() =>
                 onSelectReport(reportId, !selectedReports.includes(reportId))
               }
+              onClick={(e) => e.stopPropagation()}
               disabled={!reportId}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
@@ -411,7 +447,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
       reports,
       selectedReports,
       onSelectReport,
-      onSelectAllReports,
+      handleSelectAllInternalToggle,
       onView,
       onEdit,
       onDelete,
