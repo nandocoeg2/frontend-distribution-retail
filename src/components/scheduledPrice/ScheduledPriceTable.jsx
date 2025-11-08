@@ -93,12 +93,12 @@ const ScheduledPriceTable = ({
               <tr key={schedule.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    {schedule.itemPrice?.inventory?.nama_barang || '-'}
+                    {schedule.itemPrice?.item?.nama_barang || '-'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {schedule.itemPrice?.inventory?.plu || '-'}
+                    {schedule.itemPrice?.item?.plu || '-'}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

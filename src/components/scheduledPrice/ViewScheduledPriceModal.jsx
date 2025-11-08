@@ -63,7 +63,7 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
                     Item Name
                   </label>
                   <p className="text-gray-900">
-                    {schedule.itemPrice?.inventory?.nama_barang || '-'}
+                    {schedule.itemPrice?.item?.nama_barang || '-'}
                   </p>
                 </div>
                 <div>
@@ -71,7 +71,7 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
                     PLU
                   </label>
                   <p className="text-gray-900">
-                    {schedule.itemPrice?.inventory?.plu || '-'}
+                    {schedule.itemPrice?.item?.plu || '-'}
                   </p>
                 </div>
               </div>
