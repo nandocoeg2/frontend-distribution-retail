@@ -8,6 +8,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    supplier_code_letter: '',
     address: '',
     phoneNumber: '',
     bank: {
@@ -22,6 +23,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
       setFormData({
         name: supplier.name || '',
         code: supplier.code || '',
+        supplier_code_letter: supplier.supplier_code_letter || '',
         address: supplier.address || '',
         phoneNumber: supplier.phoneNumber || '',
         bank: {
@@ -47,6 +49,10 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
         }
       }));
     } else {
+      // Limit supplier_code_letter to 5 characters
+      if (name === 'supplier_code_letter' && value.length > 5) {
+        return;
+      }
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };

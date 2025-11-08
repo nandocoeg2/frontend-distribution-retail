@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { AccordionItem, InfoCard, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
 import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
@@ -73,6 +73,7 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
                 data={[
                   { label: 'Nama Supplier', value: supplier.name },
                   { label: 'Kode Supplier', value: supplier.code },
+                  { label: 'Kode Supplier Surat', value: supplier.supplier_code_letter || '-' },
                   { label: 'ID Supplier', value: supplier.id, copyable: true },
                   { label: 'Alamat', value: supplier.address },
                 ]}

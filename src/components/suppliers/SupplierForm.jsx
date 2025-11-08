@@ -35,6 +35,22 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
 
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Supplier Code Letter
+          </label>
+          <input
+            type='text'
+            name='supplier_code_letter'
+            value={formData.supplier_code_letter}
+            onChange={handleInputChange}
+            maxLength={5}
+            placeholder='e.g., DVT (max 5 characters)'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+          <p className='mt-1 text-xs text-gray-500'>Kode ini akan digunakan untuk generate nomor Surat Jalan</p>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
             Phone Number
           </label>
           <input

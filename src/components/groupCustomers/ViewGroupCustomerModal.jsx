@@ -97,6 +97,7 @@ const ViewGroupCustomerModal = ({ show, onClose, groupCustomer, loading = false 
                         data={[
                           { label: 'Group Name', value: groupCustomer?.nama_group },
                           { label: 'Group Code', value: groupCustomer?.kode_group, copyable: true },
+                          { label: 'Kode Group Surat', value: groupCustomer?.kode_group_surat || '-' },
                           {
                             label: 'Status',
                             component: (

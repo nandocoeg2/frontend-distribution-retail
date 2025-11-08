@@ -8,6 +8,7 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    supplier_code_letter: '',
     address: '',
     phoneNumber: '',
     bank: {
@@ -31,6 +32,10 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
         }
       }));
     } else {
+      // Limit supplier_code_letter to 5 characters
+      if (name === 'supplier_code_letter' && value.length > 5) {
+        return;
+      }
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };

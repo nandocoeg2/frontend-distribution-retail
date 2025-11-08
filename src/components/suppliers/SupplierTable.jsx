@@ -19,6 +19,9 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
               Kode
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Kode Surat
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Alamat
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -38,7 +41,7 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
         <tbody className='bg-white divide-y divide-gray-200'>
           {!suppliers || suppliers.length === 0 ? (
             <tr>
-              <td colSpan="7" className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan="8" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'Tidak ada supplier yang ditemukan sesuai pencarian.' : 'Belum ada supplier tersedia.'}
               </td>
             </tr>
@@ -53,6 +56,11 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded'>
                     {supplier.code || '-'}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded'>
+                    {supplier.supplier_code_letter || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4'>
