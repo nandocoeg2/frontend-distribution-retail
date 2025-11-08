@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import { AccordionItem, StatusBadge, InfoTable } from '../ui';
-import { formatDateTime } from '../../utils/formatUtils';
+import { formatDateTime, formatDate } from '../../utils/formatUtils';
 
 import ActivityTimeline from '../common/ActivityTimeline';
 import authService from '../../services/authService';

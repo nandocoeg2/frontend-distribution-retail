@@ -254,7 +254,7 @@ const PackingTableServerSide = ({
         id: 'po_number',
         header: ({ column }) => (
           <div className='space-y-2'>
-            <div className='font-medium'>PO Number</div>
+            <div className='font-medium'>No PO</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -268,7 +268,7 @@ const PackingTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => info.getValue() || 'N/A',
+        cell: (info) => <span className='font-medium'>{info.getValue() || 'N/A'}</span>,
       }),
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'customer_name',

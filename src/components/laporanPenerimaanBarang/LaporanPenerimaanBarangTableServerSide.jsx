@@ -246,31 +246,11 @@ const LaporanPenerimaanBarangTableServerSide = ({
         enableHiding: false,
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('purchaseOrder.po_number', {
-        id: 'po_number',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No. PO</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || '-',
-      }),
       columnHelper.accessor('no_lpb', {
         id: 'no_lpb',
         header: ({ column }) => (
           <div className="space-y-2">
-            <div className="font-medium">No. LPB</div>
+            <div className="font-medium">No LPB</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -284,7 +264,27 @@ const LaporanPenerimaanBarangTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => info.getValue() || '-',
+        cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
+      }),
+      columnHelper.accessor('purchaseOrder.po_number', {
+        id: 'po_number',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">No PO</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
       columnHelper.accessor('tanggal_po', {
         id: 'tanggal_po',
