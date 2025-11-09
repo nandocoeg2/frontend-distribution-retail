@@ -50,6 +50,7 @@ const CheckingListDetailModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [exportLoading, setExportLoading] = useState(false);
+  const [exportGroupedLoading, setExportGroupedLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     statusInfo: false,
@@ -175,6 +176,55 @@ const CheckingListDetailModal = ({
     }
   };
 
+  const handleExportPdfGrouped = async () => {
+    if (isLoading || !checklist || exportGroupedLoading) {
+      return;
+    }
+
+    setExportGroupedLoading(true);
+
+    try {
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info('Generating checklist grouped...');
+
+      // Call backend API to get HTML
+      const html = await checkingListService.exportCheckingListGrouped(
+        checklist.id,
+        companyData.id
+      );
+
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Checklist grouped berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error(
+          'Popup window diblokir. Silakan izinkan popup untuk mencetak.'
+        );
+      }
+    } catch (error) {
+      console.error('Failed to export checklist grouped:', error);
+      toastService.error(error.message || 'Gagal mengekspor checklist grouped');
+    } finally {
+      setExportGroupedLoading(false);
+    }
+  };
+
   const tabs = [
     {
       id: 'overview',
@@ -253,6 +303,19 @@ const CheckingListDetailModal = ({
                 <ArrowDownTrayIcon className='w-5 h-5' />
               )}
               <span>{exportLoading ? 'Exporting...' : 'Export PDF'}</span>
+            </button>
+            <button
+              type='button'
+              onClick={handleExportPdfGrouped}
+              disabled={isLoading || !checklist || exportGroupedLoading}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              {exportGroupedLoading ? (
+                <span className='inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
+              ) : (
+                <ArrowDownTrayIcon className='w-5 h-5' />
+              )}
+              <span>{exportGroupedLoading ? 'Exporting...' : 'Export PDF Grouped'}</span>
             </button>
             <button
               onClick={onClose}
