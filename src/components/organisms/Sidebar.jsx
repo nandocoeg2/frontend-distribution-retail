@@ -1,6 +1,7 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getActiveCompanyName } from '../../utils/companyUtils';
+import CompanySwitcher from './CompanySwitcher';
 import {
   ArchiveBoxIcon,
   BanknotesIcon,
@@ -35,6 +36,20 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState(new Set());
   const [companyName, setCompanyName] = useState(() => getActiveCompanyName());
+
+  const handleCompanyChange = (company) => {
+    // Save the selected company to localStorage
+    if (company) {
+      localStorage.setItem('company', JSON.stringify(company));
+      setCompanyName(company.nama_perusahaan);
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new Event('company:updated'));
+      
+      // Reload the page to apply company changes
+      window.location.reload();
+    }
+  };
 
   const toggleSubmenu = (menuId) => {
     const newExpanded = new Set(expandedMenus);
@@ -355,22 +370,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       <div className='absolute inset-0 pointer-events-none bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent'></div>
 
       {/* Header */}
-      <div className='relative p-6 border-b border-white/10'>
-        <div className='flex items-center justify-between'>
+      <div className='relative px-4 py-5 border-b border-white/10'>
+        <div className='flex items-center gap-2'>
           {!isCollapsed && (
-            <div className='flex items-center space-x-3'>
-              <div className='flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl'>
-                <BuildingStorefrontIcon
-                  className='w-6 h-6 text-white'
-                  aria-hidden='true'
-                />
-              </div>
-              <div>
-                <h1 className='text-xl font-bold text-transparent bg-gradient-to-r from-white to-slate-200 bg-clip-text'>
-                  {companyName}
-                </h1>
-                <p className='text-xs text-slate-400'>{companyName}</p>
-              </div>
+            <div className='flex-1 min-w-0'>
+              <CompanySwitcher
+                companyName={companyName}
+                onCompanyChange={handleCompanyChange}
+              />
             </div>
           )}
           {isCollapsed && (
@@ -381,19 +388,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
               />
             </div>
           )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className='p-2 transition-all duration-200 rounded-xl hover:bg-white/10 hover:shadow-md group'
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <ChevronDoubleRightIcon
-              className={`w-6 h-6 text-slate-200 transition-transform duration-300 group-hover:scale-110 ${
-                isCollapsed ? '' : 'rotate-180'
-              }`}
-              aria-hidden='true'
-            />
-          </button>
         </div>
+        
+        {/* Floating Collapse Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className='absolute -right-3 top-1/2 -translate-y-1/2 p-2 bg-transparent border border-white/10 rounded-lg hover:bg-slate-700 hover:shadow-lg transition-all duration-200 group z-10'
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <ChevronDoubleRightIcon
+            className={`w-5 h-5 text-slate-200 transition-transform duration-300 group-hover:scale-110 ${
+              isCollapsed ? '' : 'rotate-180'
+            }`}
+            aria-hidden='true'
+          />
+        </button>
       </div>
 
       {/* Menu Items */}
