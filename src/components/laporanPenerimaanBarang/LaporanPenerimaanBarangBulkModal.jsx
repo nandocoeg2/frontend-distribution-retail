@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
@@ -32,12 +32,12 @@ const LaporanPenerimaanBarangBulkModal = ({
 }) => {
   const [activeTab, setActiveTab] = useState('upload');
 
-  const [selectedFiles, setSelectedFiles] = useState(null);
-  const [customPrompt, setCustomPrompt] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
-  const [uploadResult, setUploadResult] = useState(null);
+  const [uploadResults, setUploadResults] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
 
   const [statusBulkId, setStatusBulkId] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
@@ -55,12 +55,12 @@ const LaporanPenerimaanBarangBulkModal = ({
     }
 
     setActiveTab('upload');
-    setSelectedFiles(null);
-    setCustomPrompt('');
+    setSelectedFiles([]);
     setFileInputKey((value) => value + 1);
     setUploading(false);
     setUploadError('');
-    setUploadResult(null);
+    setUploadResults([]);
+    setUploadProgress({});
 
     setStatusBulkId('');
     setStatusLoading(false);
@@ -74,16 +74,18 @@ const LaporanPenerimaanBarangBulkModal = ({
   }, [isOpen]);
 
   const filesArray = useMemo(() => {
-    if (!selectedFiles) {
-      return [];
-    }
-    return Array.from(selectedFiles).filter(Boolean);
+    return Array.isArray(selectedFiles) ? selectedFiles : [];
   }, [selectedFiles]);
 
   const lastBulkId = useMemo(() => {
-    if (!uploadResult) {
+    if (uploadResults.length === 0) {
       return '';
     }
+    const lastResult = uploadResults[uploadResults.length - 1];
+    if (!lastResult || !lastResult.success) {
+      return '';
+    }
+    const uploadResult = lastResult.data;
     const candidates = [
       uploadResult ? uploadResult.bulkId : '',
       uploadResult && uploadResult.data ? uploadResult.data.bulkId : '',
@@ -91,7 +93,7 @@ const LaporanPenerimaanBarangBulkModal = ({
       uploadResult && uploadResult.data ? uploadResult.data.batchId : '',
     ];
     return candidates.find((value) => typeof value === 'string' && value) || '';
-  }, [uploadResult]);
+  }, [uploadResults]);
 
   useEffect(() => {
     if (lastBulkId) {
@@ -103,23 +105,30 @@ const LaporanPenerimaanBarangBulkModal = ({
     setUploadError('');
     const files = event?.target?.files || null;
     if (!files || files.length === 0) {
-      setSelectedFiles(null);
+      setSelectedFiles([]);
       return;
     }
 
-    const valid = Array.from(files).every((file) => {
+    const filesArray = Array.from(files);
+    const valid = filesArray.every((file) => {
       const name = file?.name?.toLowerCase() || '';
       return name.endsWith('.pdf') || name.endsWith('.edi');
     });
 
     if (!valid) {
       setUploadError('Format file tidak didukung. Gunakan PDF atau EDI.');
-      setSelectedFiles(null);
+      setSelectedFiles([]);
       setFileInputKey((value) => value + 1);
       return;
     }
 
-    setSelectedFiles(files);
+    setSelectedFiles(filesArray);
+    setUploadResults([]);
+    setUploadProgress({});
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleBulkUpload = async () => {
@@ -135,25 +144,64 @@ const LaporanPenerimaanBarangBulkModal = ({
 
     setUploading(true);
     setUploadError('');
+    const results = [];
 
     try {
-      const result = await onBulkUpload({
-        files: filesArray,
-        prompt: customPrompt.trim() || undefined,
-      });
-      setUploadResult(result);
-      const bulkIdCandidates = [
-        result ? result.bulkId : '',
-        result && result.data ? result.data.bulkId : '',
-        result ? result.batchId : '',
-        result && result.data ? result.data.batchId : '',
-      ];
-      const bulkId = bulkIdCandidates.find((value) => typeof value === 'string' && value) || '';
-      if (bulkId) {
-        setStatusBulkId(bulkId);
+      for (let i = 0; i < filesArray.length; i++) {
+        const file = filesArray[i];
+        
+        // Update progress
+        setUploadProgress(prev => ({
+          ...prev,
+          [i]: { status: 'uploading', fileName: file.name }
+        }));
+
+        try {
+          const result = await onBulkUpload({
+            files: [file],
+          });
+          
+          results.push({
+            fileName: file.name,
+            success: true,
+            data: result
+          });
+
+          const bulkIdCandidates = [
+            result ? result.bulkId : '',
+            result && result.data ? result.data.bulkId : '',
+            result ? result.batchId : '',
+            result && result.data ? result.data.batchId : '',
+          ];
+          const bulkId = bulkIdCandidates.find((value) => typeof value === 'string' && value) || '';
+          if (bulkId && i === filesArray.length - 1) {
+            setStatusBulkId(bulkId);
+          }
+
+          setUploadProgress(prev => ({
+            ...prev,
+            [i]: { status: 'success', fileName: file.name, result }
+          }));
+        } catch (error) {
+          const message =
+            (error && error.response && error.response.data && error.response.data.message) ||
+            (error && error.message) ||
+            'Gagal mengunggah file.';
+          
+          results.push({
+            fileName: file.name,
+            success: false,
+            error: message
+          });
+
+          setUploadProgress(prev => ({
+            ...prev,
+            [i]: { status: 'error', fileName: file.name, error: message }
+          }));
+        }
       }
-      setSelectedFiles(null);
-      setFileInputKey((value) => value + 1);
+
+      setUploadResults(results);
     } catch (error) {
       const message =
         (error && error.response && error.response.data && error.response.data.message) ||
@@ -246,15 +294,25 @@ const LaporanPenerimaanBarangBulkModal = ({
 
   const filesList = useMemo(() => {
     return filesArray.map((file, index) => (
-      <li
+      <div
         key={(file && file.name ? file.name : 'file') + '-' + index}
-        className='flex items-center justify-between rounded border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700'
+        className='flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700'
       >
-        <span className='truncate pr-3'>{file.name}</span>
-        <span className='text-xs text-gray-500'>{formatFileSize(file.size)}</span>
-      </li>
+        <div className='flex-1 truncate pr-3'>
+          <span className='font-medium'>{file.name}</span>
+          <span className='ml-2 text-xs text-gray-500'>({formatFileSize(file.size)})</span>
+        </div>
+        {!uploading && (
+          <button
+            onClick={() => handleRemoveFile(index)}
+            className='ml-2 text-red-600 hover:text-red-800 text-sm font-medium'
+          >
+            Hapus
+          </button>
+        )}
+      </div>
     ));
-  }, [filesArray]);
+  }, [filesArray, uploading]);
 
   const statusSummary = useMemo(() => {
     if (!statusData) {
@@ -295,14 +353,14 @@ const LaporanPenerimaanBarangBulkModal = ({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4'>
-      <div className='flex w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl'>
-        <div className='flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-5'>
+      <div className='flex w-full max-w-5xl max-h-[90vh] flex-col overflow-hidden rounded-xl bg-white shadow-2xl'>
+        <div className='flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-3'>
           <div>
-            <h3 className='text-xl font-semibold text-gray-900'>Bulk Laporan Penerimaan Barang</h3>
-            <p className='text-sm text-gray-600'>Unggah file dan pantau progres konversi LPB.</p>
+            <h3 className='text-lg font-semibold text-gray-900'>Bulk Laporan Penerimaan Barang</h3>
+            <p className='text-xs text-gray-600'>Unggah file dan pantau progres konversi LPB.</p>
           </div>
-          <button onClick={onClose} className='rounded-lg p-2 text-gray-500 hover:bg-gray-100'>
-            <XMarkIcon className='h-6 w-6' />
+          <button onClick={onClose} className='rounded-lg p-1.5 text-gray-500 hover:bg-gray-100'>
+            <XMarkIcon className='h-5 w-5' />
           </button>
         </div>
 
@@ -310,59 +368,145 @@ const LaporanPenerimaanBarangBulkModal = ({
           activeTab={activeTab}
           onTabChange={handleTabChange}
           variant='underline'
-          className='px-6 pt-4'
+          className='px-6 pt-2'
         >
           <Tab id='upload' label='Upload Bulk LPB' />
           <Tab id='files' label='Daftar Bulk Files' />
           <Tab id='status' label='Cek Status by Bulk ID' />
         </TabContainer>
 
-        <div className='flex-1 overflow-y-auto px-6 py-6 bg-gray-50'>
+        <div className='flex-1 overflow-y-auto bg-gray-50 min-h-0 max-h-[60vh]'>
           <TabContent activeTab={activeTab}>
             <TabPanel tabId='upload'>
-              <section className='rounded-lg border border-dashed border-blue-300 bg-white p-5 shadow-sm'>
-                <h4 className='text-sm font-semibold text-gray-900'>Upload File Laporan</h4>
-                <p className='mt-1 text-xs text-gray-600'>Format yang didukung: PDF, EDI.</p>
-                <div className='mt-4 space-y-3'>
-                  <input
-                    key={fileInputKey}
-                    type='file'
-                    multiple
-                    accept='.pdf,.PDF,.edi,.EDI'
-                    onChange={handleFileChange}
-                    disabled={uploading}
-                    className='block w-full text-sm text-gray-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-200 disabled:opacity-50'
-                  />
-                  <textarea
-                    value={customPrompt}
-                    onChange={(event) => setCustomPrompt(event?.target?.value || '')}
-                    rows={2}
-                    placeholder='Custom prompt (opsional)'
-                    disabled={uploading}
-                    className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50'
-                  />
-                  {uploadError && (
-                    <p className='text-sm text-red-600'>{uploadError}</p>
-                  )}
-                  {filesArray.length > 0 && (
-                    <ul className='space-y-1 text-sm text-gray-700'>{filesList}</ul>
-                  )}
-                  <div className='flex items-center justify-end gap-3'>
+              <div className='px-6 py-4 space-y-3'>
+                <div className='bg-white rounded-lg border border-gray-200 p-3'>
+                  <h4 className='text-sm font-semibold text-gray-900'>Upload File Laporan</h4>
+                  <p className='mt-0.5 text-xs text-gray-600'>PDF, EDI <span className='font-medium'>(pilih banyak file sekaligus)</span></p>
+                  
+                  <div className='mt-3 space-y-2.5'>
+                    <input
+                      key={fileInputKey}
+                      type='file'
+                      multiple
+                      accept='.pdf,.PDF,.edi,.EDI'
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                      className='block w-full text-sm text-gray-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-200 disabled:opacity-50'
+                    />
+                    
+                    {uploadError && (
+                      <p className='text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2'>{uploadError}</p>
+                    )}
+                    
                     <button
                       type='button'
                       onClick={handleBulkUpload}
-                      disabled={uploading}
-                      className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:bg-blue-300'
+                      disabled={uploading || filesArray.length === 0}
+                      className='w-full inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed'
                     >
-                      {uploading ? 'Mengunggah...' : 'Upload Bulk'}
+                      {uploading ? (
+                        <>
+                          <div className='w-4 h-4 border-2 border-white rounded-full border-t-transparent animate-spin'></div>
+                          <span>Mengunggah...</span>
+                        </>
+                      ) : (
+                        'Upload Bulk'
+                      )}
                     </button>
                   </div>
                 </div>
-              </section>
+                
+                {filesArray.length > 0 && (
+                  <div className='bg-white rounded-lg border border-gray-200 p-3'>
+                    <p className='text-sm font-semibold text-gray-900 mb-2'>
+                      {filesArray.length} file terpilih
+                    </p>
+                    <div className='space-y-1'>{filesList}</div>
+                  </div>
+                )}
+                  
+                {/* Upload Progress */}
+                {uploading && Object.keys(uploadProgress).length > 0 && (
+                  <div className='bg-white rounded-lg border border-gray-200 p-3'>
+                    <h3 className='text-sm font-semibold mb-2 text-gray-900'>Progress Upload</h3>
+                    <div className='space-y-2'>
+                      {Object.entries(uploadProgress).map(([index, progress]) => (
+                        <div key={index} className='flex items-center gap-3 p-2 bg-gray-50 rounded border border-gray-200'>
+                          <div className='flex-1'>
+                            <p className='text-sm font-medium text-gray-700 truncate'>{progress.fileName}</p>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            {progress.status === 'uploading' && (
+                              <div className='flex items-center gap-2'>
+                                <div className='w-4 h-4 border-2 border-blue-600 rounded-full border-t-transparent animate-spin'></div>
+                                <span className='text-sm text-blue-600'>Uploading...</span>
+                              </div>
+                            )}
+                            {progress.status === 'success' && (
+                              <span className='text-sm text-green-600 font-medium'>✓ Selesai</span>
+                            )}
+                            {progress.status === 'error' && (
+                              <span className='text-sm text-red-600 font-medium'>✗ Gagal</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                  
+                {/* Upload Results */}
+                {uploadResults.length > 0 && (
+                  <div className='bg-white rounded-lg border border-gray-200 p-3'>
+                    <h3 className='text-sm font-semibold mb-2 text-gray-900'>Hasil Upload</h3>
+                    
+                    {/* Summary */}
+                    <div className='mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg'>
+                      <p className='text-sm font-medium text-blue-900 mb-2'>
+                        Upload Summary
+                      </p>
+                      <div className='text-sm text-blue-700 space-y-1'>
+                        <p>Total File: {uploadResults.length}</p>
+                        <p>Berhasil: {uploadResults.filter(r => r.success).length}</p>
+                        <p>Gagal: {uploadResults.filter(r => !r.success).length}</p>
+                      </div>
+                    </div>
+
+                    {/* Per File Results */}
+                    <div className='space-y-2'>
+                      {uploadResults.map((result, idx) => (
+                        <div key={idx} className={`p-3 rounded-lg border ${
+                          result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                        }`}>
+                          <div className='flex items-center justify-between mb-2'>
+                            <p className='text-sm font-medium truncate flex-1'>{result.fileName}</p>
+                            <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                              result.success ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                            }`}>
+                              {result.success ? '✓ Berhasil' : '✗ Gagal'}
+                            </span>
+                          </div>
+                          
+                          {result.success && result.data && (
+                            <div className='text-xs text-gray-700 space-y-1'>
+                              <p>• Bulk ID: {result.data.bulkId || result.data.batchId || result.data.data?.bulkId || result.data.data?.batchId || '-'}</p>
+                              <p>• Status: {result.data.status || result.data.data?.status || 'Processing'}</p>
+                            </div>
+                          )}
+                          
+                          {!result.success && (
+                            <p className='text-xs text-red-700'>Error: {result.error}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabPanel>
 
             <TabPanel tabId='files'>
-              <section className='space-y-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm'>
+              <div className='px-6 py-4'>
                 {typeof onFetchBulkFiles !== 'function' ? (
                   <p className='text-sm text-gray-600'>Fitur daftar bulk files belum tersedia.</p>
                 ) : (
@@ -448,11 +592,11 @@ const LaporanPenerimaanBarangBulkModal = ({
                     </div>
                   </>
                 )}
-              </section>
+              </div>
             </TabPanel>
 
             <TabPanel tabId='status'>
-              <section className='rounded-lg border border-gray-200 bg-white p-5 shadow-sm'>
+              <div className='px-6 py-4 space-y-3'>
                 <h4 className='text-sm font-semibold text-gray-900'>Cek Status Bulk</h4>
                 <p className='mt-1 text-xs text-gray-600'>Masukkan Bulk ID untuk melihat progres konversi.</p>
                 <div className='mt-4 flex flex-col gap-3 md:flex-row md:items-center'>
@@ -579,12 +723,12 @@ const LaporanPenerimaanBarangBulkModal = ({
                     </div>
                   </div>
                 )}
-              </section>
+              </div>
             </TabPanel>
           </TabContent>
         </div>
 
-        <div className='flex justify-end border-t border-gray-200 bg-white px-6 py-4'>
+        <div className='flex justify-end border-t border-gray-200 bg-white px-6 py-3'>
           <button
             type='button'
             onClick={onClose}
