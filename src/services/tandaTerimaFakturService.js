@@ -255,6 +255,37 @@ class TandaTerimaFakturService {
       throw error;
     }
   }
+
+  async bulkUpload(groupCustomerId, file) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = authService.getToken();
+      const response = await fetch(
+        `${API_BASE_URL}/bulk-upload/${groupCustomerId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to upload TTF document');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error uploading TTF document:', error);
+      throw error;
+    }
+  }
 }
 
 export default new TandaTerimaFakturService();

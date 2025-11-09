@@ -6,6 +6,7 @@ import {
   TandaTerimaFakturModal,
   TandaTerimaFakturDetailModal,
   TandaTerimaFakturDocumentsModal,
+  UploadTTF2Modal,
 } from '@/components/tandaTerimaFaktur';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
@@ -85,6 +86,7 @@ const TandaTerimaFakturPage = () => {
   const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
   const [assignRequestLoading, setAssignRequestLoading] = useState(false);
   const [unassignRequestLoading, setUnassignRequestLoading] = useState(false);
+  const [isUploadTTF2ModalOpen, setIsUploadTTF2ModalOpen] = useState(false);
 
   const handleTabChange = useCallback((tabId) => {
     setActiveTab(tabId);
@@ -98,6 +100,19 @@ const TandaTerimaFakturPage = () => {
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
   };
+
+  const openUploadTTF2Modal = () => {
+    setIsUploadTTF2ModalOpen(true);
+  };
+
+  const closeUploadTTF2Modal = () => {
+    setIsUploadTTF2ModalOpen(false);
+  };
+
+  const handleUploadTTF2Success = useCallback(() => {
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
+  }, [queryClient]);
 
   const openEditModal = (ttf) => {
     setSelectedTtf(ttf);
@@ -328,6 +343,13 @@ const TandaTerimaFakturPage = () => {
             </div>
             <div className='flex items-center justify-end gap-3'>
               <button
+                onClick={openUploadTTF2Modal}
+                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-green-600 rounded-md shadow-sm hover:bg-green-700'
+              >
+                <HeroIcon name='arrow-up-tray' className='w-5 h-5 mr-2' />
+                Upload TTF 2
+              </button>
+              <button
                 onClick={openCreateModal}
                 className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
               >
@@ -407,6 +429,12 @@ const TandaTerimaFakturPage = () => {
         tandaTerimaFaktur={unassignModalTarget}
         mode='unassign'
         loading={unassignRequestLoading}
+      />
+
+      <UploadTTF2Modal
+        isOpen={isUploadTTF2ModalOpen}
+        onClose={closeUploadTTF2Modal}
+        onSuccess={handleUploadTTF2Success}
       />
 
       <ConfirmationDialog

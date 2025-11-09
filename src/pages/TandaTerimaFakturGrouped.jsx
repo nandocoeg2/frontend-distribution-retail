@@ -4,14 +4,17 @@ import {
   TandaTerimaFakturGroupedTable,
   TandaTerimaFakturGroupedDetailModal,
   PrintTandaTerimaFakturByGroupModal,
+  UploadTTF2Modal,
 } from '@/components/tandaTerimaFaktur';
 import HeroIcon from '@/components/atoms/HeroIcon';
 import { PrinterIcon } from '@heroicons/react/24/outline';
 
 const TandaTerimaFakturGroupedPage = () => {
+  const queryClient = useQueryClient();
   const [selectedGroupedItem, setSelectedGroupedItem] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isUploadTTF2ModalOpen, setIsUploadTTF2ModalOpen] = useState(false);
   const [tanggal, setTanggal] = useState(null);
   const [tanggalStart, setTanggalStart] = useState(null);
   const [tanggalEnd, setTanggalEnd] = useState(null);
@@ -34,6 +37,19 @@ const TandaTerimaFakturGroupedPage = () => {
   const handleClosePrintModal = useCallback(() => {
     setIsPrintModalOpen(false);
   }, []);
+
+  const handleOpenUploadModal = useCallback(() => {
+    setIsUploadTTF2ModalOpen(true);
+  }, []);
+
+  const handleCloseUploadModal = useCallback(() => {
+    setIsUploadTTF2ModalOpen(false);
+  }, []);
+
+  const handleUploadSuccess = useCallback(() => {
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
+  }, [queryClient]);
 
   const handleFilterModeChange = useCallback((mode) => {
     setFilterMode(mode);
@@ -86,13 +102,22 @@ const TandaTerimaFakturGroupedPage = () => {
                 <label className='block text-sm font-medium text-gray-700'>
                   Mode Filter
                 </label>
-                <button
-                  onClick={handleOpenPrintModal}
-                  className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition'
-                >
-                  <PrinterIcon className='w-5 h-5' />
-                  Print By Group & TOP
-                </button>
+                <div className='flex items-center gap-3'>
+                  <button
+                    onClick={handleOpenUploadModal}
+                    className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition'
+                  >
+                    <HeroIcon name='arrow-up-tray' className='w-5 h-5' />
+                    Upload TTF 2
+                  </button>
+                  <button
+                    onClick={handleOpenPrintModal}
+                    className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition'
+                  >
+                    <PrinterIcon className='w-5 h-5' />
+                    Print By Group & TOP
+                  </button>
+                </div>
               </div>
               <div className='flex gap-2'>
                 <button
@@ -186,6 +211,13 @@ const TandaTerimaFakturGroupedPage = () => {
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetail}
         groupedItem={selectedGroupedItem}
+      />
+
+      {/* Upload TTF 2 Modal */}
+      <UploadTTF2Modal
+        isOpen={isUploadTTF2ModalOpen}
+        onClose={handleCloseUploadModal}
+        onSuccess={handleUploadSuccess}
       />
 
       {/* Print Modal */}
