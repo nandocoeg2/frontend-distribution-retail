@@ -250,40 +250,7 @@ const getSuratJalanList = (checklist) => {
   return [];
 };
 
-const getSuratJalanDetails = (suratJalan) => {
-  if (!suratJalan) {
-    return [];
-  }
-
-  if (Array.isArray(suratJalan.suratJalanDetails)) {
-    return suratJalan.suratJalanDetails.filter(Boolean);
-  }
-
-  if (suratJalan.suratJalanDetails) {
-    return [suratJalan.suratJalanDetails];
-  }
-
-  return [];
-};
-
-const getDetailItems = (detail) => {
-  if (!detail) {
-    return [];
-  }
-
-  if (Array.isArray(detail.items) && detail.items.length > 0) {
-    return detail.items.filter(Boolean);
-  }
-
-  if (
-    Array.isArray(detail.suratJalanDetailItems) &&
-    detail.suratJalanDetailItems.length > 0
-  ) {
-    return detail.suratJalanDetailItems.filter(Boolean);
-  }
-
-  return [];
-};
+// Note: getSuratJalanDetails and getDetailItems removed - use getPackingBoxes instead (Nov 9, 2025)
 
 const getPackingBoxes = (suratJalan) => {
   if (!suratJalan) {
@@ -352,35 +319,12 @@ const buildPackingKeterangan = (item) => {
 };
 
 const calculateTotals = (suratJalan) => {
-  const details = getSuratJalanDetails(suratJalan);
   const packingBoxes = getPackingBoxes(suratJalan);
 
   let totalBoxes = 0;
   let totalQuantity = 0;
   let hasBox = false;
   let hasQuantity = false;
-
-  details.forEach((detail) => {
-    const detailBox = parseNumber(detail?.total_box);
-    if (detailBox !== null) {
-      totalBoxes += detailBox;
-      hasBox = true;
-    }
-
-    const detailQuantity = parseNumber(detail?.total_quantity_in_box);
-    if (detailQuantity !== null) {
-      totalQuantity += detailQuantity;
-      hasQuantity = true;
-    } else {
-      getDetailItems(detail).forEach((item) => {
-        const itemQuantity = parseNumber(item?.quantity);
-        if (itemQuantity !== null) {
-          totalQuantity += itemQuantity;
-          hasQuantity = true;
-        }
-      });
-    }
-  });
 
   packingBoxes.forEach((box) => {
     totalBoxes += 1;
@@ -455,157 +399,66 @@ const collectChecklistRows = (suratJalanList) => {
   let counter = 0;
 
   suratJalanList.forEach((suratJalan, sjIndex) => {
-    const details = getSuratJalanDetails(suratJalan);
     const packingBoxes = getPackingBoxes(suratJalan);
 
     console.log(`Processing SJ ${sjIndex + 1}:`, {
-      detailsCount: details.length,
       packingBoxesCount: packingBoxes.length,
       suratJalanId: suratJalan?.id,
     });
 
-    const beforeCount = rows.length;
+    if (packingBoxes.length === 0) {
+      console.warn(`⚠️ No packingBoxes found for SJ ${sjIndex + 1}`);
+      return;
+    }
 
-    details.forEach((detail) => {
-      const items = getDetailItems(detail);
-
-      if (items.length === 0) {
-        const dimension = getDimension(detail, suratJalan, detail);
-        const totalBoxQty = parseNumber(detail?.total_box);
-        const beratValue = calculateBerat(dimension, totalBoxQty);
-        const kubikasiValue = calculateKubikasi(dimension, totalBoxQty);
-
-        counter += 1;
-        rows.push({
-          no: String(counter),
-          noBox: detail?.no_box || '-',
-          namaBarang: detail?.nama_barang || '-',
-          jumlah: formatQuantity(
-            detail?.total_box,
-            'Box',
-            detail?.total_quantity_in_box,
-            'Qty'
-          ),
-          totalQuantity: formatQuantity(
-            detail?.total_quantity_in_box,
-            'Qty',
-            detail?.total_box,
-            'Box'
-          ),
-          berat:
-            beratValue !== null
-              ? `${numberFormatter.format(beratValue)} kg`
-              : '-',
-          kubikasi:
-            kubikasiValue !== null
-              ? `${numberFormatter.format(kubikasiValue)} m³`
-              : '-',
-          keterangan: formatMultilineText(detail?.keterangan || ''),
-        });
-        return;
-      }
-
-      items.forEach((item) => {
-        const dimension = getDimension(item, suratJalan, detail);
-        const itemBoxQty = parseNumber(item?.total_box);
-        const beratValue = calculateBerat(dimension, itemBoxQty);
-        const kubikasiValue = calculateKubikasi(dimension, itemBoxQty);
-
-        counter += 1;
-        rows.push({
-          no: String(counter),
-          noBox: detail?.no_box || item?.no_box || '-',
-          namaBarang: item?.nama_barang || detail?.nama_barang || '-',
-          jumlah: formatQuantity(
-            item?.quantity,
-            item?.satuan || item?.unit,
-            detail?.total_quantity_in_box,
-            'Qty'
-          ),
-          totalQuantity: formatQuantity(
-            detail?.total_quantity_in_box,
-            item?.satuan || 'Qty',
-            item?.total_box ?? item?.quantity,
-            item?.satuan || 'Qty'
-          ),
-          berat:
-            beratValue !== null
-              ? `${numberFormatter.format(beratValue)} kg`
-              : '-',
-          kubikasi:
-            kubikasiValue !== null
-              ? `${numberFormatter.format(kubikasiValue)} m³`
-              : '-',
-          keterangan: formatMultilineText(
-            item?.keterangan || detail?.keterangan || ''
-          ),
-        });
+    packingBoxes.forEach((box, boxIdx) => {
+      console.log(`  Box ${boxIdx + 1}:`, {
+        no_box: box.no_box,
+        total_quantity_in_box: box.total_quantity_in_box,
+        itemsCount: box.packingBoxItems?.length || 0,
       });
-    });
+      
+      const boxItems = box.packingBoxItems || [];
+      
+      // If box has items, create row for each item
+      if (boxItems.length > 0) {
+        boxItems.forEach((item) => {
+          const dimension = getDimension(item, suratJalan, null);
+          const itemQty = parseNumber(item?.quantity);
+          const beratValue = calculateBerat(dimension, itemQty);
+          const kubikasiValue = calculateKubikasi(dimension, itemQty);
 
-    const detailRowsAdded = rows.length > beforeCount;
-
-    console.log(`SJ ${sjIndex + 1} after details:`, {
-      detailRowsAdded,
-      rowsCount: rows.length,
-      beforeCount,
-      willProcessPackingBoxes:
-        !detailRowsAdded && packingBoxes && packingBoxes.length > 0,
-    });
-
-    // Always process packing boxes if available and no detail rows were added
-    // This handles the case where surat jalan has packing but no detail items
-    if (!detailRowsAdded && packingBoxes && packingBoxes.length > 0) {
-      console.log(
-        `Processing ${packingBoxes.length} packing boxes for SJ ${sjIndex + 1}`
-      );
-      packingBoxes.forEach((box, boxIdx) => {
-        console.log(`  Box ${boxIdx + 1}:`, {
-          no_box: box.no_box,
-          total_quantity_in_box: box.total_quantity_in_box,
-          itemsCount: box.packingBoxItems?.length || 0,
+          counter += 1;
+          rows.push({
+            no: String(counter),
+            noBox: box.no_box || '-',
+            namaBarang: item.nama_barang || '-',
+            jumlah: formatQuantity(item.quantity, item.satuan || 'pcs'),
+            totalQuantity: formatQuantity(item.quantity, item.satuan || 'pcs'),
+            berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
+            kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
+            keterangan: formatMultilineText(item.keterangan || ''),
+          });
         });
-        const boxItems = box.packingBoxItems || [];
-        const itemNames =
-          boxItems.length > 0
-            ? boxItems.map((item) => item.nama_barang).join(' + ')
-            : box.nama_barang || 'Unknown Item';
-        const totalQty = box.total_quantity_in_box || 0;
-
+      } else {
+        // Empty box, create a single row
         const dimension = getDimension(box, suratJalan, null);
         const beratValue = calculateBerat(dimension, 1);
         const kubikasiValue = calculateKubikasi(dimension, 1);
-
+        
         counter += 1;
         rows.push({
           no: String(counter),
           noBox: box.no_box || '-',
-          namaBarang: itemNames || '-',
-          jumlah: `${totalQty} Qty`,
-          totalQuantity: `${totalQty} Qty`,
-          berat:
-            beratValue !== null
-              ? `${numberFormatter.format(beratValue)} kg`
-              : '-',
-          kubikasi:
-            kubikasiValue !== null
-              ? `${numberFormatter.format(kubikasiValue)} m³`
-              : '-',
-          keterangan:
-            boxItems.length > 1
-              ? 'Mixed Carton'
-              : boxItems[0]?.keterangan || '-',
+          namaBarang: box.nama_barang || 'Unknown Item',
+          jumlah: `${box.total_quantity_in_box || 0} Qty`,
+          totalQuantity: `${box.total_quantity_in_box || 0} Qty`,
+          berat: beratValue !== null ? `${numberFormatter.format(beratValue)} kg` : '-',
+          kubikasi: kubikasiValue !== null ? `${numberFormatter.format(kubikasiValue)} m³` : '-',
+          keterangan: '-',
         });
-      });
-
-      console.log(
-        `After processing packing boxes: rows.length = ${rows.length}`
-      );
-    } else {
-      console.log(
-        `Skipping packing boxes: detailRowsAdded=${detailRowsAdded}, packingBoxes.length=${packingBoxes?.length || 0}`
-      );
-    }
+      }
+    });
   });
 
   console.log(`Total rows collected: ${rows.length}`);
@@ -878,16 +731,12 @@ export const exportCheckingListToPDF = async (checklist) => {
       // Provide detailed error info
       const debugInfo = suratJalanList
         .map((sj, idx) => {
-          const details = getSuratJalanDetails(sj);
           const boxes = getPackingBoxes(sj);
           const packing = sj?.purchaseOrder?.packing || sj?.packing;
-          const hasPackingItems = packing?.packingItems !== undefined;
           const hasPackingBoxes = packing?.packingBoxes !== undefined;
 
-          return `SJ ${idx + 1}: ${details.length} details, ${boxes.length} boxes${
-            hasPackingItems && !hasPackingBoxes
-              ? ' [⚠️ API missing packingBoxes]'
-              : ''
+          return `SJ ${idx + 1}: ${boxes.length} boxes${
+            !hasPackingBoxes ? ' [⚠️ API missing packingBoxes]' : ''
           }`;
         })
         .join('; ');
@@ -898,9 +747,8 @@ export const exportCheckingListToPDF = async (checklist) => {
           `\n\nKemungkinan penyebab:\n` +
           `1. Backend API tidak mengembalikan relasi "packingBoxes"\n` +
           `2. Packing belum memiliki boxes/items\n` +
-          `3. Surat jalan belum memiliki detail items\n\n` +
-          `Solusi: Periksa console log untuk detail lebih lanjut. ` +
-          `Jika ada "[⚠️ API missing packingBoxes]", backend perlu diupdate untuk include packingBoxes relation.`
+          `3. Purchase Order belum memiliki packing data\n\n` +
+          `Solusi: Pastikan backend include packingBoxes relation dalam query.`
       );
     }
 

@@ -17,6 +17,7 @@ import ActivityTimeline from '../common/ActivityTimeline';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
+import { getPackingBoxes, getTotals } from '../../utils/suratJalanHelpers';
 
 const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -48,8 +49,10 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
   const handleExportPDF = async () => {
     try {
       // Validate surat jalan data
-      if (!suratJalan || !suratJalan.suratJalanDetails || suratJalan.suratJalanDetails.length === 0) {
-        toastService.error('Tidak ada detail surat jalan untuk dicetak');
+      const packingBoxes = getPackingBoxes(suratJalan);
+      
+      if (!suratJalan || packingBoxes.length === 0) {
+        toastService.error('Tidak ada packing boxes untuk dicetak. Pastikan purchase order memiliki packing data.');
         return;
       }
 
@@ -157,9 +160,9 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
     },
     {
       id: 'details',
-      label: 'Surat Jalan Details',
+      label: 'Box Details',
       icon: <ListBulletIcon className='w-5 h-5' aria-hidden='true' />,
-      badge: suratJalan.suratJalanDetails?.length,
+      badge: getPackingBoxes(suratJalan).length,
     },
     {
       id: 'checklist',
@@ -480,26 +483,30 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
             </div>
           )}
 
-          {activeTab === 'details' && (
+          {activeTab === 'details' && (() => {
+            // Use packingBoxes structure only
+            const packingBoxes = getPackingBoxes(suratJalan);
+            const { totalBoxes, totalQuantity } = getTotals(suratJalan);
+            
+            return (
             <div className='space-y-4'>
               <div className='flex items-center justify-between mb-6'>
                 <h3 className='text-xl font-semibold text-gray-900'>
-                  Surat Jalan Details
+                  Box Details <span className='text-sm text-green-600'>(from Packing)</span>
                 </h3>
                 <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
-                  {suratJalan.suratJalanDetails?.length || 0} details
+                  {packingBoxes.length} box{packingBoxes.length !== 1 ? 'es' : ''} • {totalQuantity || 0} qty
                 </div>
               </div>
 
-              {suratJalan.suratJalanDetails &&
-              suratJalan.suratJalanDetails.length > 0 ? (
-                suratJalan.suratJalanDetails.map((detail, detailIndex) => (
+              {packingBoxes && packingBoxes.length > 0 ? (
+                packingBoxes.map((box, boxIndex) => (
                   <div
-                    key={detail.id || detailIndex}
+                    key={box.id || boxIndex}
                     className='overflow-hidden bg-white border border-gray-200 rounded-lg'
                   >
                     <button
-                      onClick={() => toggleDetail(detail.id || detailIndex)}
+                      onClick={() => toggleDetail(box.id || boxIndex)}
                       className='flex items-center justify-between w-full px-6 py-4 text-left transition-colors hover:bg-gray-50'
                     >
                       <div className='flex items-center space-x-4'>
@@ -508,44 +515,43 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                         </div>
                         <div>
                           <h4 className='text-lg font-semibold text-gray-900'>
-                            Box #{detail.no_box}
+                            Box #{box.no_box}
                           </h4>
                           <p className='text-sm text-gray-600'>
-                            Total Qty: {detail.total_quantity_in_box} • Boxes:{' '}
-                            {detail.total_box}
+                            Total Qty: {box.total_quantity_in_box} • Items:{' '}
+                            {box.packingBoxItems?.length || 0}
                           </p>
                         </div>
                       </div>
-                      {expandedDetails[detail.id || detailIndex] ? (
+                      {expandedDetails[box.id || boxIndex] ? (
                         <ChevronDownIcon className='w-5 h-5 text-gray-500' />
                       ) : (
                         <ChevronRightIcon className='w-5 h-5 text-gray-500' />
                       )}
                     </button>
 
-                    {expandedDetails[detail.id || detailIndex] && (
+                    {expandedDetails[box.id || boxIndex] && (
                       <div className='px-6 pb-6 border-t border-gray-100'>
                         <div className='mt-4 mb-6'>
                           <InfoTable
                             data={[
-                              { label: 'No Box', value: detail.no_box },
+                              { label: 'No Box', value: box.no_box },
                               {
                                 label: 'Total Quantity in Box',
-                                value: detail.total_quantity_in_box,
+                                value: box.total_quantity_in_box,
                               },
-                              { label: 'Isi Box', value: detail.isi_box },
-                              { label: 'Sisa', value: detail.sisa },
-                              { label: 'Total Box', value: detail.total_box },
+                              {
+                                label: 'Number of Items',
+                                value: box.packingBoxItems?.length || 0,
+                              },
                             ]}
                           />
                         </div>
 
-                        {(detail.items || detail.suratJalanDetailItems) &&
-                          (detail.items?.length > 0 ||
-                            detail.suratJalanDetailItems?.length > 0) && (
+                        {box.packingBoxItems && box.packingBoxItems.length > 0 && (
                             <div>
                               <h5 className='mb-4 text-lg font-medium text-gray-900'>
-                                Items
+                                Items ({box.packingBoxItems.length})
                               </h5>
                               <div className='overflow-x-auto bg-white border border-gray-200 rounded-lg'>
                                 <table className='min-w-full divide-y divide-gray-200'>
@@ -558,13 +564,13 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                                         PLU
                                       </th>
                                       <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                        Item ID
+                                      </th>
+                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                                         Quantity
                                       </th>
                                       <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                                         Satuan
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Total Box
                                       </th>
                                       <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                                         Keterangan
@@ -572,29 +578,25 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                                     </tr>
                                   </thead>
                                   <tbody className='bg-white divide-y divide-gray-200'>
-                                    {(
-                                      detail.items ||
-                                      detail.suratJalanDetailItems ||
-                                      []
-                                    ).map((item, itemIndex) => (
+                                    {box.packingBoxItems.map((item, itemIndex) => (
                                       <tr
-                                        key={item.id || itemIndex}
+                                        key={item.id || item.itemId || itemIndex}
                                         className='hover:bg-gray-50'
                                       >
                                         <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
                                           {item.nama_barang}
                                         </td>
                                         <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.PLU}
+                                          {item.item?.plu || '-'}
+                                        </td>
+                                        <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap font-mono text-xs'>
+                                          {item.itemId ? item.itemId.slice(0, 8) + '...' : '-'}
                                         </td>
                                         <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                                           {item.quantity}
                                         </td>
                                         <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.satuan}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.total_box}
+                                          {item.satuan || 'pcs'}
                                         </td>
                                         <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                                           {item.keterangan || '-'}
@@ -619,15 +621,16 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                     />
                   </div>
                   <h3 className='mb-2 text-lg font-medium text-gray-900'>
-                    No Details Found
+                    No Box Details Found
                   </h3>
                   <p className='text-gray-500'>
-                    No surat jalan details available for this record.
+                    No packing boxes available. Please ensure the purchase order has packing data.
                   </p>
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {activeTab === 'checklist' && (
             <div className='space-y-4'>
