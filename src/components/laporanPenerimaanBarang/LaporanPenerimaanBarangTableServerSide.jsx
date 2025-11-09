@@ -41,6 +41,10 @@ const TAB_STATUS_CONFIG = {
     label: 'Failed',
     statusCode: 'FAILED LAPORAN PENERIMAAN BARANG',
   },
+  failed: {
+    label: 'Indikasi Pengganti',
+    statusCode: 'INDIKASI PENGGANTI',
+  },
 };
 
 const resolveStatusVariant = (status) => {
@@ -54,7 +58,7 @@ const resolveStatusVariant = (status) => {
     return 'success';
   }
 
-  if (value.includes('failed') || value.includes('error')) {
+  if (value.includes('failed') || value.includes('error') || value.includes('pengganti') || value.includes('indikasi')) {
     return 'danger';
   }
 
