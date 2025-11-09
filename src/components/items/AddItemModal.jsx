@@ -96,6 +96,7 @@ const AddItemModal = ({ onClose }) => {
           {activeTab === 'manual' ? (
             <ItemForm
               onSubmit={handleSubmit}
+              onClose={onClose}
               loading={loading}
               error={error}
             />
