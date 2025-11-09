@@ -15,8 +15,10 @@ import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs';
 import { AccordionItem, StatusBadge, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
-import { exportCheckingListToPDF } from './PrintCheckingList';
 import ActivityTimeline from '../common/ActivityTimeline';
+import checkingListService from '../../services/checkingListService';
+import authService from '../../services/authService';
+import toastService from '../../services/toastService';
 
 const numberFormatter = new Intl.NumberFormat('id-ID');
 
@@ -47,6 +49,7 @@ const CheckingListDetailModal = ({
   isLoading = false,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [exportLoading, setExportLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     statusInfo: false,
@@ -123,11 +126,53 @@ const CheckingListDetailModal = ({
     }));
   };
 
-  const handleExportPdf = () => {
-    if (isLoading || !checklist) {
+  const handleExportPdf = async () => {
+    if (isLoading || !checklist || exportLoading) {
       return;
     }
-    exportCheckingListToPDF(checklist);
+
+    setExportLoading(true);
+
+    try {
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info('Generating checklist...');
+
+      // Call backend API to get HTML
+      const html = await checkingListService.exportCheckingList(
+        checklist.id,
+        companyData.id
+      );
+
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Checklist berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error(
+          'Popup window diblokir. Silakan izinkan popup untuk mencetak.'
+        );
+      }
+    } catch (error) {
+      console.error('Failed to export checklist:', error);
+      toastService.error(error.message || 'Gagal mengekspor checklist');
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   const tabs = [
@@ -199,11 +244,15 @@ const CheckingListDetailModal = ({
             <button
               type='button'
               onClick={handleExportPdf}
-              disabled={isLoading || !checklist}
+              disabled={isLoading || !checklist || exportLoading}
               className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              <ArrowDownTrayIcon className='w-5 h-5' />
-              <span>Export PDF</span>
+              {exportLoading ? (
+                <span className='inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
+              ) : (
+                <ArrowDownTrayIcon className='w-5 h-5' />
+              )}
+              <span>{exportLoading ? 'Exporting...' : 'Export PDF'}</span>
             </button>
             <button
               onClick={onClose}

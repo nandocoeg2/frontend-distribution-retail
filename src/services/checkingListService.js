@@ -145,6 +145,34 @@ class CheckingListService {
       throw error;
     }
   }
+
+  async exportCheckingList(checklistId, companyId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_BASE_URL}${RESOURCE_PATH}/${checklistId}/export?companyId=${companyId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/html',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to export checklist');
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error exporting checklist surat jalan:', error);
+      throw error;
+    }
+  }
 }
 
 export default new CheckingListService();
