@@ -296,6 +296,40 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  async exportLPB(lpbId) {
+    try {
+      if (!lpbId) {
+        throw new Error('ID laporan penerimaan barang diperlukan');
+      }
+
+      const response = await this.api.get(
+        '/laporan-penerimaan-barang/' + lpbId + '/export',
+        {
+          responseType: 'blob',
+        }
+      );
+
+      // Extract filename from Content-Disposition header
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'lpb-file.pdf';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      return {
+        blob: response.data,
+        filename: filename,
+        contentType: response.headers['content-type'],
+      };
+    } catch (error) {
+      console.error('Error exporting LPB file:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();

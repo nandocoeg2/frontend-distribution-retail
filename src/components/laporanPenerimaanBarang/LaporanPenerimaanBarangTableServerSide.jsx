@@ -8,6 +8,7 @@ import {
   CheckIcon,
   LinkIcon,
   LinkSlashIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
@@ -17,6 +18,8 @@ import { DataTable, DataTablePagination } from '../table';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import AssignPurchaseOrderModal from './AssignPurchaseOrderModal';
 import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerimaanBarangOperations';
+import laporanPenerimaanBarangService from '../../services/laporanPenerimaanBarangService';
+import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
@@ -97,6 +100,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const [lpbToUnassign, setLpbToUnassign] = useState(null);
   const [showAssignConfirmation, setShowAssignConfirmation] = useState(false);
   const [showUnassignConfirmation, setShowUnassignConfirmation] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const { isAssigning, isUnassigning, assignPurchaseOrder, unassignPurchaseOrder } =
     useLaporanPenerimaanBarangOperations();
@@ -204,6 +208,82 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const handleCancelUnassignConfirmation = () => {
     setShowUnassignConfirmation(false);
     setLpbToUnassign(null);
+  };
+
+  // Handler untuk print LPB
+  const handlePrintSelected = async () => {
+    if (!selectedReports || selectedReports.length === 0) {
+      toastService.error('Tidak ada laporan yang dipilih');
+      return;
+    }
+
+    setIsPrinting(true);
+    try {
+      toastService.info(`Mendownload ${selectedReports.length} file LPB...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Loop through selected reports and download LPB files
+      for (let i = 0; i < selectedReports.length; i++) {
+        const reportId = selectedReports[i];
+        
+        try {
+          // Get report data to extract no_lpb
+          const report = reports.find(r => resolveReportId(r) === reportId);
+          const noLpb = report?.no_lpb || reportId;
+          
+          // Generate current datetime for filename
+          const now = new Date();
+          const datetime = now.toISOString()
+            .replace(/[-:]/g, '')
+            .replace('T', '_')
+            .split('.')[0];
+          
+          const result = await laporanPenerimaanBarangService.exportLPB(reportId);
+          
+          // Create a URL for the blob
+          const blobUrl = window.URL.createObjectURL(result.blob);
+          
+          // Download file directly (works better in Electron)
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `${noLpb}_${datetime}.pdf`;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+          }, 100);
+
+          successCount++;
+
+          // Small delay between downloads
+          if (i < selectedReports.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error downloading LPB ${reportId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil mendownload ${successCount} file LPB${failCount > 0 ? `. ${failCount} gagal.` : ''}. Silakan buka file untuk print.`
+        );
+      } else {
+        toastService.error('Gagal mendownload file LPB');
+      }
+    } catch (error) {
+      console.error('Error in bulk download LPB:', error);
+      toastService.error(error.message || 'Gagal mendownload LPB');
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const handleSelectAllInternalToggle = useCallback(() => {
@@ -527,6 +607,14 @@ const LaporanPenerimaanBarangTableServerSide = ({
             </span>
           </div>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrintSelected}
+              disabled={isPrinting}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <PrinterIcon className="h-4 w-4" />
+              <span>{isPrinting ? 'Mendownload...' : 'Print LPB'}</span>
+            </button>
             <button
               onClick={onProcessSelected}
               disabled={actionDisabled}
