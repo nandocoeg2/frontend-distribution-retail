@@ -322,6 +322,46 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
+      columnHelper.accessor('customer.namaCustomer', {
+        id: 'customer',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Customer</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
+      }),
+      columnHelper.accessor('purchaseOrder.invoice.no_invoice', {
+        id: 'invoice',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Invoice</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
+      }),
       columnHelper.accessor('tanggal_po', {
         id: 'tanggal_po',
         header: ({ column }) => (
