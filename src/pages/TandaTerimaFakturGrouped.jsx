@@ -115,7 +115,7 @@ const TandaTerimaFakturGroupedPage = () => {
                     className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition'
                   >
                     <PrinterIcon className='w-5 h-5' />
-                    Print By Group & TOP
+                    Print TTF 1
                   </button>
                 </div>
               </div>

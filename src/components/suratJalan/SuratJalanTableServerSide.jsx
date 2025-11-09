@@ -306,7 +306,7 @@ const SuratJalanTableServerSide = ({
         header: 'Printed',
         cell: (info) => (
           <StatusBadge
-            status={info.getValue() ? 'Yes' : 'No'}
+            status={info.getValue() ? 'Sudah Print' : 'Belum Print'}
             variant={info.getValue() ? 'success' : 'secondary'}
             size="sm"
             dot

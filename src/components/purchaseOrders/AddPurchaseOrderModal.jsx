@@ -36,7 +36,7 @@ const AddPurchaseOrderModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [activeTab, setActiveTab] = useState('manual');
+  const [activeTab, setActiveTab] = useState('bulk');
   const [uploadMode, setUploadMode] = useState('files');
 
   // Refs for file inputs
@@ -60,11 +60,11 @@ const AddPurchaseOrderModal = ({
   useEffect(() => {
     if (isOpen) {
       // Reset everything when modal opens
-      setActiveTab('manual');
+      setActiveTab('bulk');
       resetForm();
     } else {
       // Clear everything when modal closes
-      setActiveTab('manual');
+      setActiveTab('bulk');
       setError(null);
       setSelectedFile(null);
       setLoading(false);
@@ -322,25 +322,7 @@ const AddPurchaseOrderModal = ({
           variant='underline'
           className='mb-6'
         >
-          <Tab
-            id='manual'
-            label='Manual Input'
-            icon={
-              <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
-                />
-              </svg>
-            }
-          />
+
           <Tab
             id='bulk'
             label='Bulk Upload'
@@ -356,6 +338,25 @@ const AddPurchaseOrderModal = ({
                   strokeLinejoin='round'
                   strokeWidth={2}
                   d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10'
+                />
+              </svg>
+            }
+          />
+          <Tab
+            id='manual'
+            label='Manual Input'
+            icon={
+              <svg
+                className='w-5 h-5'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
                 />
               </svg>
             }
