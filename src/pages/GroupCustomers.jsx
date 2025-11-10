@@ -4,8 +4,7 @@ import useGroupCustomerOperations from '@/hooks/useGroupCustomerOperations';
 import GroupCustomerTable from '@/components/groupCustomers/GroupCustomerTable';
 import GroupCustomerSearch from '@/components/groupCustomers/GroupCustomerSearch';
 import AddGroupCustomerModal from '@/components/groupCustomers/AddGroupCustomerModal';
-import EditGroupCustomerModal from '@/components/groupCustomers/EditGroupCustomerModal';
-import ViewGroupCustomerModal from '@/components/groupCustomers/ViewGroupCustomerModal';
+import GroupCustomerDetailCard from '@/components/groupCustomers/GroupCustomerDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
@@ -22,47 +21,32 @@ const GroupCustomers = () => {
     handlePageChange,
     handleLimitChange,
     deleteGroupCustomerConfirmation,
-    fetchGroupCustomers,
+    fetchEntities,
     handleAuthError
   } = useGroupCustomersPage();
 
   const { getGroupCustomerById, loading: detailLoading } = useGroupCustomerOperations();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingGroupCustomer, setEditingGroupCustomer] = useState(null);
-  const [viewingGroupCustomer, setViewingGroupCustomer] = useState(null);
+  const [selectedGroupCustomerForDetail, setSelectedGroupCustomerForDetail] = useState(null);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = (groupCustomer) => {
-    setEditingGroupCustomer(groupCustomer);
-    setShowEditModal(true);
-  };
-  const closeEditModal = () => {
-    setEditingGroupCustomer(null);
-    setShowEditModal(false);
-  };
-
-  const openViewModal = async (groupCustomer) => {
+  const handleViewDetail = async (groupCustomer) => {
     try {
       // Fetch detail data using GET /:id endpoint
       const detailData = await getGroupCustomerById(groupCustomer.id);
-      setViewingGroupCustomer(detailData);
-      setShowViewModal(true);
+      setSelectedGroupCustomerForDetail(detailData);
     } catch (err) {
       // If fetch fails, fallback to list data
       console.warn('Failed to fetch group customer details, using list data:', err.message);
-      setViewingGroupCustomer(groupCustomer);
-      setShowViewModal(true);
+      setSelectedGroupCustomerForDetail(groupCustomer);
     }
   };
 
-  const closeViewModal = () => {
-    setViewingGroupCustomer(null);
-    setShowViewModal(false);
+  const handleCloseDetail = () => {
+    setSelectedGroupCustomerForDetail(null);
   };
 
   const handleGroupCustomerAdded = (newGroupCustomer) => {
@@ -70,14 +54,6 @@ const GroupCustomers = () => {
     closeAddModal();
   };
 
-  const handleGroupCustomerUpdated = (updatedGroupCustomer) => {
-    setGroupCustomers(
-      groupCustomers.map((gc) =>
-        gc.id === updatedGroupCustomer.id ? updatedGroupCustomer : gc
-      )
-    );
-    closeEditModal();
-  };
 
   if (loading) {
     return (
@@ -92,7 +68,7 @@ const GroupCustomers = () => {
       <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
         <p className='text-red-800'>Error: {error}</p>
         <button
-          onClick={fetchGroupCustomers}
+          onClick={() => fetchEntities()}
           className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
         >
           Retry
@@ -127,9 +103,9 @@ const GroupCustomers = () => {
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal} 
             onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation} 
-            onView={openViewModal}
+            onViewDetail={handleViewDetail}
+            selectedGroupCustomerId={selectedGroupCustomerForDetail?.id}
             searchQuery={searchQuery}
           />
         </div>
@@ -140,21 +116,6 @@ const GroupCustomers = () => {
         onClose={closeAddModal} 
         onGroupCustomerAdded={handleGroupCustomerAdded}
         handleAuthError={handleAuthError}
-      />
-
-      <EditGroupCustomerModal 
-        show={showEditModal} 
-        onClose={closeEditModal} 
-        groupCustomer={editingGroupCustomer}
-        onGroupCustomerUpdated={handleGroupCustomerUpdated}
-        handleAuthError={handleAuthError}
-      />
-
-      <ViewGroupCustomerModal
-        show={showViewModal}
-        onClose={closeViewModal}
-        groupCustomer={viewingGroupCustomer}
-        loading={detailLoading}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -169,6 +130,19 @@ const GroupCustomers = () => {
         cancelText="Batal"
         loading={deleteGroupCustomerConfirmation.loading}
       />
+
+      {/* Group Customer Detail Card */}
+      {selectedGroupCustomerForDetail && (
+        <GroupCustomerDetailCard
+          groupCustomer={selectedGroupCustomerForDetail}
+          onClose={handleCloseDetail}
+          onUpdate={() => {
+            fetchEntities();
+            handleViewDetail(selectedGroupCustomerForDetail);
+          }}
+          loading={detailLoading}
+        />
+      )}
     </div>
   );
 };
