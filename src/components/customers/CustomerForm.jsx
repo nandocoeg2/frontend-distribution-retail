@@ -3,6 +3,7 @@ import { groupCustomerService } from '@/services/groupCustomerService';
 import regionService from '@/services/regionService';
 import toastService from '@/services/toastService';
 import Autocomplete from '@/components/common/Autocomplete';
+import CustomerPICForm from './CustomerPICForm';
 
 const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     NPWP: '',
     alamatNPWP: '',
     description: '',
+    customerPics: [],
   });
   const [groupCustomers, setGroupCustomers] = useState([]);
   const [regions, setRegions] = useState([]);
@@ -31,7 +33,8 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     initialData?.email,
     initialData?.NPWP,
     initialData?.alamatNPWP,
-    initialData?.description
+    initialData?.description,
+    initialData?.customerPics
   ]);
 
   useEffect(() => {
@@ -47,6 +50,12 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
         NPWP: memoizedInitialData.NPWP || '',
         alamatNPWP: memoizedInitialData.alamatNPWP || '',
         description: memoizedInitialData.description || '',
+        customerPics: memoizedInitialData.customerPics?.map(pic => ({
+          nama_pic: pic.nama_pic || '',
+          dept: pic.dept || '',
+          telpon: pic.telpon || '',
+          default: pic.default || false
+        })) || [],
       });
     }
   }, [memoizedInitialData]);
@@ -87,6 +96,10 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
 
   const handleAutocompleteChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePICsChange = (pics) => {
+    setFormData(prev => ({ ...prev, customerPics: pics }));
   };
 
   const handleSubmit = (e) => {
@@ -265,6 +278,15 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
         </div>
+      </div>
+
+      {/* Customer PICs Section */}
+      <div className="pt-4 border-t border-gray-200">
+        <CustomerPICForm
+          pics={formData.customerPics}
+          onChange={handlePICsChange}
+          disabled={isLoading}
+        />
       </div>
       
       <div className="flex justify-end space-x-2">

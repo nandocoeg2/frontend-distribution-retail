@@ -91,6 +91,15 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
                   <div className='text-sm text-gray-900'>
                     {customer.phoneNumber || '-'}
                   </div>
+                  {customer.customerPics && customer.customerPics.length > 0 && (() => {
+                    const defaultPic = customer.customerPics.find(pic => pic.default);
+                    const pic = defaultPic || customer.customerPics[0];
+                    return (
+                      <div className='text-xs text-gray-500'>
+                        PIC: {pic.nama_pic} ({pic.dept})
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                   <div className='flex space-x-2'>

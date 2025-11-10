@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import customerService from '@/services/customerService';
 import groupCustomerService from '@/services/groupCustomerService';
 import toastService from '@/services/toastService';
-import { ClipboardDocumentIcon, XMarkIcon, BuildingStorefrontIcon, MapPinIcon, DevicePhoneMobileIcon, AtSymbolIcon, IdentificationIcon, CalendarDaysIcon, UserGroupIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentIcon, XMarkIcon, BuildingStorefrontIcon, MapPinIcon, DevicePhoneMobileIcon, AtSymbolIcon, IdentificationIcon, CalendarDaysIcon, UserGroupIcon, EyeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 
@@ -118,6 +118,11 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                   icon={<EyeIcon className="h-4 w-4" />}
                 />
                 <Tab
+                  id="customer-pics"
+                  label="Customer PICs"
+                  icon={<UserCircleIcon className="h-4 w-4" />}
+                />
+                <Tab
                   id="group-customer"
                   label="Group Customer"
                   icon={<UserGroupIcon className="h-4 w-4" />}
@@ -201,6 +206,72 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                         ]}
                       />
                     </div>
+                  </div>
+                </TabPanel>
+
+                {/* Customer PICs Tab */}
+                <TabPanel tabId="customer-pics">
+                  <div className="space-y-6">
+                    {fullCustomer?.customerPics && fullCustomer.customerPics.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {fullCustomer.customerPics
+                          .sort((a, b) => (b.default ? 1 : 0) - (a.default ? 1 : 0))
+                          .map((pic, index) => (
+                          <div 
+                            key={pic.id || index}
+                            className={`bg-white rounded-lg border-2 p-5 transition-all ${
+                              pic.default 
+                                ? 'border-blue-500 shadow-md' 
+                                : 'border-gray-200'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center space-x-2">
+                                <UserCircleIcon className="h-6 w-6 text-gray-600" />
+                                <h4 className="text-base font-semibold text-gray-900">
+                                  {pic.nama_pic}
+                                </h4>
+                              </div>
+                              {pic.default && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-600 text-white">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="flex items-start">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Department</p>
+                                  <p className="mt-0.5 text-sm text-gray-900">{pic.dept}</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-start">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</p>
+                                  <div className="flex items-center mt-0.5">
+                                    <DevicePhoneMobileIcon className="h-4 w-4 text-gray-400 mr-1.5" />
+                                    <a 
+                                      href={`tel:${pic.telpon}`}
+                                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                                    >
+                                      {pic.telpon}
+                                    </a>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
+                        <UserCircleIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600 font-medium">No PICs Available</p>
+                        <p className="text-sm text-gray-400 mt-2">No person in charge has been added to this customer</p>
+                      </div>
+                    )}
                   </div>
                 </TabPanel>
 
