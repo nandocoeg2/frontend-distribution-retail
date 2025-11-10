@@ -3,8 +3,7 @@ import { useSuppliersPage as useSuppliers } from '@/hooks/useSuppliers';
 import SupplierTable from '@/components/suppliers/SupplierTable';
 import SupplierSearch from '@/components/suppliers/SupplierSearch';
 import AddSupplierModal from '@/components/suppliers/AddSupplierModal';
-import EditSupplierModal from '@/components/suppliers/EditSupplierModal';
-import ViewSupplierModal from '@/components/suppliers/ViewSupplierModal';
+import SupplierDetailCard from '@/components/suppliers/SupplierDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
@@ -26,30 +25,17 @@ const Suppliers = () => {
   } = useSuppliers();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState(null);
-  const [viewingSupplier, setViewingSupplier] = useState(null);
+  const [selectedSupplierForDetail, setSelectedSupplierForDetail] = useState(null);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = (supplier) => {
-    setEditingSupplier(supplier);
-    setShowEditModal(true);
-  };
-  const closeEditModal = () => {
-    setEditingSupplier(null);
-    setShowEditModal(false);
+  const handleViewDetail = (supplier) => {
+    setSelectedSupplierForDetail(supplier);
   };
 
-  const openViewModal = (supplier) => {
-    setViewingSupplier(supplier);
-    setShowViewModal(true);
-  };
-  const closeViewModal = () => {
-    setViewingSupplier(null);
-    setShowViewModal(false);
+  const handleCloseDetail = () => {
+    setSelectedSupplierForDetail(null);
   };
 
   const handleSupplierAdded = (newSupplier) => {
@@ -57,14 +43,6 @@ const Suppliers = () => {
     closeAddModal();
   };
 
-  const handleSupplierUpdated = (updatedSupplier) => {
-    setSuppliers(
-      suppliers.map((supplier) =>
-        supplier.id === updatedSupplier.id ? updatedSupplier : supplier
-      )
-    );
-    closeEditModal();
-  };
 
   if (loading) {
     return (
@@ -114,9 +92,9 @@ const Suppliers = () => {
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal} 
             onDelete={deleteSupplierConfirmation.showDeleteConfirmation} 
-            onView={openViewModal}
+            onViewDetail={handleViewDetail}
+            selectedSupplierId={selectedSupplierForDetail?.id}
             searchQuery={searchQuery}
           />
         </div>
@@ -129,19 +107,18 @@ const Suppliers = () => {
         handleAuthError={handleAuthError}
       />
 
-      <EditSupplierModal 
-        show={showEditModal} 
-        onClose={closeEditModal} 
-        supplier={editingSupplier}
-        onSupplierUpdated={handleSupplierUpdated}
-        handleAuthError={handleAuthError}
-      />
-
-      <ViewSupplierModal 
-        show={showViewModal} 
-        onClose={closeViewModal} 
-        supplier={viewingSupplier} 
-      />
+      {/* Supplier Detail Card */}
+      {selectedSupplierForDetail && (
+        <SupplierDetailCard
+          supplier={selectedSupplierForDetail}
+          onClose={handleCloseDetail}
+          handleAuthError={handleAuthError}
+          onUpdate={() => {
+            fetchSuppliers();
+            handleViewDetail(selectedSupplierForDetail);
+          }}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog

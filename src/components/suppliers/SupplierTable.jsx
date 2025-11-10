@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-  PencilIcon,
   TrashIcon,
-  EyeIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 
-const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedSupplierId, searchQuery }) => {
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -47,7 +45,15 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
             </tr>
           ) : (
             suppliers.map((supplier) => (
-              <tr key={supplier.id} className='hover:bg-gray-50'>
+              <tr 
+                key={supplier.id} 
+                onClick={() => onViewDetail(supplier)}
+                className={`cursor-pointer transition-colors ${
+                  selectedSupplierId === supplier.id 
+                    ? 'bg-blue-50 hover:bg-blue-100' 
+                    : 'hover:bg-gray-50'
+                }`}
+              >
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {supplier.name || '-'}
@@ -92,21 +98,10 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                   <div className='flex space-x-2 justify-end'>
                     <button
-                      onClick={() => onView(supplier)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50'
-                      title='Lihat Detail'
-                    >
-                      <EyeIcon className='h-4 w-4' />
-                    </button>
-                    <button
-                      onClick={() => onEdit(supplier)}
-                      className='text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50'
-                      title='Edit'
-                    >
-                      <PencilIcon className='h-4 w-4' />
-                    </button>
-                    <button
-                      onClick={() => onDelete(supplier.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(supplier.id);
+                      }}
                       className='text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50'
                       title='Hapus'
                     >
