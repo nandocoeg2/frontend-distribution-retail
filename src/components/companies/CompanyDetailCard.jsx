@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import {
+  XMarkIcon,
+  PencilIcon,
+  CheckIcon,
+  BuildingOfficeIcon,
+  BanknotesIcon,
+  MapPinIcon,
+  DevicePhoneMobileIcon,
+  IdentificationIcon,
+  CalendarDaysIcon,
+  PhotoIcon,
+} from '@heroicons/react/24/outline';
+import { formatDateTime } from '../../utils/formatUtils';
+import { InfoTable } from '../ui';
+import fileService from '@/services/fileService';
+import toastService from '@/services/toastService';
+import CompanyForm from './CompanyForm';
+
+const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    kode_company: '',
+    nama_perusahaan: '',
+    alamat: '',
+    no_rekening: '',
+    bank: '',
+    bank_account_name: '',
+    bank_cabang: '',
+    telp: '',
+    fax: '',
+    email: '',
+    direktur_utama: '',
+    npwp: '',
+    logoId: null
+  });
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (company) {
+      setFormData({
+        kode_company: company.kode_company || '',
+        nama_perusahaan: company.nama_perusahaan || '',
+        alamat: company.alamat || '',
+        no_rekening: company.no_rekening || '',
+        bank: company.bank || '',
+        bank_account_name: company.bank_account_name || '',
+        bank_cabang: company.bank_cabang || '',
+        telp: company.telp || '',
+        fax: company.fax || '',
+        email: company.email || '',
+        direktur_utama: company.direktur_utama || '',
+        npwp: company.npwp || '',
+        logoId: company.logoId || null
+      });
+
+      // Set logo URL if logo exists
+      if (company.logoId) {
+        setLogoUrl(fileService.getFileUrl(company.logoId));
+      } else {
+        setLogoUrl(null);
+      }
+    }
+  }, [company]);
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    // Reset to original values
+    if (company) {
+      setFormData({
+        kode_company: company.kode_company || '',
+        nama_perusahaan: company.nama_perusahaan || '',
+        alamat: company.alamat || '',
+        no_rekening: company.no_rekening || '',
+        bank: company.bank || '',
+        bank_account_name: company.bank_account_name || '',
+        bank_cabang: company.bank_cabang || '',
+        telp: company.telp || '',
+        fax: company.fax || '',
+        email: company.email || '',
+        direktur_utama: company.direktur_utama || '',
+        npwp: company.npwp || '',
+        logoId: company.logoId || null
+      });
+
+      if (company.logoId) {
+        setLogoUrl(fileService.getFileUrl(company.logoId));
+      } else {
+        setLogoUrl(null);
+      }
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: value 
+    }));
+  };
+
+  const handleLogoChange = (fileId) => {
+    setFormData((prev) => ({
+      ...prev,
+      logoId: fileId
+    }));
+    setLogoUrl(fileService.getFileUrl(fileId));
+  };
+
+  const handleLogoRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      logoId: null
+    }));
+    setLogoUrl(null);
+  };
+
+  const handleSave = async () => {
+    if (!formData.kode_company || !formData.nama_perusahaan) {
+      toastService.error('Please fill all required fields');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await updateCompany(company.id, formData);
+      if (response && response.success) {
+        toastService.success('Company updated successfully');
+        setIsEditMode(false);
+        if (onUpdate) {
+          onUpdate();
+        }
+      }
+    } catch (error) {
+      console.error('Error updating company:', error);
+      toastService.error(error.message || 'Failed to update company');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!company) return null;
+
+  const displayLogoUrl = logoUrl || (company?.logoId ? fileService.getFileUrl(company.logoId) : null);
+
+  return (
+    <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">
+            Company Details
+            {isEditMode && <span className="ml-3 text-sm font-normal text-blue-600">(Editing)</span>}
+          </h2>
+          <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
+            <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
+            {company?.nama_perusahaan || 'No company name available'}
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          {!isEditMode ? (
+            <>
+              <button
+                onClick={handleEditClick}
+                className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                title="Edit"
+              >
+                <PencilIcon className="w-4 h-4 mr-1" />
+                Edit
+              </button>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                disabled={saving}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              >
+                <CheckIcon className="w-4 h-4 mr-1" />
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {isEditMode ? (
+        /* EDIT MODE */
+        <div className="bg-gray-50 rounded-lg p-6">
+          <CompanyForm 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+            handleSubmit={(e) => { e.preventDefault(); handleSave(); }} 
+            closeModal={handleCancelEdit}
+            isEdit={true}
+            logoId={formData.logoId}
+            logoUrl={logoUrl}
+            onLogoChange={handleLogoChange}
+            onLogoRemove={handleLogoRemove}
+          />
+        </div>
+      ) : (
+        /* VIEW MODE */
+        <div className="space-y-6">
+          {/* Company Logo */}
+          {displayLogoUrl && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center mb-4">
+                <PhotoIcon className="h-5 w-5 text-gray-500 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Company Logo</h3>
+              </div>
+              <div className="flex justify-center">
+                <div className="w-48 h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={displayLogoUrl}
+                    alt={`${company.nama_perusahaan} logo`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Company Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <BuildingOfficeIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Company Information</h3>
+            </div>
+            <InfoTable
+              data={[
+                { label: 'Company Name', value: company?.nama_perusahaan },
+                { label: 'Company Code', value: company?.kode_company, copyable: true },
+                { label: 'Main Director', value: company?.direktur_utama || '—' },
+                {
+                  label: 'Address',
+                  component: (
+                    <span className="flex items-center gap-2">
+                      <MapPinIcon className="h-4 w-4 text-gray-400" />
+                      {company?.alamat || 'N/A'}
+                    </span>
+                  ),
+                },
+              ]}
+            />
+          </div>
+
+          {/* Bank Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <BanknotesIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Bank Information</h3>
+            </div>
+            <InfoTable
+              data={[
+                { label: 'Bank Name', value: company?.bank || '—' },
+                { label: 'Account Number', value: company?.no_rekening || '—', copyable: !!company?.no_rekening },
+                { label: 'Account Name', value: company?.bank_account_name || '—' },
+                { label: 'Branch', value: company?.bank_cabang || '—' },
+              ]}
+            />
+          </div>
+
+          {/* Contact Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <DevicePhoneMobileIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+            </div>
+            <InfoTable
+              data={[
+                { label: 'Phone', value: company?.telp || '—', copyable: !!company?.telp },
+                { label: 'Fax', value: company?.fax || '—' },
+                { label: 'Email', value: company?.email || '—', copyable: !!company?.email },
+              ]}
+            />
+          </div>
+
+          {/* Tax Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <IdentificationIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Tax Information</h3>
+            </div>
+            <InfoTable
+              data={[
+                { label: 'NPWP', value: company?.npwp || '—', copyable: !!company?.npwp },
+              ]}
+            />
+          </div>
+
+          {/* System Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center mb-4">
+              <CalendarDaysIcon className="h-5 w-5 text-gray-500 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">System Information</h3>
+            </div>
+            <InfoTable
+              data={[
+                { label: 'Created By', value: company?.createdBy || '—' },
+                { label: 'Created At', value: formatDateTime(company?.createdAt) },
+                { label: 'Updated By', value: company?.updatedBy || '—' },
+                { label: 'Updated At', value: formatDateTime(company?.updatedAt) },
+              ]}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CompanyDetailCard;

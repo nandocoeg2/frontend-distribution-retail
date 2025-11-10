@@ -3,8 +3,7 @@ import useCompaniesPage from '@/hooks/useCompaniesPage';
 import CompanyTable from '@/components/companies/CompanyTable';
 import CompanySearch from '@/components/companies/CompanySearch';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
-import EditCompanyModal from '@/components/companies/EditCompanyModal';
-import ViewCompanyModal from '@/components/companies/ViewCompanyModal';
+import CompanyDetailCard from '@/components/companies/CompanyDetailCard';
 import { createCompany, updateCompany } from '@/services/companyService';
 import toastService from '@/services/toastService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
@@ -27,30 +26,17 @@ const Companies = () => {
   } = useCompaniesPage();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingCompany, setEditingCompany] = useState(null);
-  const [viewingCompany, setViewingCompany] = useState(null);
+  const [selectedCompanyForDetail, setSelectedCompanyForDetail] = useState(null);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = (company) => {
-    setEditingCompany(company);
-    setShowEditModal(true);
-  };
-  const closeEditModal = () => {
-    setEditingCompany(null);
-    setShowEditModal(false);
+  const handleViewDetail = (company) => {
+    setSelectedCompanyForDetail(company);
   };
 
-  const openViewModal = (company) => {
-    setViewingCompany(company);
-    setShowViewModal(true);
-  };
-  const closeViewModal = () => {
-    setViewingCompany(null);
-    setShowViewModal(false);
+  const handleCloseDetail = () => {
+    setSelectedCompanyForDetail(null);
   };
 
   const handleCompanyAdded = async (companyData) => {
@@ -66,18 +52,6 @@ const Companies = () => {
     }
   };
 
-  const handleCompanyUpdated = async (id, companyData) => {
-    try {
-      const response = await updateCompany(id, companyData);
-      if (response.success) {
-        toastService.success('Company updated successfully');
-        closeEditModal();
-        fetchCompanies(pagination.currentPage, pagination.itemsPerPage);
-      }
-    } catch (error) {
-      toastService.error(error.message || 'Failed to update company');
-    }
-  };
 
   if (loading) {
     return (
@@ -127,9 +101,9 @@ const Companies = () => {
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal} 
             onDelete={deleteCompany} 
-            onView={openViewModal}
+            onViewDetail={handleViewDetail}
+            selectedCompanyId={selectedCompanyForDetail?.id}
             searchQuery={searchQuery}
             loading={loading}
           />
@@ -143,19 +117,18 @@ const Companies = () => {
         handleAuthError={handleAuthError}
       />
 
-      <EditCompanyModal 
-        show={showEditModal} 
-        onClose={closeEditModal} 
-        company={editingCompany}
-        onCompanyUpdated={handleCompanyUpdated}
-        handleAuthError={handleAuthError}
-      />
-
-      <ViewCompanyModal 
-        show={showViewModal} 
-        onClose={closeViewModal} 
-        company={viewingCompany} 
-      />
+      {/* Company Detail Card */}
+      {selectedCompanyForDetail && (
+        <CompanyDetailCard
+          company={selectedCompanyForDetail}
+          onClose={handleCloseDetail}
+          updateCompany={updateCompany}
+          onUpdate={() => {
+            fetchCompanies(pagination.currentPage, pagination.itemsPerPage);
+            handleViewDetail(selectedCompanyForDetail);
+          }}
+        />
+      )}
 
     </div>
   );

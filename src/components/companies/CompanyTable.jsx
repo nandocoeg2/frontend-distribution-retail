@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-  PencilIcon,
   TrashIcon,
-  EyeIcon,
 } from '@heroicons/react/24/outline';
 import { useConfirmationDialog } from '../ui';
 
-const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery = '', loading = false }) => {
+const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange, onDelete, onViewDetail, selectedCompanyId, searchQuery = '', loading = false }) => {
   const [deleteId, setDeleteId] = React.useState(null);
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
 
@@ -60,7 +58,15 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
               </tr>
             ) : (
               companiesArray.map((company) => (
-                <tr key={company.id} className="hover:bg-gray-50">
+                <tr 
+                  key={company.id} 
+                  onClick={() => onViewDetail(company)}
+                  className={`cursor-pointer transition-colors ${
+                    selectedCompanyId === company.id 
+                      ? 'bg-blue-50 hover:bg-blue-100' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">{company.kode_company}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.nama_perusahaan}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.alamat || 'N/A'}</td>
@@ -68,21 +74,10 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
                       <button
-                        onClick={() => onView(company)}
-                        className="text-gray-600 hover:text-gray-900"
-                        title="View"
-                      >
-                        <EyeIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(company)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Edit"
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(company.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(company.id);
+                        }}
                         className="text-red-600 hover:text-red-900"
                         title="Delete"
                       >
