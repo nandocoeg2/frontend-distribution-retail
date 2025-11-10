@@ -1,13 +1,11 @@
 import React from 'react';
 import {
-  PencilIcon,
   TrashIcon,
-  EyeIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 import { useConfirmationDialog } from '../ui';
 
-const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedCustomerId, searchQuery }) => {
   const [deleteId, setDeleteId] = React.useState(null);
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
 
@@ -62,8 +60,16 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
               </td>
             </tr>
           ) : (
-            customers.map((customer) => (
-              <tr key={customer.id} className='hover:bg-gray-50'>
+            customers.map((customer) => {
+              const isSelected = selectedCustomerId === customer.id;
+              return (
+              <tr 
+                key={customer.id}
+                onClick={() => onViewDetail && onViewDetail(customer)}
+                className={`hover:bg-gray-50 cursor-pointer transition-colors ${
+                  isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                }`}
+              >
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {customer.namaCustomer}
@@ -102,32 +108,20 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onE
                   })()}
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                  <div className='flex space-x-2'>
-                    <button
-                      onClick={() => onView(customer)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1'
-                      title='View'
-                    >
-                      <EyeIcon className='h-4 w-4' />
-                    </button>
-                    <button
-                      onClick={() => onEdit(customer)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1'
-                      title='Edit'
-                    >
-                      <PencilIcon className='h-4 w-4' />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(customer.id)}
-                      className='text-red-600 hover:text-red-900 p-1'
-                      title='Delete'
-                    >
-                      <TrashIcon className='h-4 w-4' />
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(customer.id);
+                    }}
+                    className='text-red-600 hover:text-red-900 p-1 transition-colors'
+                    title='Delete'
+                  >
+                    <TrashIcon className='h-4 w-4' />
+                  </button>
                 </td>
               </tr>
-            ))
+            );
+            })
           )}
         </tbody>
       </table>

@@ -5,8 +5,7 @@ import { useModal } from '@/hooks/useModal';
 import CustomerTable from '@/components/customers/CustomerTable';
 import CustomerSearch from '@/components/customers/CustomerSearch';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
-import EditCustomerModal from '@/components/customers/EditCustomerModal';
-import ViewCustomerModal from '@/components/customers/ViewCustomerModal';
+import CustomerDetailCardEditable from '@/components/customers/CustomerDetailCardEditable';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import Pagination from '@/components/common/Pagination';
 import Loading from '@/components/ui/Loading';
@@ -26,32 +25,25 @@ const Customers = () => {
   } = useCustomers();
 
   const { modalState, openModal, closeModal } = useModal();
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomerForDetail, setSelectedCustomerForDetail] = useState(null);
 
   const handleAddCustomer = () => {
     openModal('add');
   };
 
-  const handleEditCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    openModal('edit');
+  const handleViewDetail = (customer) => {
+    setSelectedCustomerForDetail(customer);
   };
 
-  const handleViewCustomer = (customer) => {
-    setSelectedCustomer(customer);
-    openModal('view');
+  const handleCloseDetail = () => {
+    setSelectedCustomerForDetail(null);
   };
-
 
   const handleCustomerAdded = () => {
     closeModal('add');
     fetchCustomers(pagination.currentPage, pagination.itemsPerPage);
   };
 
-  const handleCustomerUpdated = () => {
-    closeModal('edit');
-    fetchCustomers(pagination.currentPage, pagination.itemsPerPage);
-  };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -83,19 +75,28 @@ const Customers = () => {
             <>
               <CustomerTable
                 customers={customers}
-                onEdit={handleEditCustomer}
-                onDelete={deleteCustomer}
-                onView={handleViewCustomer}
-              />
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
+                pagination={pagination}
                 onPageChange={handlePageChange}
+                onDelete={deleteCustomer}
+                onViewDetail={handleViewDetail}
+                selectedCustomerId={selectedCustomerForDetail?.id}
+                searchQuery={searchQuery}
               />
             </>
           )}
         </div>
       </div>
+
+      {/* Customer Detail Card */}
+      {selectedCustomerForDetail && (
+        <div className="max-w-7xl mx-auto px-6">
+          <CustomerDetailCardEditable
+            customer={selectedCustomerForDetail}
+            onClose={handleCloseDetail}
+            onUpdate={() => fetchCustomers(pagination.currentPage, pagination.itemsPerPage)}
+          />
+        </div>
+      )}
 
       {modalState.add && (
         <AddCustomerModal
@@ -103,20 +104,6 @@ const Customers = () => {
           onCustomerAdded={handleCustomerAdded}
         />
       )}
-
-      {modalState.edit && selectedCustomer && (
-        <EditCustomerModal
-          onClose={() => closeModal('edit')}
-          customer={selectedCustomer}
-          onCustomerUpdated={handleCustomerUpdated}
-        />
-      )}
-
-      <ViewCustomerModal
-        show={modalState.view}
-        onClose={() => closeModal('view')}
-        customer={selectedCustomer}
-      />
     </div>
   );
 };
