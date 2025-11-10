@@ -3,8 +3,7 @@ import useRegionsPage from '@/hooks/useRegionsPage';
 import RegionTable from '@/components/regions/RegionTable';
 import RegionSearch from '@/components/regions/RegionSearch';
 import AddRegionModal from '@/components/regions/AddRegionModal';
-import EditRegionModal from '@/components/regions/EditRegionModal';
-import ViewRegionModal from '@/components/regions/ViewRegionModal';
+import RegionDetailCard from '@/components/regions/RegionDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
@@ -26,10 +25,7 @@ const Regions = () => {
   } = useRegionsPage();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingRegion, setEditingRegion] = useState(null);
-  const [viewingRegion, setViewingRegion] = useState(null);
+  const [selectedRegionForDetail, setSelectedRegionForDetail] = useState(null);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => {
@@ -37,22 +33,12 @@ const Regions = () => {
     fetchRegions(pagination.page, pagination.limit);
   };
 
-  const openEditModal = (region) => {
-    setEditingRegion(region);
-    setShowEditModal(true);
-  };
-  const closeEditModal = () => {
-    setEditingRegion(null);
-    setShowEditModal(false);
+  const handleViewDetail = (region) => {
+    setSelectedRegionForDetail(region);
   };
 
-  const openViewModal = (region) => {
-    setViewingRegion(region);
-    setShowViewModal(true);
-  };
-  const closeViewModal = () => {
-    setViewingRegion(null);
-    setShowViewModal(false);
+  const handleCloseDetail = () => {
+    setSelectedRegionForDetail(null);
   };
 
   const handleRegionAdded = (newRegion) => {
@@ -60,14 +46,6 @@ const Regions = () => {
     closeAddModal();
   };
 
-  const handleRegionUpdated = (updatedRegion) => {
-    setRegions(
-      regions.map((region) =>
-        region.id === updatedRegion.id ? updatedRegion : region
-      )
-    );
-    closeEditModal();
-  };
 
   if (loading) {
     return (
@@ -117,9 +95,9 @@ const Regions = () => {
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal} 
             onDelete={deleteRegionConfirmation.showDeleteConfirmation} 
-            onView={openViewModal}
+            onViewDetail={handleViewDetail}
+            selectedRegionId={selectedRegionForDetail?.id}
             searchQuery={searchQuery}
           />
         </div>
@@ -132,19 +110,18 @@ const Regions = () => {
         handleAuthError={handleAuthError}
       />
 
-      <EditRegionModal 
-        show={showEditModal} 
-        onClose={closeEditModal} 
-        region={editingRegion}
-        onRegionUpdated={handleRegionUpdated}
-        handleAuthError={handleAuthError}
-      />
-
-      <ViewRegionModal 
-        show={showViewModal} 
-        onClose={closeViewModal} 
-        region={viewingRegion} 
-      />
+      {/* Region Detail Card */}
+      {selectedRegionForDetail && (
+        <RegionDetailCard
+          region={selectedRegionForDetail}
+          onClose={handleCloseDetail}
+          handleAuthError={handleAuthError}
+          onUpdate={() => {
+            fetchRegions(pagination.page, pagination.limit);
+            handleViewDetail(selectedRegionForDetail);
+          }}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
