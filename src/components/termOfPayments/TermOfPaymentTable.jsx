@@ -1,12 +1,10 @@
 import React from 'react';
 import {
-  PencilIcon,
   TrashIcon,
-  EyeIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 
-const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedTermOfPaymentId, searchQuery }) => {
   return (
     <div className='overflow-x-auto'>
       <table className='min-w-full divide-y divide-gray-200'>
@@ -38,7 +36,15 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
             </tr>
           ) : (
             termOfPayments.map((top) => (
-              <tr key={top.id} className='hover:bg-gray-50'>
+              <tr 
+                key={top.id} 
+                onClick={() => onViewDetail(top)}
+                className={`cursor-pointer transition-colors ${
+                  selectedTermOfPaymentId === top.id 
+                    ? 'bg-blue-50 hover:bg-blue-100' 
+                    : 'hover:bg-gray-50'
+                }`}
+              >
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {top.kode_top}
@@ -62,21 +68,10 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
                 <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                   <div className='flex space-x-2'>
                     <button
-                      onClick={() => onView(top)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1'
-                      title='View'
-                    >
-                      <EyeIcon className='h-4 w-4' />
-                    </button>
-                    <button
-                      onClick={() => onEdit(top)}
-                      className='text-indigo-600 hover:text-indigo-900 p-1'
-                      title='Edit'
-                    >
-                      <PencilIcon className='h-4 w-4' />
-                    </button>
-                    <button
-                      onClick={() => onDelete(top.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(top.id);
+                      }}
                       className='text-red-600 hover:text-red-900 p-1'
                       title='Delete'
                     >

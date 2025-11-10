@@ -3,8 +3,7 @@ import useTermOfPayments from '@/hooks/useTermOfPayments';
 import TermOfPaymentTable from '@/components/termOfPayments/TermOfPaymentTable';
 import TermOfPaymentSearch from '@/components/termOfPayments/TermOfPaymentSearch';
 import AddTermOfPaymentModal from '@/components/termOfPayments/AddTermOfPaymentModal';
-import EditTermOfPaymentModal from '@/components/termOfPayments/EditTermOfPaymentModal';
-import ViewTermOfPaymentModal from '@/components/termOfPayments/ViewTermOfPaymentModal';
+import TermOfPaymentDetailCard from '@/components/termOfPayments/TermOfPaymentDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
@@ -29,30 +28,25 @@ const TermOfPayments = () => {
   } = useTermOfPayments();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingTermOfPayment, setEditingTermOfPayment] = useState(null);
-  const [viewingTermOfPayment, setViewingTermOfPayment] = useState(null);
+  const [selectedTermOfPaymentForDetail, setSelectedTermOfPaymentForDetail] = useState(null);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = (termOfPayment) => {
-    setEditingTermOfPayment(termOfPayment);
-    setShowEditModal(true);
-  };
-  const closeEditModal = () => {
-    setEditingTermOfPayment(null);
-    setShowEditModal(false);
+  const handleViewDetail = async (termOfPayment) => {
+    try {
+      // Optionally fetch detailed data if needed
+      const detailData = await getTermOfPaymentById(termOfPayment.id);
+      setSelectedTermOfPaymentForDetail(detailData);
+    } catch (err) {
+      // If fetch fails, use list data
+      console.warn('Failed to fetch term of payment details, using list data:', err.message);
+      setSelectedTermOfPaymentForDetail(termOfPayment);
+    }
   };
 
-  const openViewModal = (termOfPayment) => {
-    setViewingTermOfPayment(termOfPayment);
-    setShowViewModal(true);
-  };
-  const closeViewModal = () => {
-    setViewingTermOfPayment(null);
-    setShowViewModal(false);
+  const handleCloseDetail = () => {
+    setSelectedTermOfPaymentForDetail(null);
   };
 
   const handleTermOfPaymentAdded = async (formData) => {
@@ -64,14 +58,6 @@ const TermOfPayments = () => {
     }
   };
 
-  const handleTermOfPaymentUpdated = async (id, formData) => {
-    try {
-      await updateTermOfPayment(id, formData);
-      closeEditModal();
-    } catch (error) {
-      console.error('Error updating term of payment:', error);
-    }
-  };
 
   if (loading) {
     return (
@@ -121,9 +107,9 @@ const TermOfPayments = () => {
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal} 
             onDelete={deleteTermOfPaymentConfirmation.showDeleteConfirmation} 
-            onView={openViewModal}
+            onViewDetail={handleViewDetail}
+            selectedTermOfPaymentId={selectedTermOfPaymentForDetail?.id}
             searchQuery={searchQuery}
           />
         </div>
@@ -136,19 +122,18 @@ const TermOfPayments = () => {
         handleAuthError={handleAuthError}
       />
 
-      <EditTermOfPaymentModal 
-        show={showEditModal} 
-        onClose={closeEditModal} 
-        termOfPayment={editingTermOfPayment}
-        onTermOfPaymentUpdated={handleTermOfPaymentUpdated}
-        handleAuthError={handleAuthError}
-      />
-
-      <ViewTermOfPaymentModal 
-        show={showViewModal} 
-        onClose={closeViewModal} 
-        termOfPayment={viewingTermOfPayment} 
-      />
+      {/* Term of Payment Detail Card */}
+      {selectedTermOfPaymentForDetail && (
+        <TermOfPaymentDetailCard
+          termOfPayment={selectedTermOfPaymentForDetail}
+          onClose={handleCloseDetail}
+          updateTermOfPayment={updateTermOfPayment}
+          onUpdate={() => {
+            fetchTermOfPayments();
+            handleViewDetail(selectedTermOfPaymentForDetail);
+          }}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
