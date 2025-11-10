@@ -3,8 +3,7 @@ import useItemsPage from '../hooks/useItemsPage';
 import ItemSearch from '../components/items/ItemSearch';
 import ItemTable from '../components/items/ItemTable';
 import AddItemModal from '../components/items/AddItemModal';
-import EditItemModal from '../components/items/EditItemModal';
-import ViewItemModal from '../components/items/ViewItemModal';
+import ItemDetailCard from '../components/items/ItemDetailCard';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { ConfirmationDialog } from '../components/ui';
 
@@ -24,33 +23,22 @@ const Items = () => {
   } = useItemsPage();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItemForDetail, setSelectedItemForDetail] = useState(null);
 
   const openAddModal = () => setIsAddModalOpen(true);
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    fetchItems(pagination.currentPage, pagination.itemsPerPage);
+    if (fetchItems) {
+      fetchItems();
+    }
   };
 
-  const openEditModal = (item) => {
-    setSelectedItem(item);
-    setIsEditModalOpen(true);
-  };
-  const closeEditModal = () => {
-    setSelectedItem(null);
-    setIsEditModalOpen(false);
-    fetchItems(pagination.currentPage, pagination.itemsPerPage);
+  const handleViewDetail = (item) => {
+    setSelectedItemForDetail(item);
   };
 
-  const openViewModal = (item) => {
-    setSelectedItem(item);
-    setIsViewModalOpen(true);
-  };
-  const closeViewModal = () => {
-    setSelectedItem(null);
-    setIsViewModalOpen(false);
+  const handleCloseDetail = () => {
+    setSelectedItemForDetail(null);
   };
 
 
@@ -68,7 +56,7 @@ const Items = () => {
       <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
         <p className='text-red-800'>Error: {error}</p>
         <button
-          onClick={() => fetchItems()}
+          onClick={() => fetchItems && fetchItems()}
           className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
         >
           Retry
@@ -101,26 +89,27 @@ const Items = () => {
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal}
             onDelete={deleteItem}
-            onView={openViewModal}
+            onViewDetail={handleViewDetail}
+            selectedItemId={selectedItemForDetail?.id}
             loading={loading || searchLoading}
           />
         </div>
       </div>
 
       {isAddModalOpen && <AddItemModal onClose={closeAddModal} />}
-      {isEditModalOpen && selectedItem && (
-        <EditItemModal
-          item={selectedItem}
-          onClose={closeEditModal}
-        />
-      )}
-      {isViewModalOpen && selectedItem && (
-        <ViewItemModal
-          show={isViewModalOpen}
-          item={selectedItem}
-          onClose={closeViewModal}
+
+      {/* Item Detail Card */}
+      {selectedItemForDetail && (
+        <ItemDetailCard
+          item={selectedItemForDetail}
+          onClose={handleCloseDetail}
+          onUpdate={() => {
+            if (fetchItems) {
+              fetchItems();
+            }
+            handleViewDetail(selectedItemForDetail);
+          }}
         />
       )}
       

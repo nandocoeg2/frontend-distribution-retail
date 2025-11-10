@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  EyeIcon,
-  PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { formatDate } from '../../utils/formatUtils';
@@ -13,9 +11,9 @@ const ItemTable = ({
   pagination,
   onPageChange,
   onLimitChange,
-  onEdit,
   onDelete,
-  onView,
+  onViewDetail,
+  selectedItemId,
   loading,
 }) => {
   const [deleteId, setDeleteId] = React.useState(null);
@@ -129,7 +127,15 @@ const ItemTable = ({
               items.map((item) => {
                 const { berat, formattedSize } = resolveDimension(item);
                 return (
-                  <tr key={item.id} className='hover:bg-gray-50'>
+                  <tr 
+                    key={item.id} 
+                    onClick={() => onViewDetail(item)}
+                    className={`cursor-pointer transition-colors ${
+                      selectedItemId === item.id 
+                        ? 'bg-blue-50 hover:bg-blue-100' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
                     <td className='px-6 py-4 font-mono text-sm text-gray-900 whitespace-nowrap'>
                       {item.plu}
                     </td>
@@ -148,21 +154,10 @@ const ItemTable = ({
                     <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
                       <div className='flex items-center justify-end space-x-2'>
                         <button
-                          onClick={() => onView(item)}
-                          className='text-gray-600 hover:text-gray-900'
-                          title='View'
-                        >
-                          <EyeIcon className='w-5 h-5' />
-                        </button>
-                        <button
-                          onClick={() => onEdit(item)}
-                          className='text-blue-600 hover:text-blue-900'
-                          title='Edit'
-                        >
-                          <PencilSquareIcon className='w-5 h-5' />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
                           className='text-red-600 hover:text-red-900'
                           title='Delete'
                         >
