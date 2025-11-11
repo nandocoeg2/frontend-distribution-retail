@@ -373,7 +373,7 @@ const MutasiBankTableServerSide = ({
       columnHelper.accessor(
         (row) =>
           Number(
-            getFirstAvailableValue(row, ['amount', 'nominal', 'total_amount']) ||
+            getFirstAvailableValue(row, ['amount', 'nominal','jumlah', 'total_amount']) ||
               0
           ),
         {
