@@ -97,6 +97,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  selectedReportId = null,
 }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedLpbForAssign, setSelectedLpbForAssign] = useState(null);
@@ -651,12 +652,25 @@ const LaporanPenerimaanBarangTableServerSide = ({
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        rowClassName="hover:bg-gray-50 cursor-pointer"
+        onRowClick={({ row }) => {
+          const report = row.original;
+          if (report && onView) {
+            onView(report);
+          }
+        }}
         getRowClassName={({ row }) => {
           const reportId = resolveReportId(row.original);
-          return reportId && selectedReports.includes(reportId)
-            ? 'bg-blue-50 hover:bg-blue-100'
-            : undefined;
+          
+          if (reportId === selectedReportId) {
+            return 'bg-indigo-100 hover:bg-indigo-150 border-l-4 border-indigo-500';
+          }
+          
+          if (reportId && selectedReports.includes(reportId)) {
+            return 'bg-blue-50 hover:bg-blue-100';
+          }
+          
+          return undefined;
         }}
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-4 text-center text-gray-500"

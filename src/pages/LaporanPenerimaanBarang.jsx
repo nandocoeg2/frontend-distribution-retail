@@ -4,7 +4,7 @@ import useLaporanPenerimaanBarangPage from '@/hooks/useLaporanPenerimaanBarangPa
 import {
   LaporanPenerimaanBarangTableServerSide,
   LaporanPenerimaanBarangModal,
-  LaporanPenerimaanBarangDetailModal,
+  LaporanPenerimaanBarangDetailCard,
   LaporanPenerimaanBarangBulkModal,
 } from '@/components/laporanPenerimaanBarang';
 import {
@@ -67,7 +67,7 @@ const LaporanPenerimaanBarang = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedReportForDetail, setSelectedReportForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReportIds, setSelectedReportIds] = useState([]);
   const [isProcessingReports, setIsProcessingReports] = useState(false);
@@ -240,29 +240,27 @@ const LaporanPenerimaanBarang = () => {
     setSelectedReport(null);
   }, []);
 
-  const openDetailModal = useCallback(async (report) => {
+  const handleViewDetail = useCallback(async (report) => {
     if (!report?.id) {
       return;
     }
 
-    setIsDetailModalOpen(true);
     setDetailLoading(true);
-    setSelectedReport(null);
+    setSelectedReportForDetail(null);
 
     try {
       const detail = await fetchReportById(report.id);
-      setSelectedReport(detail?.data || detail || null);
+      setSelectedReportForDetail(detail?.data || detail || null);
     } catch (error) {
       console.error('Failed to fetch laporan penerimaan barang detail:', error);
-      setIsDetailModalOpen(false);
+      setSelectedReportForDetail(report);
     } finally {
       setDetailLoading(false);
     }
   }, [fetchReportById]);
 
-  const closeDetailModal = useCallback(() => {
-    setIsDetailModalOpen(false);
-    setSelectedReport(null);
+  const handleCloseDetail = useCallback(() => {
+    setSelectedReportForDetail(null);
     setDetailLoading(false);
   }, []);
 
@@ -344,7 +342,7 @@ const LaporanPenerimaanBarang = () => {
 
           <div className='space-y-4'>
             <LaporanPenerimaanBarangTableServerSide
-              onView={openDetailModal}
+              onView={handleViewDetail}
               onEdit={openEditModal}
               onDelete={deleteReport}
               deleteLoading={deleteReportConfirmation.loading}
@@ -359,6 +357,7 @@ const LaporanPenerimaanBarang = () => {
               initialPage={1}
               initialLimit={10}
               activeTab={activeTab}
+              selectedReportId={selectedReportForDetail?.id}
             />
           </div>
         </div>
@@ -378,13 +377,6 @@ const LaporanPenerimaanBarang = () => {
         onSubmit={handleUpdateSubmit}
         initialValues={selectedReport}
         isEdit
-      />
-
-      <LaporanPenerimaanBarangDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeDetailModal}
-        report={selectedReport}
-        isLoading={detailLoading}
       />
 
       <LaporanPenerimaanBarangBulkModal
@@ -409,6 +401,15 @@ const LaporanPenerimaanBarang = () => {
         cancelText='Batal'
         loading={deleteReportConfirmation.loading}
       />
+
+      {/* Laporan Penerimaan Barang Detail Card */}
+      {selectedReportForDetail && (
+        <LaporanPenerimaanBarangDetailCard
+          report={selectedReportForDetail}
+          onClose={handleCloseDetail}
+          loading={detailLoading}
+        />
+      )}
     </div>
   );
 };
