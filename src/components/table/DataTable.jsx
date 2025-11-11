@@ -44,6 +44,7 @@ const DataTable = ({
   emptyCellClassName = 'px-6 py-4 text-center text-gray-500',
   renderLoading = defaultLoading,
   renderError = defaultError,
+  onRowClick,
 }) => {
   if (!table) {
     return null;
@@ -125,12 +126,19 @@ const DataTable = ({
               const computedRowClass = [
                 resolveClassName(rowClassName, context),
                 resolveClassName(getRowClassName, context),
+                onRowClick ? 'cursor-pointer' : '',
               ]
                 .filter(Boolean)
                 .join(' ');
 
+              const handleRowClick = (e) => {
+                if (onRowClick) {
+                  onRowClick(row.original, e);
+                }
+              };
+
               return (
-                <tr key={row.id} className={computedRowClass}>
+                <tr key={row.id} className={computedRowClass} onClick={handleRowClick}>
                   {row.getVisibleCells().map((cell) => {
                     const cellContext = { row, cell };
                     const computedCellClass = [

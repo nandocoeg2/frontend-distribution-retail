@@ -5,7 +5,7 @@ import {
   PurchaseOrderSearch,
   AddPurchaseOrderModal,
   EditPurchaseOrderModal,
-  ViewPurchaseOrderModal,
+  PurchaseOrderDetailCard,
 } from '../components/purchaseOrders';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
@@ -109,8 +109,8 @@ const PurchaseOrders = () => {
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -151,10 +151,19 @@ const PurchaseOrders = () => {
     }
   };
 
-  const handleViewOrder = async (order) => {
-    setViewModalOpen(true);
-    const orderData = await getPurchaseOrder(order.id);
-    setSelectedOrder(orderData);
+  const handleViewDetail = async (order) => {
+    if (selectedOrderForDetail?.id === order.id) {
+      // If clicking the same row, close the detail card
+      setSelectedOrderForDetail(null);
+    } else {
+      // Load full order data and show detail card
+      const orderData = await getPurchaseOrder(order.id);
+      setSelectedOrderForDetail(orderData);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedOrderForDetail(null);
   };
 
   const handleEditModalOpen = async (order) => {
@@ -579,7 +588,7 @@ const PurchaseOrders = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="px-4 py-5 sm:p-6">
           <div className="mb-4 flex justify-between items-center">
@@ -614,7 +623,7 @@ const PurchaseOrders = () => {
 
           {/* TanStack Table with Server-Side Features */}
           <PurchaseOrderTableServerSide
-            onView={handleViewOrder}
+            onViewDetail={handleViewDetail}
             onEdit={handleEditModalOpen}
             onDelete={handleDeleteOrder}
             selectedOrders={selectedOrders}
@@ -626,9 +635,19 @@ const PurchaseOrders = () => {
             activeTab={activeTab}
             initialPage={1}
             initialLimit={10}
+            selectedOrderId={selectedOrderForDetail?.id}
           />
         </div>
       </div>
+
+      {/* Purchase Order Detail Card */}
+      {selectedOrderForDetail && (
+        <PurchaseOrderDetailCard
+          order={selectedOrderForDetail}
+          onClose={handleCloseDetail}
+          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] })}
+        />
+      )}
 
       {isAddModalOpen && (
         <AddPurchaseOrderModal
@@ -647,22 +666,6 @@ const PurchaseOrders = () => {
           }}
           onSubmit={handleEditOrder}
           order={selectedOrder}
-        />
-      )}
-
-      {isViewModalOpen && (
-        <ViewPurchaseOrderModal
-          isOpen={isViewModalOpen}
-          onClose={() => {
-            setViewModalOpen(false);
-            setSelectedOrder(null);
-          }}
-          order={selectedOrder}
-          loading={!selectedOrder}
-          onProcessed={() => {
-            // Invalidate queries to refresh data
-            queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-          }}
         />
       )}
 

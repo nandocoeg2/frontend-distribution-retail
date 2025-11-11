@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
@@ -46,7 +46,7 @@ const isEditDisabled = (order) => {
 };
 
 const PurchaseOrderTableServerSide = ({
-  onView,
+  onViewDetail,
   onEdit,
   onDelete,
   deleteLoading = false,
@@ -59,6 +59,7 @@ const PurchaseOrderTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  selectedOrderId = null,
 }) => {
   const lockedFilters = useMemo(() => {
     const config = TAB_STATUS_CONFIG[activeTab] || {};
@@ -409,15 +410,10 @@ const PurchaseOrderTableServerSide = ({
             <div className="flex space-x-2">
               <button
                 type="button"
-                onClick={() => onView(order)}
-                className="text-indigo-600 hover:text-indigo-900"
-                title="View Details"
-              >
-                <EyeIcon className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => !editDisabled && onEdit(order)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  !editDisabled && onEdit(order);
+                }}
                 className={`p-1 ${
                   editDisabled
                     ? 'text-gray-400 cursor-not-allowed'
@@ -434,7 +430,10 @@ const PurchaseOrderTableServerSide = ({
               </button>
               <button
                 type="button"
-                onClick={() => onDelete(order.id, order.po_number)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(order.id, order.po_number);
+                }}
                 disabled={deleteLoading}
                 className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete"
@@ -452,7 +451,6 @@ const PurchaseOrderTableServerSide = ({
       selectedOrders,
       onSelectionChange,
       handleSelectAllInternalToggle,
-      onView,
       onEdit,
       onDelete,
       deleteLoading,
@@ -529,13 +527,18 @@ const PurchaseOrderTableServerSide = ({
         headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
         rowClassName="hover:bg-gray-50"
-        getRowClassName={({ row }) =>
-          selectedOrders.includes(row.original.id)
-            ? 'bg-blue-50 hover:bg-blue-100'
-            : undefined
-        }
+        getRowClassName={({ row }) => {
+          if (selectedOrderId === row.original.id) {
+            return 'bg-blue-50 border-l-4 border-blue-500';
+          }
+          if (selectedOrders.includes(row.original.id)) {
+            return 'bg-green-50';
+          }
+          return undefined;
+        }}
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-4 text-center text-gray-500"
+        onRowClick={onViewDetail}
       />
 
       {!loading && !error && (
