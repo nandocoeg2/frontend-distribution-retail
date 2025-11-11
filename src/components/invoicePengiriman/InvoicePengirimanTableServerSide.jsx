@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  EyeIcon,
   PencilIcon,
   TrashIcon,
   PrinterIcon,
@@ -45,6 +44,8 @@ const InvoicePengirimanTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  onViewDetail,
+  selectedInvoiceId,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -359,21 +360,20 @@ const InvoicePengirimanTableServerSide = ({
         cell: ({ row }) => (
           <div className='flex justify-center space-x-2'>
             <button
-              onClick={() => onView(row.original)}
-              className='text-indigo-600 hover:text-indigo-900'
-              title='Lihat detail'
-            >
-              <EyeIcon className='w-5 h-5' />
-            </button>
-            <button
-              onClick={() => onEdit(row.original)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row.original);
+              }}
               className='text-green-600 hover:text-green-900'
               title='Edit'
             >
               <PencilIcon className='w-5 h-5' />
             </button>
             <button
-              onClick={() => onDelete(row.original.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(row.original.id);
+              }}
               disabled={deleteLoading}
               className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
               title='Delete'
@@ -452,12 +452,17 @@ const InvoicePengirimanTableServerSide = ({
         headerRowClassName='bg-gray-50'
         headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
         bodyClassName='divide-y divide-gray-200'
-        rowClassName='hover:bg-gray-50'
-        getRowClassName={({ row }) =>
-          selectedInvoices.includes(row.original.id)
-            ? 'bg-blue-50 hover:bg-blue-100'
-            : undefined
-        }
+        rowClassName='hover:bg-gray-50 cursor-pointer'
+        getRowClassName={({ row }) => {
+          if (selectedInvoiceId === row.original.id) {
+            return 'bg-blue-50 hover:bg-blue-100';
+          }
+          if (selectedInvoices.includes(row.original.id)) {
+            return 'bg-blue-50 hover:bg-blue-100';
+          }
+          return undefined;
+        }}
+        onRowClick={onViewDetail}
         cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
         emptyCellClassName='px-6 py-4 text-center text-sm text-gray-500'
       />

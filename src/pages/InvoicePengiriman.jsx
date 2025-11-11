@@ -5,6 +5,7 @@ import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman
 import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
 import EditInvoicePengirimanModal from '@/components/invoicePengiriman/EditInvoicePengirimanModal';
 import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
+import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
@@ -55,6 +56,8 @@ const InvoicePengirimanPage = () => {
   const [editModalError, setEditModalError] = useState(null);
   const [viewModalLoading, setViewModalLoading] = useState(false);
   const [viewModalError, setViewModalError] = useState(null);
+  const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState('all');
   const [selectedInvoices, setSelectedInvoices] = useState([]);
@@ -229,6 +232,33 @@ const InvoicePengirimanPage = () => {
     );
   }, [loadInvoiceIntoState, viewingInvoiceId]);
 
+  const handleViewDetail = useCallback(
+    async (invoice) => {
+      if (!invoice?.id) {
+        console.error('Invoice ID tidak ditemukan untuk detail view');
+        return;
+      }
+      
+      setDetailLoading(true);
+      try {
+        // Fetch detail data using GET /:id endpoint
+        const detailData = await fetchInvoiceDetail(invoice.id);
+        setSelectedInvoiceForDetail(detailData);
+      } catch (err) {
+        // If fetch fails, fallback to list data
+        console.warn('Failed to fetch invoice details, using list data:', err.message);
+        setSelectedInvoiceForDetail(invoice);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [fetchInvoiceDetail]
+  );
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedInvoiceForDetail(null);
+  }, []);
+
   const handleModalSuccess = useCallback(() => {
     // Invalidate queries to refresh data
     queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
@@ -359,9 +389,20 @@ const InvoicePengirimanPage = () => {
             initialPage={resolvedPagination.currentPage}
             initialLimit={resolvedPagination.itemsPerPage}
             activeTab={activeTab}
+            onViewDetail={handleViewDetail}
+            selectedInvoiceId={selectedInvoiceForDetail?.id}
           />
         </div>
       </div>
+
+      {/* Invoice Pengiriman Detail Card */}
+      {selectedInvoiceForDetail && (
+        <InvoicePengirimanDetailCard
+          invoice={selectedInvoiceForDetail}
+          onClose={handleCloseDetail}
+          loading={detailLoading}
+        />
+      )}
 
       <AddInvoicePengirimanModal
         show={showAddModal}
