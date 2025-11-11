@@ -4,7 +4,7 @@ import useFakturPajakPage from '@/hooks/useFakturPajakPage';
 import {
   FakturPajakTableServerSide,
   FakturPajakModal,
-  FakturPajakDetailModal,
+  FakturPajakDetailCard,
   FakturPajakExportModal,
 } from '@/components/fakturPajak';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
@@ -67,9 +67,9 @@ const FakturPajakPage = () => {
 
   const [activeTab, setActiveTab] = useState('all');
   const [selectedFakturPajak, setSelectedFakturPajak] = useState(null);
+  const [selectedFakturPajakForDetail, setSelectedFakturPajakForDetail] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -110,18 +110,18 @@ const FakturPajakPage = () => {
     setIsExportModalOpen(false);
   };
 
-  const openDetailModal = useCallback(
+  const handleViewDetail = useCallback(
     async (fakturPajak) => {
       if (!fakturPajak?.id) {
         return;
       }
-      setIsDetailModalOpen(true);
       setDetailLoading(true);
       try {
         const detail = await fetchFakturPajakById(fakturPajak.id);
-        setSelectedFakturPajak(detail || fakturPajak);
+        setSelectedFakturPajakForDetail(detail || fakturPajak);
       } catch (err) {
-        setSelectedFakturPajak(fakturPajak);
+        console.warn('Failed to fetch faktur pajak details, using list data:', err.message);
+        setSelectedFakturPajakForDetail(fakturPajak);
       } finally {
         setDetailLoading(false);
       }
@@ -129,9 +129,8 @@ const FakturPajakPage = () => {
     [fetchFakturPajakById]
   );
 
-  const closeDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedFakturPajak(null);
+  const handleCloseDetail = () => {
+    setSelectedFakturPajakForDetail(null);
     setDetailLoading(false);
   };
 
@@ -206,13 +205,14 @@ const FakturPajakPage = () => {
           </div>
 
           <FakturPajakTableServerSide
-            onView={openDetailModal}
+            onView={handleViewDetail}
             onEdit={openEditModal}
             onDelete={handleDelete}
             deleteLoading={deleteFakturPajakConfirmation.loading}
             initialPage={1}
             initialLimit={10}
             activeTab={activeTab}
+            selectedFakturPajakId={selectedFakturPajakForDetail?.id}
           />
         </div>
       </div>
@@ -232,13 +232,6 @@ const FakturPajakPage = () => {
         isEdit
       />
 
-      <FakturPajakDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeDetailModal}
-        fakturPajak={selectedFakturPajak}
-        isLoading={detailLoading}
-      />
-
       <FakturPajakExportModal
         isOpen={isExportModalOpen}
         onClose={closeExportModal}
@@ -255,6 +248,15 @@ const FakturPajakPage = () => {
         cancelText='Batal'
         loading={deleteFakturPajakConfirmation.loading}
       />
+
+      {/* Faktur Pajak Detail Card */}
+      {selectedFakturPajakForDetail && (
+        <FakturPajakDetailCard
+          fakturPajak={selectedFakturPajakForDetail}
+          onClose={handleCloseDetail}
+          loading={detailLoading}
+        />
+      )}
     </div>
   );
 };

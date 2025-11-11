@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  EyeIcon,
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -82,6 +81,7 @@ const FakturPajakTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  selectedFakturPajakId = null,
 }) => {
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
@@ -378,18 +378,12 @@ const FakturPajakTableServerSide = ({
           const fakturPajak = row.original;
           return (
             <div className="flex items-center justify-end space-x-2">
-              {onView && (
-                <button
-                  onClick={() => onView(fakturPajak)}
-                  className="p-1 text-blue-600 hover:text-blue-900"
-                  title="Lihat Detail"
-                >
-                  <EyeIcon className="w-5 h-5" />
-                </button>
-              )}
               {onEdit && (
                 <button
-                  onClick={() => onEdit(fakturPajak)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(fakturPajak);
+                  }}
                   className="p-1 text-yellow-600 hover:text-yellow-900"
                   title="Edit"
                 >
@@ -398,7 +392,10 @@ const FakturPajakTableServerSide = ({
               )}
               {onDelete && (
                 <button
-                  onClick={() => onDelete(fakturPajak)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(fakturPajak);
+                  }}
                   className="p-1 text-red-600 hover:text-red-900"
                   title="Hapus"
                   disabled={deleteLoading}
@@ -420,6 +417,7 @@ const FakturPajakTableServerSide = ({
       deleteLoading,
       activeTab,
       setPage,
+      selectedFakturPajakId,
     ]
   );
 
@@ -454,7 +452,17 @@ const FakturPajakTableServerSide = ({
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
         bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        rowClassName={(row) => {
+          const isSelected = row.original.id === selectedFakturPajakId;
+          return `hover:bg-gray-50 cursor-pointer transition-colors ${
+            isSelected ? 'bg-blue-50 hover:bg-blue-100' : ''
+          }`;
+        }}
+        onRowClick={(row) => {
+          if (onView) {
+            onView(row.original);
+          }
+        }}
         cellClassName="px-6 py-4 whitespace-nowrap"
         emptyCellClassName="px-6 py-8 text-center text-gray-500"
       />
