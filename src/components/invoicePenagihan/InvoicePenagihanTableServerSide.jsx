@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useInvoicePenagihanQuery } from '../../hooks/useInvoicePenagihanQuery';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
@@ -63,6 +63,8 @@ const InvoicePenagihanTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  selectedInvoiceId,
+  onRowClick,
 }) => {
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
@@ -325,18 +327,12 @@ const InvoicePenagihanTableServerSide = ({
           const invoice = row.original;
           return (
             <div className="flex items-center justify-end space-x-2">
-              {onView && (
-                <button
-                  onClick={() => onView(invoice)}
-                  className="p-1 text-blue-600 hover:text-blue-900"
-                  title="Lihat Detail"
-                >
-                  <EyeIcon className="w-5 h-5" />
-                </button>
-              )}
               {onEdit && (
                 <button
-                  onClick={() => onEdit(invoice)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(invoice);
+                  }}
                   className="p-1 text-yellow-600 hover:text-yellow-900"
                   title="Edit"
                 >
@@ -345,7 +341,10 @@ const InvoicePenagihanTableServerSide = ({
               )}
               {onDelete && (
                 <button
-                  onClick={() => onDelete(invoice.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(invoice.id);
+                  }}
                   className="p-1 text-red-600 hover:text-red-900"
                   title="Hapus"
                   disabled={deleteLoading}
@@ -409,7 +408,17 @@ const InvoicePenagihanTableServerSide = ({
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
         bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        rowClassName={(row) => {
+          const isSelected = selectedInvoiceId === row.original.id;
+          return `cursor-pointer transition-colors ${
+            isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
+          }`;
+        }}
+        onRowClick={(row) => {
+          if (onRowClick) {
+            onRowClick(row.original);
+          }
+        }}
         cellClassName="px-6 py-4 whitespace-nowrap"
         emptyCellClassName="px-6 py-8 text-center text-gray-500"
       />

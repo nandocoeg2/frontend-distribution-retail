@@ -5,7 +5,7 @@ import InvoicePenagihanTableServerSide from '@/components/invoicePenagihan/Invoi
 import InvoicePenagihanSearch from '@/components/invoicePenagihan/InvoicePenagihanSearch';
 import AddInvoicePenagihanModal from '@/components/invoicePenagihan/AddInvoicePenagihanModal';
 import EditInvoicePenagihanModal from '@/components/invoicePenagihan/EditInvoicePenagihanModal';
-import ViewInvoicePenagihanModal from '@/components/invoicePenagihan/ViewInvoicePenagihanModal';
+import InvoicePenagihanDetailCard from '@/components/invoicePenagihan/InvoicePenagihanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import invoicePenagihanService from '@/services/invoicePenagihanService';
@@ -190,7 +190,6 @@ const InvoicePenagihanPage = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [viewDetailLoading, setViewDetailLoading] = useState(false);
@@ -662,14 +661,19 @@ const InvoicePenagihanPage = () => {
     queryClient,
   ]);
 
-  const openViewModal = useCallback(
+  const handleViewDetail = useCallback(
     async (selectedInvoice) => {
       if (!selectedInvoice) {
         return;
       }
 
+      // If clicking the same invoice, close it
+      if (viewingInvoice && viewingInvoice.id === selectedInvoice.id) {
+        setViewingInvoice(null);
+        return;
+      }
+
       setViewingInvoice(selectedInvoice);
-      setShowViewModal(true);
 
       const invoiceId = selectedInvoice.id;
       if (!invoiceId) {
@@ -720,13 +724,12 @@ const InvoicePenagihanPage = () => {
         }
       }
     },
-    [handleAuthError]
+    [handleAuthError, viewingInvoice]
   );
 
-  const closeViewModal = useCallback(() => {
+  const handleCloseDetail = useCallback(() => {
     viewDetailRequestRef.current = null;
     setViewingInvoice(null);
-    setShowViewModal(false);
     setViewDetailLoading(false);
   }, []);
 
@@ -897,7 +900,6 @@ const InvoicePenagihanPage = () => {
           </div>
 
           <InvoicePenagihanTableServerSide
-            onView={openViewModal}
             onEdit={openEditModal}
             onDelete={showDeleteConfirmation}
             onGenerateKwitansi={openGenerateKwitansiDialog}
@@ -910,6 +912,8 @@ const InvoicePenagihanPage = () => {
             initialPage={1}
             initialLimit={10}
             activeTab={activeTab}
+            selectedInvoiceId={viewingInvoice?.id}
+            onRowClick={handleViewDetail}
           />
         </div>
       </div>
@@ -927,12 +931,13 @@ const InvoicePenagihanPage = () => {
         onUpdate={handleInvoiceUpdated}
       />
 
-      <ViewInvoicePenagihanModal
-        show={showViewModal}
-        onClose={closeViewModal}
-        invoice={viewingInvoice}
-        isLoading={viewDetailLoading}
-      />
+      {viewingInvoice && (
+        <InvoicePenagihanDetailCard
+          invoice={viewingInvoice}
+          onClose={handleCloseDetail}
+          isLoading={viewDetailLoading}
+        />
+      )}
 
       <ConfirmationDialog
         show={generateKwitansiConfirmation.show}
