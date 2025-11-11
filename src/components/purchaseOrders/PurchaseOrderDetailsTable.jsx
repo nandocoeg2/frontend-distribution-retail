@@ -40,13 +40,13 @@ const PurchaseOrderDetailsTable = ({ details }) => {
               scope='col'
               className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
             >
-              Quantity
+              Quantity (karton)
             </th>
             <th
               scope='col'
               className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
             >
-              Isi
+              Quantity (pcs)
             </th>
             <th
               scope='col'
@@ -106,10 +106,10 @@ const PurchaseOrderDetailsTable = ({ details }) => {
                 {item.nama_barang || '-'}
               </td>
               <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.quantity || 0}
+                {item.isi || 0}
               </td>
               <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.isi || 0}
+                {item.quantity || 0}
               </td>
               <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                 {item.harga?.toLocaleString() || 0}
