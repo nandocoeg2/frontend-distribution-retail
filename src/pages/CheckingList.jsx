@@ -4,7 +4,7 @@ import useCheckingListPage from '@/hooks/useCheckingListPage';
 import {
   CheckingListTableServerSide,
   CheckingListModal,
-  CheckingListDetailModal,
+  CheckingListDetailCard,
 } from '@/components/checkingList';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
@@ -39,10 +39,9 @@ const CheckingList = () => {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [editingChecklist, setEditingChecklist] = useState(null);
-  const [detailChecklist, setDetailChecklist] = useState(null);
+  const [selectedChecklist, setSelectedChecklist] = useState(null);
 
   const pageSubtitle = useMemo(
     () =>
@@ -77,11 +76,8 @@ const CheckingList = () => {
     setEditingChecklist(null);
   };
 
-  const openDetailModal = useCallback(
+  const handleViewDetail = useCallback(
     async (checklist) => {
-      setDetailChecklist(checklist || null);
-      setIsDetailModalOpen(true);
-
       const checklistId = resolveChecklistId(checklist);
       if (!checklistId) {
         return;
@@ -91,10 +87,11 @@ const CheckingList = () => {
       try {
         const response = await fetchChecklistById(checklistId);
         if (response) {
-          setDetailChecklist(response);
+          setSelectedChecklist(response);
         }
       } catch (fetchError) {
         console.error('Failed to fetch checklist detail:', fetchError);
+        setSelectedChecklist(checklist);
       } finally {
         setDetailLoading(false);
       }
@@ -102,10 +99,9 @@ const CheckingList = () => {
     [fetchChecklistById]
   );
 
-  const closeDetailModal = () => {
-    setIsDetailModalOpen(false);
+  const handleCloseDetail = () => {
+    setSelectedChecklist(null);
     setDetailLoading(false);
-    setDetailChecklist(null);
   };
 
   const handleCreateSubmit = useCallback(
@@ -186,10 +182,11 @@ const CheckingList = () => {
             </div>
           ) : (
             <CheckingListTableServerSide
-              onView={openDetailModal}
+              onViewDetail={handleViewDetail}
               onEdit={openEditModal}
               onDelete={handleDeleteChecklist}
               deleteLoading={deleteChecklistConfirmation.loading}
+              selectedChecklistId={selectedChecklist?.id}
               initialPage={pagination?.currentPage || 1}
               initialLimit={pagination?.itemsPerPage || 10}
             />
@@ -212,12 +209,13 @@ const CheckingList = () => {
         isEdit
       />
 
-      <CheckingListDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeDetailModal}
-        checklist={detailChecklist}
-        isLoading={detailLoading}
-      />
+      {selectedChecklist && (
+        <CheckingListDetailCard
+          checklist={selectedChecklist}
+          onClose={handleCloseDetail}
+          isLoading={detailLoading}
+        />
+      )}
 
       <ConfirmationDialog
         show={deleteChecklistConfirmation.showConfirm}
