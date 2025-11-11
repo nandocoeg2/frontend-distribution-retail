@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   ArrowDownTrayIcon,
-  EyeIcon,
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -60,6 +59,8 @@ const KwitansiTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  onRowClick,
+  selectedKwitansiId,
 }) => {
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
@@ -288,21 +289,20 @@ const KwitansiTableServerSide = ({
           return (
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => onView(kwitansi)}
-                className="text-indigo-600 hover:text-indigo-900"
-                title="Lihat detail"
-              >
-                <EyeIcon className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => onEdit(kwitansi)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(kwitansi);
+                }}
                 className="text-green-600 hover:text-green-900"
                 title="Edit"
               >
                 <PencilIcon className="h-5 w-5" />
               </button>
               <button
-                onClick={() => onDelete(kwitansi)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(kwitansi);
+                }}
                 disabled={deleteLoading}
                 className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Hapus"
@@ -310,7 +310,10 @@ const KwitansiTableServerSide = ({
                 <TrashIcon className="h-5 w-5" />
               </button>
               <button
-                onClick={() => onExport(kwitansi)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExport(kwitansi);
+                }}
                 disabled={isExporting}
                 className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Export PDF"
@@ -325,7 +328,6 @@ const KwitansiTableServerSide = ({
     ],
     [
       kwitansis,
-      onView,
       onEdit,
       onDelete,
       onExport,
@@ -366,7 +368,13 @@ const KwitansiTableServerSide = ({
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        rowClassName={(row) => {
+          const isSelected = selectedKwitansiId === row.original.id;
+          return `cursor-pointer transition-colors ${
+            isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
+          }`;
+        }}
+        onRowClick={onRowClick}
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-6 text-center text-sm text-gray-500"
       />

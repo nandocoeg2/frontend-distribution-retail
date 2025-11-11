@@ -4,7 +4,7 @@ import useKwitansiPage from '@/hooks/useKwitansiPage';
 import {
   KwitansiTableServerSide,
   KwitansiModal,
-  KwitansiDetailModal,
+  KwitansiDetailCard,
 } from '@/components/kwitansi';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
@@ -74,7 +74,7 @@ const KwitansiPage = () => {
   const [selectedKwitansi, setSelectedKwitansi] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedKwitansiForDetail, setSelectedKwitansiForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [exportingId, setExportingId] = useState(null);
@@ -98,19 +98,19 @@ const KwitansiPage = () => {
     setSelectedKwitansi(null);
   };
 
-  const openDetailModal = useCallback(
+  const handleViewDetail = useCallback(
     async (kwitansi) => {
       if (!kwitansi?.id) {
         return;
       }
 
-      setIsDetailModalOpen(true);
       setDetailLoading(true);
       try {
         const detail = await fetchKwitansiById(kwitansi.id);
-        setSelectedKwitansi(detail || kwitansi);
+        setSelectedKwitansiForDetail(detail || kwitansi);
       } catch (error) {
-        setSelectedKwitansi(kwitansi);
+        console.warn('Failed to fetch kwitansi details, using list data:', error.message);
+        setSelectedKwitansiForDetail(kwitansi);
       } finally {
         setDetailLoading(false);
       }
@@ -118,9 +118,8 @@ const KwitansiPage = () => {
     [fetchKwitansiById]
   );
 
-  const closeDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedKwitansi(null);
+  const handleCloseDetail = () => {
+    setSelectedKwitansiForDetail(null);
     setDetailLoading(false);
   };
 
@@ -257,7 +256,6 @@ const KwitansiPage = () => {
 
           <div className='space-y-4'>
             <KwitansiTableServerSide
-              onView={openDetailModal}
               onEdit={openEditModal}
               onDelete={handleDelete}
               onExport={handleExportKwitansi}
@@ -266,6 +264,8 @@ const KwitansiPage = () => {
               initialPage={1}
               initialLimit={10}
               activeTab={activeTab}
+              onRowClick={handleViewDetail}
+              selectedKwitansiId={selectedKwitansiForDetail?.id}
             />
           </div>
         </div>
@@ -286,17 +286,18 @@ const KwitansiPage = () => {
         isEdit
       />
 
-      <KwitansiDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeDetailModal}
-        kwitansi={selectedKwitansi}
-        isLoading={detailLoading}
-        onExport={handleExportKwitansi}
-        exportLoading={
-          Boolean(selectedKwitansi?.id) &&
-          exportingId === selectedKwitansi?.id
-        }
-      />
+      {selectedKwitansiForDetail && (
+        <KwitansiDetailCard
+          kwitansi={selectedKwitansiForDetail}
+          onClose={handleCloseDetail}
+          loading={detailLoading}
+          onExport={handleExportKwitansi}
+          exportLoading={
+            Boolean(selectedKwitansiForDetail?.id) &&
+            exportingId === selectedKwitansiForDetail?.id
+          }
+        />
+      )}
 
       <ConfirmationDialog
         show={deleteKwitansiConfirmation.showConfirm}
