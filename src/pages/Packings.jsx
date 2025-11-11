@@ -215,19 +215,32 @@ const PackingsPage = () => {
   }, [refreshPackings]);
 
   const handleViewDetail = useCallback(async (packing) => {
+    if (!packing?.id) {
+      console.warn('Invalid packing data:', packing);
+      return;
+    }
+
+    // Toggle detail card: if clicking the same row, close it
+    if (selectedPackingForDetail?.id === packing.id) {
+      setSelectedPackingForDetail(null);
+      return;
+    }
+
     try {
       setDetailLoading(true);
       // Fetch full detail data using GET /:id endpoint
-      const detailData = await getPackingById(packing.id);
+      const response = await getPackingById(packing.id);
+      // Unwrap response: handle both { success: true, data: {...} } and direct data formats
+      const detailData = response?.success ? response.data : response;
       setSelectedPackingForDetail(detailData);
     } catch (err) {
       // If fetch fails, fallback to list data
-      console.warn('Failed to fetch packing details, using list data:', err.message);
+      console.warn('Failed to fetch packing details, using list data:', err?.message || err);
       setSelectedPackingForDetail(packing);
     } finally {
       setDetailLoading(false);
     }
-  }, []);
+  }, [selectedPackingForDetail]);
 
   const handleCloseDetail = useCallback(() => {
     setSelectedPackingForDetail(null);

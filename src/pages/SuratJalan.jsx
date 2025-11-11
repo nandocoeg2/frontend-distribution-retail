@@ -9,7 +9,7 @@ import {
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
 import EditSuratJalanModal from '../components/suratJalan/EditSuratJalanModal';
-import ViewSuratJalanModal from '../components/suratJalan/ViewSuratJalanModal';
+import SuratJalanDetailCard from '../components/suratJalan/SuratJalanDetailCard';
 import ProcessSuratJalanModal from '../components/suratJalan/ProcessSuratJalanModal';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
@@ -41,13 +41,13 @@ const SuratJalan = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [editingSuratJalan, setEditingSuratJalan] = useState(null);
-  const [viewingSuratJalan, setViewingSuratJalan] = useState(null);
+  const [selectedSuratJalanForDetail, setSelectedSuratJalanForDetail] = useState(null);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const {
     showDialog: showDeleteDialog,
@@ -112,13 +112,20 @@ const SuratJalan = () => {
     setShowEditModal(false);
   };
 
-  const openViewModal = async (suratJalanItem) => {
+  const handleViewDetail = async (suratJalanItem) => {
     if (!suratJalanItem?.id) {
       toastService.error('Surat jalan tidak valid');
       return;
     }
 
+    // Toggle detail card: if clicking the same row, close it
+    if (selectedSuratJalanForDetail?.id === suratJalanItem.id) {
+      setSelectedSuratJalanForDetail(null);
+      return;
+    }
+
     try {
+      setDetailLoading(true);
       const response = await suratJalanService.getSuratJalanById(suratJalanItem.id);
       const detailData = response?.data?.data ?? response?.data;
 
@@ -127,8 +134,7 @@ const SuratJalan = () => {
         return;
       }
 
-      setViewingSuratJalan(detailData);
-      setShowViewModal(true);
+      setSelectedSuratJalanForDetail(detailData);
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
         handleAuthError();
@@ -136,12 +142,13 @@ const SuratJalan = () => {
       }
       console.error('Error fetching surat jalan detail:', err);
       toastService.error('Gagal memuat detail surat jalan');
+    } finally {
+      setDetailLoading(false);
     }
   };
 
-  const closeViewModal = () => {
-    setViewingSuratJalan(null);
-    setShowViewModal(false);
+  const handleCloseDetail = () => {
+    setSelectedSuratJalanForDetail(null);
   };
 
   const handleDelete = useCallback((id) => {
@@ -325,7 +332,6 @@ const SuratJalan = () => {
           </div>
 
           <SuratJalanTableServerSide
-            onView={openViewModal}
             onEdit={openEditModal}
             onDelete={handleDelete}
             deleteLoading={deleteLoading}
@@ -336,6 +342,8 @@ const SuratJalan = () => {
             isProcessing={isProcessing}
             hasSelectedSuratJalan={selectedSuratJalan.length > 0}
             activeTab={activeTab}
+            onRowClick={handleViewDetail}
+            selectedSuratJalanId={selectedSuratJalanForDetail?.id}
           />
         </div>
       </div>
@@ -355,12 +363,6 @@ const SuratJalan = () => {
         handleAuthError={handleAuthError}
       />
 
-      <ViewSuratJalanModal
-        show={showViewModal}
-        onClose={closeViewModal}
-        suratJalan={viewingSuratJalan}
-      />
-
       <ProcessSuratJalanModal
         show={showProcessModal}
         onClose={closeProcessModal}
@@ -372,6 +374,15 @@ const SuratJalan = () => {
 
       <DeleteConfirmationDialog />
       <ProcessConfirmationDialog />
+
+      {/* Surat Jalan Detail Card */}
+      {selectedSuratJalanForDetail && (
+        <SuratJalanDetailCard
+          suratJalan={selectedSuratJalanForDetail}
+          onClose={handleCloseDetail}
+          loading={detailLoading}
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { EyeIcon, PencilIcon, TrashIcon, TruckIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
@@ -59,6 +59,8 @@ const SuratJalanTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  onRowClick,
+  selectedSuratJalanId,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -324,15 +326,10 @@ const SuratJalanTableServerSide = ({
             <div className="flex space-x-2">
               <button
                 type="button"
-                onClick={() => onView(suratJalanItem)}
-                className="text-indigo-600 hover:text-indigo-900"
-                title="View Details"
-              >
-                <EyeIcon className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onEdit(suratJalanItem)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(suratJalanItem);
+                }}
                 className="text-green-600 hover:text-green-900"
                 title="Edit"
               >
@@ -340,7 +337,10 @@ const SuratJalanTableServerSide = ({
               </button>
               <button
                 type="button"
-                onClick={() => onDelete(suratJalanItem.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(suratJalanItem.id);
+                }}
                 disabled={deleteLoading}
                 className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete"
@@ -358,7 +358,6 @@ const SuratJalanTableServerSide = ({
       selectedSuratJalan,
       onSelectSuratJalan,
       onSelectAllSuratJalan,
-      onView,
       onEdit,
       onDelete,
       deleteLoading,
@@ -428,13 +427,17 @@ const SuratJalanTableServerSide = ({
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        rowClassName="hover:bg-gray-50 cursor-pointer"
         getRowClassName={({ row }) => {
+          if (selectedSuratJalanId === row.original.id) {
+            return 'bg-blue-50 hover:bg-blue-100';
+          }
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
           return selectedIds.includes(row.original.id)
             ? 'bg-blue-50 hover:bg-blue-100'
             : undefined;
         }}
+        onRowClick={onRowClick}
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-4 text-center text-gray-500"
       />

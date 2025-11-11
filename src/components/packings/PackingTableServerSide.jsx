@@ -558,7 +558,7 @@ const PackingTableServerSide = ({
         headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
         bodyClassName='bg-white divide-y divide-gray-200'
         rowClassName='hover:bg-gray-50 cursor-pointer'
-        onRowClick={onRowClick ? (row) => onRowClick(row.original) : undefined}
+        onRowClick={onRowClick}
         getRowClassName={({ row }) => {
           if (selectedPackingId === row.original.id) {
             return 'bg-blue-100 hover:bg-blue-150';
