@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { getPackingById } from '@/services/packingService';
 import usePackingsPage from '@/hooks/usePackingsPage';
 import {
   PackingTableServerSide,
   PackingModal,
-  ViewPackingModal,
+  PackingDetailCard,
 } from '@/components/packings';
 import Pagination from '@/components/common/Pagination';
 import {
@@ -71,6 +72,8 @@ const PackingsPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPacking, setEditingPacking] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedPackingForDetail, setSelectedPackingForDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const {
     showDialog: showProcessDialog,
@@ -211,6 +214,25 @@ const PackingsPage = () => {
     refreshPackings();
   }, [refreshPackings]);
 
+  const handleViewDetail = useCallback(async (packing) => {
+    try {
+      setDetailLoading(true);
+      // Fetch full detail data using GET /:id endpoint
+      const detailData = await getPackingById(packing.id);
+      setSelectedPackingForDetail(detailData);
+    } catch (err) {
+      // If fetch fails, fallback to list data
+      console.warn('Failed to fetch packing details, using list data:', err.message);
+      setSelectedPackingForDetail(packing);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedPackingForDetail(null);
+  }, []);
+
   return (
     <div className='p-6'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
@@ -285,6 +307,8 @@ const PackingsPage = () => {
                   initialPage={resolvedPagination.currentPage}
                   initialLimit={resolvedPagination.itemsPerPage}
                   activeTab={activeTab}
+                  onRowClick={handleViewDetail}
+                  selectedPackingId={selectedPackingForDetail?.id}
                 />
               </div>
             </>
@@ -292,10 +316,16 @@ const PackingsPage = () => {
         </div>
       </div>
 
-      {isViewModalOpen && (
-        <ViewPackingModal packing={viewingPacking} onClose={closeViewModal} />
+      {/* Packing Detail Card */}
+      {selectedPackingForDetail && (
+        <PackingDetailCard
+          packing={selectedPackingForDetail}
+          onClose={handleCloseDetail}
+          loading={detailLoading}
+        />
       )}
 
+      {/* Modals */}
       <PackingModal
         isOpen={isCreateModalOpen}
         onClose={closeCreateModal}

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  EyeIcon,
   PencilIcon,
   TrashIcon,
   PlayIcon,
@@ -103,6 +102,8 @@ const PackingTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
+  onRowClick,
+  selectedPackingId,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
 
@@ -437,15 +438,10 @@ const PackingTableServerSide = ({
             <div className='flex space-x-2'>
               <button
                 type='button'
-                onClick={() => onViewById(packing.id)}
-                className='text-indigo-600 hover:text-indigo-900'
-                title='View Details'
-              >
-                <EyeIcon className='h-5 w-5' />
-              </button>
-              <button
-                type='button'
-                onClick={() => !processing && onEdit(packing)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  !processing && onEdit(packing);
+                }}
                 className={`p-1 ${
                   processing
                     ? 'text-gray-400 cursor-not-allowed'
@@ -462,7 +458,10 @@ const PackingTableServerSide = ({
               </button>
               <button
                 type='button'
-                onClick={() => onDelete(packing.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(packing.id);
+                }}
                 disabled={deleteLoading}
                 className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
                 title='Delete'
@@ -480,7 +479,6 @@ const PackingTableServerSide = ({
       selectedPackings,
       onSelectPacking,
       onSelectAllPackings,
-      onViewById,
       onEdit,
       onDelete,
       deleteLoading,
@@ -559,12 +557,17 @@ const PackingTableServerSide = ({
         headerRowClassName='bg-gray-50'
         headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
         bodyClassName='bg-white divide-y divide-gray-200'
-        rowClassName='hover:bg-gray-50'
-        getRowClassName={({ row }) =>
-          selectedPackings.includes(row.original.id)
-            ? 'bg-blue-50 hover:bg-blue-100'
-            : undefined
-        }
+        rowClassName='hover:bg-gray-50 cursor-pointer'
+        onRowClick={onRowClick ? (row) => onRowClick(row.original) : undefined}
+        getRowClassName={({ row }) => {
+          if (selectedPackingId === row.original.id) {
+            return 'bg-blue-100 hover:bg-blue-150';
+          }
+          if (selectedPackings.includes(row.original.id)) {
+            return 'bg-blue-50 hover:bg-blue-100';
+          }
+          return undefined;
+        }}
         cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
         emptyCellClassName='px-6 py-4 text-center text-gray-500'
       />
