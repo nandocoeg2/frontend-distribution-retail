@@ -409,14 +409,18 @@ const InvoicePenagihanTableServerSide = ({
         headerCellClassName="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
         bodyClassName="bg-white divide-y divide-gray-200"
         rowClassName={(row) => {
+          // Add null check for row.original
+          if (!row || !row.original) {
+            return 'hover:bg-gray-50 cursor-pointer transition-colors';
+          }
           const isSelected = selectedInvoiceId === row.original.id;
           return `cursor-pointer transition-colors ${
             isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
           }`;
         }}
-        onRowClick={(row) => {
+        onRowClick={(rowData, event) => {
           if (onRowClick) {
-            onRowClick(row.original);
+            onRowClick(rowData);
           }
         }}
         cellClassName="px-6 py-4 whitespace-nowrap"

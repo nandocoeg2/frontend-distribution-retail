@@ -653,10 +653,10 @@ const LaporanPenerimaanBarangTableServerSide = ({
         headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
         rowClassName="hover:bg-gray-50 cursor-pointer"
-        onRowClick={({ row }) => {
-          const report = row.original;
-          if (report && onView) {
-            onView(report);
+        onRowClick={(rowData) => {
+          // rowData is row.original from DataTable
+          if (rowData && onView) {
+            onView(rowData);
           }
         }}
         getRowClassName={({ row }) => {

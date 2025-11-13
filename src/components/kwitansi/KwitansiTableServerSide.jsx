@@ -369,12 +369,20 @@ const KwitansiTableServerSide = ({
         headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
         rowClassName={(row) => {
+          // Add null check for row.original
+          if (!row || !row.original) {
+            return 'hover:bg-gray-50 cursor-pointer transition-colors';
+          }
           const isSelected = selectedKwitansiId === row.original.id;
           return `cursor-pointer transition-colors ${
             isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
           }`;
         }}
-        onRowClick={onRowClick}
+        onRowClick={(rowData, event) => {
+          if (onRowClick) {
+            onRowClick(rowData);
+          }
+        }}
         cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
         emptyCellClassName="px-6 py-6 text-center text-sm text-gray-500"
       />
