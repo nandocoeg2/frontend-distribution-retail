@@ -69,15 +69,25 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
       const response = await invoicePengirimanService.generateInvoicePenagihan(invoice.id);
       
       if (response?.success) {
-        toastService.success(`Invoice Penagihan berhasil dibuat: ${response.data?.no_invoice_penagihan || 'N/A'}`);
+        // Extract all generated documents from the response
+        const invoicePenagihan = response.data;
+        const kwitansi = response.data?.kwitansi;
+        const fakturPajak = response.data?.fakturPajak;
         
-        // Optional: Redirect to the new invoice penagihan detail page
-        if (response.data?.id) {
-          // You can implement navigation here if needed
-          console.log('Generated Invoice Penagihan ID:', response.data.id);
+        // Create detailed success message showing all 3 documents
+        const successMessage = `✅ Berhasil membuat semua dokumen:\n📋 Invoice Penagihan: ${invoicePenagihan?.no_invoice_penagihan || 'N/A'}\n💰 Kwitansi: ${kwitansi?.no_kwitansi || 'N/A'}\n📄 Faktur Pajak: ${fakturPajak?.no_pajak || 'N/A'}`;
+        toastService.success(successMessage);
+        
+        // Log all generated documents for debugging
+        if (invoicePenagihan?.id) {
+          console.log('Generated Documents:', {
+            invoicePenagihan: { id: invoicePenagihan.id, number: invoicePenagihan.no_invoice_penagihan },
+            kwitansi: { id: kwitansi?.id, number: kwitansi?.no_kwitansi },
+            fakturPajak: { id: fakturPajak?.id, number: fakturPajak?.no_pajak }
+          });
         }
       } else {
-        toastService.error(response?.error?.message || 'Gagal membuat invoice penagihan');
+        toastService.error(response?.error?.message || 'Gagal membuat dokumen invoice');
       }
     } catch (error) {
       console.error('Error generating invoice penagihan:', error);
@@ -88,10 +98,10 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
       } else if (error?.response?.status === 404) {
         toastService.error('Invoice Pengiriman tidak ditemukan');
       } else if (error?.response?.status === 400) {
-        const errorMessage = error?.response?.data?.error?.message || 'Data tidak valid untuk membuat invoice penagihan';
+        const errorMessage = error?.response?.data?.error?.message || 'Data tidak valid untuk membuat dokumen invoice';
         toastService.error(errorMessage);
       } else {
-        toastService.error('Gagal membuat invoice penagihan. Silakan coba lagi.');
+        toastService.error('Gagal membuat dokumen invoice. Silakan coba lagi.');
       }
     } finally {
       setIsGenerating(false);
@@ -125,10 +135,10 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
             onClick={handleGenerateInvoicePenagihan}
             disabled={isGenerating || loading}
             className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-            title="Generate Invoice Penagihan"
+            title="Generate All Documents (Invoice Penagihan, Kwitansi, Faktur Pajak)"
           >
             <DocumentPlusIcon className="w-4 h-4 mr-1" />
-            {isGenerating ? 'Generating...' : 'Generate Invoice Penagihan'}
+            {isGenerating ? 'Generating All Documents...' : 'Generate All Documents'}
           </button>
           <button
             onClick={handlePrintInvoice}

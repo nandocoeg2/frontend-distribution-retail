@@ -126,7 +126,7 @@ const InvoicePengirimanTableServerSide = ({
 
     setIsGenerating(true);
     try {
-      toastService.info(`Memproses ${selectedInvoices.length} invoice...`);
+      toastService.info(`Memproses ${selectedInvoices.length} invoice (membuat 3 dokumen per invoice)...`);
 
       let successCount = 0;
       let failCount = 0;
@@ -156,7 +156,7 @@ const InvoicePengirimanTableServerSide = ({
           } else if (error?.response?.status === 400) {
             errorMessage = error?.response?.data?.error?.message || 'Data tidak valid';
           } else {
-            errorMessage = 'Gagal membuat invoice penagihan';
+            errorMessage = 'Gagal membuat dokumen invoice';
           }
           
           failedInvoices.push({ id: invoiceId, error: errorMessage });
@@ -169,13 +169,13 @@ const InvoicePengirimanTableServerSide = ({
         }
       }
 
-      // Show results
+      // Show results with enhanced messaging
       if (successCount > 0 && failCount === 0) {
-        toastService.success(`Berhasil membuat ${successCount} Invoice Penagihan`);
+        toastService.success(`✅ Berhasil membuat semua dokumen untuk ${successCount} invoice (Invoice Penagihan + Kwitansi + Faktur Pajak)`);
       } else if (successCount > 0 && failCount > 0) {
-        toastService.warning(`Berhasil membuat ${successCount} Invoice Penagihan. ${failCount} gagal.`);
+        toastService.warning(`✅ Berhasil membuat semua dokumen untuk ${successCount} invoice. ${failCount} gagal.`);
       } else {
-        toastService.error('Gagal membuat Invoice Penagihan');
+        toastService.error('❌ Gagal membuat dokumen invoice');
       }
 
       // Log failed invoices for debugging
@@ -184,7 +184,7 @@ const InvoicePengirimanTableServerSide = ({
       }
     } catch (error) {
       console.error('Error in bulk generate:', error);
-      toastService.error(error.message || 'Gagal membuat Invoice Penagihan');
+      toastService.error(error.message || 'Gagal membuat dokumen invoice');
     } finally {
       setIsGenerating(false);
     }
@@ -507,7 +507,7 @@ const InvoicePengirimanTableServerSide = ({
               className='flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
             >
               <DocumentPlusIcon className='h-4 w-4' />
-              <span>{isGenerating ? 'Generating...' : 'Generate Invoice Penagihan'}</span>
+              <span>{isGenerating ? 'Generating All Documents...' : 'Generate All Documents'}</span>
             </button>
             <button
               onClick={handleBulkPrintInvoice}
