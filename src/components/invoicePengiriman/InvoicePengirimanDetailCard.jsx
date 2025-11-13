@@ -6,6 +6,7 @@ import {
   CurrencyDollarIcon,
   XMarkIcon,
   PrinterIcon,
+  DocumentPlusIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { InfoTable, StatusBadge, TabContainer, Tab, TabContent, TabPanel } from '../ui';
@@ -16,6 +17,7 @@ import toastService from '../../services/toastService';
 const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     pricingInfo: false,
@@ -59,6 +61,43 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
     }
   };
 
+  const handleGenerateInvoicePenagihan = async () => {
+    if (!invoice || loading) return;
+
+    setIsGenerating(true);
+    try {
+      const response = await invoicePengirimanService.generateInvoicePenagihan(invoice.id);
+      
+      if (response?.success) {
+        toastService.success(`Invoice Penagihan berhasil dibuat: ${response.data?.no_invoice_penagihan || 'N/A'}`);
+        
+        // Optional: Redirect to the new invoice penagihan detail page
+        if (response.data?.id) {
+          // You can implement navigation here if needed
+          console.log('Generated Invoice Penagihan ID:', response.data.id);
+        }
+      } else {
+        toastService.error(response?.error?.message || 'Gagal membuat invoice penagihan');
+      }
+    } catch (error) {
+      console.error('Error generating invoice penagihan:', error);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 409) {
+        toastService.error('Invoice Penagihan sudah ada untuk Invoice Pengiriman ini');
+      } else if (error?.response?.status === 404) {
+        toastService.error('Invoice Pengiriman tidak ditemukan');
+      } else if (error?.response?.status === 400) {
+        const errorMessage = error?.response?.data?.error?.message || 'Data tidak valid untuk membuat invoice penagihan';
+        toastService.error(errorMessage);
+      } else {
+        toastService.error('Gagal membuat invoice penagihan. Silakan coba lagi.');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (!invoice) return null;
 
   const detailCount = invoice?.invoiceDetails?.length ?? 0;
@@ -82,6 +121,15 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={handleGenerateInvoicePenagihan}
+            disabled={isGenerating || loading}
+            className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+            title="Generate Invoice Penagihan"
+          >
+            <DocumentPlusIcon className="w-4 h-4 mr-1" />
+            {isGenerating ? 'Generating...' : 'Generate Invoice Penagihan'}
+          </button>
           <button
             onClick={handlePrintInvoice}
             disabled={isPrinting || loading}

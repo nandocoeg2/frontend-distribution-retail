@@ -4,6 +4,7 @@ import {
   PencilIcon,
   TrashIcon,
   PrinterIcon,
+  DocumentPlusIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
@@ -48,6 +49,7 @@ const InvoicePengirimanTableServerSide = ({
   selectedInvoiceId,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleBulkPrintInvoice = async () => {
     if (!selectedInvoices || selectedInvoices.length === 0) {
@@ -113,6 +115,78 @@ const InvoicePengirimanTableServerSide = ({
       toastService.error(error.message || 'Gagal mencetak invoice');
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleBulkGenerateInvoicePenagihan = async () => {
+    if (!selectedInvoices || selectedInvoices.length === 0) {
+      toastService.error('Tidak ada invoice yang dipilih');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      toastService.info(`Memproses ${selectedInvoices.length} invoice...`);
+
+      let successCount = 0;
+      let failCount = 0;
+      const failedInvoices = [];
+
+      // Loop through selected invoices and generate invoice penagihan
+      for (let i = 0; i < selectedInvoices.length; i++) {
+        const invoiceId = selectedInvoices[i];
+        
+        try {
+          const response = await invoicePengirimanService.generateInvoicePenagihan(invoiceId);
+          
+          if (response?.success) {
+            successCount++;
+          } else {
+            failCount++;
+            failedInvoices.push({ id: invoiceId, error: response?.error?.message || 'Unknown error' });
+          }
+        } catch (error) {
+          failCount++;
+          let errorMessage = 'Unknown error';
+          
+          if (error?.response?.status === 409) {
+            errorMessage = 'Invoice Penagihan sudah ada';
+          } else if (error?.response?.status === 404) {
+            errorMessage = 'Invoice tidak ditemukan';
+          } else if (error?.response?.status === 400) {
+            errorMessage = error?.response?.data?.error?.message || 'Data tidak valid';
+          } else {
+            errorMessage = 'Gagal membuat invoice penagihan';
+          }
+          
+          failedInvoices.push({ id: invoiceId, error: errorMessage });
+          console.error(`Error generating invoice penagihan for ${invoiceId}:`, error);
+        }
+
+        // Small delay between requests to prevent overwhelming the server
+        if (i < selectedInvoices.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+
+      // Show results
+      if (successCount > 0 && failCount === 0) {
+        toastService.success(`Berhasil membuat ${successCount} Invoice Penagihan`);
+      } else if (successCount > 0 && failCount > 0) {
+        toastService.warning(`Berhasil membuat ${successCount} Invoice Penagihan. ${failCount} gagal.`);
+      } else {
+        toastService.error('Gagal membuat Invoice Penagihan');
+      }
+
+      // Log failed invoices for debugging
+      if (failedInvoices.length > 0) {
+        console.log('Failed invoices:', failedInvoices);
+      }
+    } catch (error) {
+      console.error('Error in bulk generate:', error);
+      toastService.error(error.message || 'Gagal membuat Invoice Penagihan');
+    } finally {
+      setIsGenerating(false);
     }
   };
   const lockedFilters = useMemo(() => {
@@ -427,6 +501,14 @@ const InvoicePengirimanTableServerSide = ({
             </span>
           </div>
           <div className='flex items-center space-x-2'>
+            <button
+              onClick={handleBulkGenerateInvoicePenagihan}
+              disabled={isGenerating}
+              className='flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+            >
+              <DocumentPlusIcon className='h-4 w-4' />
+              <span>{isGenerating ? 'Generating...' : 'Generate Invoice Penagihan'}</span>
+            </button>
             <button
               onClick={handleBulkPrintInvoice}
               disabled={isPrinting}

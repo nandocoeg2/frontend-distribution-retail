@@ -112,6 +112,16 @@ class InvoicePengirimanService {
     }
   }
 
+  async generateInvoicePenagihan(id) {
+    try {
+      const response = await this.api.post(`/${id}/generate-invoice-penagihan`);
+      return response.data;
+    } catch (error) {
+      console.error('Error generating invoice penagihan:', error);
+      throw error;
+    }
+  }
+
   async exportInvoicePengiriman(id) {
     try {
       const token = authService.getToken();
