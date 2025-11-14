@@ -863,24 +863,8 @@ const InvoicePenagihanPage = () => {
                 serta rincian pembayaran.
               </p>
             </div>
-            {/* <div className='flex justify-end'>
-              <button
-                onClick={openAddModal}
-                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
-              >
-                Tambah Invoice Penagihan
-              </button>
-            </div> */}
           </div>
 
-          {/* Search is now integrated in the server-side table */}
-          {/* <InvoicePenagihanSearch
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            loading={Boolean(searchLoading || tableLoading)}
-          /> */}
 
           <div className='mb-4 overflow-x-auto'>
             <TabContainer
