@@ -53,12 +53,8 @@ const InvoicePenagihanTableServerSide = ({
   onView,
   onEdit,
   onDelete,
-  onGenerateKwitansi,
-  generatingInvoiceId,
   onGenerateTandaTerimaFaktur,
   generatingTandaTerimaInvoiceId,
-  onGenerateFakturPajak,
-  generatingFakturInvoiceId,
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
@@ -214,34 +210,44 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'kwitansi',
-        header: () => <div className="text-center font-medium">{/* Generate Kwitansi */}Kwitansi</div>,
+        header: () => <div className="text-center font-medium">Kwitansi</div>,
         cell: ({ row }) => {
           const invoice = row.original;
-          const isGenerating = generatingInvoiceId === invoice.id;
           const hasKwitansi = Boolean(invoice?.kwitansiId || invoice?.kwitansi?.id);
 
           return (
             <div className="flex flex-col items-center justify-center space-y-1">
-              <div className="flex items-center space-x-2">
-                {isGenerating && (
-                  <span className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                )}
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
-                  checked={hasKwitansi}
-                  onChange={(event) => {
-                    if (event.target.checked && onGenerateKwitansi) {
-                      onGenerateKwitansi(invoice);
-                    }
-                  }}
-                  disabled={hasKwitansi || isGenerating}
-                />
-              </div>
-              {invoice?.kwitansi?.no_kwitansi && (
-                <span className="text-xs text-gray-500">
-                  {invoice.kwitansi.no_kwitansi}
-                </span>
+              {hasKwitansi && invoice?.kwitansi?.no_kwitansi ? (
+                <div className="text-center">
+                  <div className="text-sm text-gray-900">
+                    {invoice.kwitansi.no_kwitansi}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs text-gray-400">-</span>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+      }),
+            columnHelper.display({
+        id: 'fakturPajak',
+        header: () => <div className="text-center font-medium">Faktur Pajak</div>,
+        cell: ({ row }) => {
+          const invoice = row.original;
+          const hasFaktur = Boolean(invoice?.fakturPajakId || invoice?.fakturPajak?.id);
+
+          return (
+            <div className="flex flex-col items-center justify-center space-y-1">
+              {hasFaktur && (invoice?.fakturPajak?.no_pajak || invoice?.fakturPajak?.no_faktur_pajak) ? (
+                <div className="text-center">
+                  <div className="text-sm text-gray-900">
+                    {invoice.fakturPajak.no_pajak || invoice.fakturPajak.no_faktur_pajak}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-xs text-gray-400">-</span>
               )}
             </div>
           );
@@ -277,42 +283,6 @@ const InvoicePenagihanTableServerSide = ({
               {invoice?.tandaTerimaFaktur?.code_supplier && (
                 <span className="text-xs text-gray-500">
                   {invoice.tandaTerimaFaktur.code_supplier}
-                </span>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
-      columnHelper.display({
-        id: 'fakturPajak',
-        header: () => <div className="text-center font-medium">{/* Generate Faktur Pajak */}Faktur Pajak</div>,
-        cell: ({ row }) => {
-          const invoice = row.original;
-          const isGenerating = generatingFakturInvoiceId === invoice.id;
-          const hasFaktur = Boolean(invoice?.fakturPajakId || invoice?.fakturPajak?.id);
-
-          return (
-            <div className="flex flex-col items-center justify-center space-y-1">
-              <div className="flex items-center space-x-2">
-                {isGenerating && (
-                  <span className="w-4 h-4 border-2 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-                )}
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 disabled:opacity-50"
-                  checked={hasFaktur}
-                  onChange={(event) => {
-                    if (event.target.checked && onGenerateFakturPajak) {
-                      onGenerateFakturPajak(invoice);
-                    }
-                  }}
-                  disabled={hasFaktur || isGenerating}
-                />
-              </div>
-              {invoice?.fakturPajak?.no_pajak && (
-                <span className="text-xs text-gray-500">
-                  {invoice.fakturPajak.no_pajak}
                 </span>
               )}
             </div>
@@ -363,12 +333,8 @@ const InvoicePenagihanTableServerSide = ({
       onView,
       onEdit,
       onDelete,
-      onGenerateKwitansi,
       onGenerateTandaTerimaFaktur,
-      onGenerateFakturPajak,
-      generatingInvoiceId,
       generatingTandaTerimaInvoiceId,
-      generatingFakturInvoiceId,
       deleteLoading,
       activeTab,
       setPage,
