@@ -467,118 +467,116 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false }) => {
                 </div>
 
                 {packingBoxes && packingBoxes.length > 0 ? (
-                  packingBoxes.map((box, boxIndex) => (
+                  <div className='space-y-4 max-h-[600px] overflow-y-auto pr-2'>
+                  {packingBoxes.map((box, boxIndex) => (
                     <div
                       key={box.id || boxIndex}
-                      className='overflow-hidden bg-white border border-gray-200 rounded-lg'
+                      className='border border-gray-200 rounded-lg overflow-hidden'
                     >
-                      <button
+                      {/* Box Header */}
+                      <div
                         onClick={() => toggleDetail(box.id || boxIndex)}
-                        className='flex items-center justify-between w-full px-6 py-4 text-left transition-colors hover:bg-gray-50'
+                        className='px-4 py-3 bg-gray-100 border-b border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors'
                       >
-                        <div className='flex items-center space-x-4'>
-                          <div className='p-2 bg-blue-100 rounded-lg'>
-                            <span>📦</span>
-                          </div>
-                          <div>
-                            <h4 className='text-lg font-semibold text-gray-900'>
+                        <div className='flex justify-between items-center'>
+                          <div className='flex items-center space-x-3'>
+                            {expandedDetails[box.id || boxIndex] ? (
+                              <ChevronDownIcon className='w-5 h-5 text-gray-600' />
+                            ) : (
+                              <ChevronRightIcon className='w-5 h-5 text-gray-600' />
+                            )}
+                            <span className='text-sm font-semibold text-gray-900'>
                               Box #{box.no_box}
-                            </h4>
-                            <p className='text-sm text-gray-600'>
-                              Total Qty: {box.total_quantity_in_box} • Items:{' '}
-                              {box.packingBoxItems?.length || 0}
-                            </p>
+                            </span>
+                            <span className='text-xs text-gray-500'>
+                              ({box.packingBoxItems?.length || 0} items)
+                            </span>
+                          </div>
+                          <div className='text-xs text-gray-600'>
+                            Total Qty:{' '}
+                            <span className='font-medium'>
+                              {box.total_quantity_in_box || 0}
+                            </span>
                           </div>
                         </div>
-                        {expandedDetails[box.id || boxIndex] ? (
-                          <ChevronDownIcon className='w-5 h-5 text-gray-500' />
-                        ) : (
-                          <ChevronRightIcon className='w-5 h-5 text-gray-500' />
-                        )}
-                      </button>
+                      </div>
 
+                      {/* Box Items Table - Only show when expanded */}
                       {expandedDetails[box.id || boxIndex] && (
-                        <div className='px-6 pb-6 border-t border-gray-100'>
-                          <div className='mt-4 mb-6'>
-                            <InfoTable
-                              data={[
-                                { label: 'No Box', value: box.no_box },
-                                {
-                                  label: 'Total Quantity in Box',
-                                  value: box.total_quantity_in_box,
-                                },
-                                {
-                                  label: 'Number of Items',
-                                  value: box.packingBoxItems?.length || 0,
-                                },
-                              ]}
-                            />
-                          </div>
-
-                          {box.packingBoxItems && box.packingBoxItems.length > 0 && (
-                            <div>
-                              <h5 className='mb-4 text-lg font-medium text-gray-900'>
-                                Items ({box.packingBoxItems.length})
-                              </h5>
-                              <div className='overflow-x-auto bg-white border border-gray-200 rounded-lg'>
-                                <table className='min-w-full divide-y divide-gray-200'>
-                                  <thead className='bg-gray-50'>
-                                    <tr>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Nama Barang
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        PLU
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Item ID
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Quantity
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Satuan
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Keterangan
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className='bg-white divide-y divide-gray-200'>
-                                    {box.packingBoxItems.map((item, itemIndex) => (
-                                      <tr
-                                        key={item.id || item.itemId || itemIndex}
-                                        className='hover:bg-gray-50'
-                                      >
-                                        <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-                                          {item.nama_barang}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.item?.plu || '-'}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap font-mono text-xs'>
-                                          {item.itemId ? item.itemId.slice(0, 8) + '...' : '-'}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.quantity}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.satuan || 'pcs'}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {item.keterangan || '-'}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
+                        <div className='overflow-x-auto'>
+                          {box.packingBoxItems && box.packingBoxItems.length > 0 ? (
+                            <table className='min-w-full divide-y divide-gray-200'>
+                              <thead className='bg-gray-50'>
+                                <tr>
+                                  <th className='px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                    Nama Barang
+                                  </th>
+                                  <th className='px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                    PLU
+                                  </th>
+                                  <th className='px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                    Item ID
+                                  </th>
+                                  <th className='px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                    Quantity
+                                  </th>
+                                  <th className='px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                    Satuan
+                                  </th>
+                                  <th className='px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                    Keterangan
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className='bg-white divide-y divide-gray-200'>
+                                {box.packingBoxItems.map((item, itemIndex) => (
+                                  <tr
+                                    key={item.id || item.itemId || itemIndex}
+                                    className='transition-colors hover:bg-gray-50'
+                                  >
+                                    <td className='px-4 py-4 text-sm text-gray-900 border-b whitespace-nowrap'>
+                                      {item.nama_barang}
+                                    </td>
+                                    <td className='px-4 py-4 text-sm text-gray-900 border-b whitespace-nowrap'>
+                                      {item.item?.plu || '-'}
+                                    </td>
+                                    <td className='px-4 py-4 text-sm text-gray-500 border-b whitespace-nowrap font-mono text-xs'>
+                                      {item.itemId ? item.itemId.slice(0, 8) + '...' : '-'}
+                                    </td>
+                                    <td className='px-4 py-4 text-sm text-gray-900 border-b whitespace-nowrap'>
+                                      <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+                                        {item.quantity}
+                                      </span>
+                                    </td>
+                                    <td className='px-4 py-4 text-sm text-gray-900 border-b whitespace-nowrap'>
+                                      {item.satuan || 'pcs'}
+                                    </td>
+                                    <td className='px-4 py-4 text-sm text-gray-500 border-b'>
+                                      {item.keterangan || '-'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <table className='min-w-full'>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    colSpan='6'
+                                    className='px-4 py-8 text-sm text-center text-gray-500'
+                                  >
+                                    Tidak ada items dalam box ini
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
                           )}
                         </div>
                       )}
                     </div>
-                  ))
+                  ))}
+                  </div>
                 ) : (
                   <div className='py-12 text-center'>
                     <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
