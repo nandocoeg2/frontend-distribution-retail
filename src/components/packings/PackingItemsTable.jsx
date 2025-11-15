@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { StatusBadge, MixedBadge } from '../ui';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 
 const PackingItemsTable = ({ packingBoxes, onItemClick }) => {
+  // State to track which boxes are expanded (default: all collapsed)
+  const [expandedBoxes, setExpandedBoxes] = useState(new Set());
+
+  const toggleBox = (boxId) => {
+    setExpandedBoxes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(boxId)) {
+        newSet.delete(boxId);
+      } else {
+        newSet.add(boxId);
+      }
+      return newSet;
+    });
+  };
+
   if (!packingBoxes || packingBoxes.length === 0) {
     return (
       <div className='p-8 text-center text-gray-500 bg-gray-50 rounded-lg'>
@@ -12,16 +28,24 @@ const PackingItemsTable = ({ packingBoxes, onItemClick }) => {
   }
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-4 max-h-[600px] overflow-y-auto pr-2'>
       {packingBoxes.map((box, boxIndex) => (
         <div
           key={box.id || boxIndex}
           className='border border-gray-200 rounded-lg overflow-hidden'
         >
           {/* Box Header */}
-          <div className='px-4 py-3 bg-gray-100 border-b border-gray-200'>
+          <div 
+            className='px-4 py-3 bg-gray-100 border-b border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors'
+            onClick={() => toggleBox(box.id || boxIndex)}
+          >
             <div className='flex justify-between items-center'>
               <div className='flex items-center space-x-3'>
+                {expandedBoxes.has(box.id || boxIndex) ? (
+                  <ChevronDownIcon className='w-5 h-5 text-gray-600' />
+                ) : (
+                  <ChevronRightIcon className='w-5 h-5 text-gray-600' />
+                )}
                 <span className='text-sm font-semibold text-gray-900'>
                   {box.no_box || `Box ${boxIndex + 1}`}
                 </span>
@@ -50,7 +74,8 @@ const PackingItemsTable = ({ packingBoxes, onItemClick }) => {
             </div>
           </div>
 
-          {/* Box Items Table */}
+          {/* Box Items Table - Only show when expanded */}
+          {expandedBoxes.has(box.id || boxIndex) && (
           <div className='overflow-x-auto'>
             <table className='min-w-full divide-y divide-gray-200'>
               <thead className='bg-gray-50'>
@@ -117,6 +142,7 @@ const PackingItemsTable = ({ packingBoxes, onItemClick }) => {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       ))}
     </div>
