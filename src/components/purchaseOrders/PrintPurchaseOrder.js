@@ -112,14 +112,14 @@ const computeTotals = (order) => {
 
   const totals = details.reduce(
     (acc, detail) => {
-      const quantity = toFiniteNumber(detail?.quantity) ?? 0;
+      const totalQuantityOrder = toFiniteNumber(detail?.total_quantity_order) ?? 0;
       const price = toFiniteNumber(detail?.harga) ?? 0;
-      const priceBeforeDiscount = quantity * price;
+      const priceBeforeDiscount = totalQuantityOrder * price;
 
       const netUnitPrice = toFiniteNumber(detail?.harga_netto);
       const totalPembelian =
         toFiniteNumber(detail?.total_pembelian) ??
-        (netUnitPrice !== null ? netUnitPrice * quantity : priceBeforeDiscount);
+        (netUnitPrice !== null ? netUnitPrice * totalQuantityOrder : priceBeforeDiscount);
 
       const itemDiscount = Math.max(0, priceBeforeDiscount - totalPembelian);
 
@@ -271,8 +271,8 @@ const buildDetailRows = (details) => {
     }
     if (detail?.min_rec_qty) {
       minRecParts.push(detail.min_rec_qty);
-    } else if (detail?.isi !== undefined && detail?.isi !== null) {
-      minRecParts.push(`Isi: ${formatNumberOrDash(detail.isi)}`);
+    } else if (detail?.qty_per_carton !== undefined && detail?.qty_per_carton !== null) {
+      minRecParts.push(`Qty/Crt: ${formatNumberOrDash(detail.qty_per_carton)}`);
     }
     if (!minRecParts.length) {
       minRecParts.push('-');
@@ -282,12 +282,13 @@ const buildDetailRows = (details) => {
       detail?.jumlah_carton ??
       detail?.carton ??
       detail?.qty_carton ??
-      detail?.quantity ??
+      detail?.quantity_carton ??
       null;
 
+    const totalQuantityOrder = toFiniteNumber(detail?.total_quantity_order) ?? 0;
     const totalPembelian =
       toFiniteNumber(detail?.total_pembelian) ??
-      (toFiniteNumber(detail?.harga_netto) ?? 0) * (toFiniteNumber(detail?.quantity) ?? 0);
+      (toFiniteNumber(detail?.harga_netto) ?? 0) * totalQuantityOrder;
 
     return [
       `#${index + 1} ${productName}\n${productCode}`,

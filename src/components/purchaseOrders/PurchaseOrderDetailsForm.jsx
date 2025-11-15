@@ -71,7 +71,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
     };
 
     // Calculate derived fields
-    if (field === 'quantity' || field === 'isi' || field === 'harga' || field === 'potongan_a' || field === 'potongan_b') {
+    if (field === 'quantity_pcs' || field === 'quantity_carton' || field === 'qty_per_carton' || field === 'harga' || field === 'potongan_a' || field === 'potongan_b') {
       calculateDerivedFields(updatedDetails, index);
     }
 
@@ -81,33 +81,36 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
   const calculateDerivedFields = (detailsArray, index) => {
     const detail = detailsArray[index];
     
-    if (detail.quantity && detail.isi && detail.harga) {
-      const quantity = parseFloat(detail.quantity) || 0;
-      const isi = parseFloat(detail.isi) || 0;
-      const harga = parseFloat(detail.harga) || 0;
-      const potonganA = parseFloat(detail.potongan_a) || 0;
-      const potonganB = parseFloat(detail.potongan_b) || 0;
+    const quantityPcs = parseFloat(detail.quantity_pcs) || 0;
+    const quantityCarton = parseFloat(detail.quantity_carton) || 0;
+    const qtyPerCarton = parseFloat(detail.qty_per_carton) || 1;
+    const harga = parseFloat(detail.harga) || 0;
+    const potonganA = parseFloat(detail.potongan_a) || 0;
+    const potonganB = parseFloat(detail.potongan_b) || 0;
 
-      // Calculate harga_after_potongan_a
-      const hargaAfterPotonganA = harga - (harga * potonganA / 100);
-      
-      // Calculate harga_netto (same as harga_after_potongan_a for now)
-      const hargaNetto = hargaAfterPotonganA;
-      
-      // Calculate harga_after_potongan_b
-      const hargaAfterPotonganB = hargaNetto - (hargaNetto * potonganB / 100);
-      
-      // Calculate total_pembelian
-      const totalPembelian = quantity * isi * hargaAfterPotonganB;
+    // Calculate total_quantity_order: (carton × qty_per_carton) + pcs
+    const totalQuantityOrder = (quantityCarton * qtyPerCarton) + quantityPcs;
 
-      detailsArray[index] = {
-        ...detail,
-        harga_after_potongan_a: hargaAfterPotonganA,
-        harga_netto: hargaNetto,
-        harga_after_potongan_b: hargaAfterPotonganB,
-        total_pembelian: totalPembelian
-      };
-    }
+    // Calculate harga_after_potongan_a
+    const hargaAfterPotonganA = harga - (harga * potonganA / 100);
+    
+    // Calculate harga_netto (same as harga_after_potongan_a for now)
+    const hargaNetto = hargaAfterPotonganA;
+    
+    // Calculate harga_after_potongan_b
+    const hargaAfterPotonganB = hargaNetto - (hargaNetto * potonganB / 100);
+    
+    // Calculate total_pembelian: price per pcs × total quantity
+    const totalPembelian = totalQuantityOrder * hargaAfterPotonganB;
+
+    detailsArray[index] = {
+      ...detail,
+      total_quantity_order: totalQuantityOrder,
+      harga_after_potongan_a: hargaAfterPotonganA,
+      harga_netto: hargaNetto,
+      harga_after_potongan_b: hargaAfterPotonganB,
+      total_pembelian: totalPembelian
+    };
   };
 
   const handleItemSelect = (index, itemId) => {
@@ -122,7 +125,7 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
         plu: item.plu,
         nama_barang: item.nama_barang,
         harga: derivedPrice || 0,
-        isi: updatedDetails[index]?.isi ?? itemStock.qty_per_carton ?? 1
+        qty_per_carton: itemStock.qty_per_carton || 1
       };
       
       // Recalculate derived fields
@@ -151,8 +154,10 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
     const newDetail = {
       plu: '',
       nama_barang: '',
-      quantity: 1,
-      isi: 1,
+      quantity_pcs: 0,
+      quantity_carton: 0,
+      qty_per_carton: 1,
+      total_quantity_order: 0,
       harga: 0,
       potongan_a: 0,
       harga_after_potongan_a: 0,
@@ -259,38 +264,77 @@ const PurchaseOrderDetailsForm = ({ details, onDetailsChange, onRemoveDetail, on
                   <p className="mt-1 text-xs text-gray-500">Otomatis terisi dari item yang dipilih</p>
                 </div>
 
-                {/* Quantity */}
+                {/* Quantity Carton */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity *
+                    Quantity Carton
                   </label>
                   <input
                     type="number"
-                    value={detail.quantity}
-                    onChange={(e) => handleDetailChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                    required
+                    value={detail.quantity_carton}
+                    onChange={(e) => handleDetailChange(index, 'quantity_carton', parseInt(e.target.value) || 0)}
                     min="0"
-                    step="0.01"
+                    step="1"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Jumlah carton penuh</p>
                 </div>
 
-                {/* Isi */}
+                {/* Quantity PCS */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Isi *
+                    Quantity PCS (Loose)
                   </label>
                   <input
                     type="number"
-                    value={detail.isi}
-                    onChange={(e) => handleDetailChange(index, 'isi', parseFloat(e.target.value) || 0)}
-                    required
+                    value={detail.quantity_pcs}
+                    onChange={(e) => handleDetailChange(index, 'quantity_pcs', parseInt(e.target.value) || 0)}
                     min="0"
-                    step="0.01"
+                    step="1"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="0"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Pieces individual</p>
+                </div>
+
+                {/* Qty Per Carton */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Qty Per Carton *
+                  </label>
+                  <input
+                    type="number"
+                    value={detail.qty_per_carton}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                    placeholder="Auto dari item"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Snapshot dari ItemStock</p>
+                </div>
+
+                {/* Total Quantity Order - Read Only Display */}
+                <div className="lg:col-span-3">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Total Order</p>
+                        <p className="text-xs text-blue-700 mt-1">
+                          {detail.quantity_carton > 0 && (
+                            <span>{detail.quantity_carton} carton × {detail.qty_per_carton} = {detail.quantity_carton * (detail.qty_per_carton || 1)} pcs</span>
+                          )}
+                          {detail.quantity_carton > 0 && detail.quantity_pcs > 0 && <span> + </span>}
+                          {detail.quantity_pcs > 0 && (
+                            <span>{detail.quantity_pcs} pcs</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-blue-900">{detail.total_quantity_order || 0}</p>
+                        <p className="text-xs text-blue-700">pcs total</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Harga */}

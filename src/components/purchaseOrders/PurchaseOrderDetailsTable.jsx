@@ -10,8 +10,8 @@ const PurchaseOrderDetailsTable = ({ details }) => {
   }
 
   // Calculate totals
-  const totalQuantity = details.reduce(
-    (sum, item) => sum + (item.quantity || 0),
+  const totalQuantityOrder = details.reduce(
+    (sum, item) => sum + (item.total_quantity_order || 0),
     0
   );
   const totalAmount = details.reduce(
@@ -28,7 +28,7 @@ const PurchaseOrderDetailsTable = ({ details }) => {
               scope='col'
               className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
             >
-              Kode Barang
+              PLU
             </th>
             <th
               scope='col'
@@ -40,13 +40,7 @@ const PurchaseOrderDetailsTable = ({ details }) => {
               scope='col'
               className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
             >
-              Quantity (karton)
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Quantity (pcs)
+              Quantity Order
             </th>
             <th
               scope='col'
@@ -105,11 +99,12 @@ const PurchaseOrderDetailsTable = ({ details }) => {
               <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                 {item.nama_barang || '-'}
               </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.isi || 0}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.quantity || 0}
+              <td className='px-6 py-4 text-sm text-gray-900'>
+                <div className='space-y-1'>
+                {
+                 item.total_quantity_order || 0 
+                } pcs
+                </div>
               </td>
               <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                 {item.harga?.toLocaleString() || 0}
@@ -143,23 +138,17 @@ const PurchaseOrderDetailsTable = ({ details }) => {
             >
               Total
             </td>
-            <td className='px-6 py-3 text-sm font-medium text-gray-900'>
-              {totalQuantity}
+            <td className='px-6 py-3 text-sm font-bold text-blue-900'>
+              {totalQuantityOrder.toLocaleString()} pcs
             </td>
             <td
-              colSpan='7'
+              colSpan='6'
               className='px-6 py-3 text-sm font-medium text-gray-900'
             >
               {/* Empty cells for spacing */}
             </td>
-            <td className='px-6 py-3 text-sm font-medium text-gray-900'>
-              {totalAmount.toLocaleString()}
-            </td>
-            <td
-              colSpan='2'
-              className='px-6 py-3 text-sm font-medium text-gray-900'
-            >
-              {/* Empty cells for spacing */}
+            <td className='px-6 py-3 text-sm font-bold text-gray-900'>
+              Rp {totalAmount.toLocaleString()}
             </td>
           </tr>
         </tfoot>

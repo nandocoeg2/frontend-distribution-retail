@@ -187,12 +187,22 @@ const AddPurchaseOrderModal = ({
       if (
         !detail.plu ||
         !detail.nama_barang ||
-        !detail.quantity ||
-        !detail.isi ||
         !detail.harga ||
         !detail.harga_netto
       ) {
         setError(`Please fill in all required fields for detail #${i + 1}.`);
+        return;
+      }
+      
+      // Validate that at least one quantity is provided
+      if ((detail.quantity_pcs || 0) === 0 && (detail.quantity_carton || 0) === 0) {
+        setError(`Detail #${i + 1}: Must order at least 1 carton or 1 pcs.`);
+        return;
+      }
+      
+      // Validate qty_per_carton
+      if (!detail.qty_per_carton || detail.qty_per_carton < 1) {
+        setError(`Detail #${i + 1}: Qty per carton must be at least 1.`);
         return;
       }
     }

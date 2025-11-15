@@ -15,13 +15,15 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
       ...safeDetails,
       {
         id: `new-${Date.now()}`,
-        kode_barang: '',
+        plu: '',
         nama_barang: '',
-        quantity: 1,
-        isi: 1,
+        quantity_pcs: 0,
+        quantity_carton: 0,
+        qty_per_carton: 1,
+        total_quantity_order: 0,
         harga: 0,
-        potongan_a: '0',
-        potongan_b: '0',
+        potongan_a: 0,
+        potongan_b: 0,
         total_pembelian: 0,
         harga_after_potongan_a: 0,
         harga_after_potongan_b: 0,
@@ -41,10 +43,12 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode Barang</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PLU</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Barang</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Isi</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Carton</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty PCS</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty/Carton</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Order</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Potongan A</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Potongan B</th>
@@ -57,8 +61,8 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
                   type="text"
-                  value={item.kode_barang || ''}
-                  onChange={(e) => handleItemChange(index, 'kode_barang', e.target.value)}
+                  value={item.plu || ''}
+                  onChange={(e) => handleItemChange(index, 'plu', e.target.value)}
                   className="w-full px-2 py-1 border border-gray-300 rounded-md"
                 />
               </td>
@@ -73,18 +77,34 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
                   type="number"
-                  value={item.quantity || 0}
-                  onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                  value={item.quantity_carton || 0}
+                  onChange={(e) => handleItemChange(index, 'quantity_carton', parseInt(e.target.value) || 0)}
                   className="w-24 px-2 py-1 border border-gray-300 rounded-md"
+                  min="0"
                 />
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
                   type="number"
-                  value={item.isi || 0}
-                  onChange={(e) => handleItemChange(index, 'isi', parseInt(e.target.value) || 0)}
+                  value={item.quantity_pcs || 0}
+                  onChange={(e) => handleItemChange(index, 'quantity_pcs', parseInt(e.target.value) || 0)}
                   className="w-24 px-2 py-1 border border-gray-300 rounded-md"
+                  min="0"
                 />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <input
+                  type="number"
+                  value={item.qty_per_carton || 1}
+                  onChange={(e) => handleItemChange(index, 'qty_per_carton', parseInt(e.target.value) || 1)}
+                  className="w-24 px-2 py-1 border border-gray-300 rounded-md bg-gray-50"
+                  min="1"
+                />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm font-semibold text-blue-600">
+                  {((item.quantity_carton || 0) * (item.qty_per_carton || 1)) + (item.quantity_pcs || 0)}
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
@@ -96,17 +116,17 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
-                  type="text"
-                  value={item.potongan_a || ''}
-                  onChange={(e) => handleItemChange(index, 'potongan_a', e.target.value)}
+                  type="number"
+                  value={item.potongan_a || 0}
+                  onChange={(e) => handleItemChange(index, 'potongan_a', parseFloat(e.target.value) || 0)}
                   className="w-24 px-2 py-1 border border-gray-300 rounded-md"
                 />
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
-                  type="text"
-                  value={item.potongan_b || ''}
-                  onChange={(e) => handleItemChange(index, 'potongan_b', e.target.value)}
+                  type="number"
+                  value={item.potongan_b || 0}
+                  onChange={(e) => handleItemChange(index, 'potongan_b', parseFloat(e.target.value) || 0)}
                   className="w-24 px-2 py-1 border border-gray-300 rounded-md"
                 />
               </td>
