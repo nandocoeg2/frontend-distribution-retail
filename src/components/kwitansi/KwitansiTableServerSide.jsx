@@ -144,14 +144,6 @@ const KwitansiTableServerSide = ({
               <div className="text-sm font-medium text-gray-900">
                 {info.getValue() || '-'}
               </div>
-              {statusCode && (
-                <StatusBadge
-                  status={statusCode}
-                  variant={resolveStatusVariant(statusCode)}
-                  size="sm"
-                  dot
-                />
-              )}
             </div>
           );
         },

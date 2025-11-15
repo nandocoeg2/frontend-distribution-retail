@@ -36,8 +36,8 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -67,8 +67,8 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
                       : 'hover:bg-gray-50'
                   }`}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">{company.kode_company}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.nama_perusahaan}</td>
+                  <td className="text-sm text-gray-600 font-mono bg-gray-100 px-6 py-4 rounded">{company.kode_company}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.alamat || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{company.telp || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

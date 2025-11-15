@@ -11,10 +11,10 @@ const RegionTable = ({ regions, pagination, onPageChange, onLimitChange, onDelet
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Region Code
+              Region Name
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Region Name
+              Region Code
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Created At
@@ -46,13 +46,13 @@ const RegionTable = ({ regions, pagination, onPageChange, onLimitChange, onDelet
                 }`}
               >
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm font-medium text-gray-900'>
-                    {region.kode_region}
+                  <div className='text-sm text-gray-900'>
+                    {region.nama_region}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {region.nama_region}
+                  <div className='text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded'>
+                    {region.kode_region}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

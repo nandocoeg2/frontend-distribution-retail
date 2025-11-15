@@ -137,11 +137,6 @@ const FakturPajakTableServerSide = ({
               <div className="text-sm font-medium text-gray-900">
                 {info.getValue() || '-'}
               </div>
-              {item.createdAt && (
-                <div className="text-xs text-gray-500">
-                  Dibuat {formatDate(item.createdAt)}
-                </div>
-              )}
             </div>
           );
         },
@@ -268,9 +263,9 @@ const FakturPajakTableServerSide = ({
           return (
             <div>
               <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
-              {item?.customer?.kodeCustomer && (
+              {item?.customer?.groupCustomer?.nama_group && (
                 <div className="text-xs text-gray-500">
-                  {item.customer.kodeCustomer}
+                  {item.customer.groupCustomer?.nama_group}
                 </div>
               )}
             </div>

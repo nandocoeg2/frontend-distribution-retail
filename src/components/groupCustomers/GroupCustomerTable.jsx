@@ -11,13 +11,13 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Group Name
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Group Code
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Kode Surat
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Group Name
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Address
@@ -52,6 +52,11 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
                 }`}
               >
                 <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>
+                    {gc.nama_group}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {gc.kode_group}
                   </div>
@@ -59,11 +64,6 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded'>
                     {gc.kode_group_surat || '-'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {gc.nama_group}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

@@ -91,10 +91,13 @@ const ItemTable = ({
           <thead className='bg-gray-50'>
             <tr>
               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                Nama Barang
+              </th>
+              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                 PLU
               </th>
               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Nama Barang
+                Kode Barang
               </th>
               <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
                 Berat (kg)
@@ -136,11 +139,14 @@ const ItemTable = ({
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    <td className='px-6 py-4 font-mono text-sm text-gray-900 whitespace-nowrap'>
-                      {item.plu}
-                    </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                       {item.nama_barang}
+                    </td>
+                    <td className='px-6 py-4 text-sm text-gray-600 font-mono bg-gray-100 rounded whitespace-nowrap'>
+                      {item.plu}
+                    </td>
+                    <td className='px-6 py-4 text-sm text-gray-600 font-mono bg-gray-100 rounded whitespace-nowrap'>
+                      {item.kode_barang || 'N/A'}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                       {berat}
