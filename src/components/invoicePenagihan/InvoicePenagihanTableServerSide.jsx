@@ -67,7 +67,7 @@ const InvoicePenagihanTableServerSide = ({
     if (!statusCode || activeTab === 'all') {
       return [];
     }
-    return [{ id: 'status', value: statusCode }];
+    return [{ id: 'status_code', value: statusCode }];
   }, [activeTab]);
 
   const {
@@ -198,7 +198,7 @@ const InvoicePenagihanTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
-        id: 'status',
+        id: 'status_code',
         header: ({ column }) => {
           const statusConfig = TAB_STATUS_CONFIG[activeTab];
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
