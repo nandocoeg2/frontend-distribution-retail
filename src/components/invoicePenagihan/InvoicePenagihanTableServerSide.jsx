@@ -103,7 +103,18 @@ const InvoicePenagihanTableServerSide = ({
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter..."
+              placeholder="Filter Start..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter End..."
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             />
@@ -142,7 +153,6 @@ const InvoicePenagihanTableServerSide = ({
         enableSorting: true,
         enableColumnFilter: false,
       }),
-
       columnHelper.accessor('purchaseOrder.customer.groupCustomer.nama_group', {
         id: 'group_customer',
         header: ({ column }) => (
