@@ -10,7 +10,6 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
 import EditSuratJalanModal from '../components/suratJalan/EditSuratJalanModal';
 import SuratJalanDetailCard from '../components/suratJalan/SuratJalanDetailCard';
-import ProcessSuratJalanModal from '../components/suratJalan/ProcessSuratJalanModal';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
 import { useNavigate } from 'react-router-dom';
@@ -41,7 +40,6 @@ const SuratJalan = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showProcessModal, setShowProcessModal] = useState(false);
   const [editingSuratJalan, setEditingSuratJalan] = useState(null);
   const [selectedSuratJalanForDetail, setSelectedSuratJalanForDetail] = useState(null);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
@@ -56,12 +54,6 @@ const SuratJalan = () => {
     ConfirmationDialog: DeleteConfirmationDialog,
   } = useConfirmationDialog();
 
-  const {
-    showDialog: showProcessDialog,
-    hideDialog: hideProcessDialog,
-    setLoading: setProcessDialogLoading,
-    ConfirmationDialog: ProcessConfirmationDialog,
-  } = useConfirmationDialog();
 
   const handleAuthError = useCallback(() => {
     localStorage.clear();
@@ -218,65 +210,80 @@ const SuratJalan = () => {
       return;
     }
 
-    setShowProcessModal(true);
-  }, [selectedSuratJalan]);
-
-  const closeProcessModal = useCallback(() => {
-    setShowProcessModal(false);
-  }, []);
-
-  const handleProcessModalSubmit = useCallback(
-    async (checklistData) => {
-      if (selectedSuratJalan.length === 0) {
-        toastService.error('Pilih minimal satu surat jalan untuk diproses');
-        return;
-      }
-
-      setIsProcessing(true);
-      try {
-        const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
-        const requestBody = {
-          ids: selectedIds,
-          checklist: checklistData,
+    const selectedSummary = selectedSuratJalan
+      .map((item) => {
+        if (!item) return null;
+        return {
+          id: item.id,
+          display: item.no_surat_jalan || '(No. Surat Jalan tidak tersedia)',
+          subtitle: item.deliver_to || item.deliverTo || undefined,
         };
+      })
+      .filter((item) => item !== null);
 
-        const response = await suratJalanService.processSuratJalan(requestBody);
+    const summaryList = selectedSummary
+      .map((item) => `• ${item.display}${item.subtitle ? ` - ${item.subtitle}` : ''}`)
+      .join('\n');
 
-        if (response?.success === false) {
-          const errorMessage =
-            response?.message ||
-            response?.error?.message ||
+    showDeleteDialog({
+      title: 'Proses Surat Jalan',
+      message: `Anda akan memproses ${selectedSuratJalan.length} surat jalan:\n\n${summaryList}\n\nTanggal checklist akan diisi dengan tanggal sekarang. Lanjutkan?`,
+      confirmText: 'Proses',
+      cancelText: 'Batal',
+      type: 'info',
+      onConfirm: async () => {
+        setDeleteDialogLoading(true);
+        setIsProcessing(true);
+        try {
+          const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+          const requestBody = {
+            ids: selectedIds,
+            checklist: {
+              status_code: 'PENDING CHECKLIST SURAT JALAN',
+              tanggal: new Date().toISOString(),
+            },
+          };
+
+          const response = await suratJalanService.processSuratJalan(requestBody);
+
+          if (response?.success === false) {
+            const errorMessage =
+              response?.message ||
+              response?.error?.message ||
+              'Gagal memproses surat jalan';
+            toastService.error(errorMessage);
+            return;
+          }
+
+          const successMessage =
+            response?.data?.message ||
+            `Surat jalan berhasil diproses (${selectedSuratJalan.length})`;
+          toastService.success(successMessage);
+          
+          setSelectedSuratJalan([]);
+          hideDeleteDialog();
+          
+          // Invalidate queries to refresh data
+          await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
+        } catch (err) {
+          if (err?.response?.status === 401 || err?.response?.status === 403) {
+            handleAuthError();
+            return;
+          }
+          const message =
+            err?.response?.data?.error?.message ||
+            err?.message ||
             'Gagal memproses surat jalan';
-          toastService.error(errorMessage);
-          return;
+          toastService.error(message);
+        } finally {
+          setDeleteDialogLoading(false);
+          setIsProcessing(false);
         }
+      },
+    });
+  }, [selectedSuratJalan, showDeleteDialog, hideDeleteDialog, setDeleteDialogLoading, handleAuthError, queryClient]);
 
-        const successMessage =
-          response?.data?.message ||
-          `Surat jalan berhasil diproses (${selectedSuratJalan.length})`;
-        toastService.success(successMessage);
-        
-        setSelectedSuratJalan([]);
-        closeProcessModal();
-        
-        // Invalidate queries to refresh data
-        await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          handleAuthError();
-          return;
-        }
-        const message =
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Gagal memproses surat jalan';
-        toastService.error(message);
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [selectedSuratJalan, closeProcessModal, handleAuthError, queryClient]
-  );
+
 
   const handleSuratJalanAdded = useCallback(() => {
     setSelectedSuratJalan([]);
@@ -363,17 +370,7 @@ const SuratJalan = () => {
         handleAuthError={handleAuthError}
       />
 
-      <ProcessSuratJalanModal
-        show={showProcessModal}
-        onClose={closeProcessModal}
-        onSubmit={handleProcessModalSubmit}
-        isSubmitting={isProcessing}
-        selectedItems={selectedSuratJalan}
-        selectedIds={selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean)}
-      />
-
       <DeleteConfirmationDialog />
-      <ProcessConfirmationDialog />
 
       {/* Surat Jalan Detail Card */}
       {selectedSuratJalanForDetail && (

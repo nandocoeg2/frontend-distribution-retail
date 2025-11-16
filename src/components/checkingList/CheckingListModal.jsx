@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import FormModal from '../common/FormModal';
+import Autocomplete from '../common/Autocomplete';
+import statusService from '../../services/statusService';
 
 const defaultValues = {
   statusId: '',
@@ -61,15 +63,44 @@ const CheckingListModal = ({
 }) => {
   const [formData, setFormData] = useState(defaultValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [loadingStatuses, setLoadingStatuses] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setFormData(normalizeInitialValues(initialValues));
+      fetchStatuses();
     } else {
       setFormData(defaultValues);
       setIsSubmitting(false);
+      setStatusOptions([]);
     }
-  }, [initialValues, isOpen]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && statusOptions.length > 0) {
+      // Set form data after status options are loaded
+      if (isEdit && initialValues) {
+        setFormData(normalizeInitialValues(initialValues));
+      } else if (!isEdit) {
+        // For create mode, just set default values
+        setFormData(defaultValues);
+      }
+    }
+  }, [isOpen, statusOptions, initialValues, isEdit]);
+
+  const fetchStatuses = async () => {
+    setLoadingStatuses(true);
+    try {
+      const response = await statusService.getSuratJalanStatuses();
+      const statuses = response?.data?.data || response?.data || [];
+      setStatusOptions(statuses);
+    } catch (error) {
+      console.error('Failed to fetch statuses:', error);
+      setStatusOptions([]);
+    } finally {
+      setLoadingStatuses(false);
+    }
+  };
 
   const modalTitle = useMemo(
     () =>
@@ -138,22 +169,34 @@ const CheckingListModal = ({
     >
       <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
         <div className='md:col-span-2'>
-          <label
-            htmlFor='statusId'
-            className='mb-1 block text-sm font-medium text-gray-700'
-          >
-            Status ID <span className='text-red-500'>*</span>
-          </label>
-          <input
-            id='statusId'
-            name='statusId'
-            type='text'
-            value={formData.statusId}
-            onChange={handleChange}
-            required
-            placeholder='Masukkan ID status checklist'
-            className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
-          />
+          {isEdit ? (
+            <div>
+              <label className='mb-1 block text-sm font-medium text-gray-700'>
+                Status ID <span className='text-red-500'>*</span>
+              </label>
+              <input
+                type='text'
+                value={initialValues?.status?.status_code || initialValues?.status?.status_name || formData.statusId || '-'}
+                disabled
+                className='w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed'
+              />
+            </div>
+          ) : (
+            <Autocomplete
+              label='Status ID'
+              name='statusId'
+              value={formData.statusId}
+              onChange={handleChange}
+              options={statusOptions}
+              displayKey='status_code'
+              valueKey='id'
+              placeholder='Pilih status checklist'
+              required
+              disabled={false}
+              loading={loadingStatuses}
+              showId={false}
+            />
+          )}
         </div>
 
         <div>

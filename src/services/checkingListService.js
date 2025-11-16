@@ -163,7 +163,8 @@ class CheckingListService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Failed to export checklist');
+        const errorMessage = errorData.message || errorData.error?.message || 'Failed to export checklist';
+        throw new Error(errorMessage);
       }
 
       const html = await response.text();
@@ -191,7 +192,8 @@ class CheckingListService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Failed to export checklist grouped');
+        const errorMessage = errorData.message || errorData.error?.message || 'Failed to export checklist grouped';
+        throw new Error(errorMessage);
       }
 
       const html = await response.text();
