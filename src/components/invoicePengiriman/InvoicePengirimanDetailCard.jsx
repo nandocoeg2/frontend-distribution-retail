@@ -111,12 +111,17 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
   if (!invoice) return null;
 
   const detailCount = invoice?.invoiceDetails?.length ?? 0;
-  const statusVariant = invoice?.statusPembayaran?.status_name?.toLowerCase().includes('paid')
+  const statusInfo = invoice?.status || invoice?.statusPembayaran || null;
+  const statusLabel = statusInfo?.status_name || statusInfo?.status_code || '';
+  const normalizedStatus = statusLabel.toLowerCase();
+  const statusVariant = normalizedStatus.includes('paid')
     ? 'success'
-    : invoice?.statusPembayaran?.status_name?.toLowerCase().includes('cancelled')
+    : normalizedStatus.includes('cancelled')
     ? 'danger'
-    : invoice?.statusPembayaran?.status_name?.toLowerCase().includes('overdue')
+    : normalizedStatus.includes('overdue')
     ? 'danger'
+    : normalizedStatus.includes('pending')
+    ? 'secondary'
     : 'secondary';
 
   return (
@@ -210,7 +215,15 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
                         label: 'Jatuh Tempo',
                         value: formatDate(invoice.expired_date),
                       },
-                      { label: 'Term of Payment', value: invoice.TOP || '-' },
+                      {
+                        label: 'Term of Payment',
+                        value:
+                          invoice.termOfPayment?.kode_top ||
+                          invoice.termOfPayment?.kodeTop ||
+                          invoice.termOfPaymentId ||
+                          invoice.TOP ||
+                          '-',
+                      },
                       {
                         label: 'Tujuan Pengiriman',
                         value: invoice.deliver_to || '-',
@@ -220,10 +233,10 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
                         value: invoice.type || '-',
                       },
                       {
-                        label: 'Status Pembayaran',
+                        label: 'Status',
                         component: (
                           <StatusBadge
-                            status={invoice.statusPembayaran?.status_name || invoice.statusPembayaran?.status_code || '-'}
+                            status={statusLabel || '-'}
                             variant={statusVariant}
                             dot
                           />
@@ -280,7 +293,7 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
                       },
                       {
                         label: 'PPN (Rp)',
-                        value: formatCurrency(invoice.ppn_rupiah),
+                        value: formatCurrency(invoice.ppnRupiah ?? invoice.ppn_rupiah),
                       },
                       {
                         label: 'Grand Total',

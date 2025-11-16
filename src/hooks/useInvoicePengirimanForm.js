@@ -9,12 +9,12 @@ const buildInitialFormState = () => ({
   total_discount: 0,
   total_price: 0,
   ppn_percentage: 11,
-  ppn_rupiah: 0,
+  ppnRupiah: 0,
   grand_total: 0,
   expired_date: '',
   TOP: '',
   type: 'PENGIRIMAN',
-  statusPembayaranId: null,
+  statusId: null,
   purchaseOrderId: null,
   invoiceDetails: []
 });
@@ -58,8 +58,8 @@ const useInvoicePengirimanForm = () => {
       newErrors.ppn_percentage = 'PPN (%) tidak boleh negatif';
     }
 
-    if (formData.ppn_rupiah < 0) {
-      newErrors.ppn_rupiah = 'PPN (Rp) tidak boleh negatif';
+    if (formData.ppnRupiah < 0) {
+      newErrors.ppnRupiah = 'PPN (Rp) tidak boleh negatif';
     }
 
     if (formData.grand_total <= 0) {
@@ -72,34 +72,34 @@ const useInvoicePengirimanForm = () => {
 
     formData.invoiceDetails.forEach((detail, index) => {
       if (!detail.nama_barang?.trim()) {
-        newErrors[invoiceDetails..nama_barang] = 'Nama barang harus diisi';
+        newErrors.invoiceDetails.nama_barang = 'Nama barang harus diisi';
       }
       if (!detail.PLU?.trim()) {
-        newErrors[invoiceDetails..PLU] = 'PLU harus diisi';
+        newErrors.invoiceDetails.PLU = 'PLU harus diisi';
       }
       if (!detail.quantity || detail.quantity <= 0) {
-        newErrors[invoiceDetails..quantity] = 'Quantity harus lebih dari 0';
+        newErrors.invoiceDetails.quantity = 'Quantity harus lebih dari 0';
       }
       if (!detail.satuan?.trim()) {
-        newErrors[invoiceDetails..satuan] = 'Satuan harus diisi';
+        newErrors.invoiceDetails.satuan = 'Satuan harus diisi';
       }
       if (!detail.harga || detail.harga <= 0) {
-        newErrors[invoiceDetails..harga] = 'Harga harus lebih dari 0';
+        newErrors.invoiceDetails.harga = 'Harga harus lebih dari 0';
       }
       if (!detail.total || detail.total <= 0) {
-        newErrors[invoiceDetails..total] = 'Total harus lebih dari 0';
+        newErrors.invoiceDetails.total = 'Total harus lebih dari 0';
       }
       if (detail.discount_percentage < 0) {
-        newErrors[invoiceDetails..discount_percentage] = 'Diskon (%) tidak boleh negatif';
+        newErrors.invoiceDetails.discount_percentage = 'Diskon (%) tidak boleh negatif';
       }
       if (detail.discount_rupiah < 0) {
-        newErrors[invoiceDetails..discount_rupiah] = 'Diskon (Rp) tidak boleh negatif';
+        newErrors.invoiceDetails.discount_rupiah = 'Diskon (Rp) tidak boleh negatif';
       }
       if (detail.PPN_pecentage < 0) {
-        newErrors[invoiceDetails..PPN_pecentage] = 'PPN (%) tidak boleh negatif';
+        newErrors.invoiceDetails.PPN_pecentage = 'PPN (%) tidak boleh negatif';
       }
-      if (detail.ppn_rupiah < 0) {
-        newErrors[invoiceDetails..ppn_rupiah] = 'PPN (Rp) tidak boleh negatif';
+      if (detail.ppnRupiah < 0) {
+        newErrors.invoiceDetails.ppnRupiah = 'PPN (Rp) tidak boleh negatif';
       }
     });
 
@@ -134,7 +134,7 @@ const useInvoicePengirimanForm = () => {
       ))
     }));
 
-    const errorKey = invoiceDetails..;
+    const errorKey = `invoiceDetails.${index}.${field}`;
     if (errors[errorKey]) {
       setErrors(prev => ({
         ...prev,
@@ -154,7 +154,7 @@ const useInvoicePengirimanForm = () => {
       discount_percentage: 0,
       discount_rupiah: 0,
       PPN_pecentage: 11,
-      ppn_rupiah: 0
+      ppnRupiah: 0
     };
 
     setFormData(prev => ({
@@ -182,7 +182,7 @@ const useInvoicePengirimanForm = () => {
       sub_total: subTotal,
       total_discount: totalDiscount,
       total_price: totalPrice,
-      ppn_rupiah: ppnRupiah,
+      ppnRupiah: ppnRupiah,
       grand_total: grandTotal
     }));
   }, [formData.invoiceDetails, formData.ppn_percentage]);
@@ -191,7 +191,7 @@ const useInvoicePengirimanForm = () => {
     const quantity = detail.quantity || 0;
     const harga = detail.harga || 0;
     const discountRupiah = detail.discount_rupiah || 0;
-    const ppnRupiah = detail.ppn_rupiah || 0;
+    const ppnRupiah = detail.ppnRupiah || 0;
 
     return (quantity * harga) - discountRupiah + ppnRupiah;
   }, []);
@@ -202,6 +202,11 @@ const useInvoicePengirimanForm = () => {
   }, []);
 
   const loadInvoiceData = useCallback((invoice) => {
+    const normalizedDetails = (invoice.invoiceDetails || []).map((detail) => ({
+      ...detail,
+      ppnRupiah: detail.ppnRupiah ?? detail.ppn_rupiah ?? 0,
+    }));
+
     setFormData({
       no_invoice: invoice.no_invoice || '',
       deliver_to: invoice.deliver_to || '',
@@ -209,14 +214,14 @@ const useInvoicePengirimanForm = () => {
       total_discount: invoice.total_discount || 0,
       total_price: invoice.total_price || 0,
       ppn_percentage: invoice.ppn_percentage || 11,
-      ppn_rupiah: invoice.ppn_rupiah || 0,
+      ppnRupiah: invoice.ppnRupiah ?? invoice.ppn_rupiah ?? 0,
       grand_total: invoice.grand_total || 0,
       expired_date: invoice.expired_date ? invoice.expired_date.split('T')[0] : '',
       TOP: invoice.TOP || '',
       type: invoice.type || 'PENGIRIMAN',
-      statusPembayaranId: invoice.statusPembayaranId || null,
+      statusId: invoice.statusId ?? invoice.statusPembayaranId ?? null,
       purchaseOrderId: invoice.purchaseOrderId || null,
-      invoiceDetails: invoice.invoiceDetails || []
+      invoiceDetails: normalizedDetails
     });
     setErrors({});
   }, []);

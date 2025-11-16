@@ -11,10 +11,10 @@ const buildInitialState = () => ({
   total_discount: '',
   total_price: '',
   ppn_percentage: '',
-  ppn_rupiah: '',
+  ppnRupiah: '',
   grand_total: '',
   expired_date: '',
-  term_of_payment_id: '',
+  termOfPaymentId: '',
   type: 'PEMBAYARAN',
 });
 
@@ -46,7 +46,7 @@ const AddInvoicePengirimanModal = ({
         total_discount: parseFloat(formData.total_discount) || 0,
         total_price: parseFloat(formData.total_price) || 0,
         ppn_percentage: parseFloat(formData.ppn_percentage) || 0,
-        ppn_rupiah: parseFloat(formData.ppn_rupiah) || 0,
+        ppnRupiah: parseFloat(formData.ppnRupiah) || 0,
         grand_total: parseFloat(formData.grand_total) || 0,
       };
 
@@ -242,16 +242,16 @@ const AddInvoicePengirimanModal = ({
 
             <div>
               <label
-                htmlFor='ppn_rupiah'
+                htmlFor='ppnRupiah'
                 className='block text-sm font-medium text-gray-700'
               >
                 PPN (Rp)
               </label>
               <input
                 type='number'
-                id='ppn_rupiah'
-                name='ppn_rupiah'
-                value={formData.ppn_rupiah}
+                id='ppnRupiah'
+                name='ppnRupiah'
+                value={formData.ppnRupiah}
                 onChange={handleInputChange}
                 className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
               />
@@ -276,16 +276,16 @@ const AddInvoicePengirimanModal = ({
 
             <div>
               <label
-                htmlFor='term_of_payment_id'
+                htmlFor='termOfPaymentId'
                 className='block text-sm font-medium text-gray-700'
               >
                 Term of Payment (Optional)
               </label>
               <input
                 type='text'
-                id='term_of_payment_id'
-                name='term_of_payment_id'
-                value={formData.term_of_payment_id}
+                id='termOfPaymentId'
+                name='termOfPaymentId'
+                value={formData.termOfPaymentId}
                 onChange={handleInputChange}
                 className='mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm'
                 placeholder='Term of Payment ID'

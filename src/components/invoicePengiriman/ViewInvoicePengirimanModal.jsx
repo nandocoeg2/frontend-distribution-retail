@@ -31,6 +31,13 @@ const ViewInvoicePengirimanModal = ({
   const isLoading = Boolean(loading);
   const hasError = Boolean(error);
   const detailCount = invoice?.invoiceDetails?.length ?? 0;
+  const statusInfo = invoice?.status || invoice?.statusPembayaran || null;
+  const termOfPaymentLabel =
+    invoice?.termOfPayment?.kode_top ||
+    invoice?.termOfPayment?.kodeTop ||
+    invoice?.termOfPaymentId ||
+    invoice?.TOP ||
+    '-';
 
   const handlePrintInvoice = async () => {
     if (!invoice || hasError || isLoading) return;
@@ -213,7 +220,7 @@ const ViewInvoicePengirimanModal = ({
                           label: 'Jatuh Tempo',
                           value: formatDate(invoice.expired_date),
                         },
-                        { label: 'Term of Payment', value: invoice.TOP || '-' },
+                        { label: 'Term of Payment', value: termOfPaymentLabel },
                         {
                           label: 'Tujuan Pengiriman',
                           value: invoice.deliver_to || '-',
@@ -223,8 +230,11 @@ const ViewInvoicePengirimanModal = ({
                           value: invoice.type || '-',
                         },
                         {
-                          label: 'Status Pembayaran',
-                          value: invoice.statusPembayaran?.status_code || '-',
+                          label: 'Status',
+                          value:
+                            statusInfo?.status_code ||
+                            statusInfo?.status_name ||
+                            '-',
                         },
                         {
                           label: 'Purchase Order',
@@ -267,7 +277,9 @@ const ViewInvoicePengirimanModal = ({
                         },
                         {
                           label: 'PPN (Rp)',
-                          value: formatCurrency(invoice.ppn_rupiah),
+                          value: formatCurrency(
+                            invoice.ppnRupiah ?? invoice.ppn_rupiah
+                          ),
                         },
                         {
                           label: 'Grand Total',

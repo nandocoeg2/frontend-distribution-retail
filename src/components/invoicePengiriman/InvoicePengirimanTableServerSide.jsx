@@ -377,11 +377,12 @@ const InvoicePengirimanTableServerSide = ({
         },
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('statusPembayaran.status_name', {
+      columnHelper.accessor('status.status_name', {
         id: 'status',
         header: 'Status',
         cell: (info) => {
-          const status = info.row.original?.statusPembayaran;
+          const status =
+            info.row.original?.status || info.row.original?.statusPembayaran;
           const statusText = status?.status_name || status?.status_code;
 
           if (!statusText) {

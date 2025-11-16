@@ -7,13 +7,13 @@ import { formatCurrency } from '../../utils/formatUtils';
 const DEFAULT_FORM = {
   deliver_to: '',
   expired_date: '',
-  term_of_payment_id: '',
+  termOfPaymentId: '',
   type: 'PEMBAYARAN',
   sub_total: '',
   total_discount: '',
   total_price: '',
   ppn_percentage: '11',
-  ppn_rupiah: '',
+  ppnRupiah: '',
   grand_total: '',
 };
 
@@ -22,7 +22,7 @@ const numericFields = [
   'total_discount',
   'total_price',
   'ppn_percentage',
-  'ppn_rupiah',
+  'ppnRupiah',
   'grand_total',
 ];
 
@@ -60,13 +60,17 @@ const EditInvoicePengirimanModal = ({
         expired_date: invoice.expired_date
           ? invoice.expired_date.substring(0, 10)
           : '',
-        term_of_payment_id: toStringValue(invoice.term_of_payment_id),
+        termOfPaymentId: toStringValue(
+          invoice.termOfPaymentId ??
+            invoice.term_of_payment_id ??
+            invoice.termOfPayment?.id
+        ),
         type: toStringValue(invoice.type || 'PEMBAYARAN'),
         sub_total: toStringValue(invoice.sub_total),
         total_discount: toStringValue(invoice.total_discount),
         total_price: toStringValue(invoice.total_price),
         ppn_percentage: toStringValue(invoice.ppn_percentage ?? '11'),
-        ppn_rupiah: toStringValue(invoice.ppn_rupiah),
+        ppnRupiah: toStringValue(invoice.ppnRupiah ?? invoice.ppn_rupiah),
         grand_total: toStringValue(invoice.grand_total),
       });
       setErrors({});
@@ -82,7 +86,7 @@ const EditInvoicePengirimanModal = ({
       discount: toNumberValue(formData.total_discount),
       totalPrice: toNumberValue(formData.total_price),
       ppnPercentage: toNumberValue(formData.ppn_percentage),
-      ppnRupiah: toNumberValue(formData.ppn_rupiah),
+      ppnRupiah: toNumberValue(formData.ppnRupiah),
       grandTotal: toNumberValue(formData.grand_total),
     }),
     [formData]
@@ -113,7 +117,7 @@ const EditInvoicePengirimanModal = ({
     setFormData((prev) => ({
       ...prev,
       total_price: String(totalPrice),
-      ppn_rupiah: String(ppnRupiah),
+      ppnRupiah: String(ppnRupiah),
       grand_total: String(grandTotal),
     }));
     toastService.info(
@@ -352,18 +356,18 @@ const EditInvoicePengirimanModal = ({
 
                   <div>
                     <label
-                      htmlFor='term_of_payment_id'
+                      htmlFor='termOfPaymentId'
                       className='mb-1 block text-sm font-medium text-gray-700'
                     >
                       Term of Payment (Optional)
                     </label>
                     <input
-                      id='term_of_payment_id'
-                      name='term_of_payment_id'
+                      id='termOfPaymentId'
+                      name='termOfPaymentId'
                       type='text'
-                      value={formData.term_of_payment_id}
+                      value={formData.termOfPaymentId}
                       onChange={(e) =>
-                        handleChange('term_of_payment_id', e.target.value)
+                        handleChange('termOfPaymentId', e.target.value)
                       }
                       placeholder='Term of Payment ID'
                       className='w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400'
@@ -525,27 +529,27 @@ const EditInvoicePengirimanModal = ({
 
                   <div>
                     <label
-                      htmlFor='ppn_rupiah'
+                      htmlFor='ppnRupiah'
                       className='mb-1 block text-sm font-medium text-gray-700'
                     >
                       PPN (Rp)
                     </label>
                     <input
-                      id='ppn_rupiah'
-                      name='ppn_rupiah'
+                      id='ppnRupiah'
+                      name='ppnRupiah'
                       type='number'
                       step='0.01'
-                      value={formData.ppn_rupiah}
+                      value={formData.ppnRupiah}
                       onChange={(e) =>
-                        handleChange('ppn_rupiah', e.target.value)
+                        handleChange('ppnRupiah', e.target.value)
                       }
-                      className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.ppn_rupiah ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.ppnRupiah ? 'border-red-500' : 'border-gray-300'}`}
                       placeholder='Nilai PPN dalam Rupiah'
                       disabled={submitLoading}
                     />
-                    {errors.ppn_rupiah && (
+                    {errors.ppnRupiah && (
                       <p className='mt-1 text-sm text-red-600'>
-                        {errors.ppn_rupiah}
+                        {errors.ppnRupiah}
                       </p>
                     )}
                   </div>

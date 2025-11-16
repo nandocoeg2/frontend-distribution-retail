@@ -955,14 +955,21 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
                       value: order.invoice.type,
                     },
                     {
-                      label: 'Status Pembayaran',
+                      label: 'Status',
                       component: (
                         <StatusBadge
                           status={
-                            order.invoice.statusPembayaran?.status_name
+                            order.invoice.status?.status_name ||
+                            order.invoice.status?.status_code ||
+                            order.invoice.statusPembayaran?.status_name ||
+                            order.invoice.statusPembayaran?.status_code ||
+                            '-'
                           }
                           variant={resolveStatusVariant(
-                            order.invoice.statusPembayaran?.status_name
+                            order.invoice.status?.status_name ||
+                              order.invoice.statusPembayaran?.status_name ||
+                              order.invoice.status?.status_code ||
+                              order.invoice.statusPembayaran?.status_code
                           )}
                           size='sm'
                           dot

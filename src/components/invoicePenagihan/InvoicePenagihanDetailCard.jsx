@@ -175,7 +175,7 @@ const InvoicePenagihanDetailCard = ({
                       },
                       {
                         label: 'PPN (Rp)',
-                        value: formatCurrency(invoice.ppn_rupiah),
+                        value: formatCurrency(invoice.ppnRupiah ?? invoice.ppn_rupiah),
                       },
                       {
                         label: 'Grand Total',

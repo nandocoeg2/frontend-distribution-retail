@@ -165,6 +165,7 @@ const computeTotals = (order) => {
   const vatAmount =
     toFiniteNumber(
       resolveField(order, [
+        'ppnRupiah',
         'ppn_rupiah',
         'total_vat_input',
         'totalVatInput',

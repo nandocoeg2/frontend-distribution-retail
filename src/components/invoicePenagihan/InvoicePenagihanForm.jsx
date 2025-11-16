@@ -7,7 +7,7 @@ const numberFields = [
   'total_discount',
   'total_price',
   'ppn_percentage',
-  'ppn_rupiah',
+  'ppnRupiah',
   'grand_total',
 ];
 
@@ -57,7 +57,11 @@ const sanitizeNumber = (value) => {
 
 const buildInitialState = (initialValues) => ({
   purchaseOrderId: initialValues?.purchaseOrderId || '',
-  termOfPaymentId: initialValues?.termOfPaymentId || '',
+  termOfPaymentId:
+    initialValues?.termOfPaymentId ||
+    initialValues?.termOfPayment?.id ||
+    initialValues?.term_of_payment_id ||
+    '',
   statusId: initialValues?.statusId || '',
   tanggal: initialValues?.tanggal ? initialValues.tanggal.substring(0, 10) : '',
   kepada: initialValues?.kepada || '',
@@ -73,8 +77,12 @@ const buildInitialState = (initialValues) => ({
     initialValues?.ppn_percentage != null
       ? String(initialValues.ppn_percentage)
       : '11',
-  ppn_rupiah:
-    initialValues?.ppn_rupiah != null ? String(initialValues.ppn_rupiah) : '',
+  ppnRupiah:
+    initialValues?.ppnRupiah != null
+      ? String(initialValues.ppnRupiah)
+      : initialValues?.ppn_rupiah != null
+        ? String(initialValues.ppn_rupiah)
+        : '',
   grand_total:
     initialValues?.grand_total != null ? String(initialValues.grand_total) : '',
   kw: booleanToString(initialValues?.kw),
@@ -220,7 +228,7 @@ const InvoicePenagihanForm = ({
             'total_discount',
             'total_price',
             'ppn_percentage',
-            'ppn_rupiah',
+            'ppnRupiah',
             'grand_total',
           ].includes(field)
         ) {
@@ -302,7 +310,7 @@ const InvoicePenagihanForm = ({
       total_discount: sanitizeNumber(formState.total_discount),
       total_price: sanitizeNumber(formState.total_price),
       ppn_percentage: sanitizeNumber(formState.ppn_percentage),
-      ppn_rupiah: sanitizeNumber(formState.ppn_rupiah),
+      ppnRupiah: sanitizeNumber(formState.ppnRupiah),
       grand_total: sanitizeNumber(formState.grand_total),
       invoicePenagihanDetails: formState.invoicePenagihanDetails
         .filter((detail) =>
@@ -574,23 +582,23 @@ const InvoicePenagihanForm = ({
 
         <div>
           <label
-            htmlFor='ppn_rupiah'
+            htmlFor='ppnRupiah'
             className='block text-sm font-medium text-gray-700'
           >
             PPN (Rp) *
           </label>
           <input
-            id='ppn_rupiah'
-            name='ppn_rupiah'
+            id='ppnRupiah'
+            name='ppnRupiah'
             type='number'
             step='0.01'
-            value={formState.ppn_rupiah}
-            onChange={(e) => handleChange('ppn_rupiah', e.target.value)}
+            value={formState.ppnRupiah}
+            onChange={(e) => handleChange('ppnRupiah', e.target.value)}
             className='block w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
             placeholder='Nilai PPN dalam Rupiah'
           />
-          {errors.ppn_rupiah && (
-            <p className='mt-1 text-sm text-red-600'>{errors.ppn_rupiah}</p>
+          {errors.ppnRupiah && (
+            <p className='mt-1 text-sm text-red-600'>{errors.ppnRupiah}</p>
           )}
         </div>
 

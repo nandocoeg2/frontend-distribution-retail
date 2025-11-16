@@ -8,7 +8,7 @@ const INITIAL_SEARCH_PARAMS = {
   no_invoice: '',
   deliver_to: '',
   type: '',
-  statusPembayaranId: '',
+  statusId: '',
   purchaseOrderId: '',
   tanggal_start: '',
   tanggal_end: ''
