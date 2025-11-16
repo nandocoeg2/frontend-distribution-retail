@@ -194,7 +194,7 @@ const InvoicePengirimanTableServerSide = ({
     if (!statusCode || activeTab === 'all') {
       return [];
     }
-    return [{ id: 'status', value: statusCode }];
+    return [{ id: 'status_code', value: statusCode }];
   }, [activeTab]);
 
   const globalFilterConfig = useMemo(
@@ -379,37 +379,7 @@ const InvoicePengirimanTableServerSide = ({
       }),
       columnHelper.accessor('statusPembayaran.status_name', {
         id: 'status',
-        header: ({ column }) => {
-          const statusConfig = TAB_STATUS_CONFIG[activeTab];
-          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
-
-          return (
-            <div className='space-y-2'>
-              <div className='font-medium'>Status</div>
-              {isLocked ? (
-                <div className='w-full px-2 py-1 text-xs text-gray-700 bg-gray-100 border border-gray-300 rounded'>
-                  {statusConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value=''>Semua</option>
-                  <option value='CANCELLED INVOICE'>Cancelled</option>
-                  <option value='PENDING INVOICE'>Pending</option>
-                  <option value='PAID INVOICE'>Paid</option>
-                  <option value='OVERDUE INVOICE'>Overdue</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: 'Status',
         cell: (info) => {
           const status = info.row.original?.statusPembayaran;
           const statusText = status?.status_name || status?.status_code;
