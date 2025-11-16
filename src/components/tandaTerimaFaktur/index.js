@@ -8,4 +8,3 @@ export { default as TandaTerimaFakturGroupedTable } from './TandaTerimaFakturGro
 export { default as TandaTerimaFakturGroupedDetailModal } from './TandaTerimaFakturGroupedDetailModal';
 export { default as PrintTandaTerimaFakturByGroupModal } from './PrintTandaTerimaFakturByGroupModal';
 export { default as UploadTTF2Modal } from './UploadTTF2Modal';
-export { exportTandaTerimaFakturToPDF } from './PrintTandaTerimaFaktur';

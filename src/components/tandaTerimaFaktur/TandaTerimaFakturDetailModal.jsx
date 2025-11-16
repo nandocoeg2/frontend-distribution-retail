@@ -1,7 +1,6 @@
 import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
-import { exportTandaTerimaFakturToPDF } from './PrintTandaTerimaFaktur';
 
 const InfoRow = ({ label, value }) => (
   <div className='flex justify-between py-2 border-b border-gray-100'>
@@ -72,12 +71,6 @@ const TandaTerimaFakturDetailModal = ({
   const customer = detail?.customer || null;
   const hasLaporan = totalLaporan > 0;
   const hasInvoice = totalInvoice > 0;
-  const handleExportPdf = () => {
-    if (isLoading || !detail) {
-      return;
-    }
-    exportTandaTerimaFakturToPDF(detail);
-  };
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4'>
@@ -92,27 +85,6 @@ const TandaTerimaFakturDetailModal = ({
             </p>
           </div>
           <div className='flex items-center gap-2'>
-            <button
-              type='button'
-              onClick={handleExportPdf}
-              disabled={isLoading || !tandaTerimaFaktur}
-              className='flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed'
-            >
-              <svg
-                className='w-4 h-4 mr-2'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 16v6m0 0l-3-3m3 3l3-3M6 10V5a2 2 0 012-2h8a2 2 0 012 2v5m1 0H5'
-                />
-              </svg>
-              Export PDF
-            </button>
             <button
               onClick={onClose}
               className='p-2 text-gray-500 transition-colors duration-150 rounded-lg hover:bg-gray-100'

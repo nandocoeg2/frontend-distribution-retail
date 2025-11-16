@@ -24,7 +24,6 @@ import { getPackingById, exportPackingSticker } from '../../services/packingServ
 import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
-import { exportPurchaseOrderToPDF } from './PrintPurchaseOrder';
 
 const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -123,9 +122,9 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         return;
       }
 
-      exportTasks.push(async () => {
-        await exportPurchaseOrderToPDF(order);
-      });
+      // NOTE: Purchase Order export will be handled by backend API in the future
+      // For now, we only mark it as printed without generating the document
+      console.info('Purchase Order will be marked as printed (export handled by backend)');
     }
 
     if (selectedDocuments.PACKING && order?.packing) {

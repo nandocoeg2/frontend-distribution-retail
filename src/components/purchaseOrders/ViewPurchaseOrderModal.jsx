@@ -26,7 +26,6 @@ import { getPackingById, exportPackingSticker } from '../../services/packingServ
 import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
-import { exportPurchaseOrderToPDF } from './PrintPurchaseOrder';
 
 const ViewPurchaseOrderModal = ({
   isOpen,
@@ -251,9 +250,9 @@ const ViewPurchaseOrderModal = ({
         return;
       }
 
-      exportTasks.push(async () => {
-        await exportPurchaseOrderToPDF(order);
-      });
+      // NOTE: Purchase Order export will be handled by backend API in the future
+      // For now, we only mark it as printed without generating the document
+      console.info('Purchase Order will be marked as printed (export handled by backend)');
       purchaseOrderTaskCreated = true;
     }
 
