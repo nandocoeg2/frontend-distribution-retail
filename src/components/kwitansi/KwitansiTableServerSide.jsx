@@ -176,7 +176,23 @@ const KwitansiTableServerSide = ({
         cell: (info) => formatDate(info.getValue()),
       }),
       columnHelper.accessor('grand_total', {
-        header: 'Grand Total',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Grand Total</div>
+            <input
+              type="number"
+              min="0"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => formatCurrency(info.getValue()),
         enableSorting: true,
       }),
