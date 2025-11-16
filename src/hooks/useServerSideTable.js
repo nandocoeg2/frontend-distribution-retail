@@ -18,7 +18,17 @@ const DEFAULT_GLOBAL_FILTER = {
 const DEFAULT_LOCKED_FILTERS = [];
 const DEFAULT_TABLE_OPTIONS = {};
 
-const isDefined = (value) => value !== undefined && value !== null && value !== '';
+const isDefined = (value) => {
+  if (value === undefined || value === null || value === '') {
+    return false;
+  }
+  // Handle range filter object (e.g., {start: 'xxx', end: 'yyy'})
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return (value.start !== undefined && value.start !== null && value.start !== '') ||
+           (value.end !== undefined && value.end !== null && value.end !== '');
+  }
+  return true;
+};
 
 const mergeLockedFilters = (filters = [], lockedFilters = []) => {
   if (!Array.isArray(filters) || filters.length === 0) {

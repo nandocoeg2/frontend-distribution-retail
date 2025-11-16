@@ -38,7 +38,17 @@ export const useInvoicePenagihanQuery = ({
       // Add column filters
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
-          params[key] = value;
+          // Handle range filter (start/end) for no_invoice_penagihan
+          if (key === 'no_invoice_penagihan' && typeof value === 'object') {
+            if (value.start) {
+              params['no_invoice_penagihan_start'] = value.start;
+            }
+            if (value.end) {
+              params['no_invoice_penagihan_end'] = value.end;
+            }
+          } else {
+            params[key] = value;
+          }
         }
       });
 

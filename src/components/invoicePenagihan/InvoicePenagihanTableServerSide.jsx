@@ -93,33 +93,57 @@ const InvoicePenagihanTableServerSide = ({
     () => [
       columnHelper.accessor('no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter Start..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter End..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue();
+          const startValue = (typeof filterValue === 'object' && filterValue?.start) || '';
+          const endValue = (typeof filterValue === 'object' && filterValue?.end) || '';
+
+          return (
+            <div className="space-y-2">
+              <div className="font-medium">No Invoice</div>
+              <input
+                type="text"
+                value={startValue}
+                onChange={(event) => {
+                  const newValue = event.target.value;
+                  const currentFilter = column.getFilterValue() || {};
+                  const newFilterValue = {
+                    start: newValue,
+                    end: (typeof currentFilter === 'object' && currentFilter.end) || '',
+                  };
+                  // Set to undefined if both are empty to clear the filter
+                  column.setFilterValue(
+                    !newFilterValue.start && !newFilterValue.end ? undefined : newFilterValue
+                  );
+                  setPage(1);
+                }}
+                placeholder="Filter Start..."
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onClick={(event) => event.stopPropagation()}
+              />
+              <input
+                type="text"
+                value={endValue}
+                onChange={(event) => {
+                  const newValue = event.target.value;
+                  const currentFilter = column.getFilterValue() || {};
+                  const newFilterValue = {
+                    start: (typeof currentFilter === 'object' && currentFilter.start) || '',
+                    end: newValue,
+                  };
+                  // Set to undefined if both are empty to clear the filter
+                  column.setFilterValue(
+                    !newFilterValue.start && !newFilterValue.end ? undefined : newFilterValue
+                  );
+                  setPage(1);
+                }}
+                placeholder="Filter End..."
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          );
+        },
         cell: (info) => (
           <div className="text-sm font-medium text-gray-900">
             {info.getValue() || '-'}
