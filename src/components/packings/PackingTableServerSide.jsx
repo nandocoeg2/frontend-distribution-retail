@@ -185,7 +185,7 @@ const PackingTableServerSide = ({
     if (!statusCode || activeTab === 'all') {
       return [];
     }
-    return [{ id: 'status', value: statusCode }];
+    return [{ id: 'status_code', value: statusCode }];
   }, [activeTab]);
 
   const globalFilterConfig = useMemo(
@@ -333,15 +333,30 @@ const PackingTableServerSide = ({
       }),
       columnHelper.display({
         id: 'is_printed',
-        header: 'Status Print',
-        enableColumnFilter: false,
-        enableSorting: true,
+        header: ({ column }) => (
+          <div className='space-y-2'>
+            <div className='font-medium'>Status Print</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value=''>Semua</option>
+              <option value='true'>Sudah Print</option>
+              <option value='false'>Belum Print</option>
+            </select>
+          </div>
+        ),
         cell: ({ row }) => {
           const isPrinted = row.original.is_printed;
           return (
             <StatusBadge
               dot={true}
-              status={isPrinted ? 'Sudah di Print' : 'Belum Print'}
+              status={isPrinted ? 'Sudah Print' : 'Belum Print'}
               variant={isPrinted ? 'success' : 'secondary'}
               size='sm'
             />
