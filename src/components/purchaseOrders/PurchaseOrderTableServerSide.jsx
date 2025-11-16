@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
-import { resolveStatusVariant } from '../../utils/modalUtils';
+import { formatDate, resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
@@ -254,7 +254,22 @@ const PurchaseOrderTableServerSide = ({
         },
       }),
       columnHelper.accessor('total_items', {
-        header: 'Total Items',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Total Items</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {info.getValue() || 0}
@@ -280,14 +295,28 @@ const PurchaseOrderTableServerSide = ({
         ),
         cell: (info) =>
           info.getValue()
-            ? new Date(info.getValue()).toLocaleDateString('id-ID')
+            ? formatDate(info.getValue())
             : '-',
       }),
-      columnHelper.accessor('tanggal_batas_kirim', {
-        header: 'Tanggal Batas Kirim',
+      columnHelper.accessor('delivery_date', {
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Delivery Date</div>
+            <input
+              type="date"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) =>
           info.getValue()
-            ? new Date(info.getValue()).toLocaleDateString('id-ID')
+            ? formatDate(info.getValue())
             : '-',
         enableColumnFilter: false,
       }),
