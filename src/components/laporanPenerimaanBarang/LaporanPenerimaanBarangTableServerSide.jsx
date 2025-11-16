@@ -467,7 +467,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         cell: (info) => formatDate(info.getValue()),
       }),
       columnHelper.accessor('status.status_name', {
-        id: 'status',
+        id: 'status_code',
         header: ({ column }) => {
           const statusConfig = TAB_STATUS_CONFIG[activeTab];
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
