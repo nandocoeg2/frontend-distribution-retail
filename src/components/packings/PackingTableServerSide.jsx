@@ -11,7 +11,7 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
-import { exportPackingSticker } from '../../services/packingService';
+import { exportPackingSticker, exportPackingTandaTerima } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 
@@ -106,6 +106,7 @@ const PackingTableServerSide = ({
   selectedPackingId,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isPrintingTandaTerima, setIsPrintingTandaTerima] = useState(false);
 
   const handleBulkPrintSticker = async () => {
     if (!selectedPackings || selectedPackings.length === 0) {
@@ -178,6 +179,80 @@ const PackingTableServerSide = ({
       toastService.error(error.message || 'Gagal mencetak sticker');
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleBulkPrintTandaTerima = async () => {
+    if (!selectedPackings || selectedPackings.length === 0) {
+      toastService.error('Tidak ada packing yang dipilih');
+      return;
+    }
+
+    setIsPrintingTandaTerima(true);
+    try {
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info(`Memproses ${selectedPackings.length} tanda terima...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Loop through selected packings and fetch tanda terima
+      for (let i = 0; i < selectedPackings.length; i++) {
+        const packingId = selectedPackings[i];
+        
+        try {
+          // Call backend API to get HTML
+          const html = await exportPackingTandaTerima(packingId, companyData.id);
+
+          // Open HTML in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            // Wait for content to load, then trigger print dialog
+            printWindow.onload = () => {
+              printWindow.focus();
+              // Auto print for first window, manual for others
+              if (i === 0) {
+                printWindow.print();
+              }
+            };
+
+            successCount++;
+          } else {
+            failCount++;
+            console.error(`Failed to open print window for packing ${packingId}`);
+          }
+
+          // Small delay between opening windows to prevent browser blocking
+          if (i < selectedPackings.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error printing tanda terima for packing ${packingId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil membuka ${successCount} tanda terima${failCount > 0 ? `. ${failCount} gagal.` : ''}`
+        );
+      } else {
+        toastService.error('Gagal membuka tanda terima');
+      }
+    } catch (error) {
+      console.error('Error in bulk print tanda terima:', error);
+      toastService.error(error.message || 'Gagal mencetak tanda terima');
+    } finally {
+      setIsPrintingTandaTerima(false);
     }
   };
   const lockedFilters = useMemo(() => {
@@ -537,6 +612,14 @@ const PackingTableServerSide = ({
             >
               <PrinterIcon className='h-4 w-4' />
               <span>{isPrinting ? 'Mencetak...' : 'Print Stiker'}</span>
+            </button>
+            <button
+              onClick={handleBulkPrintTandaTerima}
+              disabled={isPrintingTandaTerima || actionDisabled}
+              className='flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+            >
+              <PrinterIcon className='h-4 w-4' />
+              <span>{isPrintingTandaTerima ? 'Mencetak...' : 'Print Tanda Terima'}</span>
             </button>
             <button
               onClick={onProcessSelected}
