@@ -233,7 +233,22 @@ const SuratJalanTableServerSide = ({
       }),
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
-        header: 'No PO',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">No PO</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => <span className="font-medium">{info.getValue() || 'N/A'}</span>,
         enableColumnFilter: false,
       }),
@@ -258,7 +273,22 @@ const SuratJalanTableServerSide = ({
       }),
       columnHelper.accessor('invoice.no_invoice', {
         id: 'no_invoice',
-        header: 'Invoice',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">No Invoice</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => info.getValue() || 'N/A',
         enableColumnFilter: false,
       }),
@@ -305,7 +335,24 @@ const SuratJalanTableServerSide = ({
         ),
       }),
       columnHelper.accessor('is_printed', {
-        header: 'Printed',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Status Print</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="true">Sudah Print</option>
+              <option value="false">Belum Print</option>
+            </select>
+          </div>
+        ),
         cell: (info) => (
           <StatusBadge
             status={info.getValue() ? 'Sudah Print' : 'Belum Print'}
