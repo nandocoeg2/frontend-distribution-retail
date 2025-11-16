@@ -118,7 +118,16 @@ const KwitansiTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => info.getValue() || '-',
+        cell: (info) => {
+          const invoicePenagihan = info.row.original?.invoicePenagihan;
+          return (
+            <div>
+              <div className="text-sm font-medium text-gray-900">
+                {invoicePenagihan?.no_invoice_penagihan || '-'}
+              </div>
+            </div>
+          );
+        },
       }),
       columnHelper.accessor('no_kwitansi', {
         header: ({ column }) => (
@@ -138,11 +147,11 @@ const KwitansiTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const statusCode = info.row.original?.status?.status_code;
+          const kwitansi = info.row.original;
           return (
             <div>
               <div className="text-sm font-medium text-gray-900">
-                {info.getValue() || '-'}
+                {kwitansi?.no_kwitansi || '-'}
               </div>
             </div>
           );
