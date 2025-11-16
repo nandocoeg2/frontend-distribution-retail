@@ -10,6 +10,7 @@ import {
   UserIcon,
   BuildingStorefrontIcon,
   ClockIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs';
 import { AccordionItem, StatusBadge, InfoTable } from '../ui';
@@ -55,6 +56,7 @@ const CheckingListDetailCard = ({
     statusInfo: false,
     systemInfo: false,
   });
+  const [expandedPackings, setExpandedPackings] = useState({});
 
   // Normalize audit trails - must be called before early return
   const normalizedAuditTrails = useMemo(() => {
@@ -141,6 +143,13 @@ const CheckingListDetailCard = ({
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
+    }));
+  };
+
+  const togglePacking = (packingId) => {
+    setExpandedPackings((prev) => ({
+      ...prev,
+      [packingId]: !prev[packingId],
     }));
   };
 
@@ -395,11 +404,6 @@ const CheckingListDetailCard = ({
                           '-',
                       },
                       {
-                        label: 'Checklist ID',
-                        value: checklist.id || '-',
-                        copyable: Boolean(checklist?.id),
-                      },
-                      {
                         label: 'Tanggal Checklist',
                         value: formatDateTime(checklist?.tanggal),
                       },
@@ -539,11 +543,6 @@ const CheckingListDetailCard = ({
                         <InfoTable
                           data={[
                             {
-                              label: 'Purchase Order ID',
-                              value: purchaseOrder.id || '-',
-                              copyable: Boolean(purchaseOrder.id),
-                            },
-                            {
                               label: 'PO Number',
                               value: purchaseOrder.po_number || '-',
                             },
@@ -675,11 +674,6 @@ const CheckingListDetailCard = ({
                           <InfoTable
                             data={[
                               {
-                                label: 'Surat Jalan ID',
-                                value: suratJalan.id || '-',
-                                copyable: Boolean(suratJalan.id),
-                              },
-                              {
                                 label: 'No Surat Jalan',
                                 value: suratJalan.no_surat_jalan || '-',
                               },
@@ -717,11 +711,6 @@ const CheckingListDetailCard = ({
                                 value: formatNumberValue(
                                   suratJalan.print_counter
                                 ),
-                              },
-                              {
-                                label: 'Invoice ID',
-                                value: suratJalan.invoiceId || '-',
-                                copyable: Boolean(suratJalan.invoiceId),
                               },
                             ]}
                           />
@@ -765,30 +754,39 @@ const CheckingListDetailCard = ({
                     const packingBoxes = Array.isArray(packing?.packingBoxes)
                       ? packing.packingBoxes
                       : [];
+                    const isExpanded = expandedPackings[packing.id] ?? true;
 
                     return (
                       <div
                         key={packing.id || index}
                         className='overflow-hidden bg-white border border-gray-200 rounded-lg mb-4'
                       >
-                        <div className='px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50'>
-                          <h4 className='text-lg font-semibold text-gray-900'>
-                            Packing #{index + 1}: {packing.packing_number}
-                          </h4>
-                          {packing.po_number && (
-                            <p className='text-sm text-gray-600 mt-1'>
-                              PO: {packing.po_number}
-                            </p>
-                          )}
+                        <div
+                          className='px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-colors'
+                          onClick={() => togglePacking(packing.id)}
+                        >
+                          <div className='flex items-center justify-between'>
+                            <div>
+                              <h4 className='text-lg font-semibold text-gray-900'>
+                                Packing #{index + 1}: {packing.packing_number}
+                              </h4>
+                              {packing.po_number && (
+                                <p className='text-sm text-gray-600 mt-1'>
+                                  PO: {packing.po_number}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronDownIcon
+                              className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                                isExpanded ? 'transform rotate-180' : ''
+                              }`}
+                            />
+                          </div>
                         </div>
-                        <div className='px-6 py-4'>
+                        {isExpanded && (
+                          <div className='px-6 py-4'>
                           <InfoTable
                             data={[
-                              {
-                                label: 'Packing ID',
-                                value: packing.id || '-',
-                                copyable: Boolean(packing.id),
-                              },
                               {
                                 label: 'Packing Number',
                                 value: packing.packing_number || '-',
@@ -808,11 +806,6 @@ const CheckingListDetailCard = ({
                               {
                                 label: 'Print Counter',
                                 value: formatNumberValue(packing.print_counter),
-                              },
-                              {
-                                label: 'Purchase Order ID',
-                                value: packing.purchaseOrderId || '-',
-                                copyable: Boolean(packing.purchaseOrderId),
                               },
                             ]}
                           />
@@ -876,6 +869,7 @@ const CheckingListDetailCard = ({
                             </div>
                           )}
                         </div>
+                        )}
                       </div>
                     );
                   })}
@@ -910,11 +904,6 @@ const CheckingListDetailCard = ({
                   >
                     <InfoTable
                       data={[
-                        {
-                          label: 'Customer ID',
-                          value: customer.id || '-',
-                          copyable: Boolean(customer.id),
-                        },
                         {
                           label: 'Nama Customer',
                           value:
@@ -999,11 +988,6 @@ const CheckingListDetailCard = ({
                   >
                     <InfoTable
                       data={[
-                        {
-                          label: 'Supplier ID',
-                          value: supplier.id || '-',
-                          copyable: Boolean(supplier.id),
-                        },
                         {
                           label: 'Supplier Name',
                           value: supplier.nama_supplier || supplier.name || '-',

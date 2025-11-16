@@ -720,11 +720,6 @@ const CheckingListDetailModal = ({
                     <InfoTable
                       data={[
                         {
-                          label: 'Packing ID',
-                          value: packing.id || '-',
-                          copyable: Boolean(packing.id),
-                        },
-                        {
                           label: 'Packing Number',
                           value: packing.packing_number || '-',
                         },

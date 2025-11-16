@@ -142,7 +142,22 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('suratJalan', {
         id: 'surat_jalan',
-        header: 'Surat Jalan',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Surat Jalan</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => {
           const suratJalanList = Array.isArray(info.getValue())
             ? info.getValue()
