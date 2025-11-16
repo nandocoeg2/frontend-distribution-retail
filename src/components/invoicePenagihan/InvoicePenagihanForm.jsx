@@ -1,6 +1,8 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import Autocomplete from '../common/Autocomplete';
 import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
+import usePurchaseOrderAutocomplete from '@/hooks/usePurchaseOrderAutocomplete';
+import useStatuses from '@/hooks/useStatuses';
 
 const numberFields = [
   'sub_total',
@@ -30,39 +32,25 @@ const emptyDetailRow = () => ({
   discount_rupiah: '',
 });
 
-const booleanToString = (value) => {
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false';
-  }
-  if (typeof value === 'string') {
-    return value.toLowerCase() === 'true'
-      ? 'true'
-      : value.toLowerCase() === 'false'
-        ? 'false'
-        : '';
-  }
-  return '';
-};
-
-const parseBoolean = (value) => {
-  if (value === true || value === 'true') return true;
-  if (value === false || value === 'false') return false;
-  return false;
-};
-
 const sanitizeNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
 const buildInitialState = (initialValues) => ({
-  purchaseOrderId: initialValues?.purchaseOrderId || '',
+  purchaseOrderId:
+    initialValues?.purchaseOrderId ||
+    initialValues?.purchaseOrder?.id ||
+    '',
   termOfPaymentId:
     initialValues?.termOfPaymentId ||
     initialValues?.termOfPayment?.id ||
     initialValues?.term_of_payment_id ||
     '',
-  statusId: initialValues?.statusId || '',
+  statusId:
+    initialValues?.statusId ||
+    initialValues?.status?.id ||
+    '',
   tanggal: initialValues?.tanggal ? initialValues.tanggal.substring(0, 10) : '',
   kepada: initialValues?.kepada || '',
   sub_total:
@@ -85,8 +73,6 @@ const buildInitialState = (initialValues) => ({
         : '',
   grand_total:
     initialValues?.grand_total != null ? String(initialValues.grand_total) : '',
-  kw: booleanToString(initialValues?.kw),
-  fp: booleanToString(initialValues?.fp),
   invoicePenagihanDetails:
     initialValues?.invoicePenagihanDetails &&
     initialValues.invoicePenagihanDetails.length > 0
@@ -115,6 +101,7 @@ const InvoicePenagihanForm = ({
   onCancel,
   submitLabel,
   loading,
+  isEditMode = false,
 }) => {
   const [formState, setFormState] = useState(() =>
     buildInitialState(initialValues)
@@ -128,6 +115,31 @@ const InvoicePenagihanForm = ({
   } = useTermOfPaymentAutocomplete({
     selectedId: formState.termOfPaymentId
   });
+
+  const {
+    options: purchaseOrderOptions,
+    loading: purchaseOrderLoading,
+    fetchOptions: searchPurchaseOrders
+  } = usePurchaseOrderAutocomplete({
+    selectedValue: formState.purchaseOrderId
+  });
+
+  const { invoiceStatuses, fetchInvoiceStatuses } = useStatuses();
+
+  useEffect(() => {
+    fetchInvoiceStatuses();
+  }, [fetchInvoiceStatuses]);
+
+  const statusOptions = useMemo(() => {
+    const statuses = Array.isArray(invoiceStatuses) 
+      ? invoiceStatuses 
+      : invoiceStatuses?.data || [];
+    return statuses.map(status => ({
+      id: status.id,
+      label: status.status_name || status.status_code,
+      value: status.id
+    }));
+  }, [invoiceStatuses]);
 
   useEffect(() => {
     setFormState(buildInitialState(initialValues));
@@ -304,8 +316,6 @@ const InvoicePenagihanForm = ({
       statusId: formState.statusId.trim(),
       tanggal: formState.tanggal,
       kepada: formState.kepada.trim(),
-      kw: parseBoolean(formState.kw),
-      fp: parseBoolean(formState.fp),
       sub_total: sanitizeNumber(formState.sub_total),
       total_discount: sanitizeNumber(formState.total_discount),
       total_price: sanitizeNumber(formState.total_price),
@@ -341,16 +351,23 @@ const InvoicePenagihanForm = ({
             htmlFor='purchaseOrderId'
             className='block text-sm font-medium text-gray-700'
           >
-            Purchase Order ID *
+            Purchase Order *
           </label>
-          <input
-            id='purchaseOrderId'
-            name='purchaseOrderId'
-            type='text'
+          <Autocomplete
+            options={purchaseOrderOptions}
             value={formState.purchaseOrderId}
-            onChange={(e) => handleChange('purchaseOrderId', e.target.value)}
-            className='block w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Masukkan Purchase Order ID'
+            onChange={(event) =>
+              handleChange('purchaseOrderId', event.target.value)
+            }
+            placeholder='Cari Purchase Order'
+            displayKey='label'
+            valueKey='id'
+            name='purchaseOrderId'
+            required
+            loading={purchaseOrderLoading}
+            onSearch={searchPurchaseOrders}
+            showId
+            disabled={isEditMode}
           />
           {errors.purchaseOrderId && (
             <p className='mt-1 text-sm text-red-600'>
@@ -380,6 +397,7 @@ const InvoicePenagihanForm = ({
             loading={termOfPaymentLoading}
             onSearch={searchTermOfPayments}
             showId
+            disabled={isEditMode}
           />
           {errors.termOfPaymentId && (
             <p className='mt-1 text-sm text-red-600'>
@@ -393,16 +411,21 @@ const InvoicePenagihanForm = ({
             htmlFor='statusId'
             className='block text-sm font-medium text-gray-700'
           >
-            Status ID *
+            Status *
           </label>
-          <input
-            id='statusId'
-            name='statusId'
-            type='text'
+          <Autocomplete
+            options={statusOptions}
             value={formState.statusId}
-            onChange={(e) => handleChange('statusId', e.target.value)}
-            className='block w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            placeholder='Masukkan Status ID'
+            onChange={(event) =>
+              handleChange('statusId', event.target.value)
+            }
+            placeholder='Pilih Status'
+            displayKey='label'
+            valueKey='id'
+            name='statusId'
+            required
+            showId
+            disabled={isEditMode}
           />
           {errors.statusId && (
             <p className='mt-1 text-sm text-red-600'>{errors.statusId}</p>
@@ -442,53 +465,15 @@ const InvoicePenagihanForm = ({
             type='text'
             value={formState.kepada}
             onChange={(e) => handleChange('kepada', e.target.value)}
-            className='block w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='block w-full px-3 py-2 mt-1 border rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed'
             placeholder='Nama penerima invoice'
+            disabled={isEditMode}
           />
           {errors.kepada && (
             <p className='mt-1 text-sm text-red-600'>{errors.kepada}</p>
           )}
         </div>
 
-        <div>
-          <label
-            htmlFor='kw'
-            className='block text-sm font-medium text-gray-700'
-          >
-            Status KW
-          </label>
-          <select
-            id='kw'
-            name='kw'
-            value={formState.kw}
-            onChange={(e) => handleChange('kw', e.target.value)}
-            className='block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value=''>Pilih Status</option>
-            <option value='true'>Ya</option>
-            <option value='false'>Tidak</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor='fp'
-            className='block text-sm font-medium text-gray-700'
-          >
-            Status FP
-          </label>
-          <select
-            id='fp'
-            name='fp'
-            value={formState.fp}
-            onChange={(e) => handleChange('fp', e.target.value)}
-            className='block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-          >
-            <option value=''>Pilih Status</option>
-            <option value='true'>Ya</option>
-            <option value='false'>Tidak</option>
-          </select>
-        </div>
       </section>
 
       <section className='grid grid-cols-1 gap-4 md:grid-cols-3'>

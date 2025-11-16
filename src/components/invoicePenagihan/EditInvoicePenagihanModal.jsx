@@ -3,7 +3,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import toastService from '../../services/toastService';
 import InvoicePenagihanForm from './InvoicePenagihanForm';
 
-const EditInvoicePenagihanModal = ({ show, onClose, invoice, onUpdate }) => {
+const EditInvoicePenagihanModal = ({ show, onClose, invoice, onUpdate, isLoadingDetail = false }) => {
   const [loading, setLoading] = useState(false);
   const [initialValues, setInitialValues] = useState(invoice || {});
 
@@ -11,7 +11,7 @@ const EditInvoicePenagihanModal = ({ show, onClose, invoice, onUpdate }) => {
     setInitialValues(invoice || {});
   }, [invoice]);
 
-  if (!show || !invoice) {
+  if (!show) {
     return null;
   }
 
@@ -56,13 +56,25 @@ const EditInvoicePenagihanModal = ({ show, onClose, invoice, onUpdate }) => {
         </div>
 
         <div className='px-6 py-6'>
-          <InvoicePenagihanForm
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            onCancel={onClose}
-            submitLabel='Simpan Perubahan'
-            loading={loading}
-          />
+          {isLoadingDetail ? (
+            <div className='flex justify-center items-center py-12'>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600'></div>
+              <span className='ml-3 text-sm text-gray-600'>Memuat detail invoice...</span>
+            </div>
+          ) : invoice ? (
+            <InvoicePenagihanForm
+              initialValues={initialValues}
+              onSubmit={handleSubmit}
+              onCancel={onClose}
+              submitLabel='Simpan Perubahan'
+              loading={loading}
+              isEditMode={true}
+            />
+          ) : (
+            <div className='flex justify-center items-center py-12'>
+              <p className='text-sm text-gray-500'>Data invoice tidak tersedia.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

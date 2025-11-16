@@ -9,18 +9,6 @@ import {
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 
-const toBooleanLabel = (value, fallback = '-') => {
-  if (typeof value === 'boolean') {
-    return value ? 'Ya' : 'Tidak';
-  }
-  if (typeof value === 'string') {
-    const lower = value.toLowerCase();
-    if (lower === 'true') return 'Ya';
-    if (lower === 'false') return 'Tidak';
-  }
-  return fallback;
-};
-
 const InvoicePenagihanDetailCard = ({
   invoice,
   onClose,
@@ -186,7 +174,7 @@ const InvoicePenagihanDetailCard = ({
                 </AccordionItem>
 
                 <AccordionItem
-                  title='Status & Flag'
+                  title='Status & Dokumen'
                   isExpanded={expandedSections.statusInfo}
                   onToggle={() => toggleSection('statusInfo')}
                   bgColor='bg-gradient-to-r from-yellow-50 to-yellow-100'
@@ -201,8 +189,18 @@ const InvoicePenagihanDetailCard = ({
                           invoice.statusId ||
                           '-',
                       },
-                      { label: 'Status KW', value: toBooleanLabel(invoice.kw) },
-                      { label: 'Status FP', value: toBooleanLabel(invoice.fp) },
+                      {
+                        label: 'Kwitansi',
+                        value: invoice?.kwitansi?.no_kwitansi || (invoice?.kwitansiId ? 'Ada' : 'Belum ada'),
+                      },
+                      {
+                        label: 'Faktur Pajak',
+                        value: invoice?.fakturPajak?.no_faktur_pajak || (invoice?.fakturPajakId ? 'Ada' : 'Belum ada'),
+                      },
+                      {
+                        label: 'Tanda Terima Faktur',
+                        value: invoice?.tandaTerimaFaktur?.no_tanda_terima_faktur || (invoice?.tandaTerimaFakturId ? 'Ada' : 'Belum ada'),
+                      },
                     ]}
                   />
                 </AccordionItem>

@@ -91,26 +91,6 @@ class InvoicePenagihanService {
     }
   }
 
-  async generateKwitansi(id, overrides = {}) {
-    try {
-      const response = await this.api.post(`/${id}/generate-kwitansi`, overrides);
-      return response.data;
-    } catch (error) {
-      console.error('Error generating kwitansi from invoice penagihan:', error);
-      throw error;
-    }
-  }
-
-  async generateFakturPajak(id, overrides = {}) {
-    try {
-      const response = await this.api.post(`/${id}/generate-faktur-pajak`, overrides);
-      return response.data;
-    } catch (error) {
-      console.error('Error generating faktur pajak from invoice penagihan:', error);
-      throw error;
-    }
-  }
-
   async generateTandaTerimaFaktur(id, overrides = {}) {
     try {
       const response = await this.api.post(

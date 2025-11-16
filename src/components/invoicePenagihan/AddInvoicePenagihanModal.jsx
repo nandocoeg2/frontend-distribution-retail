@@ -15,8 +15,6 @@ const buildInitialValues = () => ({
   ppn_percentage: '11',
   ppnRupiah: '',
   grand_total: '',
-  kw: 'false',
-  fp: 'false',
   invoicePenagihanDetails: [],
 });
 
