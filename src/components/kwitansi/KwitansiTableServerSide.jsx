@@ -180,26 +180,7 @@ const KwitansiTableServerSide = ({
         cell: (info) => formatCurrency(info.getValue()),
         enableSorting: true,
       }),
-      columnHelper.accessor('kepada', {
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kepada</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || '-',
-      }),
-      columnHelper.accessor((row) => row.invoicePenagihan?.customer?.namaCustomer, {
+      columnHelper.accessor((row) => row.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer, {
         id: 'customer_name',
         header: ({ column }) => (
           <div className="space-y-2">
@@ -218,7 +199,7 @@ const KwitansiTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const customer = info.row.original?.invoicePenagihan?.customer;
+          const customer = info.row.original?.invoicePenagihan?.purchaseOrder?.customer;
           return (
             <div>
               <div className="text-sm text-gray-900">{customer?.namaCustomer || '-'}</div>
@@ -272,13 +253,6 @@ const KwitansiTableServerSide = ({
             dot
           />
         ),
-      }),
-      columnHelper.accessor('tanggal', {
-        id: 'created_at',
-        header: 'Dibuat',
-        enableSorting: true,
-        enableColumnFilter: false,
-        cell: (info) => formatDateTime(info.getValue()),
       }),
       columnHelper.display({
         id: 'actions',
