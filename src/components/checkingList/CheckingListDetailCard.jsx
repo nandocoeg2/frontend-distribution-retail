@@ -97,15 +97,33 @@ const CheckingListDetailCard = ({
       ? [checklist.suratJalan]
       : [];
 
-  // Get first surat jalan for related data (PO, Customer, Supplier, Packing)
+  // Get first surat jalan for related data (Customer, Supplier)
   const firstSuratJalan = suratJalanData[0];
-  const purchaseOrder = firstSuratJalan?.purchaseOrder;
-  const customer = purchaseOrder?.customer;
-  const supplier = purchaseOrder?.supplier;
-  const packing = purchaseOrder?.packing;
-  const packingBoxes = Array.isArray(packing?.packingBoxes)
-    ? packing.packingBoxes
-    : [];
+  const firstPurchaseOrder = firstSuratJalan?.purchaseOrder;
+  const customer = firstPurchaseOrder?.customer;
+  const supplier = firstPurchaseOrder?.supplier;
+
+  // Extract unique purchase orders from all surat jalan
+  const purchaseOrdersMap = new Map();
+  suratJalanData.forEach((sj) => {
+    if (sj?.purchaseOrder?.id) {
+      purchaseOrdersMap.set(sj.purchaseOrder.id, sj.purchaseOrder);
+    }
+  });
+  const purchaseOrders = Array.from(purchaseOrdersMap.values());
+
+  // Extract unique packing data from all purchase orders
+  const packingMap = new Map();
+  purchaseOrders.forEach((po) => {
+    if (po?.packing?.id) {
+      packingMap.set(po.packing.id, {
+        ...po.packing,
+        po_number: po.po_number, // Add PO reference
+        purchaseOrderId: po.id,
+      });
+    }
+  });
+  const packingList = Array.from(packingMap.values());
 
   // Status handling
   const statusData = checklist?.status;
@@ -234,7 +252,8 @@ const CheckingListDetailCard = ({
       id: 'purchaseOrder',
       label: 'Purchase Order',
       icon: <ShoppingCartIcon className='w-5 h-5' aria-hidden='true' />,
-      disabled: !purchaseOrder,
+      disabled: purchaseOrders.length === 0,
+      badge: purchaseOrders.length || null,
     },
     {
       id: 'suratJalan',
@@ -246,7 +265,8 @@ const CheckingListDetailCard = ({
       id: 'packing',
       label: 'Packing',
       icon: <CubeIcon className='w-5 h-5' aria-hidden='true' />,
-      disabled: !packing,
+      disabled: packingList.length === 0,
+      badge: packingList.length || null,
     },
     {
       id: 'customer',
@@ -494,90 +514,106 @@ const CheckingListDetailCard = ({
 
             {/* Purchase Order Tab */}
             <TabPanel tabId='purchaseOrder'>
-              {purchaseOrder ? (
-                <div className='space-y-6'>
-                  <AccordionItem
-                    title='Purchase Order Details'
-                    isExpanded={true}
-                    onToggle={() => {}}
-                    bgColor='bg-gradient-to-r from-emerald-50 to-green-50'
-                  >
-                    <InfoTable
-                      data={[
-                        {
-                          label: 'Purchase Order ID',
-                          value: purchaseOrder.id || '-',
-                          copyable: Boolean(purchaseOrder.id),
-                        },
-                        {
-                          label: 'PO Number',
-                          value: purchaseOrder.po_number || '-',
-                        },
-                        {
-                          label: 'PO Date',
-                          value: formatDateTime(purchaseOrder.po_date),
-                        },
-                        {
-                          label: 'PO Type',
-                          value: purchaseOrder.po_type || '-',
-                        },
-                        {
-                          label: 'Tanggal Masuk PO',
-                          value: formatDateTime(purchaseOrder.tanggal_masuk_po),
-                        },
-                        {
-                          label: 'Tanggal Batas Kirim',
-                          value: formatDateTime(
-                            purchaseOrder.tanggal_batas_kirim
-                          ),
-                        },
-                        {
-                          label: 'Delivery Date',
-                          value: formatDateTime(purchaseOrder.delivery_date),
-                        },
-                        {
-                          label: 'Total Items',
-                          value: formatNumberValue(purchaseOrder.total_items),
-                        },
-                        {
-                          label: 'Total Before Discount',
-                          value: formatNumberValue(
-                            purchaseOrder.total_before_discount
-                          ),
-                        },
-                        {
-                          label: 'Total Discount',
-                          value: formatNumberValue(
-                            purchaseOrder.total_discount
-                          ),
-                        },
-                        {
-                          label: 'Total Additional Charges',
-                          value: formatNumberValue(
-                            purchaseOrder.total_additional_charges
-                          ),
-                        },
-                        {
-                          label: 'Total Tax',
-                          value: formatNumberValue(purchaseOrder.total_tax),
-                        },
-                        {
-                          label: 'Grand Total',
-                          value: formatNumberValue(purchaseOrder.grand_total),
-                        },
-                        {
-                          label: 'Payable Amount',
-                          value: formatNumberValue(
-                            purchaseOrder.payable_amount
-                          ),
-                        },
-                        {
-                          label: 'Remarks',
-                          value: purchaseOrder.remarks || '-',
-                        },
-                      ]}
-                    />
-                  </AccordionItem>
+              {purchaseOrders.length > 0 ? (
+                <div className='space-y-4'>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h3 className='text-xl font-semibold text-gray-900'>
+                      Purchase Order Details
+                    </h3>
+                    <div className='px-3 py-1 text-sm font-medium text-green-800 bg-green-100 rounded-full'>
+                      {purchaseOrders.length} purchase order{purchaseOrders.length > 1 ? 's' : ''}
+                    </div>
+                  </div>
+
+                  {purchaseOrders.map((purchaseOrder, index) => (
+                    <div
+                      key={purchaseOrder.id || index}
+                      className='overflow-hidden bg-white border border-gray-200 rounded-lg mb-4'
+                    >
+                      <div className='px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
+                        <h4 className='text-lg font-semibold text-gray-900'>
+                          PO #{index + 1}: {purchaseOrder.po_number}
+                        </h4>
+                      </div>
+                      <div className='px-6 py-4'>
+                        <InfoTable
+                          data={[
+                            {
+                              label: 'Purchase Order ID',
+                              value: purchaseOrder.id || '-',
+                              copyable: Boolean(purchaseOrder.id),
+                            },
+                            {
+                              label: 'PO Number',
+                              value: purchaseOrder.po_number || '-',
+                            },
+                            {
+                              label: 'PO Date',
+                              value: formatDateTime(purchaseOrder.po_date),
+                            },
+                            {
+                              label: 'PO Type',
+                              value: purchaseOrder.po_type || '-',
+                            },
+                            {
+                              label: 'Tanggal Masuk PO',
+                              value: formatDateTime(purchaseOrder.tanggal_masuk_po),
+                            },
+                            {
+                              label: 'Tanggal Batas Kirim',
+                              value: formatDateTime(
+                                purchaseOrder.tanggal_batas_kirim
+                              ),
+                            },
+                            {
+                              label: 'Delivery Date',
+                              value: formatDateTime(purchaseOrder.delivery_date),
+                            },
+                            {
+                              label: 'Total Items',
+                              value: formatNumberValue(purchaseOrder.total_items),
+                            },
+                            {
+                              label: 'Total Before Discount',
+                              value: formatNumberValue(
+                                purchaseOrder.total_before_discount
+                              ),
+                            },
+                            {
+                              label: 'Total Discount',
+                              value: formatNumberValue(
+                                purchaseOrder.total_discount
+                              ),
+                            },
+                            {
+                              label: 'Total Additional Charges',
+                              value: formatNumberValue(
+                                purchaseOrder.total_additional_charges
+                              ),
+                            },
+                            {
+                              label: 'Total Tax',
+                              value: formatNumberValue(purchaseOrder.total_tax),
+                            },
+                            {
+                              label: 'Grand Total',
+                              value: formatNumberValue(purchaseOrder.grand_total),
+                            },
+                            {
+                              label: 'Payable Amount',
+                              value: formatNumberValue(
+                                purchaseOrder.payable_amount
+                              ),
+                            },
+                            {
+                              label: 'Remarks',
+                              value: purchaseOrder.remarks || '-',
+                            },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className='py-12 text-center'>
@@ -714,104 +750,135 @@ const CheckingListDetailCard = ({
 
             {/* Packing Tab */}
             <TabPanel tabId='packing'>
-              {packing ? (
-                <div className='space-y-6'>
-                  <AccordionItem
-                    title='Packing Information'
-                    isExpanded={true}
-                    onToggle={() => {}}
-                    bgColor='bg-gradient-to-r from-blue-50 to-indigo-50'
-                  >
-                    <InfoTable
-                      data={[
-                        {
-                          label: 'Packing ID',
-                          value: packing.id || '-',
-                          copyable: Boolean(packing.id),
-                        },
-                        {
-                          label: 'Packing Number',
-                          value: packing.packing_number || '-',
-                        },
-                        {
-                          label: 'Tanggal Packing',
-                          value: formatDateTime(packing.tanggal_packing),
-                        },
-                        {
-                          label: 'Is Printed',
-                          value: formatBooleanValue(packing.is_printed),
-                        },
-                        {
-                          label: 'Print Counter',
-                          value: formatNumberValue(packing.print_counter),
-                        },
-                        {
-                          label: 'Purchase Order ID',
-                          value: packing.purchaseOrderId || '-',
-                          copyable: Boolean(packing.purchaseOrderId),
-                        },
-                      ]}
-                    />
-                  </AccordionItem>
-
-                  {packingBoxes.length > 0 && (
-                    <div>
-                      <h3 className='mb-4 text-lg font-semibold text-gray-900'>
-                        Packing Boxes ({packingBoxes.length})
-                      </h3>
-                      <div className='overflow-x-auto bg-white border border-gray-200 rounded-lg'>
-                        <table className='min-w-full divide-y divide-gray-200'>
-                          <thead className='bg-gray-50'>
-                            <tr>
-                              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Box Number
-                              </th>
-                              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Total Qty
-                              </th>
-                              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Status
-                              </th>
-                              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                Items
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className='bg-white divide-y divide-gray-200'>
-                            {packingBoxes.map((box, boxIndex) => (
-                              <tr
-                                key={box.id || boxIndex}
-                                className='hover:bg-gray-50'
-                              >
-                                <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-                                  {box.no_box || '-'}
-                                </td>
-                                <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {formatNumberValue(box.total_quantity_in_box)}
-                                </td>
-                                <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                  {box.status?.status_name || '-'}
-                                </td>
-                                <td className='px-6 py-4 text-sm text-gray-900'>
-                                  {box.packingBoxItems?.map((item, idx) => (
-                                    <div key={idx} className='mb-1'>
-                                      {item.nama_barang} ({item.quantity} pcs)
-                                      {item.keterangan && (
-                                        <span className='text-xs text-gray-500'>
-                                          {' '}
-                                          - {item.keterangan}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ))}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+              {packingList.length > 0 ? (
+                <div className='space-y-4'>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h3 className='text-xl font-semibold text-gray-900'>
+                      Packing Details
+                    </h3>
+                    <div className='px-3 py-1 text-sm font-medium text-purple-800 bg-purple-100 rounded-full'>
+                      {packingList.length} packing{packingList.length > 1 ? 's' : ''}
                     </div>
-                  )}
+                  </div>
+
+                  {packingList.map((packing, index) => {
+                    const packingBoxes = Array.isArray(packing?.packingBoxes)
+                      ? packing.packingBoxes
+                      : [];
+
+                    return (
+                      <div
+                        key={packing.id || index}
+                        className='overflow-hidden bg-white border border-gray-200 rounded-lg mb-4'
+                      >
+                        <div className='px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50'>
+                          <h4 className='text-lg font-semibold text-gray-900'>
+                            Packing #{index + 1}: {packing.packing_number}
+                          </h4>
+                          {packing.po_number && (
+                            <p className='text-sm text-gray-600 mt-1'>
+                              PO: {packing.po_number}
+                            </p>
+                          )}
+                        </div>
+                        <div className='px-6 py-4'>
+                          <InfoTable
+                            data={[
+                              {
+                                label: 'Packing ID',
+                                value: packing.id || '-',
+                                copyable: Boolean(packing.id),
+                              },
+                              {
+                                label: 'Packing Number',
+                                value: packing.packing_number || '-',
+                              },
+                              {
+                                label: 'PO Number',
+                                value: packing.po_number || '-',
+                              },
+                              {
+                                label: 'Tanggal Packing',
+                                value: formatDateTime(packing.tanggal_packing),
+                              },
+                              {
+                                label: 'Is Printed',
+                                value: formatBooleanValue(packing.is_printed),
+                              },
+                              {
+                                label: 'Print Counter',
+                                value: formatNumberValue(packing.print_counter),
+                              },
+                              {
+                                label: 'Purchase Order ID',
+                                value: packing.purchaseOrderId || '-',
+                                copyable: Boolean(packing.purchaseOrderId),
+                              },
+                            ]}
+                          />
+
+                          {packingBoxes.length > 0 && (
+                            <div className='mt-6'>
+                              <h5 className='mb-4 text-md font-semibold text-gray-900'>
+                                Packing Boxes ({packingBoxes.length})
+                              </h5>
+                              <div className='max-h-96 overflow-auto bg-white border border-gray-200 rounded-lg'>
+                                <table className='min-w-full divide-y divide-gray-200'>
+                                  <thead className='bg-gray-50 sticky top-0 z-10'>
+                                    <tr>
+                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                        Box Number
+                                      </th>
+                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                        Total Qty
+                                      </th>
+                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                        Status
+                                      </th>
+                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                        Items
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className='bg-white divide-y divide-gray-200'>
+                                    {packingBoxes.map((box, boxIndex) => (
+                                      <tr
+                                        key={box.id || boxIndex}
+                                        className='hover:bg-gray-50'
+                                      >
+                                        <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
+                                          {box.no_box || '-'}
+                                        </td>
+                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                                          {formatNumberValue(box.total_quantity_in_box)}
+                                        </td>
+                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                                          {box.status?.status_name || '-'}
+                                        </td>
+                                        <td className='px-6 py-4 text-sm text-gray-900'>
+                                          {box.packingBoxItems?.map((item, idx) => (
+                                            <div key={idx} className='mb-1'>
+                                              {item.nama_barang} ({item.quantity} pcs)
+                                              {item.keterangan && (
+                                                <span className='text-xs text-gray-500'>
+                                                  {' '}
+                                                  - {item.keterangan}
+                                                </span>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className='py-12 text-center'>

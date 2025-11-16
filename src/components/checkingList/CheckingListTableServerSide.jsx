@@ -103,6 +103,24 @@ const CheckingListTableServerSide = ({
 
   const columns = useMemo(
     () => [
+      columnHelper.accessor('tanggal', {
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Tanggal Checklist</div>
+            <input
+              type="date"
+              value={column.getFilterValue() ?? ''}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => formatDateTime(info.getValue()),
+      }),
       columnHelper.accessor('no_checklist_surat_jalan', {
         header: ({ column }) => (
           <div className="space-y-2">
@@ -122,23 +140,33 @@ const CheckingListTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.accessor('tanggal', {
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal Checklist</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => formatDateTime(info.getValue()),
+      columnHelper.accessor('suratJalan', {
+        id: 'surat_jalan',
+        header: 'Surat Jalan',
+        cell: (info) => {
+          const suratJalanList = Array.isArray(info.getValue())
+            ? info.getValue()
+            : info.getValue()
+              ? [info.getValue()]
+              : [];
+          const primarySuratJalan = suratJalanList[0];
+          const additionalCount = suratJalanList.length > 1 ? suratJalanList.length - 1 : 0;
+
+          return (
+            <div className="text-sm">
+              <p className="font-medium text-gray-900">
+                {primarySuratJalan?.no_surat_jalan || info.row.original?.suratJalanId || '-'}
+              </p>
+              {primarySuratJalan?.deliver_to && (
+                <p className="text-xs text-gray-500">{primarySuratJalan.deliver_to}</p>
+              )}
+              {additionalCount > 0 && (
+                <p className="text-xs text-gray-400">+{additionalCount} surat jalan lainnya</p>
+              )}
+            </div>
+          );
+        },
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('checker', {
         header: ({ column }) => (
@@ -215,34 +243,6 @@ const CheckingListTableServerSide = ({
           </div>
         ),
         cell: (info) => info.getValue() || '-',
-      }),
-      columnHelper.accessor('suratJalan', {
-        id: 'surat_jalan',
-        header: 'Surat Jalan',
-        cell: (info) => {
-          const suratJalanList = Array.isArray(info.getValue())
-            ? info.getValue()
-            : info.getValue()
-              ? [info.getValue()]
-              : [];
-          const primarySuratJalan = suratJalanList[0];
-          const additionalCount = suratJalanList.length > 1 ? suratJalanList.length - 1 : 0;
-
-          return (
-            <div className="text-sm">
-              <p className="font-medium text-gray-900">
-                {primarySuratJalan?.no_surat_jalan || info.row.original?.suratJalanId || '-'}
-              </p>
-              {primarySuratJalan?.deliver_to && (
-                <p className="text-xs text-gray-500">{primarySuratJalan.deliver_to}</p>
-              )}
-              {additionalCount > 0 && (
-                <p className="text-xs text-gray-400">+{additionalCount} surat jalan lainnya</p>
-              )}
-            </div>
-          );
-        },
-        enableColumnFilter: false,
       }),
       columnHelper.accessor('status', {
         header: 'Status Checklist',
