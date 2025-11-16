@@ -142,6 +142,31 @@ const InvoicePenagihanTableServerSide = ({
         enableSorting: true,
         enableColumnFilter: false,
       }),
+
+      columnHelper.accessor('purchaseOrder.customer.groupCustomer.nama_group', {
+        id: 'group_customer',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Group Customer</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <div className="text-sm text-gray-900">
+            {info.getValue() || '-'}
+          </div>
+        ),
+      }),
       columnHelper.accessor('kepada', {
         id: 'kepada',
         header: ({ column }) => (
@@ -160,14 +185,11 @@ const InvoicePenagihanTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => {
-          const invoice = info.row.original;
-          return (
-            <div className="text-sm text-gray-900">
-              {info.getValue() || invoice?.purchaseOrder?.customer?.namaCustomer || '-'}
-            </div>
-          );
-        },
+        cell: (info) => (
+          <div className="text-sm text-gray-900">
+            {info.getValue() || '-'}
+          </div>
+        ),
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
