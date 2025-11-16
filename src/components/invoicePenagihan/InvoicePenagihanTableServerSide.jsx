@@ -117,7 +117,23 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
-        header: 'Tanggal',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Tanggal</div>
+            {/* date picker */}
+            <input
+              type="date"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {formatDate(info.getValue())}
@@ -155,7 +171,24 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: 'Grand Total',
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Grand Total</div>
+            {/* amount filter, cannot be negative */}
+            <input
+              type="number"
+              min="0"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-sm text-gray-900">
             {formatCurrency(info.getValue())}
@@ -210,7 +243,22 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'kwitansi',
-        header: () => <div className="text-center font-medium">Kwitansi</div>,
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Kwitansi</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: ({ row }) => {
           const invoice = row.original;
           const hasKwitansi = Boolean(invoice?.kwitansiId || invoice?.kwitansi?.id);
@@ -231,9 +279,24 @@ const InvoicePenagihanTableServerSide = ({
         },
         enableSorting: false,
       }),
-            columnHelper.display({
+      columnHelper.display({
         id: 'fakturPajak',
-        header: () => <div className="text-center font-medium">Faktur Pajak</div>,
+        header: ({ column }) => (
+          <div className="space-y-2">
+            <div className="font-medium">Faktur Pajak</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>
+        ),
         cell: ({ row }) => {
           const invoice = row.original;
           const hasFaktur = Boolean(invoice?.fakturPajakId || invoice?.fakturPajak?.id);
@@ -256,7 +319,7 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'tandaTerimaFaktur',
-        header: () => <div className="text-center font-medium">{/* Generate Tanda Terima Faktur */}Tanda Terima Faktur</div>,
+        header: 'Tanda Terima Faktur',
         cell: ({ row }) => {
           const invoice = row.original;
           const isGenerating = generatingTandaTerimaInvoiceId === invoice.id;
@@ -292,7 +355,7 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.display({
         id: 'actions',
-        header: () => <div className="text-right font-medium">Aksi</div>,
+        header: 'Aksi',
         cell: ({ row }) => {
           const invoice = row.original;
           return (
