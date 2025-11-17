@@ -39,7 +39,7 @@ const GroupCustomerAPITest = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.BACKEND_BASE_URL_LOCAL}api/v1/group-customers?page=1&limit=10`, {
+      const response = await fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/group-customers?page=1&limit=10`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

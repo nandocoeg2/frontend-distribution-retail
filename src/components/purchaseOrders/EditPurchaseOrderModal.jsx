@@ -50,7 +50,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
   const fetchCustomerName = async (customerId) => {
     try {
       const token = authService.getToken();
-      const response = await axios.get(`${process.env.BACKEND_BASE_URL_LOCAL}api/v1/customers/${customerId}`, {
+      const response = await axios.get(`${process.env.BACKEND_BASE_URL_DEV}api/v1/customers/${customerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'accept': 'application/json'

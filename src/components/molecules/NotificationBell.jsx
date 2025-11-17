@@ -102,7 +102,7 @@ const NotificationBell = () => {
 
       // Call both alerts endpoint and getAll notifications
       const [alertsResponse, notificationsResponse] = await Promise.all([
-        fetch(`${process.env.BACKEND_BASE_URL_LOCAL}api/v1/notifications/alerts`),
+        fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/notifications/alerts`),
         notificationService.getAllNotifications(),
       ]);
 

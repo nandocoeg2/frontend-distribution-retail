@@ -1,4 +1,4 @@
-const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1/regions`;
+const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/regions`;
 
 const getHeaders = () => {
   const accessToken = localStorage.getItem('token');

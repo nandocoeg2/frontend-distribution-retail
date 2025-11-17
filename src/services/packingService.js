@@ -70,7 +70,7 @@ export const exportPackingSticker = async (packingId, companyId) => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `${process.env.BACKEND_BASE_URL_LOCAL}api/v1${API_URL}/${packingId}/export-sticker?companyId=${companyId}`,
+      `${process.env.BACKEND_BASE_URL_DEV}api/v1${API_URL}/${packingId}/export-sticker?companyId=${companyId}`,
       {
         method: 'GET',
         headers: {
@@ -99,7 +99,7 @@ export const exportPackingTandaTerima = async (packingId, companyId) => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `${process.env.BACKEND_BASE_URL_LOCAL}api/v1${API_URL}/${packingId}/export-tanda-terima?companyId=${companyId}`,
+      `${process.env.BACKEND_BASE_URL_DEV}api/v1${API_URL}/${packingId}/export-tanda-terima?companyId=${companyId}`,
       {
         method: 'GET',
         headers: {

@@ -2,7 +2,7 @@ import { createApiService } from './apiService';
 import authService from './authService';
 
 const baseService = createApiService('customers');
-const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1/customers`;
+const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/customers`;
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
   if (!errorData) {

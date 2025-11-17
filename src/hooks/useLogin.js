@@ -118,7 +118,7 @@ const useLogin = () => {
     setIsCompanyLoading(true);
     try {
       // Fetch first 10 companies using search API with empty query
-      const response = await fetch(`${process.env.BACKEND_BASE_URL_LOCAL}api/v1/companies/search?q=&limit=10`, {
+      const response = await fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/companies/search?q=&limit=10`, {
         headers: {
           accept: 'application/json'
         }
@@ -152,7 +152,7 @@ const useLogin = () => {
 
     setIsCompanyLoading(true);
     try {
-      const response = await fetch(`${process.env.BACKEND_BASE_URL_LOCAL}api/v1/companies/search?q=${encodeURIComponent(query)}&limit=10`, {
+      const response = await fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/companies/search?q=${encodeURIComponent(query)}&limit=10`, {
         headers: {
           accept: 'application/json'
         }

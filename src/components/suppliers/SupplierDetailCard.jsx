@@ -13,7 +13,7 @@ import { formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable } from '../ui';
 import toastService from '../../services/toastService';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1`;
+const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
 
 const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) => {
   const [isEditMode, setIsEditMode] = useState(false);
