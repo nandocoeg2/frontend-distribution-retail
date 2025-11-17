@@ -3,7 +3,7 @@ import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import toastService from '@/services/toastService';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-const API_URL = 'http://localhost:5050/api/v1/group-customers';
+const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1/group-customers`;
 
 const EditGroupCustomerModal = ({ show, onClose, groupCustomer, onGroupCustomerUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({

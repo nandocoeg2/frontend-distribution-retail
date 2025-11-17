@@ -1,6 +1,6 @@
 import authService from './authService';
 
-const API_BASE_URL = 'http://localhost:5050/api/v1/stock-movements';
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1/stock-movements`;
 
 const isNonEmptyString = (value) =>
   typeof value === 'string' && value.trim().length > 0;

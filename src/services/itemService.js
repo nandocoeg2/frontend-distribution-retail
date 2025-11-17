@@ -1,6 +1,6 @@
 import authService from './authService';
 
-const API_URL = 'http://localhost:5050/api/v1/items';
+const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1/items`;
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
   if (!errorData) {

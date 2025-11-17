@@ -2,7 +2,7 @@ import axios from 'axios';
 import toastService from './toastService';
 import authService from './authService';
 
-const API_BASE_URL = 'http://localhost:5050/api/v1';
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SupplierForm from '@/components/suppliers/SupplierForm';
 import toastService from '@/services/toastService';
 
-const API_URL = 'http://localhost:5050/api/v1';
+const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1`;
 
 const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({

@@ -13,7 +13,7 @@ const createWindow = () => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; connect-src 'self' http://localhost:5050 https://localhost:5050 ws://localhost:*; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self';",
+          "default-src 'self'; connect-src 'self' http://localhost:5050 https://localhost:5050 http://167.99.66.57:5050 https://167.99.66.57:5050 ws://localhost:*; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self';",
         ],
       },
     });

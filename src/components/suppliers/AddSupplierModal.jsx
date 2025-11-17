@@ -3,7 +3,7 @@ import SupplierForm from '@/components/suppliers/SupplierForm';
 import BulkUploadSupplier from '@/components/suppliers/BulkUploadSupplier';
 import toastService from '@/services/toastService';
 
-const API_URL = 'http://localhost:5050/api/v1';
+const API_URL = `${process.env.BACKEND_BASE_URL_LOCAL}api/v1`;
 
 const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) => {
   const [activeTab, setActiveTab] = useState('single');
