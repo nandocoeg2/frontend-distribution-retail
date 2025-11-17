@@ -58,6 +58,7 @@ import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
 import Regions from './pages/Regions.jsx';
 import Companies from './pages/Companies.jsx';
+import MasterParameter from './pages/MasterParameter.jsx';
 import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import CheckingList from './pages/CheckingList.jsx';
@@ -306,6 +307,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Companies />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/master-parameter'
+        element={
+          <ProtectedRoute>
+            <MasterParameter />
           </ProtectedRoute>
         }
       />
