@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 class AuthService {
   constructor() {
@@ -98,9 +98,9 @@ class AuthService {
       return { success: false, error: response.data?.error?.message || 'Invalid response format' };
     } catch (error) {
       const errorMessage =
-        error.response?.data?.error?.message || 
-        error.response?.data?.message || 
-        error.message || 
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        error.message ||
         'Login failed';
       return { success: false, error: errorMessage };
     }
@@ -123,9 +123,9 @@ class AuthService {
       return { success: false, error: response.data?.error?.message || 'Invalid response format' };
     } catch (error) {
       const errorMessage =
-        error.response?.data?.error?.message || 
-        error.response?.data?.message || 
-        error.message || 
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        error.message ||
         'Registration failed';
       return { success: false, error: errorMessage };
     }

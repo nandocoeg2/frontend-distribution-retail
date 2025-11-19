@@ -3,7 +3,7 @@ import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import toastService from '@/services/toastService';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/group-customers`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/group-customers`;
 
 const EditGroupCustomerModal = ({ show, onClose, groupCustomer, onGroupCustomerUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
@@ -67,11 +67,11 @@ const EditGroupCustomerModal = ({ show, onClose, groupCustomer, onGroupCustomerU
   }
 
   return (
-    <div 
+    <div
       className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'
       onClick={onClose}
     >
-      <div 
+      <div
         className='bg-white rounded-lg p-6 w-full max-w-md mx-4'
         onClick={(e) => e.stopPropagation()}
       >

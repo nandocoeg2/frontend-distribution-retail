@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   XMarkIcon,
   PencilIcon,
   CheckIcon,
@@ -13,7 +13,7 @@ import { formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable } from '../ui';
 import toastService from '../../services/toastService';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -86,7 +86,7 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle nested bank fields
     if (name.startsWith('bank.')) {
       const bankField = name.split('.')[1];
@@ -286,7 +286,7 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
               {/* Bank Information Section */}
               <div className='border-t pt-4 mt-4'>
                 <h4 className='text-md font-medium text-gray-800 mb-3'>Bank Information</h4>
-                
+
                 <div className='space-y-4'>
                   <div>
                     <label className='block text-sm font-medium text-gray-700 mb-1'>
@@ -350,8 +350,8 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
                 { label: 'Kode Supplier', value: supplier.code },
                 { label: 'Kode Supplier Surat', value: supplier.supplier_code_letter || '—' },
                 { label: 'ID Supplier', value: supplier.id, copyable: true },
-                { 
-                  label: 'Alamat', 
+                {
+                  label: 'Alamat',
                   component: (
                     <span className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4 text-gray-400" />

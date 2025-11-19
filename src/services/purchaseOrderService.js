@@ -1,15 +1,15 @@
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/purchase-orders`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/purchase-orders`;
 
 const purchaseOrderService = {
   // Get purchase orders with pagination and optional filters (supports both old and new signatures)
-  getPurchaseOrders: function(params = {}) {
+  getPurchaseOrders: function (params = {}) {
     // Support both old (page, limit) and new (params object) signatures for backward compatibility
     if (typeof params === 'number') {
       const page = params;
       const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
       return this.getAllPurchaseOrders(page, limit);
     }
-    
+
     // New params object signature for TanStack Query
     const accessToken = localStorage.getItem('token');
     if (!accessToken) {
@@ -17,7 +17,7 @@ const purchaseOrderService = {
     }
 
     const url = new URL(`${API_URL}/`);
-    
+
     // Add all parameters to URL
     Object.keys(params).forEach(key => {
       if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
@@ -92,7 +92,7 @@ const purchaseOrderService = {
     }
 
     const data = new FormData();
-    
+
     // Append form data
     Object.keys(formData).forEach(key => {
       if (formData[key] !== null && formData[key] !== undefined) {
@@ -179,14 +179,14 @@ const purchaseOrderService = {
     }
 
     const url = new URL(`${API_URL}/search`);
-    
+
     // Add search parameters
     Object.keys(searchParams).forEach(key => {
       if (searchParams[key] !== null && searchParams[key] !== undefined) {
         url.searchParams.append(key, searchParams[key]);
       }
     });
-    
+
     // Add pagination
     url.searchParams.append('page', page);
     url.searchParams.append('limit', limit);

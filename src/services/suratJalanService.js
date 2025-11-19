@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 class SuratJalanService {
   constructor() {
@@ -33,7 +33,7 @@ class SuratJalanService {
         const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
         return this.api.get('/surat-jalan', { params: { page, limit } }).then(res => res.data);
       }
-      
+
       // New params object signature with support for sorting and filtering
       const response = await this.api.get('/surat-jalan', { params });
       return response.data;

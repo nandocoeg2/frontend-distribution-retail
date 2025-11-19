@@ -3,7 +3,7 @@ import SupplierForm from '@/components/suppliers/SupplierForm';
 import BulkUploadSupplier from '@/components/suppliers/BulkUploadSupplier';
 import toastService from '@/services/toastService';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) => {
   const [activeTab, setActiveTab] = useState('single');
@@ -22,7 +22,7 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle nested bank fields
     if (name.startsWith('bank.')) {
       const bankField = name.split('.')[1];
@@ -97,21 +97,19 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
         <div className='flex space-x-1 border-b border-gray-200 mb-6'>
           <button
             onClick={() => setActiveTab('single')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'single'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'single'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
           >
             Tambah Satu
           </button>
           <button
             onClick={() => setActiveTab('bulk')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'bulk'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'bulk'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
           >
             Bulk Upload
           </button>
@@ -119,11 +117,11 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
 
         {/* Tab Content */}
         {activeTab === 'single' && (
-          <SupplierForm 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
-            handleSubmit={createSupplier} 
-            closeModal={onClose} 
+          <SupplierForm
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={createSupplier}
+            closeModal={onClose}
           />
         )}
 

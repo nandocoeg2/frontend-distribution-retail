@@ -2,7 +2,7 @@ import { createApiService } from './apiService';
 import authService from './authService';
 
 const baseService = createApiService('customers');
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/customers`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/customers`;
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
   if (!errorData) {
@@ -51,27 +51,27 @@ const parseErrorMessage = async (response, fallbackMessage) => {
 
 const customerService = {
   ...baseService,
-  
+
   // Alias untuk create dengan nama yang lebih spesifik
   createCustomer: (data) => {
     return baseService.create(data);
   },
-  
+
   // Alias untuk update dengan nama yang lebih spesifik
   updateCustomer: (id, data) => {
     return baseService.update(id, data);
   },
-  
+
   // Alias untuk delete dengan nama yang lebih spesifik
   deleteCustomer: (id) => {
     return baseService.delete(id);
   },
-  
+
   // Alias untuk getById dengan nama yang lebih spesifik
   getCustomerById: (id) => {
     return baseService.getById(id);
   },
-  
+
   // Alias untuk getAll dengan nama yang lebih spesifik
   getAllCustomers: (page = 1, limit = 10) => {
     return baseService.getAll(page, limit);
@@ -95,7 +95,7 @@ const customerService = {
     // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = 'Customer_Template.xlsx';
-    
+
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
       if (filenameMatch && filenameMatch[1]) {
@@ -157,10 +157,10 @@ const customerService = {
 
   getAllBulkFiles: async (status = null) => {
     const token = authService.getToken();
-    const url = status 
+    const url = status
       ? `${API_URL}/bulk/files?status=${encodeURIComponent(status)}`
       : `${API_URL}/bulk/files`;
-      
+
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`

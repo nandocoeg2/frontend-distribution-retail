@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SupplierForm from '@/components/suppliers/SupplierForm';
 import toastService from '@/services/toastService';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle nested bank fields
     if (name.startsWith('bank.')) {
       const bankField = name.split('.')[1];
@@ -100,11 +100,11 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
           Edit Supplier
         </h3>
-        <SupplierForm 
-          formData={formData} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={updateSupplier} 
-          closeModal={onClose} 
+        <SupplierForm
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={updateSupplier}
+          closeModal={onClose}
           isEdit
         />
       </div>

@@ -1,6 +1,6 @@
 import authService from './authService';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/items`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/items`;
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
   if (!errorData) {
@@ -60,14 +60,14 @@ export const getItems = async (page = 1, limit = 10, filters = {}) => {
   const params = new URLSearchParams();
   params.append('page', page);
   params.append('limit', limit);
-  
+
   // Add filters only if they exist and have values
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       params.append(key, value);
     }
   });
-  
+
   const response = await fetch(`${API_URL}?${params}`, {
     headers: getHeaders()
   });
@@ -85,11 +85,11 @@ export const getMixableItems = async () => {
   try {
     // First, get first page to check total
     const firstPage = await getItems(1, 100, { allow_mixed_carton: true });
-    
+
     // Handle different response structures
     let allItems = [];
     let totalItems = 0;
-    
+
     if (firstPage?.data?.data && Array.isArray(firstPage.data.data)) {
       // Paginated response: {success, data: {data: [...], pagination: {...}}}
       allItems = firstPage.data.data;
@@ -103,18 +103,18 @@ export const getMixableItems = async () => {
       allItems = firstPage;
       totalItems = allItems.length;
     }
-    
+
     // If there are more items, fetch remaining pages
     if (totalItems > 100) {
       const totalPages = Math.ceil(totalItems / 100);
       const remainingPages = [];
-      
+
       for (let page = 2; page <= totalPages; page++) {
         remainingPages.push(getItems(page, 100, { allow_mixed_carton: true }));
       }
-      
+
       const results = await Promise.all(remainingPages);
-      
+
       // Combine all results
       results.forEach(result => {
         if (result?.data?.data && Array.isArray(result.data.data)) {
@@ -126,7 +126,7 @@ export const getMixableItems = async () => {
         }
       });
     }
-    
+
     // Return in consistent format
     return {
       success: true,
@@ -223,7 +223,7 @@ export const downloadBulkTemplate = async () => {
   // Get filename from Content-Disposition header or use default
   const contentDisposition = response.headers.get('Content-Disposition');
   let filename = 'Item_Template.xlsx';
-  
+
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
     if (filenameMatch && filenameMatch[1]) {
@@ -281,10 +281,10 @@ export const getBulkUploadStatus = async (bulkId) => {
 };
 
 export const getAllBulkFiles = async (status = null) => {
-  const url = status 
+  const url = status
     ? `${API_URL}/bulk/files?status=${encodeURIComponent(status)}`
     : `${API_URL}/bulk/files`;
-    
+
   const response = await fetch(url, {
     headers: getHeaders()
   });

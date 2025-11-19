@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 const getAuthHeader = () => {
   const token = authService.getToken();
@@ -65,7 +65,7 @@ class SupplierService {
       },
       withCredentials: true,
     });
-    
+
     // Add a request interceptor to include the auth token
     this.api.interceptors.request.use((config) => {
       const token = authService.getToken();
@@ -151,7 +151,7 @@ class SupplierService {
     // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = 'Supplier_Template.xlsx';
-    
+
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
       if (filenameMatch && filenameMatch[1]) {
@@ -206,10 +206,10 @@ class SupplierService {
   }
 
   async getAllBulkFiles(status = null) {
-    const url = status 
+    const url = status
       ? `${API_BASE_URL}/suppliers/bulk/files?status=${encodeURIComponent(status)}`
       : `${API_BASE_URL}/suppliers/bulk/files`;
-      
+
     const response = await fetch(url, {
       headers: getAuthHeader()
     });

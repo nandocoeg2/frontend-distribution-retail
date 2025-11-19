@@ -38,7 +38,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
         suratPenagihan: order.suratPenagihan || ''
       });
       setPurchaseOrderDetails(order.purchaseOrderDetails || []);
-      
+
       if (order.customerId) {
         fetchCustomerName(order.customerId);
       }
@@ -50,7 +50,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
   const fetchCustomerName = async (customerId) => {
     try {
       const token = authService.getToken();
-      const response = await axios.get(`${process.env.BACKEND_BASE_URL_DEV}api/v1/customers/${customerId}`, {
+      const response = await axios.get(`${process.env.BACKEND_BASE_URL}api/v1/customers/${customerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'accept': 'application/json'
@@ -67,9 +67,9 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: type === 'number' ? parseInt(value) || 0 : value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'number' ? parseInt(value) || 0 : value
     }));
   };
 
@@ -90,7 +90,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
     await fileService.downloadFile(fileId, fileName);
   };
 
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
@@ -111,9 +111,9 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <PurchaseOrderForm 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
+          <PurchaseOrderForm
+            formData={formData}
+            handleInputChange={handleInputChange}
             isEditMode={true}
             customerName={customerName}
             purchaseOrderDetails={purchaseOrderDetails}
@@ -121,9 +121,9 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
 
           <div>
             <h4 className="text-sm font-medium text-gray-500 mb-2">Purchase Order Details</h4>
-            <EditablePurchaseOrderDetailsTable 
-              details={purchaseOrderDetails} 
-              onDetailsChange={handleDetailsChange} 
+            <EditablePurchaseOrderDetailsTable
+              details={purchaseOrderDetails}
+              onDetailsChange={handleDetailsChange}
             />
           </div>
 
@@ -160,7 +160,7 @@ const EditPurchaseOrderModal = ({ isOpen, onClose, onSubmit, order }) => {
                 <h4 className="text-sm font-medium text-gray-500">Created At</h4>
                 <p className="mt-1 text-sm text-gray-900">{formatDateTime(order.createdAt)}</p>
               </div>
-              
+
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Updated At</h4>
                 <p className="mt-1 text-sm text-gray-900">{formatDateTime(order.updatedAt)}</p>

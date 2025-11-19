@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/kwitansi`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1/kwitansi`;
 
 class KwitansiService {
   constructor() {

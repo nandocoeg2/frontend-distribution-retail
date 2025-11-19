@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 class UserService {
   constructor() {
@@ -13,7 +13,7 @@ class UserService {
       },
       withCredentials: true,
     });
-    
+
     // Add a request interceptor to include the auth token
     this.api.interceptors.request.use((config) => {
       const token = authService.getToken();

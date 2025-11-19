@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 class LaporanPenerimaanBarangService {
   constructor() {
@@ -155,8 +155,8 @@ class LaporanPenerimaanBarangService {
       const fileList = Array.isArray(files)
         ? files
         : files && typeof files.length === 'number'
-        ? Array.from(files)
-        : [];
+          ? Array.from(files)
+          : [];
 
       if (!fileList.length) {
         throw new Error('Files are required');

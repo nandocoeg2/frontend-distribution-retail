@@ -17,7 +17,7 @@ const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [companyOptions, setCompanyOptions] = useState([]);
   const [isCompanyLoading, setIsCompanyLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -118,7 +118,7 @@ const useLogin = () => {
     setIsCompanyLoading(true);
     try {
       // Fetch first 10 companies using search API with empty query
-      const response = await fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/companies/search?q=&limit=10`, {
+      const response = await fetch(`${process.env.BACKEND_BASE_URL}api/v1/companies/search?q=&limit=10`, {
         headers: {
           accept: 'application/json'
         }
@@ -152,7 +152,7 @@ const useLogin = () => {
 
     setIsCompanyLoading(true);
     try {
-      const response = await fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/companies/search?q=${encodeURIComponent(query)}&limit=10`, {
+      const response = await fetch(`${process.env.BACKEND_BASE_URL}api/v1/companies/search?q=${encodeURIComponent(query)}&limit=10`, {
         headers: {
           accept: 'application/json'
         }
@@ -180,7 +180,7 @@ const useLogin = () => {
   // Handle form submission
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -190,7 +190,7 @@ const useLogin = () => {
 
     try {
       const result = await login(formData.username, formData.password, formData.companyId);
-      
+
       if (result.success) {
         // Redirect to dashboard or intended page
         const intendedPath = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';

@@ -1,4 +1,4 @@
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/regions`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/regions`;
 
 const getHeaders = () => {
   const accessToken = localStorage.getItem('token');
@@ -76,7 +76,7 @@ export const regionService = {
       if (!response.ok) throw new Error('Failed to fetch regions');
 
       const result = await response.json();
-      
+
       // Return data in expected format
       return {
         data: result.data.data || [],
@@ -195,7 +195,7 @@ export const regionService = {
       if (!response.ok) throw new Error('Failed to search regions');
 
       const result = await response.json();
-      
+
       // Return data in expected format
       return {
         data: result.data.data || [],
@@ -231,7 +231,7 @@ export const regionService = {
     // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = 'Region_Template.xlsx';
-    
+
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
       if (filenameMatch && filenameMatch[1]) {
@@ -286,10 +286,10 @@ export const regionService = {
   },
 
   getAllBulkFiles: async (status = null) => {
-    const url = status 
+    const url = status
       ? `${API_URL}/bulk/files?status=${encodeURIComponent(status)}`
       : `${API_URL}/bulk/files`;
-      
+
     const response = await fetch(url, {
       headers: getAuthHeader()
     });

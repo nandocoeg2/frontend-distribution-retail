@@ -1,6 +1,6 @@
 import authService from './authService';
 
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/master-parameters`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/master-parameters`;
 
 const getHeaders = () => {
   const token = authService.getToken();

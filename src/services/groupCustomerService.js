@@ -2,7 +2,7 @@ import { createApiService } from './apiService';
 import authService from './authService';
 
 const baseService = createApiService('group-customers');
-const API_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1/group-customers`;
+const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/group-customers`;
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
   if (!errorData) {
@@ -95,7 +95,7 @@ export const groupCustomerService = {
     // Get filename from Content-Disposition header or use default
     const contentDisposition = response.headers.get('Content-Disposition');
     let filename = 'GroupCustomer_Template.xlsx';
-    
+
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
       if (filenameMatch && filenameMatch[1]) {
@@ -157,10 +157,10 @@ export const groupCustomerService = {
 
   getAllBulkFiles: async (status = null) => {
     const token = authService.getToken();
-    const url = status 
+    const url = status
       ? `${API_URL}/bulk/files?status=${encodeURIComponent(status)}`
       : `${API_URL}/bulk/files`;
-      
+
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`

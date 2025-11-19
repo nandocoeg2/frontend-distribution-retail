@@ -1,7 +1,7 @@
 import axios from 'axios';
 import authService from './authService';
 
-const API_BASE_URL = `${process.env.BACKEND_BASE_URL_DEV}api/v1`;
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 const fileService = {
   downloadFile: async (fileId, fileName) => {
@@ -36,7 +36,7 @@ const fileService = {
         throw new Error('Authentication required');
       }
       const formData = new FormData();
-      
+
       for (const file of files) {
         formData.append('files', file);
       }
@@ -76,9 +76,9 @@ const fileService = {
       return { success: true, data: response.data };
     } catch (error) {
       console.error('Error uploading file:', error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error?.message || 'File upload failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error?.message || 'File upload failed'
       };
     }
   },

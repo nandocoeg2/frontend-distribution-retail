@@ -39,7 +39,7 @@ const GroupCustomerAPITest = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/group-customers?page=1&limit=10`, {
+      const response = await fetch(`${process.env.BACKEND_BASE_URL}api/v1/group-customers?page=1&limit=10`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ const GroupCustomerAPITest = () => {
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <h2 className="text-xl font-bold mb-4">Group Customer API Test</h2>
-      
+
       <div className="space-y-4">
         <div className="flex space-x-2">
           <button
@@ -115,7 +115,7 @@ const GroupCustomerAPITest = () => {
           </div>
         )}
       </div>
-      
+
       {/* Alert Component */}
       <AlertComponent />
     </div>

@@ -102,7 +102,7 @@ const NotificationBell = () => {
 
       // Call both alerts endpoint and getAll notifications
       const [alertsResponse, notificationsResponse] = await Promise.all([
-        fetch(`${process.env.BACKEND_BASE_URL_DEV}api/v1/notifications/alerts`),
+        fetch(`${process.env.BACKEND_BASE_URL}api/v1/notifications/alerts`),
         notificationService.getAllNotifications(),
       ]);
 
@@ -317,9 +317,8 @@ const NotificationBell = () => {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                    !notification.isRead ? 'bg-blue-50' : ''
-                  }`}
+                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${!notification.isRead ? 'bg-blue-50' : ''
+                    }`}
                 >
                   <div className='flex items-start space-x-3'>
                     {getNotificationIcon(notification.type)}

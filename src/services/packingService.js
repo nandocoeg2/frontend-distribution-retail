@@ -3,14 +3,14 @@ import { get, post, put, del } from './apiService';
 const API_URL = '/packings';
 
 // Get all packings with pagination and optional filters
-export const getPackings = function(params = {}) {
+export const getPackings = function (params = {}) {
   // Support both old (page, limit) and new (params object) signatures
   if (typeof params === 'number') {
     const page = params;
     const limit = typeof arguments[1] !== 'undefined' ? arguments[1] : 10;
     return get(API_URL, { page, limit });
   }
-  
+
   // New params object signature
   // If params is empty or only has page/limit, use it directly
   // Otherwise, it's a filter object
@@ -70,7 +70,7 @@ export const exportPackingSticker = async (packingId, companyId) => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `${process.env.BACKEND_BASE_URL_DEV}api/v1${API_URL}/${packingId}/export-sticker?companyId=${companyId}`,
+      `${process.env.BACKEND_BASE_URL}api/v1${API_URL}/${packingId}/export-sticker?companyId=${companyId}`,
       {
         method: 'GET',
         headers: {
@@ -99,7 +99,7 @@ export const exportPackingTandaTerima = async (packingId, companyId) => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `${process.env.BACKEND_BASE_URL_DEV}api/v1${API_URL}/${packingId}/export-tanda-terima?companyId=${companyId}`,
+      `${process.env.BACKEND_BASE_URL}api/v1${API_URL}/${packingId}/export-tanda-terima?companyId=${companyId}`,
       {
         method: 'GET',
         headers: {
