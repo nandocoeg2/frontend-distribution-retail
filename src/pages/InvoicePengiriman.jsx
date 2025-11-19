@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
 import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
-import EditInvoicePengirimanModal from '@/components/invoicePengiriman/EditInvoicePengirimanModal';
+
 import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
@@ -46,14 +46,9 @@ const InvoicePengirimanPage = () => {
   } = useInvoicePengiriman();
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState(null);
   const [viewingInvoice, setViewingInvoice] = useState(null);
-  const [editingInvoiceId, setEditingInvoiceId] = useState(null);
   const [viewingInvoiceId, setViewingInvoiceId] = useState(null);
-  const [editModalLoading, setEditModalLoading] = useState(false);
-  const [editModalError, setEditModalError] = useState(null);
   const [viewModalLoading, setViewModalLoading] = useState(false);
   const [viewModalError, setViewModalError] = useState(null);
   const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState(null);
@@ -154,44 +149,7 @@ const InvoicePengirimanPage = () => {
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = useCallback(
-    (invoice) => {
-      if (!invoice?.id) {
-        console.error('Invoice ID tidak ditemukan untuk modal edit');
-        return;
-      }
-      setEditingInvoiceId(invoice.id);
-      setEditingInvoice(invoice);
-      setShowEditModal(true);
-      loadInvoiceIntoState(
-        invoice.id,
-        setEditingInvoice,
-        setEditModalLoading,
-        setEditModalError
-      );
-    },
-    [loadInvoiceIntoState]
-  );
 
-  const closeEditModal = useCallback(() => {
-    setEditingInvoice(null);
-    setEditingInvoiceId(null);
-    setEditModalError(null);
-    setEditModalLoading(false);
-    setShowEditModal(false);
-  }, []);
-
-  const reloadEditingInvoice = useCallback(() => {
-    if (!editingInvoiceId) {
-      return;
-    }
-    loadInvoiceIntoState(
-      editingInvoiceId,
-      setEditingInvoice,
-      setEditModalLoading,
-      setEditModalError
-    );
-  }, [editingInvoiceId, loadInvoiceIntoState]);
 
   const openViewModal = useCallback(
     (invoice) => {
@@ -238,7 +196,7 @@ const InvoicePengirimanPage = () => {
         console.error('Invoice ID tidak ditemukan untuk detail view');
         return;
       }
-      
+
       setDetailLoading(true);
       try {
         // Fetch detail data using GET /:id endpoint
@@ -264,8 +222,7 @@ const InvoicePengirimanPage = () => {
     queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
     refreshActiveTab();
     closeAddModal();
-    closeEditModal();
-  }, [closeAddModal, closeEditModal, refreshActiveTab, queryClient]);
+  }, [closeAddModal, refreshActiveTab, queryClient]);
 
   const handleInvoiceAdded = (newInvoice) => {
     if (!newInvoice) {
@@ -276,18 +233,23 @@ const InvoicePengirimanPage = () => {
     handleModalSuccess();
   };
 
-  const handleInvoiceUpdated = (updatedInvoice) => {
-    if (!updatedInvoice) {
-      return;
-    }
-    setInvoicePengiriman((prev) =>
-      prev.map((invoice) =>
-        invoice.id === updatedInvoice.id ? updatedInvoice : invoice
-      )
-    );
-    closeEditModal();
+  const handleInvoiceUpdated = useCallback(() => {
     handleModalSuccess();
-  };
+    // Update selected detail if it's the one being edited
+    if (selectedInvoiceForDetail) {
+      // We can re-fetch the detail or let the user do it. 
+      // Since we have onUpdate in DetailCard which calls this, we might want to re-fetch detail here or in DetailCard.
+      // Actually DetailCard calls onUpdate after successful save.
+      // We should probably re-fetch the selected detail here if we want it to update immediately without closing.
+      // But DetailCard handles its own form submission.
+      // Let's just refresh the list for now.
+      fetchInvoiceDetail(selectedInvoiceForDetail.id).then(updatedDetail => {
+        if (updatedDetail) {
+          setSelectedInvoiceForDetail(updatedDetail);
+        }
+      });
+    }
+  }, [handleModalSuccess, selectedInvoiceForDetail, fetchInvoiceDetail]);
 
   const handleDeleteConfirm = useCallback(async () => {
     try {
@@ -379,7 +341,7 @@ const InvoicePengirimanPage = () => {
 
           <InvoicePengirimanTableServerSide
             onView={openViewModal}
-            onEdit={openEditModal}
+
             onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
             deleteLoading={deleteInvoiceConfirmation.loading}
             selectedInvoices={selectedInvoices}
@@ -401,6 +363,7 @@ const InvoicePengirimanPage = () => {
           invoice={selectedInvoiceForDetail}
           onClose={handleCloseDetail}
           loading={detailLoading}
+          onUpdate={handleInvoiceUpdated}
         />
       )}
 
@@ -409,17 +372,6 @@ const InvoicePengirimanPage = () => {
         onClose={closeAddModal}
         onInvoiceAdded={handleInvoiceAdded}
         handleAuthError={handleAuthError}
-      />
-
-      <EditInvoicePengirimanModal
-        show={showEditModal}
-        onClose={closeEditModal}
-        invoice={editingInvoice}
-        onInvoiceUpdated={handleInvoiceUpdated}
-        handleAuthError={handleAuthError}
-        invoiceLoading={editModalLoading}
-        invoiceError={editModalError}
-        onRetry={reloadEditingInvoice}
       />
 
       <ViewInvoicePengirimanModal

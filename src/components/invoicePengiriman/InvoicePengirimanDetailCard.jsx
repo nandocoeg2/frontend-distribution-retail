@@ -7,17 +7,21 @@ import {
   XMarkIcon,
   PrinterIcon,
   DocumentPlusIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { InfoTable, StatusBadge, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 import { AccordionItem } from '../ui';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import toastService from '../../services/toastService';
+import InvoicePengirimanForm from './InvoicePengirimanForm';
 
-const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
+const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     pricingInfo: false,
@@ -29,6 +33,31 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
       ...prev,
       [section]: !prev[section],
     }));
+  };
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  const handleSave = async (formData) => {
+    setSaving(true);
+    try {
+      await invoicePengirimanService.updateInvoicePengiriman(invoice.id, formData);
+      toastService.success('Invoice pengiriman berhasil diperbarui');
+      setIsEditMode(false);
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error('Failed to update invoice:', error);
+      toastService.error(error.message || 'Gagal memperbarui invoice');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePrintInvoice = async () => {
@@ -67,17 +96,17 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
     setIsGenerating(true);
     try {
       const response = await invoicePengirimanService.generateInvoicePenagihan(invoice.id);
-      
+
       if (response?.success) {
         // Extract all generated documents from the response
         const invoicePenagihan = response.data;
         const kwitansi = response.data?.kwitansi;
         const fakturPajak = response.data?.fakturPajak;
-        
+
         // Create detailed success message showing all 3 documents
         const successMessage = `✅ Berhasil membuat semua dokumen:\n📋 Invoice Penagihan: ${invoicePenagihan?.no_invoice_penagihan || 'N/A'}\n💰 Kwitansi: ${kwitansi?.no_kwitansi || 'N/A'}\n📄 Faktur Pajak: ${fakturPajak?.no_pajak || 'N/A'}`;
         toastService.success(successMessage);
-        
+
         // Log all generated documents for debugging
         if (invoicePenagihan?.id) {
           console.log('Generated Documents:', {
@@ -91,7 +120,7 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
       }
     } catch (error) {
       console.error('Error generating invoice penagihan:', error);
-      
+
       // Handle specific error cases
       if (error?.response?.status === 409) {
         toastService.error('Invoice Penagihan sudah ada untuk Invoice Pengiriman ini');
@@ -117,12 +146,12 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
   const statusVariant = normalizedStatus.includes('paid')
     ? 'success'
     : normalizedStatus.includes('cancelled')
-    ? 'danger'
-    : normalizedStatus.includes('overdue')
-    ? 'danger'
-    : normalizedStatus.includes('pending')
-    ? 'secondary'
-    : 'secondary';
+      ? 'danger'
+      : normalizedStatus.includes('overdue')
+        ? 'danger'
+        : normalizedStatus.includes('pending')
+          ? 'secondary'
+          : 'secondary';
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
@@ -136,32 +165,62 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={handleGenerateInvoicePenagihan}
-            disabled={isGenerating || loading}
-            className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-            title="Generate All Documents (Invoice Penagihan, Kwitansi, Faktur Pajak)"
-          >
-            <DocumentPlusIcon className="w-4 h-4 mr-1" />
-            {isGenerating ? 'Generating All Documents...' : 'Generate All Documents'}
-          </button>
-          <button
-            onClick={handlePrintInvoice}
-            disabled={isPrinting || loading}
-            className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            title="Print Invoice"
-          >
-            <PrinterIcon className="w-4 h-4 mr-1" />
-            {isPrinting ? 'Printing...' : 'Print'}
-          </button>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Close"
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-500" />
-            </button>
+          {!isEditMode ? (
+            <>
+              <button
+                onClick={handleEditClick}
+                className="inline-flex items-center px-3 py-2 border border-yellow-600 text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+              >
+                <PencilIcon className="w-4 h-4 mr-1" />
+                Edit
+              </button>
+              <button
+                onClick={handleGenerateInvoicePenagihan}
+                disabled={isGenerating || loading}
+                className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                title="Generate All Documents (Invoice Penagihan, Kwitansi, Faktur Pajak)"
+              >
+                <DocumentPlusIcon className="w-4 h-4 mr-1" />
+                {isGenerating ? 'Generating...' : 'Generate Docs'}
+              </button>
+              <button
+                onClick={handlePrintInvoice}
+                disabled={isPrinting || loading}
+                className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                title="Print Invoice"
+              >
+                <PrinterIcon className="w-4 h-4 mr-1" />
+                {isPrinting ? 'Printing...' : 'Print'}
+              </button>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                type='button'
+                onClick={handleCancelEdit}
+                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50'
+                disabled={saving}
+              >
+                Batal
+              </button>
+              <button
+                type='submit'
+                form='invoice-pengiriman-form'
+                className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50'
+                disabled={saving}
+              >
+                {saving ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -170,6 +229,16 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false }) => {
         <div className="flex justify-center items-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-3 text-sm text-gray-600">Loading invoice details...</span>
+        </div>
+      ) : isEditMode ? (
+        <div className="mt-6">
+          <InvoicePengirimanForm
+            initialValues={invoice}
+            onSubmit={handleSave}
+            onCancel={handleCancelEdit}
+            isSubmitting={saving}
+            formId="invoice-pengiriman-form"
+          />
         </div>
       ) : (
         <div>

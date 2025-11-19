@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  PencilIcon,
   TrashIcon,
   PrinterIcon,
   DocumentPlusIcon,
@@ -67,7 +66,7 @@ const InvoicePengirimanTableServerSide = ({
       // Loop through selected invoices and fetch print HTML
       for (let i = 0; i < selectedInvoices.length; i++) {
         const invoiceId = selectedInvoices[i];
-        
+
         try {
           // Call backend API to get HTML
           const html = await invoicePengirimanService.exportInvoicePengiriman(invoiceId);
@@ -77,7 +76,7 @@ const InvoicePengirimanTableServerSide = ({
           if (printWindow) {
             printWindow.document.write(html);
             printWindow.document.close();
-            
+
             // Wait for content to load, then trigger print dialog
             printWindow.onload = () => {
               printWindow.focus();
@@ -135,10 +134,10 @@ const InvoicePengirimanTableServerSide = ({
       // Loop through selected invoices and generate invoice penagihan
       for (let i = 0; i < selectedInvoices.length; i++) {
         const invoiceId = selectedInvoices[i];
-        
+
         try {
           const response = await invoicePengirimanService.generateInvoicePenagihan(invoiceId);
-          
+
           if (response?.success) {
             successCount++;
           } else {
@@ -148,7 +147,7 @@ const InvoicePengirimanTableServerSide = ({
         } catch (error) {
           failCount++;
           let errorMessage = 'Unknown error';
-          
+
           if (error?.response?.status === 409) {
             errorMessage = 'Invoice Penagihan sudah ada';
           } else if (error?.response?.status === 404) {
@@ -158,7 +157,7 @@ const InvoicePengirimanTableServerSide = ({
           } else {
             errorMessage = 'Gagal membuat dokumen invoice';
           }
-          
+
           failedInvoices.push({ id: invoiceId, error: errorMessage });
           console.error(`Error generating invoice penagihan for ${invoiceId}:`, error);
         }
@@ -404,16 +403,7 @@ const InvoicePengirimanTableServerSide = ({
         header: 'Aksi',
         cell: ({ row }) => (
           <div className='flex justify-center space-x-2'>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row.original);
-              }}
-              className='text-green-600 hover:text-green-900'
-              title='Edit'
-            >
-              <PencilIcon className='w-5 h-5' />
-            </button>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -436,7 +426,7 @@ const InvoicePengirimanTableServerSide = ({
       onSelectInvoice,
       onSelectAllInvoices,
       onView,
-      onEdit,
+
       onDelete,
       deleteLoading,
       activeTab,
