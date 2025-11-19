@@ -5,12 +5,28 @@ import fakturPajakService from '../services/fakturPajakService';
  * Custom hook for fetching faktur pajak with server-side filtering, sorting, and pagination
  * Uses the unified GET / endpoint that supports all features (filtering, sorting, global search)
  *
+ * API Response Structure:
+ * {
+ *   success: true,
+ *   data: {
+ *     data: [...], // Array of faktur pajak objects
+ *     pagination: { currentPage, totalPages, totalItems, itemsPerPage },
+ *     meta: { queryTime, appliedFilters, appliedSort }
+ *   }
+ * }
+ *
+ * Key Fields (from API):
+ * - ppnRupiah (PPN in rupiah)
+ * - dasar_pengenaan_pajak (DPP)
+ * - invoicePenagihan (array) - One-to-many relationship
+ * - status.status_code - Status code field
+ *
  * @param {Object} params - Query parameters
  * @param {number} params.page - Current page number
  * @param {number} params.limit - Items per page
  * @param {Array} params.sorting - Array of sorting objects [{id: 'column', desc: boolean}]
  * @param {Object} params.filters - Filter object {column: value}
- * @param {string} params.globalFilter - Global search term
+ * @param {string} params.globalFilter - Global search term (searches no_pajak and customer name)
  * @returns {Object} - Query result with data, isLoading, error, etc.
  */
 export const useFakturPajakQuery = ({

@@ -281,8 +281,8 @@ const FakturPajakTableServerSide = ({
         ),
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('ppn_rp', {
-        id: 'ppn_rp',
+      columnHelper.accessor('ppnRupiah', {
+        id: 'ppnRupiah',
         header: 'PPN Rupiah',
         enableSorting: true,
         cell: (info) => {

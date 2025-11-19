@@ -186,17 +186,21 @@ const useFakturPajakPage = () => {
       setError(null);
 
       try {
-        let response;
+        // Build params object for unified endpoint
+        const params = {
+          page,
+          limit,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        };
 
+        // Merge active filters into params
         if (activeFilters && Object.keys(activeFilters).length > 0) {
-          response = await fakturPajakService.searchFakturPajak(
-            activeFilters,
-            page,
-            limit,
-          );
-        } else {
-          response = await fakturPajakService.getAllFakturPajak(page, limit);
+          Object.assign(params, activeFilters);
         }
+
+        // Use unified endpoint (GET /) with params object
+        const response = await fakturPajakService.getAllFakturPajak(params);
 
         setDataFromResponse(response);
       } catch (err) {
@@ -330,15 +334,24 @@ const useFakturPajakPage = () => {
   const deleteFakturPajakRequest = useCallback(
     async (id) => {
       try {
+        // API returns 204 No Content with no response body
         const result = await fakturPajakService.deleteFakturPajak(id);
+        
+        // Check if delete was successful (status 204 or success flag)
+        if (result?.status === 204 || result?.success === true) {
+          toastService.success('Faktur pajak berhasil dihapus');
+          await refreshAfterMutation();
+          return result;
+        }
+        
+        // Handle unexpected response
         if (result?.success === false) {
           throw new Error(
             result?.error?.message || 'Failed to delete faktur pajak',
           );
         }
-        toastService.success('Faktur pajak berhasil dihapus');
-        await refreshAfterMutation();
-        return result?.data || result;
+        
+        return result;
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
           handleAuthError();
