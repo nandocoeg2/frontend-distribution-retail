@@ -11,6 +11,7 @@ import {
   BuildingStorefrontIcon,
   ClockIcon,
   ChevronDownIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs';
 import { AccordionItem, StatusBadge, InfoTable } from '../ui';
@@ -20,6 +21,7 @@ import ActivityTimeline from '../common/ActivityTimeline';
 import checkingListService from '../../services/checkingListService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
+import CheckingListForm from './CheckingListForm';
 
 const numberFormatter = new Intl.NumberFormat('id-ID');
 
@@ -47,10 +49,13 @@ const CheckingListDetailCard = ({
   checklist,
   onClose,
   isLoading = false,
+  onUpdate,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [exportLoading, setExportLoading] = useState(false);
   const [exportGroupedLoading, setExportGroupedLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     statusInfo: false,
@@ -151,6 +156,31 @@ const CheckingListDetailCard = ({
       ...prev,
       [packingId]: !prev[packingId],
     }));
+  };
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  const handleSave = async (formData) => {
+    setSaving(true);
+    try {
+      await checkingListService.updateChecklist(checklist.id, formData);
+      toastService.success('Checklist berhasil diperbarui');
+      setIsEditMode(false);
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error) {
+      console.error('Failed to update checklist:', error);
+      toastService.error(error.message || 'Gagal memperbarui checklist');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleExportPdf = async () => {
@@ -299,62 +329,94 @@ const CheckingListDetailCard = ({
 
   return (
     <div className='bg-white rounded-lg shadow-md mt-6 overflow-hidden'>
-        {/* Header */}
-        <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50'>
-          <div className='flex items-center space-x-4'>
-            <div className='p-2 bg-teal-100 rounded-lg'>
-              <ClipboardDocumentCheckIcon
-                className='w-8 h-8 text-teal-600'
-                aria-hidden='true'
-              />
-            </div>
-            <div>
-              <h2 className='text-2xl font-bold text-gray-900'>
-                Checklist Surat Jalan Details
-              </h2>
-              <p className='text-sm text-gray-600'>
-                {checklist.no_checklist_surat_jalan || checklist.id}
-              </p>
-            </div>
+      {/* Header */}
+      <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50'>
+        <div className='flex items-center space-x-4'>
+          <div className='p-2 bg-teal-100 rounded-lg'>
+            <ClipboardDocumentCheckIcon
+              className='w-8 h-8 text-teal-600'
+              aria-hidden='true'
+            />
           </div>
-          <div className='flex items-center space-x-2'>
-            <button
-              type='button'
-              onClick={handleExportPdf}
-              disabled={isLoading || !checklist || exportLoading}
-              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              {exportLoading ? (
-                <span className='inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
-              ) : (
-                <ArrowDownTrayIcon className='w-5 h-5' />
-              )}
-              <span>{exportLoading ? 'Exporting...' : 'Export PDF'}</span>
-            </button>
-            <button
-              type='button'
-              onClick={handleExportPdfGrouped}
-              disabled={isLoading || !checklist || exportGroupedLoading}
-              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              {exportGroupedLoading ? (
-                <span className='inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
-              ) : (
-                <ArrowDownTrayIcon className='w-5 h-5' />
-              )}
-              <span>{exportGroupedLoading ? 'Exporting...' : 'Export PDF Grouped'}</span>
-            </button>
-            <button
-            onClick={onClose}
-            className='p-2 transition-colors rounded-lg hover:bg-gray-100'
-            title='Close'
-          >
-            <XMarkIcon className='w-6 h-6 text-gray-500' />
-          </button>
+          <div>
+            <h2 className='text-2xl font-bold text-gray-900'>
+              Checklist Surat Jalan Details
+            </h2>
+            <p className='text-sm text-gray-600'>
+              {checklist.no_checklist_surat_jalan || checklist.id}
+            </p>
           </div>
         </div>
+        <div className='flex items-center space-x-2'>
+          {!isEditMode ? (
+            <>
+              <button
+                type='button'
+                onClick={handleEditClick}
+                className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-yellow-600 rounded-lg hover:bg-yellow-700'
+              >
+                <PencilIcon className='w-5 h-5' />
+                <span>Edit</span>
+              </button>
+              <button
+                type='button'
+                onClick={handleExportPdf}
+                disabled={isLoading || !checklist || exportLoading}
+                className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {exportLoading ? (
+                  <span className='inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
+                ) : (
+                  <ArrowDownTrayIcon className='w-5 h-5' />
+                )}
+                <span>{exportLoading ? 'Exporting...' : 'Export PDF'}</span>
+              </button>
+              <button
+                type='button'
+                onClick={handleExportPdfGrouped}
+                disabled={isLoading || !checklist || exportGroupedLoading}
+                className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {exportGroupedLoading ? (
+                  <span className='inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent'></span>
+                ) : (
+                  <ArrowDownTrayIcon className='w-5 h-5' />
+                )}
+                <span>{exportGroupedLoading ? 'Exporting...' : 'Export PDF Grouped'}</span>
+              </button>
+              <button
+                onClick={onClose}
+                className='p-2 transition-colors rounded-lg hover:bg-gray-100'
+                title='Close'
+              >
+                <XMarkIcon className='w-6 h-6 text-gray-500' />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type='button'
+                onClick={handleCancelEdit}
+                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50'
+                disabled={saving}
+              >
+                Batal
+              </button>
+              <button
+                type='submit'
+                form='checking-list-form'
+                className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50'
+                disabled={saving}
+              >
+                {saving ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
 
-        {/* Tabs Navigation */}
+      {/* Tabs Navigation */}
+      {!isEditMode && (
         <div className='border-b border-gray-200 bg-gray-50'>
           <TabContainer
             activeTab={activeTab}
@@ -374,15 +436,26 @@ const CheckingListDetailCard = ({
             ))}
           </TabContainer>
         </div>
+      )}
 
-        {/* Tab Content */}
-        {isLoading ? (
-          <div className='flex justify-center items-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <span className='ml-3 text-sm text-gray-600'>Loading checklist details...</span>
-          </div>
-        ) : (
-          <div className='p-6'>
+      {/* Content */}
+      {isLoading ? (
+        <div className='flex justify-center items-center py-12'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+          <span className='ml-3 text-sm text-gray-600'>Loading checklist details...</span>
+        </div>
+      ) : isEditMode ? (
+        <div className='p-6'>
+          <CheckingListForm
+            initialValues={checklist}
+            onSubmit={handleSave}
+            onCancel={handleCancelEdit}
+            isSubmitting={saving}
+            formId='checking-list-form'
+          />
+        </div>
+      ) : (
+        <div className='p-6'>
           <TabContent activeTab={activeTab}>
             {/* Overview Tab */}
             <TabPanel tabId='overview'>
@@ -651,8 +724,8 @@ const CheckingListDetailCard = ({
                       typeof sjStatus === 'string'
                         ? sjStatus
                         : sjStatus?.status_name ||
-                          sjStatus?.status_code ||
-                          'UNKNOWN';
+                        sjStatus?.status_code ||
+                        'UNKNOWN';
                     const sjStatusVariant = resolveStatusVariant(
                       typeof sjStatus === 'string'
                         ? sjStatus
@@ -777,98 +850,97 @@ const CheckingListDetailCard = ({
                               )}
                             </div>
                             <ChevronDownIcon
-                              className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
-                                isExpanded ? 'transform rotate-180' : ''
-                              }`}
+                              className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${isExpanded ? 'transform rotate-180' : ''
+                                }`}
                             />
                           </div>
                         </div>
                         {isExpanded && (
                           <div className='px-6 py-4'>
-                          <InfoTable
-                            data={[
-                              {
-                                label: 'Packing Number',
-                                value: packing.packing_number || '-',
-                              },
-                              {
-                                label: 'PO Number',
-                                value: packing.po_number || '-',
-                              },
-                              {
-                                label: 'Tanggal Packing',
-                                value: formatDateTime(packing.tanggal_packing),
-                              },
-                              {
-                                label: 'Is Printed',
-                                value: formatBooleanValue(packing.is_printed),
-                              },
-                              {
-                                label: 'Print Counter',
-                                value: formatNumberValue(packing.print_counter),
-                              },
-                            ]}
-                          />
+                            <InfoTable
+                              data={[
+                                {
+                                  label: 'Packing Number',
+                                  value: packing.packing_number || '-',
+                                },
+                                {
+                                  label: 'PO Number',
+                                  value: packing.po_number || '-',
+                                },
+                                {
+                                  label: 'Tanggal Packing',
+                                  value: formatDateTime(packing.tanggal_packing),
+                                },
+                                {
+                                  label: 'Is Printed',
+                                  value: formatBooleanValue(packing.is_printed),
+                                },
+                                {
+                                  label: 'Print Counter',
+                                  value: formatNumberValue(packing.print_counter),
+                                },
+                              ]}
+                            />
 
-                          {packingBoxes.length > 0 && (
-                            <div className='mt-6'>
-                              <h5 className='mb-4 text-md font-semibold text-gray-900'>
-                                Packing Boxes ({packingBoxes.length})
-                              </h5>
-                              <div className='max-h-96 overflow-auto bg-white border border-gray-200 rounded-lg'>
-                                <table className='min-w-full divide-y divide-gray-200'>
-                                  <thead className='bg-gray-50 sticky top-0 z-10'>
-                                    <tr>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Box Number
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Total Qty
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Status
-                                      </th>
-                                      <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                                        Items
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className='bg-white divide-y divide-gray-200'>
-                                    {packingBoxes.map((box, boxIndex) => (
-                                      <tr
-                                        key={box.id || boxIndex}
-                                        className='hover:bg-gray-50'
-                                      >
-                                        <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-                                          {box.no_box || '-'}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {formatNumberValue(box.total_quantity_in_box)}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                                          {box.status?.status_name || '-'}
-                                        </td>
-                                        <td className='px-6 py-4 text-sm text-gray-900'>
-                                          {box.packingBoxItems?.map((item, idx) => (
-                                            <div key={idx} className='mb-1'>
-                                              {item.nama_barang} ({item.quantity} pcs)
-                                              {item.keterangan && (
-                                                <span className='text-xs text-gray-500'>
-                                                  {' '}
-                                                  - {item.keterangan}
-                                                </span>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </td>
+                            {packingBoxes.length > 0 && (
+                              <div className='mt-6'>
+                                <h5 className='mb-4 text-md font-semibold text-gray-900'>
+                                  Packing Boxes ({packingBoxes.length})
+                                </h5>
+                                <div className='max-h-96 overflow-auto bg-white border border-gray-200 rounded-lg'>
+                                  <table className='min-w-full divide-y divide-gray-200'>
+                                    <thead className='bg-gray-50 sticky top-0 z-10'>
+                                      <tr>
+                                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                          Box Number
+                                        </th>
+                                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                          Total Qty
+                                        </th>
+                                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                          Status
+                                        </th>
+                                        <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+                                          Items
+                                        </th>
                                       </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                    </thead>
+                                    <tbody className='bg-white divide-y divide-gray-200'>
+                                      {packingBoxes.map((box, boxIndex) => (
+                                        <tr
+                                          key={box.id || boxIndex}
+                                          className='hover:bg-gray-50'
+                                        >
+                                          <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
+                                            {box.no_box || '-'}
+                                          </td>
+                                          <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                                            {formatNumberValue(box.total_quantity_in_box)}
+                                          </td>
+                                          <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                                            {box.status?.status_name || '-'}
+                                          </td>
+                                          <td className='px-6 py-4 text-sm text-gray-900'>
+                                            {box.packingBoxItems?.map((item, idx) => (
+                                              <div key={idx} className='mb-1'>
+                                                {item.nama_barang} ({item.quantity} pcs)
+                                                {item.keterangan && (
+                                                  <span className='text-xs text-gray-500'>
+                                                    {' '}
+                                                    - {item.keterangan}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     );
@@ -899,7 +971,7 @@ const CheckingListDetailCard = ({
                   <AccordionItem
                     title='Customer Information'
                     isExpanded={true}
-                    onToggle={() => {}}
+                    onToggle={() => { }}
                     bgColor='bg-gradient-to-r from-green-50 to-emerald-50'
                   >
                     <InfoTable
@@ -983,7 +1055,7 @@ const CheckingListDetailCard = ({
                   <AccordionItem
                     title='Supplier Information'
                     isExpanded={true}
-                    onToggle={() => {}}
+                    onToggle={() => { }}
                     bgColor='bg-gradient-to-r from-purple-50 to-indigo-50'
                   >
                     <InfoTable
@@ -1059,8 +1131,8 @@ const CheckingListDetailCard = ({
               />
             </TabPanel>
           </TabContent>
-          </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };

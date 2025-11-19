@@ -38,9 +38,7 @@ const CheckingList = () => {
   } = useCheckingListPage();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [editingChecklist, setEditingChecklist] = useState(null);
   const [selectedChecklist, setSelectedChecklist] = useState(null);
 
   const pageSubtitle = useMemo(
@@ -55,25 +53,11 @@ const CheckingList = () => {
   );
 
   const openCreateModal = () => {
-    setEditingChecklist(null);
     setIsCreateModalOpen(true);
   };
 
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
-  };
-
-  const openEditModal = useCallback((checklist) => {
-    if (!checklist) {
-      return;
-    }
-    setEditingChecklist(checklist);
-    setIsEditModalOpen(true);
-  }, []);
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setEditingChecklist(null);
   };
 
   const handleViewDetail = useCallback(
@@ -113,18 +97,20 @@ const CheckingList = () => {
     [createChecklist, queryClient]
   );
 
-  const handleEditSubmit = useCallback(
-    async (payload) => {
-      const checklistId = resolveChecklistId(editingChecklist);
-      if (!checklistId) {
-        return;
+  const handleChecklistUpdated = useCallback(async () => {
+    // Refresh data after update from Detail Card
+    await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+    // Also refresh the detail view if needed
+    if (selectedChecklist) {
+      const checklistId = resolveChecklistId(selectedChecklist);
+      if (checklistId) {
+        const response = await fetchChecklistById(checklistId);
+        if (response) {
+          setSelectedChecklist(response);
+        }
       }
-      await updateChecklist(checklistId, payload);
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
-    },
-    [editingChecklist, updateChecklist, queryClient]
-  );
+    }
+  }, [queryClient, selectedChecklist, fetchChecklistById]);
 
   const handleDeleteChecklist = useCallback(
     (checklistId) => {
@@ -183,7 +169,6 @@ const CheckingList = () => {
           ) : (
             <CheckingListTableServerSide
               onViewDetail={handleViewDetail}
-              onEdit={openEditModal}
               onDelete={handleDeleteChecklist}
               deleteLoading={deleteChecklistConfirmation.loading}
               selectedChecklistId={selectedChecklist?.id}
@@ -201,19 +186,12 @@ const CheckingList = () => {
         isEdit={false}
       />
 
-      <CheckingListModal
-        isOpen={isEditModalOpen}
-        onClose={closeEditModal}
-        onSubmit={handleEditSubmit}
-        initialValues={editingChecklist}
-        isEdit
-      />
-
       {selectedChecklist && (
         <CheckingListDetailCard
           checklist={selectedChecklist}
           onClose={handleCloseDetail}
           isLoading={detailLoading}
+          onUpdate={handleChecklistUpdated}
         />
       )}
 

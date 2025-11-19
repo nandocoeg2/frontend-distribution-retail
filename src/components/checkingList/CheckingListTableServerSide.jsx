@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
 import { formatDateTime } from '../../utils/formatUtils';
@@ -22,10 +22,10 @@ const resolveChecklistId = (item) => {
 };
 
 const resolveStatusVariant = (status) => {
-  const statusText = typeof status === 'string' 
-    ? status 
+  const statusText = typeof status === 'string'
+    ? status
     : status?.status_name || status?.status_code || '';
-  
+
   const value = statusText.toLowerCase();
 
   if (!value) {
@@ -67,7 +67,7 @@ const resolveStatusText = (status) => {
 
 const CheckingListTableServerSide = ({
   onViewDetail,
-  onEdit,
+
   onDelete,
   deleteLoading = false,
   selectedChecklistId = null,
@@ -264,7 +264,7 @@ const CheckingListTableServerSide = ({
         cell: (info) => {
           const status = info.getValue();
           const statusText = resolveStatusText(status);
-          
+
           if (!statusText) {
             return <span className="text-sm text-gray-400">-</span>;
           }
@@ -289,17 +289,7 @@ const CheckingListTableServerSide = ({
 
           return (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit && onEdit(checklist);
-                }}
-                className="inline-flex items-center rounded-md border border-transparent bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-              >
-                <PencilIcon className="mr-1 h-4 w-4" />
-                Edit
-              </button>
+
               <button
                 type="button"
                 onClick={(e) => {
@@ -318,7 +308,7 @@ const CheckingListTableServerSide = ({
         enableSorting: false,
       }),
     ],
-    [onEdit, onDelete, deleteLoading]
+    [onDelete, deleteLoading]
   );
 
   const table = useReactTable({
@@ -375,11 +365,10 @@ const CheckingListTableServerSide = ({
             bodyClassName="divide-y divide-gray-200 bg-white"
             rowClassName={({ row }) => {
               const checklistId = resolveChecklistId(row.original);
-              return `transition-colors ${
-                selectedChecklistId === checklistId
-                  ? 'bg-blue-50 hover:bg-blue-100'
-                  : 'hover:bg-gray-50'
-              }`;
+              return `transition-colors ${selectedChecklistId === checklistId
+                ? 'bg-blue-50 hover:bg-blue-100'
+                : 'hover:bg-gray-50'
+                }`;
             }}
             cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
             onRowClick={(checklist) => {
