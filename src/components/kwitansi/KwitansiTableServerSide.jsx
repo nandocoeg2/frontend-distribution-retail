@@ -2,12 +2,11 @@ import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   ArrowDownTrayIcon,
-  PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useKwitansiQuery } from '../../hooks/useKwitansiQuery';
-import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
+import { formatCurrency, formatDate } from '@/utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 
@@ -50,8 +49,6 @@ const resolveStatusVariant = (status) => {
 };
 
 const KwitansiTableServerSide = ({
-  onView,
-  onEdit,
   onDelete,
   onExport,
   exportingId,
@@ -282,16 +279,6 @@ const KwitansiTableServerSide = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEdit(kwitansi);
-                }}
-                className="text-green-600 hover:text-green-900"
-                title="Edit"
-              >
-                <PencilIcon className="h-5 w-5" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
                   onDelete(kwitansi);
                 }}
                 disabled={deleteLoading}
@@ -319,7 +306,6 @@ const KwitansiTableServerSide = ({
     ],
     [
       kwitansis,
-      onEdit,
       onDelete,
       onExport,
       deleteLoading,

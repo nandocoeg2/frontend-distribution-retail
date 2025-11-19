@@ -71,31 +71,18 @@ const KwitansiPage = () => {
     fetchKwitansiById,
   } = useKwitansiPage();
 
-  const [selectedKwitansi, setSelectedKwitansi] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedKwitansiForDetail, setSelectedKwitansiForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [exportingId, setExportingId] = useState(null);
 
   const openCreateModal = () => {
-    setSelectedKwitansi(null);
     setIsCreateModalOpen(true);
   };
 
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
-  };
-
-  const openEditModal = (kwitansi) => {
-    setSelectedKwitansi(kwitansi);
-    setIsEditModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedKwitansi(null);
   };
 
   const handleViewDetail = useCallback(
@@ -187,8 +174,7 @@ const KwitansiPage = () => {
     // Invalidate queries to refresh data
     await queryClient.invalidateQueries({ queryKey: ['kwitansi'] });
     closeCreateModal();
-    closeEditModal();
-  }, [closeCreateModal, closeEditModal, queryClient]);
+  }, [queryClient]);
 
   const handleCreateSubmit = async (payload) => {
     const result = await createKwitansi(payload);
@@ -197,16 +183,18 @@ const KwitansiPage = () => {
     }
   };
 
-  const handleUpdateSubmit = async (payload) => {
-    if (!selectedKwitansi?.id) {
-      return;
+  const handleDetailUpdate = useCallback(async () => {
+    // Invalidate queries and refresh detail
+    await queryClient.invalidateQueries({ queryKey: ['kwitansi'] });
+    if (selectedKwitansiForDetail?.id) {
+      try {
+        const refreshedDetail = await fetchKwitansiById(selectedKwitansiForDetail.id);
+        setSelectedKwitansiForDetail(refreshedDetail);
+      } catch (error) {
+        console.warn('Failed to refresh kwitansi detail:', error);
+      }
     }
-
-    const result = await updateKwitansi(selectedKwitansi.id, payload);
-    if (result) {
-      await handleModalSuccess();
-    }
-  };
+  }, [queryClient, selectedKwitansiForDetail, fetchKwitansiById]);
 
   const handleDelete = (kwitansiOrId) => {
     const id = typeof kwitansiOrId === 'string' ? kwitansiOrId : kwitansiOrId?.id;
@@ -256,7 +244,6 @@ const KwitansiPage = () => {
 
           <div className='space-y-4'>
             <KwitansiTableServerSide
-              onEdit={openEditModal}
               onDelete={handleDelete}
               onExport={handleExportKwitansi}
               exportingId={exportingId}
@@ -278,14 +265,6 @@ const KwitansiPage = () => {
         isEdit={false}
       />
 
-      <KwitansiModal
-        isOpen={isEditModalOpen}
-        onClose={closeEditModal}
-        onSubmit={handleUpdateSubmit}
-        initialValues={selectedKwitansi}
-        isEdit
-      />
-
       {selectedKwitansiForDetail && (
         <KwitansiDetailCard
           kwitansi={selectedKwitansiForDetail}
@@ -296,6 +275,8 @@ const KwitansiPage = () => {
             Boolean(selectedKwitansiForDetail?.id) &&
             exportingId === selectedKwitansiForDetail?.id
           }
+          updateKwitansi={updateKwitansi}
+          onUpdate={handleDetailUpdate}
         />
       )}
 
