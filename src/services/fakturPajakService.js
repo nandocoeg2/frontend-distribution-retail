@@ -137,6 +137,44 @@ class FakturPajakService {
   }
 
   /**
+   * Upload e-Faktur DJP Evidence (PDF)
+   * Upload PDF evidence file from CoreTax DJP after e-Faktur validation
+   * 
+   * API Documentation:
+   * - Endpoint: POST /api/v1/faktur-pajak/:id/upload-evidence
+   * - Content-Type: multipart/form-data
+   * - File must be PDF format only
+   * - Response: { success: true, data: { filename, path, size, ... } }
+   * 
+   * @param {string} id - Faktur Pajak ID
+   * @param {File} file - PDF file from CoreTax DJP
+   * @returns {Promise} Upload result with file metadata
+   */
+  async uploadEvidencePdf(id, file) {
+    try {
+      // Validate file type
+      if (!file || file.type !== 'application/pdf') {
+        throw new Error('Only PDF files are allowed for e-Faktur DJP evidence');
+      }
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await this.api.post(`/${id}/upload-evidence`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading e-Faktur evidence:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Export e-Faktur DJP (XML format)
    * Exports faktur pajak data in DJP-compliant XML format for tax reporting
    * 

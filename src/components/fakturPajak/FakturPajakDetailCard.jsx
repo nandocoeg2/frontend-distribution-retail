@@ -10,6 +10,7 @@ import {
   CalendarIcon,
   PencilIcon,
   CheckIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
 import { TabContainer, Tab, TabContent, TabPanel, InfoTable, StatusBadge } from '../ui';
@@ -18,6 +19,7 @@ import ActivityTimeline from '../common/ActivityTimeline';
 import toastService from '@/services/toastService';
 import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 import useCustomersPage from '@/hooks/useCustomersPage';
+import fakturPajakService from '@/services/fakturPajakService';
 
 const toDateInputValue = (value) => {
   if (!value) return '';
@@ -38,10 +40,12 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditMode, setIsEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [isDppTouched, setIsDppTouched] = useState(false);
   const [isPpnTouched, setIsPpnTouched] = useState(false);
   const isDppTouchedRef = useRef(false);
   const isPpnTouchedRef = useRef(false);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     no_pajak: '',
@@ -229,6 +233,56 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
     }
   }, [updateFormData]);
 
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileSelect = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      toastService.error('Hanya file PDF yang diperbolehkan untuk bukti e-Faktur DJP');
+      event.target.value = ''; // Reset input
+      return;
+    }
+
+    // Validate file size (e.g., max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toastService.error('Ukuran file maksimal 10MB');
+      event.target.value = ''; // Reset input
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const result = await fakturPajakService.uploadEvidencePdf(fakturPajak.id, file);
+
+      if (result?.success) {
+        const filename = result?.data?.filename || file.name;
+        toastService.success(`Berhasil upload e-Faktur evidence: ${filename}`);
+        
+        // Refresh data if onUpdate callback exists
+        if (onUpdate) {
+          onUpdate();
+        }
+      } else {
+        throw new Error(result?.error?.message || 'Upload gagal');
+      }
+    } catch (error) {
+      console.error('Error uploading e-Faktur evidence:', error);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Gagal upload bukti e-Faktur DJP';
+      toastService.error(errorMessage);
+    } finally {
+      setUploading(false);
+      event.target.value = ''; // Reset input for next upload
+    }
+  };
+
   const handleSave = async () => {
     // Validation
     if (!formData.no_pajak.trim()) {
@@ -336,10 +390,27 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
         <div className="flex items-center space-x-2">
           {!isEditMode ? (
             <>
+              <button
+                onClick={handleUploadClick}
+                disabled={uploading || loading}
+                className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Upload e-Faktur DJP Evidence"
+              >
+                <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
+                {uploading ? 'Uploading...' : 'Upload e-Faktur'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
               {updateFakturPajak && (
                 <button
                   onClick={handleEditClick}
-                  className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={uploading}
+                  className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Edit"
                 >
                   <PencilIcon className="w-4 h-4 mr-1" />
