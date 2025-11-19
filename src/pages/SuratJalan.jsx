@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
-import EditSuratJalanModal from '../components/suratJalan/EditSuratJalanModal';
 import SuratJalanDetailCard from '../components/suratJalan/SuratJalanDetailCard';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
@@ -36,11 +35,9 @@ const TAB_ORDER = [
 const SuratJalan = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   const [activeTab, setActiveTab] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingSuratJalan, setEditingSuratJalan] = useState(null);
   const [selectedSuratJalanForDetail, setSelectedSuratJalanForDetail] = useState(null);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -72,36 +69,9 @@ const SuratJalan = () => {
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = async (suratJalanItem) => {
-    if (!suratJalanItem?.id) {
-      toastService.error('Surat jalan tidak valid');
-      return;
-    }
-
-    try {
-      const response = await suratJalanService.getSuratJalanById(suratJalanItem.id);
-      const detailData = response?.data?.data ?? response?.data;
-
-      if (response?.success === false || !detailData) {
-        toastService.error(response?.message || 'Gagal memuat detail surat jalan');
-        return;
-      }
-
-      setEditingSuratJalan(detailData);
-      setShowEditModal(true);
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        handleAuthError();
-        return;
-      }
-      console.error('Error fetching surat jalan detail:', err);
-      toastService.error('Gagal memuat detail surat jalan');
-    }
-  };
-
-  const closeEditModal = () => {
-    setEditingSuratJalan(null);
-    setShowEditModal(false);
+  // Edit logic moved to SuratJalanDetailCard
+  const handleEditClick = async (suratJalanItem) => {
+    handleViewDetail(suratJalanItem);
   };
 
   const handleViewDetail = async (suratJalanItem) => {
@@ -192,12 +162,12 @@ const SuratJalan = () => {
     }
 
     const validItems = items.filter(item => item && item.id);
-    
+
     setSelectedSuratJalan((prevSelected) => {
       if (validItems.length === 0) {
         return [];
       }
-      
+
       const prevIds = prevSelected.map(item => typeof item === 'string' ? item : item?.id);
       const isAllSelected = validItems.every((item) => prevIds.includes(item.id));
       return isAllSelected ? [] : validItems;
@@ -259,10 +229,10 @@ const SuratJalan = () => {
             response?.data?.message ||
             `Surat jalan berhasil diproses (${selectedSuratJalan.length})`;
           toastService.success(successMessage);
-          
+
           setSelectedSuratJalan([]);
           hideDeleteDialog();
-          
+
           // Invalidate queries to refresh data
           await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
         } catch (err) {
@@ -293,11 +263,20 @@ const SuratJalan = () => {
   }, [queryClient]);
 
   const handleSuratJalanUpdated = useCallback(() => {
-    setSelectedSuratJalan([]);
-    closeEditModal();
-    // Invalidate queries to refresh data
+    // Refresh data after update from Detail Card
     queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
-  }, [queryClient]);
+    // We might want to refresh the detail view as well if it's open, 
+    // but SuratJalanDetailCard handles its own internal state update via onUpdate callback if we pass it correctly?
+    // Actually, if we invalidate queries, the table updates. 
+    // For the detail card, if we want it to reflect changes immediately, we might need to re-fetch or update local state.
+    // But let's see how Companies.jsx does it.
+    // Companies.jsx: fetchCompanies(pagination.currentPage, pagination.itemsPerPage); handleViewDetail(selectedCompanyForDetail);
+
+    if (selectedSuratJalanForDetail) {
+      // Re-fetch detail to ensure consistency
+      handleViewDetail(selectedSuratJalanForDetail);
+    }
+  }, [queryClient, selectedSuratJalanForDetail]);
 
   return (
     <div className='p-6'>
@@ -339,7 +318,7 @@ const SuratJalan = () => {
           </div>
 
           <SuratJalanTableServerSide
-            onEdit={openEditModal}
+            onEdit={handleEditClick}
             onDelete={handleDelete}
             deleteLoading={deleteLoading}
             selectedSuratJalan={selectedSuratJalan}
@@ -362,14 +341,6 @@ const SuratJalan = () => {
         handleAuthError={handleAuthError}
       />
 
-      <EditSuratJalanModal
-        show={showEditModal}
-        onClose={closeEditModal}
-        suratJalan={editingSuratJalan}
-        onSuratJalanUpdated={handleSuratJalanUpdated}
-        handleAuthError={handleAuthError}
-      />
-
       <DeleteConfirmationDialog />
 
       {/* Surat Jalan Detail Card */}
@@ -378,6 +349,7 @@ const SuratJalan = () => {
           suratJalan={selectedSuratJalanForDetail}
           onClose={handleCloseDetail}
           loading={detailLoading}
+          onUpdate={handleSuratJalanUpdated}
         />
       )}
     </div>
