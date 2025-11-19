@@ -1,12 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import HeroIcon from '../atoms/HeroIcon';
-import fileService from '@/services/fileService';
 import toastService from '@/services/toastService';
 
-const ImageUpload = ({ logoId, logoUrl, onLogoChange, onLogoRemove }) => {
+const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(logoUrl || null);
+  const [previewUrl, setPreviewUrl] = useState(logo || null);
   const fileInputRef = useRef(null);
+
+  // Update preview when logo prop changes
+  useEffect(() => {
+    setPreviewUrl(logo || null);
+  }, [logo]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -26,30 +30,21 @@ const ImageUpload = ({ logoId, logoUrl, onLogoChange, onLogoRemove }) => {
       return;
     }
 
-    // Show preview
+    // Convert to base64 and update
+    setUploading(true);
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreviewUrl(reader.result);
+      const base64String = reader.result;
+      setPreviewUrl(base64String);
+      onLogoChange(base64String);
+      toastService.success('Logo loaded successfully');
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      toastService.error('Failed to read file');
+      setUploading(false);
     };
     reader.readAsDataURL(file);
-
-    // Upload file
-    setUploading(true);
-    try {
-      const response = await fileService.uploadFile(file, 'company_logo');
-      if (response.success) {
-        const uploadedFileId = response.data.data?.id || response.data.id;
-        onLogoChange(uploadedFileId);
-        toastService.success('Logo uploaded successfully');
-      } else {
-        throw new Error(response.error || 'Upload failed');
-      }
-    } catch (error) {
-      toastService.error(error.message || 'Failed to upload logo');
-      setPreviewUrl(logoUrl || null);
-    } finally {
-      setUploading(false);
-    }
   };
 
   const handleRemoveLogo = () => {

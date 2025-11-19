@@ -7,8 +7,7 @@ const CompanyForm = ({
   handleSubmit, 
   closeModal, 
   isEdit = false,
-  logoId,
-  logoUrl,
+  logo,
   onLogoChange,
   onLogoRemove
 }) => {
@@ -17,8 +16,7 @@ const CompanyForm = ({
       {/* Logo Upload Section */}
       <div className="mb-6">
         <ImageUpload 
-          logoId={logoId}
-          logoUrl={logoUrl}
+          logo={logo}
           onLogoChange={onLogoChange}
           onLogoRemove={onLogoRemove}
         />

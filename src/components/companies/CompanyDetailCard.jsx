@@ -13,7 +13,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable } from '../ui';
-import fileService from '@/services/fileService';
 import toastService from '@/services/toastService';
 import CompanyForm from './CompanyForm';
 
@@ -32,9 +31,8 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     email: '',
     direktur_utama: '',
     npwp: '',
-    logoId: null
+    logo: null
   });
-  const [logoUrl, setLogoUrl] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -52,15 +50,8 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
-        logoId: company.logoId || null
+        logo: company.logo || null
       });
-
-      // Set logo URL if logo exists
-      if (company.logoId) {
-        setLogoUrl(fileService.getFileUrl(company.logoId));
-      } else {
-        setLogoUrl(null);
-      }
     }
   }, [company]);
 
@@ -85,14 +76,8 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
-        logoId: company.logoId || null
+        logo: company.logo || null
       });
-
-      if (company.logoId) {
-        setLogoUrl(fileService.getFileUrl(company.logoId));
-      } else {
-        setLogoUrl(null);
-      }
     }
   };
 
@@ -104,20 +89,18 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     }));
   };
 
-  const handleLogoChange = (fileId) => {
+  const handleLogoChange = (base64String) => {
     setFormData((prev) => ({
       ...prev,
-      logoId: fileId
+      logo: base64String
     }));
-    setLogoUrl(fileService.getFileUrl(fileId));
   };
 
   const handleLogoRemove = () => {
     setFormData((prev) => ({
       ...prev,
-      logoId: null
+      logo: null
     }));
-    setLogoUrl(null);
   };
 
   const handleSave = async () => {
@@ -146,7 +129,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
 
   if (!company) return null;
 
-  const displayLogoUrl = logoUrl || (company?.logoId ? fileService.getFileUrl(company.logoId) : null);
+  const displayLogo = formData.logo || company?.logo || null;
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
@@ -214,8 +197,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
             handleSubmit={(e) => { e.preventDefault(); handleSave(); }} 
             closeModal={handleCancelEdit}
             isEdit={true}
-            logoId={formData.logoId}
-            logoUrl={logoUrl}
+            logo={formData.logo}
             onLogoChange={handleLogoChange}
             onLogoRemove={handleLogoRemove}
           />
@@ -224,7 +206,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         /* VIEW MODE */
         <div className="space-y-6">
           {/* Company Logo */}
-          {displayLogoUrl && (
+          {displayLogo && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
               <div className="flex items-center mb-4">
                 <PhotoIcon className="h-5 w-5 text-gray-500 mr-2" />
@@ -233,7 +215,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
               <div className="flex justify-center">
                 <div className="w-48 h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
                   <img
-                    src={displayLogoUrl}
+                    src={displayLogo}
                     alt={`${company.nama_perusahaan} logo`}
                     className="max-w-full max-h-full object-contain"
                   />

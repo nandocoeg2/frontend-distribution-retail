@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import CompanyForm from '@/components/companies/CompanyForm';
-import fileService from '@/services/fileService';
 
 const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
@@ -16,10 +15,8 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     email: '',
     direktur_utama: '',
     npwp: '',
-    logoId: null
+    logo: null
   });
-
-  const [logoUrl, setLogoUrl] = useState(null);
 
   useEffect(() => {
     if (company) {
@@ -36,15 +33,8 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
-        logoId: company.logoId || null
+        logo: company.logo || null
       });
-
-      // Set logo URL if logo exists
-      if (company.logoId) {
-        setLogoUrl(fileService.getFileUrl(company.logoId));
-      } else {
-        setLogoUrl(null);
-      }
     }
   }, [company]);
 
@@ -56,25 +46,23 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     }));
   };
 
-  const handleLogoChange = (fileId) => {
+  const handleLogoChange = (base64String) => {
     setFormData((prev) => ({
       ...prev,
-      logoId: fileId
+      logo: base64String
     }));
-    setLogoUrl(fileService.getFileUrl(fileId));
   };
 
   const handleLogoRemove = () => {
     setFormData((prev) => ({
       ...prev,
-      logoId: null
+      logo: null
     }));
-    setLogoUrl(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Send all data including logoId
+    // Send all data including logo
     onCompanyUpdated(company.id, formData);
   };
 
@@ -94,8 +82,7 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
           handleSubmit={handleSubmit} 
           closeModal={onClose}
           isEdit={true}
-          logoId={formData.logoId}
-          logoUrl={logoUrl}
+          logo={formData.logo}
           onLogoChange={handleLogoChange}
           onLogoRemove={handleLogoRemove}
         />

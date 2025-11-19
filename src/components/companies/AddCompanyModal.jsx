@@ -15,10 +15,8 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     email: '',
     direktur_utama: '',
     npwp: '',
-    logoId: null
+    logo: null
   });
-
-  const [logoUrl, setLogoUrl] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -28,27 +26,26 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     }));
   };
 
-  const handleLogoChange = (fileId) => {
+  const handleLogoChange = (base64String) => {
     setFormData((prev) => ({
       ...prev,
-      logoId: fileId
+      logo: base64String
     }));
   };
 
   const handleLogoRemove = () => {
     setFormData((prev) => ({
       ...prev,
-      logoId: null
+      logo: null
     }));
-    setLogoUrl(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Only send logoId if it exists
+    // Only send logo if it exists
     const dataToSend = { ...formData };
-    if (!dataToSend.logoId) {
-      delete dataToSend.logoId;
+    if (!dataToSend.logo) {
+      delete dataToSend.logo;
     }
     onCompanyAdded(dataToSend);
   };
@@ -68,9 +65,8 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
       email: '',
       direktur_utama: '',
       npwp: '',
-      logoId: null
+      logo: null
     });
-    setLogoUrl(null);
     onClose();
   };
 
@@ -89,8 +85,7 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
           handleInputChange={handleInputChange} 
           handleSubmit={handleSubmit} 
           closeModal={handleClose}
-          logoId={formData.logoId}
-          logoUrl={logoUrl}
+          logo={formData.logo}
           onLogoChange={handleLogoChange}
           onLogoRemove={handleLogoRemove}
         />

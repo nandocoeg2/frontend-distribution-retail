@@ -11,14 +11,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable } from '../ui';
-import fileService from '@/services/fileService';
 
 const ViewCompanyModal = ({ show, onClose, company }) => {
   if (!show) {
     return null;
   }
 
-  const logoUrl = company?.logoId ? fileService.getFileUrl(company.logoId) : null;
+  const logoUrl = company?.logo || null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -55,7 +54,7 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
                     <div className="w-48 h-48 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
                       <img
                         src={logoUrl}
-                        alt={`${company.nama_perusahaan} logo`}
+                        alt={`${company?.nama_perusahaan || 'Company'} logo`}
                         className="max-w-full max-h-full object-contain"
                       />
                     </div>
