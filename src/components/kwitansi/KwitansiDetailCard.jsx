@@ -64,6 +64,8 @@ const KwitansiDetailCard = ({
   loading = false,
   onExport,
   exportLoading,
+  onExportPaket,
+  exportPaketLoading,
   updateKwitansi,
   onUpdate,
 }) => {
@@ -257,6 +259,21 @@ const KwitansiDetailCard = ({
                     <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
                   )}
                   Print
+                </button>
+              )}
+              {onExportPaket && (
+                <button
+                  onClick={() => onExportPaket(detail)}
+                  disabled={loading || exportPaketLoading || !detail?.id}
+                  className="inline-flex items-center px-3 py-2 border border-purple-600 text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                  title="Print Kwitansi + Invoice Pengiriman (Paket)"
+                >
+                  {exportPaketLoading ? (
+                    <span className='inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-1'></span>
+                  ) : (
+                    <DocumentTextIcon className="w-4 h-4 mr-1" />
+                  )}
+                  Print Paket
                 </button>
               )}
               {onClose && (

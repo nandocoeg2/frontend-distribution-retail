@@ -76,6 +76,7 @@ const KwitansiPage = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [exportingId, setExportingId] = useState(null);
+  const [exportingPaketId, setExportingPaketId] = useState(null);
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
@@ -158,6 +159,59 @@ const KwitansiPage = () => {
         toastService.error(error.message || 'Gagal mengekspor kwitansi');
       } finally {
         setExportingId(null);
+      }
+    },
+    []
+  );
+
+  const handleExportKwitansiPaket = useCallback(
+    async (kwitansiOrId) => {
+      const kwitansiId =
+        typeof kwitansiOrId === 'string'
+          ? kwitansiOrId
+          : kwitansiOrId?.id;
+
+      if (!kwitansiId) {
+        toastService.warning('Data kwitansi tidak ditemukan untuk diekspor.');
+        return;
+      }
+
+      setExportingPaketId(kwitansiId);
+
+      try {
+        // Get company ID from auth
+        const companyData = authService.getCompanyData();
+        if (!companyData || !companyData.id) {
+          toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+          return;
+        }
+
+        toastService.info('Generating kwitansi paket (Kwitansi + Invoice Pengiriman)...');
+
+        // Call backend API to get HTML
+        const html = await kwitansiService.exportKwitansiPaket(kwitansiId, companyData.id);
+
+        // Open HTML in new window for printing
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+          };
+
+          toastService.success('Kwitansi paket berhasil di-generate. Silakan print.');
+        } else {
+          toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+        }
+      } catch (error) {
+        console.error('Failed to export kwitansi paket:', error);
+        toastService.error(error.message || 'Gagal mengekspor kwitansi paket');
+      } finally {
+        setExportingPaketId(null);
       }
     },
     []
@@ -274,6 +328,11 @@ const KwitansiPage = () => {
           exportLoading={
             Boolean(selectedKwitansiForDetail?.id) &&
             exportingId === selectedKwitansiForDetail?.id
+          }
+          onExportPaket={handleExportKwitansiPaket}
+          exportPaketLoading={
+            Boolean(selectedKwitansiForDetail?.id) &&
+            exportingPaketId === selectedKwitansiForDetail?.id
           }
           updateKwitansi={updateKwitansi}
           onUpdate={handleDetailUpdate}
