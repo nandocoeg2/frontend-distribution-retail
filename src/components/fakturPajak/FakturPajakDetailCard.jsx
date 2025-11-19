@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   XMarkIcon,
   DocumentTextIcon,
@@ -8,13 +8,69 @@ import {
   DocumentCheckIcon,
   InboxStackIcon,
   CalendarIcon,
+  PencilIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
 import { TabContainer, Tab, TabContent, TabPanel, InfoTable, StatusBadge } from '../ui';
+import Autocomplete from '../common/Autocomplete';
 import ActivityTimeline from '../common/ActivityTimeline';
+import toastService from '@/services/toastService';
+import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
+import useCustomersPage from '@/hooks/useCustomersPage';
 
-const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false }) => {
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+};
+
+const toInputString = (value) => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : '';
+  }
+  return String(value);
+};
+
+const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFakturPajak, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [isDppTouched, setIsDppTouched] = useState(false);
+  const [isPpnTouched, setIsPpnTouched] = useState(false);
+  const isDppTouchedRef = useRef(false);
+  const isPpnTouchedRef = useRef(false);
+
+  const [formData, setFormData] = useState({
+    no_pajak: '',
+    invoicePenagihanId: '',
+    tanggal_invoice: '',
+    laporanPenerimaanBarangId: '',
+    customerId: '',
+    total_harga_jual: '',
+    potongan_harga: '',
+    dasar_pengenaan_pajak: '',
+    ppn_rp: '',
+    ppn_percentage: '11',
+    termOfPaymentId: '',
+    statusId: '',
+  });
+
+  const {
+    options: termOfPaymentOptions,
+    loading: termOfPaymentLoading,
+    fetchOptions: searchTermOfPayments
+  } = useTermOfPaymentAutocomplete({
+    selectedId: formData.termOfPaymentId
+  });
+
+  const {
+    customers: customerResults = [],
+    loading: customersLoading,
+    searchCustomers,
+  } = useCustomersPage();
 
   if (!fakturPajak) return null;
 
@@ -28,26 +84,296 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false }) => {
         ? 'warning'
         : 'secondary';
 
+  // Options for disabled autocomplete fields
+  const invoicePenagihanOptions = detail?.invoicePenagihan ? [
+    {
+      id: detail.invoicePenagihan.id,
+      label: detail.invoicePenagihan.no_invoice_penagihan || detail.invoicePenagihan.no_invoice || 'N/A',
+      value: detail.invoicePenagihan.id
+    }
+  ] : [];
+
+  const laporanPenerimaanBarangOptions = detail?.laporanPenerimaanBarang ? [
+    {
+      id: detail.laporanPenerimaanBarang.id,
+      label: detail.laporanPenerimaanBarang.no_lpb || 'N/A',
+      value: detail.laporanPenerimaanBarang.id
+    }
+  ] : [];
+
+  const statusOptions = detail?.status ? [
+    {
+      id: detail.status.id,
+      label: detail.status.status_name || detail.status.status_code || 'N/A',
+      value: detail.status.id
+    }
+  ] : [];
+
+  const customerOptions = customerResults.length > 0 ? customerResults : (detail?.customer ? [{
+    id: detail.customer.id,
+    namaCustomer: detail.customer.nama_customer || detail.customer.namaCustomer,
+  }] : []);
+
+  // Sync formData with fakturPajak
+  useEffect(() => {
+    if (fakturPajak) {
+      setFormData({
+        no_pajak: fakturPajak.no_pajak || '',
+        invoicePenagihanId: fakturPajak.invoicePenagihanId || fakturPajak.invoicePenagihan?.id || '',
+        tanggal_invoice: toDateInputValue(fakturPajak.tanggal_invoice),
+        laporanPenerimaanBarangId: fakturPajak.laporanPenerimaanBarangId || fakturPajak.laporanPenerimaanBarang?.id || '',
+        customerId: fakturPajak.customerId || fakturPajak.customer?.id || '',
+        total_harga_jual: toInputString(fakturPajak.total_harga_jual),
+        potongan_harga: toInputString(fakturPajak.potongan_harga),
+        dasar_pengenaan_pajak: toInputString(fakturPajak.dasar_pengenaan_pajak),
+        ppn_rp: toInputString(fakturPajak.ppn_rp),
+        ppn_percentage: toInputString(fakturPajak.ppn_percentage != null ? fakturPajak.ppn_percentage : 11),
+        termOfPaymentId: fakturPajak.termOfPaymentId || fakturPajak.termOfPayment?.id || '',
+        statusId: fakturPajak.statusId || fakturPajak.status?.id || '',
+      });
+    }
+  }, [fakturPajak]);
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setIsDppTouched(false);
+    setIsPpnTouched(false);
+    isDppTouchedRef.current = false;
+    isPpnTouchedRef.current = false;
+    // Reset to original values
+    if (fakturPajak) {
+      setFormData({
+        no_pajak: fakturPajak.no_pajak || '',
+        invoicePenagihanId: fakturPajak.invoicePenagihanId || fakturPajak.invoicePenagihan?.id || '',
+        tanggal_invoice: toDateInputValue(fakturPajak.tanggal_invoice),
+        laporanPenerimaanBarangId: fakturPajak.laporanPenerimaanBarangId || fakturPajak.laporanPenerimaanBarang?.id || '',
+        customerId: fakturPajak.customerId || fakturPajak.customer?.id || '',
+        total_harga_jual: toInputString(fakturPajak.total_harga_jual),
+        potongan_harga: toInputString(fakturPajak.potongan_harga),
+        dasar_pengenaan_pajak: toInputString(fakturPajak.dasar_pengenaan_pajak),
+        ppn_rp: toInputString(fakturPajak.ppn_rp),
+        ppn_percentage: toInputString(fakturPajak.ppn_percentage != null ? fakturPajak.ppn_percentage : 11),
+        termOfPaymentId: fakturPajak.termOfPaymentId || fakturPajak.termOfPayment?.id || '',
+        statusId: fakturPajak.statusId || fakturPajak.status?.id || '',
+      });
+    }
+  };
+
+  const toNumber = useCallback((value) => {
+    if (value === '' || value === null || value === undefined) return 0;
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? 0 : numeric;
+  }, []);
+
+  const isBlank = (value) => value === '' || value === null || value === undefined;
+
+  const recalculateDerivedValues = useCallback((draft) => {
+    const next = { ...draft };
+
+    if (!isDppTouchedRef.current) {
+      if (isBlank(next.total_harga_jual) && isBlank(next.potongan_harga)) {
+        next.dasar_pengenaan_pajak = '';
+      } else {
+        const total = toNumber(next.total_harga_jual);
+        const discount = toNumber(next.potongan_harga);
+        const dpp = Math.max(total - discount, 0);
+        if (Number.isFinite(dpp)) {
+          next.dasar_pengenaan_pajak = String(Math.round(dpp));
+        }
+      }
+    }
+
+    if (!isPpnTouchedRef.current) {
+      if (isBlank(next.dasar_pengenaan_pajak) || isBlank(next.ppn_percentage)) {
+        next.ppn_rp = '';
+      } else {
+        const dppValue = toNumber(next.dasar_pengenaan_pajak);
+        const percentValue = toNumber(next.ppn_percentage);
+        const ppn = dppValue * (percentValue / 100);
+        if (Number.isFinite(ppn)) {
+          next.ppn_rp = String(Math.round(ppn));
+        }
+      }
+    }
+
+    return next;
+  }, [toNumber]);
+
+  const updateFormData = useCallback((updater) => {
+    setFormData((prev) => {
+      const draft = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+      const recalculated = recalculateDerivedValues(draft);
+      return recalculated;
+    });
+  }, [recalculateDerivedValues]);
+
+  const handleInputChange = useCallback((field) => (event) => {
+    const value = event?.target ? event.target.value : event;
+    
+    if (field === 'dasar_pengenaan_pajak') {
+      isDppTouchedRef.current = true;
+      setIsDppTouched(true);
+      updateFormData((prev) => ({ ...prev, [field]: value }));
+    } else if (field === 'ppn_rp') {
+      isPpnTouchedRef.current = true;
+      setIsPpnTouched(true);
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    } else if (field === 'ppn_percentage') {
+      updateFormData((prev) => ({ ...prev, [field]: value }));
+    } else {
+      updateFormData((prev) => ({ ...prev, [field]: value }));
+    }
+  }, [updateFormData]);
+
+  const handleSave = async () => {
+    // Validation
+    if (!formData.no_pajak.trim()) {
+      toastService.error('Nomor faktur pajak wajib diisi');
+      return;
+    }
+
+    const nomorFakturRegex = /^\d{3}\.\d{3}-\d{2}\.\d{8}$/;
+    if (!nomorFakturRegex.test(formData.no_pajak.trim())) {
+      toastService.error('Format nomor faktur pajak harus XXX.XXX-XX.XXXXXXXX');
+      return;
+    }
+
+    if (!formData.invoicePenagihanId.trim()) {
+      toastService.error('Invoice penagihan ID wajib diisi');
+      return;
+    }
+
+    if (!formData.tanggal_invoice) {
+      toastService.error('Tanggal invoice wajib diisi');
+      return;
+    }
+
+    if (!formData.termOfPaymentId.trim()) {
+      toastService.error('Term of payment wajib diisi');
+      return;
+    }
+
+    if (!formData.statusId.trim()) {
+      toastService.error('Status wajib diisi');
+      return;
+    }
+
+    const totalHarga = Number(formData.total_harga_jual);
+    if (formData.total_harga_jual === '' || Number.isNaN(totalHarga) || totalHarga < 0) {
+      toastService.error('Total harga jual harus berupa angka dan tidak boleh negatif');
+      return;
+    }
+
+    const dpp = Number(formData.dasar_pengenaan_pajak);
+    if (formData.dasar_pengenaan_pajak === '' || Number.isNaN(dpp) || dpp < 0) {
+      toastService.error('Dasar pengenaan pajak harus berupa angka dan tidak boleh negatif');
+      return;
+    }
+
+    const ppnRp = Number(formData.ppn_rp);
+    if (formData.ppn_rp === '' || Number.isNaN(ppnRp) || ppnRp < 0) {
+      toastService.error('PPN (Rp) harus berupa angka dan tidak boleh negatif');
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const payload = {
+        no_pajak: formData.no_pajak.trim(),
+        invoicePenagihanId: formData.invoicePenagihanId.trim(),
+        tanggal_invoice: new Date(formData.tanggal_invoice).toISOString(),
+        laporanPenerimaanBarangId: formData.laporanPenerimaanBarangId.trim(),
+        customerId: formData.customerId.trim(),
+        total_harga_jual: Number(formData.total_harga_jual),
+        potongan_harga: formData.potongan_harga === '' ? 0 : Number(formData.potongan_harga),
+        dasar_pengenaan_pajak: Number(formData.dasar_pengenaan_pajak),
+        ppn_rp: Number(formData.ppn_rp),
+        ppn_percentage: Number(formData.ppn_percentage),
+        termOfPaymentId: formData.termOfPaymentId.trim(),
+        statusId: formData.statusId.trim(),
+      };
+
+      const result = await updateFakturPajak(fakturPajak.id, payload);
+
+      if (result) {
+        toastService.success('Faktur pajak berhasil diperbarui');
+        setIsEditMode(false);
+        setIsDppTouched(false);
+        setIsPpnTouched(false);
+        isDppTouchedRef.current = false;
+        isPpnTouchedRef.current = false;
+        if (onUpdate) {
+          onUpdate();
+        }
+      }
+    } catch (error) {
+      console.error('Error updating faktur pajak:', error);
+      toastService.error(error.message || 'Gagal memperbarui faktur pajak');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Detail Faktur Pajak</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Detail Faktur Pajak
+            {isEditMode && <span className="ml-3 text-sm font-normal text-blue-600">(Editing)</span>}
+          </h2>
           <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
             <DocumentTextIcon className="h-4 w-4 text-gray-400" />
             {detail?.no_pajak || 'No faktur pajak available'}
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Close"
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-500" />
-            </button>
+          {!isEditMode ? (
+            <>
+              {updateFakturPajak && (
+                <button
+                  onClick={handleEditClick}
+                  className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  title="Edit"
+                >
+                  <PencilIcon className="w-4 h-4 mr-1" />
+                  Edit
+                </button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Close"
+                >
+                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                disabled={saving}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              >
+                <CheckIcon className="w-4 h-4 mr-1" />
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -57,7 +383,219 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false }) => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-3 text-sm text-gray-600">Loading faktur pajak details...</span>
         </div>
+      ) : isEditMode ? (
+        /* EDIT MODE */
+        <div className="bg-gray-50 rounded-lg p-6">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nomor Faktur Pajak <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.no_pajak}
+                  onChange={handleInputChange('no_pajak')}
+                  placeholder="010.000-24.12345678"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Invoice Penagihan <span className="text-red-500">*</span>
+                </label>
+                <Autocomplete
+                  label=""
+                  options={invoicePenagihanOptions}
+                  value={formData.invoicePenagihanId}
+                  onChange={handleInputChange('invoicePenagihanId')}
+                  placeholder="Invoice Penagihan"
+                  displayKey="label"
+                  valueKey="id"
+                  name="invoicePenagihanId"
+                  required
+                  disabled
+                  showId
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tanggal Invoice <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.tanggal_invoice}
+                  onChange={handleInputChange('tanggal_invoice')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Laporan Penerimaan Barang <span className="text-red-500">*</span>
+                </label>
+                <Autocomplete
+                  label=""
+                  options={laporanPenerimaanBarangOptions}
+                  value={formData.laporanPenerimaanBarangId}
+                  onChange={handleInputChange('laporanPenerimaanBarangId')}
+                  placeholder="Laporan Penerimaan Barang"
+                  displayKey="label"
+                  valueKey="id"
+                  name="laporanPenerimaanBarangId"
+                  required
+                  disabled
+                  showId
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer <span className="text-red-500">*</span>
+                </label>
+                <Autocomplete
+                  label=""
+                  options={customerOptions}
+                  value={formData.customerId}
+                  onChange={handleInputChange('customerId')}
+                  placeholder="Cari nama atau ID customer"
+                  displayKey="namaCustomer"
+                  valueKey="id"
+                  name="customerId"
+                  required
+                  loading={customersLoading}
+                  onSearch={async (query) => {
+                    try {
+                      await searchCustomers(query, 1, 20);
+                    } catch (error) {
+                      console.error('Failed to search customers:', error);
+                    }
+                  }}
+                  showId
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Harga Jual (IDR) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.total_harga_jual}
+                  onChange={handleInputChange('total_harga_jual')}
+                  placeholder="Masukkan total harga jual"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Potongan Harga (IDR)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.potongan_harga}
+                  onChange={handleInputChange('potongan_harga')}
+                  placeholder="Masukkan potongan (opsional)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dasar Pengenaan Pajak (DPP) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.dasar_pengenaan_pajak}
+                  onChange={handleInputChange('dasar_pengenaan_pajak')}
+                  placeholder="Total harga jual - potongan"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Persentase PPN (%) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.ppn_percentage}
+                  onChange={handleInputChange('ppn_percentage')}
+                  placeholder="Contoh: 11"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  PPN (Rp) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formData.ppn_rp}
+                  onChange={handleInputChange('ppn_rp')}
+                  placeholder="DPP x % PPN"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Term of Payment <span className="text-red-500">*</span>
+                </label>
+                <Autocomplete
+                  label=""
+                  options={termOfPaymentOptions}
+                  value={formData.termOfPaymentId}
+                  onChange={handleInputChange('termOfPaymentId')}
+                  placeholder="Cari Term of Payment"
+                  displayKey="label"
+                  valueKey="id"
+                  name="termOfPaymentId"
+                  required
+                  loading={termOfPaymentLoading}
+                  onSearch={searchTermOfPayments}
+                  showId
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <Autocomplete
+                  label=""
+                  options={statusOptions}
+                  value={formData.statusId}
+                  onChange={handleInputChange('statusId')}
+                  placeholder="Status"
+                  displayKey="label"
+                  valueKey="id"
+                  name="statusId"
+                  required
+                  disabled
+                  showId
+                />
+              </div>
+            </div>
+          </form>
+        </div>
       ) : (
+        /* VIEW MODE */
         <div>
           {/* Tab Navigation */}
           <TabContainer

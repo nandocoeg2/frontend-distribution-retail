@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
@@ -75,7 +74,6 @@ const formatRangeSummary = ({ pagination }) => {
 
 const FakturPajakTableServerSide = ({
   onView,
-  onEdit,
   onDelete,
   deleteLoading = false,
   initialPage = 1,
@@ -373,18 +371,6 @@ const FakturPajakTableServerSide = ({
           const fakturPajak = row.original;
           return (
             <div className="flex items-center justify-end space-x-2">
-              {onEdit && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(fakturPajak);
-                  }}
-                  className="p-1 text-yellow-600 hover:text-yellow-900"
-                  title="Edit"
-                >
-                  <PencilIcon className="w-5 h-5" />
-                </button>
-              )}
               {onDelete && (
                 <button
                   onClick={(e) => {
@@ -407,7 +393,6 @@ const FakturPajakTableServerSide = ({
     [
       fakturPajaks,
       onView,
-      onEdit,
       onDelete,
       deleteLoading,
       activeTab,

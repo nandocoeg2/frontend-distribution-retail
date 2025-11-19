@@ -66,10 +66,8 @@ const FakturPajakPage = () => {
   } = useFakturPajakPage();
 
   const [activeTab, setActiveTab] = useState('all');
-  const [selectedFakturPajak, setSelectedFakturPajak] = useState(null);
   const [selectedFakturPajakForDetail, setSelectedFakturPajakForDetail] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -84,22 +82,11 @@ const FakturPajakPage = () => {
   }, [deleteFakturPajakConfirmation, queryClient]);
 
   const openCreateModal = () => {
-    setSelectedFakturPajak(null);
     setIsCreateModalOpen(true);
   };
 
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
-  };
-
-  const openEditModal = (fakturPajak) => {
-    setSelectedFakturPajak(fakturPajak);
-    setIsEditModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedFakturPajak(null);
   };
 
   const openExportModal = () => {
@@ -143,18 +130,18 @@ const FakturPajakPage = () => {
     }
   };
 
-  const handleUpdateSubmit = async (payload) => {
-    if (!selectedFakturPajak?.id) {
-      return;
+  const handleDetailUpdate = useCallback(async () => {
+    // Invalidate queries and refresh detail
+    await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
+    if (selectedFakturPajakForDetail?.id) {
+      try {
+        const refreshedDetail = await fetchFakturPajakById(selectedFakturPajakForDetail.id);
+        setSelectedFakturPajakForDetail(refreshedDetail);
+      } catch (error) {
+        console.warn('Failed to refresh faktur pajak detail:', error);
+      }
     }
-    const result = await updateFakturPajak(selectedFakturPajak.id, payload);
-    if (result) {
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
-      setIsEditModalOpen(false);
-      setSelectedFakturPajak(null);
-    }
-  };
+  }, [queryClient, selectedFakturPajakForDetail, fetchFakturPajakById]);
 
   const handleDelete = (fakturPajak) => {
     if (!fakturPajak?.id) {
@@ -206,7 +193,6 @@ const FakturPajakPage = () => {
 
           <FakturPajakTableServerSide
             onView={handleViewDetail}
-            onEdit={openEditModal}
             onDelete={handleDelete}
             deleteLoading={deleteFakturPajakConfirmation.loading}
             initialPage={1}
@@ -222,14 +208,6 @@ const FakturPajakPage = () => {
         onClose={closeCreateModal}
         onSubmit={handleCreateSubmit}
         isEdit={false}
-      />
-
-      <FakturPajakModal
-        isOpen={isEditModalOpen}
-        onClose={closeEditModal}
-        onSubmit={handleUpdateSubmit}
-        initialValues={selectedFakturPajak}
-        isEdit
       />
 
       <FakturPajakExportModal
@@ -255,6 +233,8 @@ const FakturPajakPage = () => {
           fakturPajak={selectedFakturPajakForDetail}
           onClose={handleCloseDetail}
           loading={detailLoading}
+          updateFakturPajak={updateFakturPajak}
+          onUpdate={handleDetailUpdate}
         />
       )}
     </div>
