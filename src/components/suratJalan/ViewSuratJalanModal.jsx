@@ -21,6 +21,8 @@ import { getPackingBoxes, getTotals } from '../../utils/suratJalanHelpers';
 
 const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportPaketLoading, setExportPaketLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     invoiceInfo: false,
@@ -63,6 +65,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
         return;
       }
 
+      setExportLoading(true);
       toastService.info('Generating surat jalan...');
 
       // Call backend API to get HTML
@@ -87,6 +90,50 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
     } catch (error) {
       console.error('Error exporting surat jalan:', error);
       toastService.error(error.message || 'Gagal mengekspor surat jalan');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleExportPaket = async () => {
+    try {
+      const packingBoxes = getPackingBoxes(suratJalan);
+
+      if (!suratJalan || packingBoxes.length === 0) {
+        toastService.error('Tidak ada packing boxes untuk dicetak. Pastikan purchase order memiliki packing data.');
+        return;
+      }
+
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      setExportPaketLoading(true);
+      toastService.info('Generating paket dokumen (Invoice Pengiriman + Surat Jalan + Purchase Order)...');
+
+      const html = await suratJalanService.exportSuratJalanPaket(suratJalan.id, companyData.id);
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Dokumen paket berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+      }
+    } catch (error) {
+      console.error('Error exporting surat jalan paket:', error);
+      toastService.error(error.message || 'Gagal mengekspor surat jalan paket');
+    } finally {
+      setExportPaketLoading(false);
     }
   };
 
@@ -202,22 +249,41 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
             <button
               type='button'
               onClick={handleExportPDF}
-              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700'
+              disabled={exportLoading}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              <svg
-                className='w-5 h-5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                />
-              </svg>
+              {exportLoading ? (
+                <span className='inline-block w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent'></span>
+              ) : (
+                <svg
+                  className='w-5 h-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                  />
+                </svg>
+              )}
               <span>Print Surat Jalan</span>
+            </button>
+
+            <button
+              type='button'
+              onClick={handleExportPaket}
+              disabled={exportPaketLoading}
+              className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              {exportPaketLoading ? (
+                <span className='inline-block w-4 h-4 border-2 border-white rounded-full animate-spin border-t-transparent'></span>
+              ) : (
+                <DocumentTextIcon className='w-5 h-5' />
+              )}
+              <span>Print Paket</span>
             </button>
             <button
               onClick={onClose}
