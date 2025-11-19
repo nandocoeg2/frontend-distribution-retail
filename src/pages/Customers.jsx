@@ -93,7 +93,10 @@ const Customers = () => {
           <CustomerDetailCardEditable
             customer={selectedCustomerForDetail}
             onClose={handleCloseDetail}
-            onUpdate={() => fetchCustomers(pagination.currentPage, pagination.itemsPerPage)}
+            onUpdate={() => {
+              fetchCustomers(pagination.currentPage, pagination.itemsPerPage);
+              handleViewDetail(selectedCustomerForDetail);
+            }}
           />
         </div>
       )}
