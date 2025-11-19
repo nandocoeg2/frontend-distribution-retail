@@ -32,21 +32,17 @@ const Autocomplete = ({
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (!value) {
+    if (!value || value === '') {
+      setInputValue('');
       return;
     }
 
-    const selectedOption = options.find(option => option[valueKey] === value);
+    const selectedOption = options.find(option => String(option[valueKey]) === String(value));
+    
     if (selectedOption) {
-      setInputValue(selectedOption[displayKey]);
+      setInputValue(selectedOption[displayKey] || '');
     }
   }, [value, options, displayKey, valueKey]);
-
-  useEffect(() => {
-    if (!value) {
-      setInputValue('');
-    }
-  }, [value]);
 
   useEffect(() => {
     setFilteredOptions(options);
@@ -106,9 +102,19 @@ const Autocomplete = ({
   };
 
   const handleOptionClick = (option) => {
-    setInputValue(option[displayKey]);
+    const selectedValue = option[valueKey];
+    setInputValue(option[displayKey] || '');
     setShowOptions(false);
-    onChange({ target: { name: name || wrapperRef.current.querySelector('input').name, value: option[valueKey] } });
+    
+    // Call onChange with the selected value
+    if (onChange) {
+      onChange({ 
+        target: { 
+          name: name || (wrapperRef.current?.querySelector('input')?.name) || '', 
+          value: selectedValue 
+        } 
+      });
+    }
   };
 
   const handleFocus = () => {
@@ -139,13 +145,13 @@ const Autocomplete = ({
       )}
       <input
         type="text"
-        value={inputValue}
+        value={inputValue || ''}
         onChange={handleInputChange}
         onFocus={handleFocus}
         placeholder={placeholder}
         required={required && !value}
         disabled={disabled}
-        name={name || label.toLowerCase().replace(/\s+/g, '_')} // Use provided name or generate one
+        name={name || label?.toLowerCase().replace(/\s+/g, '_') || 'autocomplete'} // Use provided name or generate one
         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${inputClassName}`}
       />
       {showOptions && (

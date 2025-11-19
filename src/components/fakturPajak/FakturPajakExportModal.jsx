@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '@/components/common/Autocomplete';
-import useCompanyAutocomplete from '@/hooks/useCompanyAutocomplete';
 import useCustomersPage from '@/hooks/useCustomersPage';
+import useGroupCustomersPage from '@/hooks/useGroupCustomersPage';
 import fakturPajakService from '@/services/fakturPajakService';
 import toastService from '@/services/toastService';
+import authService from '@/services/authService';
 
 const EXPORT_INITIAL_VALUES = {
-  format: 'json',
-  companyId: '',
   customerId: '',
+  groupCustomerId: '',
   statusId: '',
   tanggal_start: '',
   tanggal_end: '',
@@ -79,17 +79,6 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const {
-    options: companyOptions,
-    loading: companyLoading,
-    searchCompanies: searchCompanyOptions,
-    fetchOptions: fetchCompanyOptions,
-  } = useCompanyAutocomplete({
-    selectedValue: formValues.companyId,
-    initialFetch: false,
-    pageSize: 20,
-  });
-
-  const {
     customers: customerOptions = [],
     searchCustomers,
     fetchCustomers,
@@ -97,8 +86,20 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
     searchLoading: customersSearching,
   } = useCustomersPage();
 
+  const {
+    groupCustomers: groupCustomerOptions = [],
+    handleSearchChange: searchGroupCustomers,
+    fetchEntities: fetchGroupCustomers,
+    loading: groupCustomersLoading,
+    searchLoading: groupCustomersSearching,
+  } = useGroupCustomersPage();
+
   const customerAutocompleteLoading = Boolean(
     customersLoading || customersSearching
+  );
+
+  const groupCustomerAutocompleteLoading = Boolean(
+    groupCustomersLoading || groupCustomersSearching
   );
 
   useEffect(() => {
@@ -109,14 +110,14 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
     setFormValues(EXPORT_INITIAL_VALUES);
     setErrorMessage('');
 
-    fetchCompanyOptions('').catch((err) => {
-      console.error('Failed to preload companies:', err);
-    });
-
     fetchCustomers(1, 20).catch((err) => {
       console.error('Failed to preload customers:', err);
     });
-  }, [fetchCompanyOptions, fetchCustomers, isOpen]);
+
+    fetchGroupCustomers(1, 20).catch((err) => {
+      console.error('Failed to preload group customers:', err);
+    });
+  }, [fetchCustomers, fetchGroupCustomers, isOpen]);
 
   const handleClose = useCallback((force = false) => {
     if (submitting && !force) {
@@ -156,13 +157,20 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
   }, [formValues.tanggal_end, formValues.tanggal_start]);
 
   const buildParams = useCallback(() => {
+    // Always use XML format for e-Faktur DJP
     const params = {
-      format: formValues.format || 'json',
+      format: 'xml',
     };
 
+    // Get companyId from logged-in user
+    const companyData = authService.getCompanyData();
+    if (companyData?.id) {
+      params.companyId = companyData.id;
+    }
+
     const fields = [
-      'companyId',
       'customerId',
+      'groupCustomerId',
       'statusId',
       'tanggal_start',
       'tanggal_end',
@@ -265,7 +273,7 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
               Export e-Faktur DJP
             </h2>
             <p className='text-sm text-gray-500'>
-              Tentukan parameter export sebelum mengunduh berkas JSON atau XML.
+              Tentukan parameter export sebelum mengunduh berkas XML.
             </p>
           </div>
           <button
@@ -289,61 +297,11 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Format File
-                </label>
-                <select
-                  value={formValues.format}
-                  onChange={handleFieldChange('format')}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                >
-                  <option value='json'>JSON</option>
-                  <option value='xml'>XML</option>
-                </select>
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Status Faktur Pajak (Opsional)
-                </label>
-                <input
-                  type='text'
-                  value={formValues.statusId}
-                  onChange={handleFieldChange('statusId')}
-                  placeholder='Masukkan ID status terkait'
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                />
-                <p className='mt-1 text-xs text-gray-500'>
-                  Biarkan kosong untuk semua status.
-                </p>
-              </div>
-            </div>
-
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Perusahaan
-                </label>
-                <Autocomplete
-                  options={companyOptions}
-                  value={formValues.companyId}
-                  onChange={handleFieldChange('companyId')}
-                  placeholder='Cari atau pilih perusahaan'
-                  displayKey='label'
-                  valueKey='id'
-                  name='companyId'
-                  loading={companyLoading}
-                  onSearch={searchCompanyOptions}
-                  showId
-                />
-              </div>
-
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Customer
+                  Customer (Opsional)
                 </label>
                 <Autocomplete
                   options={Array.isArray(customerOptions) ? customerOptions : []}
-                  value={formValues.customerId}
+                  value={formValues.customerId || ''}
                   onChange={handleFieldChange('customerId')}
                   placeholder='Cari nama atau ID customer'
                   displayKey='namaCustomer'
@@ -356,6 +314,42 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
                     })
                   }
                   showId
+                />
+              </div>
+
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Group Customer (Opsional)
+                </label>
+                <Autocomplete
+                  options={Array.isArray(groupCustomerOptions) ? groupCustomerOptions : []}
+                  value={formValues.groupCustomerId || ''}
+                  onChange={handleFieldChange('groupCustomerId')}
+                  placeholder='Cari nama group customer'
+                  displayKey='nama_group'
+                  valueKey='id'
+                  name='groupCustomerId'
+                  loading={groupCustomerAutocompleteLoading}
+                  onSearch={(query) => {
+                    const event = { target: { value: query } };
+                    searchGroupCustomers(event);
+                  }}
+                  showId
+                />
+              </div>
+            </div>
+
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>
+                  Status Faktur Pajak (Opsional)
+                </label>
+                <input
+                  type='text'
+                  value={formValues.statusId}
+                  onChange={handleFieldChange('statusId')}
+                  placeholder='Masukkan ID status'
+                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
                 />
               </div>
             </div>
