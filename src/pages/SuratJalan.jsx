@@ -6,8 +6,8 @@ import {
   ConfirmationDialog as BaseConfirmationDialog,
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
-import AddSuratJalanModal from '../components/suratJalan/AddSuratJalanModal';
+
+
 import SuratJalanDetailCard from '../components/suratJalan/SuratJalanDetailCard';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
@@ -37,7 +37,7 @@ const SuratJalan = () => {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
+
   const [selectedSuratJalanForDetail, setSelectedSuratJalanForDetail] = useState(null);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,6 +58,8 @@ const SuratJalan = () => {
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
 
+
+
   const handleTabChange = useCallback(
     (tabId) => {
       setActiveTab(tabId);
@@ -65,14 +67,6 @@ const SuratJalan = () => {
     },
     []
   );
-
-  const openAddModal = () => setShowAddModal(true);
-  const closeAddModal = () => setShowAddModal(false);
-
-  // Edit logic moved to SuratJalanDetailCard
-  const handleEditClick = async (suratJalanItem) => {
-    handleViewDetail(suratJalanItem);
-  };
 
   const handleViewDetail = async (suratJalanItem) => {
     if (!suratJalanItem?.id) {
@@ -255,12 +249,7 @@ const SuratJalan = () => {
 
 
 
-  const handleSuratJalanAdded = useCallback(() => {
-    setSelectedSuratJalan([]);
-    closeAddModal();
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
-  }, [queryClient]);
+
 
   const handleSuratJalanUpdated = useCallback(() => {
     // Refresh data after update from Detail Card
@@ -291,14 +280,7 @@ const SuratJalan = () => {
                 Kelola dan pantau surat jalan pengiriman pelanggan.
               </p>
             </div>
-            {/* Uncomment jika perlu tombol tambah */}
-            {/* <button
-              onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700'
-            >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Surat Jalan
-            </button> */}
+
           </div>
 
           <div className='mb-4 overflow-x-auto'>
@@ -318,7 +300,6 @@ const SuratJalan = () => {
           </div>
 
           <SuratJalanTableServerSide
-            onEdit={handleEditClick}
             onDelete={handleDelete}
             deleteLoading={deleteLoading}
             selectedSuratJalan={selectedSuratJalan}
@@ -334,12 +315,7 @@ const SuratJalan = () => {
         </div>
       </div>
 
-      <AddSuratJalanModal
-        show={showAddModal}
-        onClose={closeAddModal}
-        onSuratJalanAdded={handleSuratJalanAdded}
-        handleAuthError={handleAuthError}
-      />
+
 
       <DeleteConfirmationDialog />
 

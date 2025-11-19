@@ -47,7 +47,7 @@ const resolveStatusVariant = (status) => {
 
 const SuratJalanTableServerSide = ({
   onView,
-  onEdit,
+
   onDelete,
   deleteLoading = false,
   selectedSuratJalan = [],
@@ -101,7 +101,7 @@ const SuratJalanTableServerSide = ({
           if (printWindow) {
             printWindow.document.write(html);
             printWindow.document.close();
-            
+
             // Wait for content to load, then trigger print dialog
             printWindow.onload = () => {
               printWindow.focus();
@@ -371,17 +371,7 @@ const SuratJalanTableServerSide = ({
 
           return (
             <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(suratJalanItem);
-                }}
-                className="text-green-600 hover:text-green-900"
-                title="Edit"
-              >
-                <PencilIcon className="h-5 w-5" />
-              </button>
+
               <button
                 type="button"
                 onClick={(e) => {
@@ -405,7 +395,7 @@ const SuratJalanTableServerSide = ({
       selectedSuratJalan,
       onSelectSuratJalan,
       onSelectAllSuratJalan,
-      onEdit,
+
       onDelete,
       deleteLoading,
       activeTab,
