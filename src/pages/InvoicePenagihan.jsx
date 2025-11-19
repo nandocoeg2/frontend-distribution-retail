@@ -4,7 +4,6 @@ import useInvoicePenagihan from '@/hooks/useInvoicePenagihanPage';
 import InvoicePenagihanTableServerSide from '@/components/invoicePenagihan/InvoicePenagihanTableServerSide';
 import InvoicePenagihanSearch from '@/components/invoicePenagihan/InvoicePenagihanSearch';
 import AddInvoicePenagihanModal from '@/components/invoicePenagihan/AddInvoicePenagihanModal';
-import EditInvoicePenagihanModal from '@/components/invoicePenagihan/EditInvoicePenagihanModal';
 import InvoicePenagihanDetailCard from '@/components/invoicePenagihan/InvoicePenagihanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TabContainer, Tab } from '@/components/ui/Tabs';
@@ -189,9 +188,6 @@ const InvoicePenagihanPage = () => {
   const viewDetailRequestRef = useRef(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingInvoice, setEditingInvoice] = useState(null);
-  const [editDetailLoading, setEditDetailLoading] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [viewDetailLoading, setViewDetailLoading] = useState(false);
   const [generateTtfConfirmation, setGenerateTtfConfirmation] = useState({
@@ -367,52 +363,6 @@ const InvoicePenagihanPage = () => {
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const openEditModal = useCallback(async (invoice) => {
-    if (!invoice?.id) {
-      toastService.error('Invoice ID tidak valid.');
-      return;
-    }
-
-    setShowEditModal(true);
-    setEditDetailLoading(true);
-    setEditingInvoice(invoice); // Set basic data first
-
-    try {
-      // Fetch complete invoice data with all relations
-      const response = await invoicePenagihanService.getInvoicePenagihanById(invoice.id);
-      const detailPayload = response?.data ?? response;
-      const detailedInvoice =
-        detailPayload?.data && !Array.isArray(detailPayload.data)
-          ? detailPayload.data
-          : detailPayload;
-
-      if (detailedInvoice) {
-        setEditingInvoice(detailedInvoice);
-      }
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        handleAuthError();
-      } else {
-        const message =
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Gagal memuat detail invoice penagihan untuk edit.';
-        toastService.error(message);
-      }
-      console.error('Failed to fetch invoice penagihan detail for edit:', err);
-      // Close modal if fetch fails
-      setShowEditModal(false);
-      setEditingInvoice(null);
-    } finally {
-      setEditDetailLoading(false);
-    }
-  }, [handleAuthError]);
-
-  const closeEditModal = () => {
-    setEditingInvoice(null);
-    setShowEditModal(false);
-    setEditDetailLoading(false);
-  };
 
 
   const openGenerateTtfDialog = useCallback((invoice) => {
@@ -734,7 +684,6 @@ const InvoicePenagihanPage = () => {
           </div>
 
           <InvoicePenagihanTableServerSide
-            onEdit={openEditModal}
             onDelete={showDeleteConfirmation}
             onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
             generatingTandaTerimaInvoiceId={generatingTtfInvoiceId}
@@ -754,18 +703,12 @@ const InvoicePenagihanPage = () => {
         onCreate={handleInvoiceCreated}
       />
 
-      <EditInvoicePenagihanModal
-        show={showEditModal}
-        onClose={closeEditModal}
-        invoice={editingInvoice}
-        onUpdate={handleInvoiceUpdated}
-        isLoadingDetail={editDetailLoading}
-      />
 
       {viewingInvoice && (
         <InvoicePenagihanDetailCard
           invoice={viewingInvoice}
           onClose={handleCloseDetail}
+          onUpdate={handleInvoiceUpdated}
           isLoading={viewDetailLoading}
         />
       )}

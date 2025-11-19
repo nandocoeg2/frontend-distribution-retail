@@ -4,17 +4,24 @@ import {
   DocumentTextIcon,
   CurrencyDollarIcon,
   ClockIcon,
-  FlagIcon
+  FlagIcon,
+  PencilIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
+import InvoicePenagihanForm from './InvoicePenagihanForm';
+import toastService from '../../services/toastService';
 
 const InvoicePenagihanDetailCard = ({
   invoice,
   onClose,
+  onUpdate,
   isLoading = false,
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     paymentInfo: true,
@@ -31,6 +38,38 @@ const InvoicePenagihanDetailCard = ({
     }));
   };
 
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  const handleSave = async (payload) => {
+    if (!onUpdate) {
+      toastService.error('Handler update invoice penagihan tidak tersedia.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const result = await onUpdate(invoice.id, payload);
+      if (result) {
+        setIsEditMode(false);
+        toastService.success('Invoice penagihan berhasil diperbarui.');
+      }
+    } catch (error) {
+      const message =
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        'Gagal memperbarui invoice penagihan.';
+      toastService.error(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className='bg-white shadow-md rounded-lg p-6 mt-6'>
       {/* Header */}
@@ -42,27 +81,72 @@ const InvoicePenagihanDetailCard = ({
           <div>
             <h2 className='text-xl font-bold text-gray-900'>
               Detail Invoice Penagihan
+              {isEditMode && <span className="ml-3 text-sm font-normal text-indigo-600">(Editing)</span>}
             </h2>
             <p className='text-sm text-gray-600'>
               {invoice.no_invoice_penagihan || '-'}
             </p>
           </div>
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
-            title='Tutup detail'
-          >
-            <XMarkIcon className='w-5 h-5 text-gray-500' />
-          </button>
-        )}
+        <div className="flex items-center space-x-2">
+          {!isEditMode ? (
+            <>
+              {onUpdate && (
+                <button
+                  onClick={handleEditClick}
+                  className="inline-flex items-center px-3 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  title="Edit"
+                >
+                  <PencilIcon className="w-4 h-4 mr-1" />
+                  Edit
+                </button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
+                  title='Tutup detail'
+                >
+                  <XMarkIcon className='w-5 h-5 text-gray-500' />
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                disabled={saving}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {/* Save button is handled by the form, but we can show a placeholder if needed, 
+                  however InvoicePenagihanForm usually has its own buttons. 
+                  Let's see InvoicePenagihanForm implementation. 
+                  It accepts onCancel and onSubmit. We don't need a save button here if the form has it. 
+                  But CompanyDetailCard had it in the header. 
+                  Let's stick to InvoicePenagihanForm's buttons for now, so we just hide the header buttons or show Cancel.
+              */}
+            </>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
         <div className='flex justify-center items-center py-12'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
           <span className='ml-3 text-sm text-gray-600'>Memuat detail invoice...</span>
+        </div>
+      ) : isEditMode ? (
+        <div className='bg-gray-50 rounded-lg p-6'>
+          <InvoicePenagihanForm
+            initialValues={invoice}
+            onSubmit={handleSave}
+            onCancel={handleCancelEdit}
+            submitLabel='Simpan Perubahan'
+            loading={saving}
+            isEditMode={true}
+          />
         </div>
       ) : (
         <div>
