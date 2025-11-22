@@ -66,14 +66,141 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Address
           </label>
-          <input
-            type='text'
+          <textarea
             name='address'
             value={formData.address}
             onChange={handleInputChange}
             placeholder='e.g., JAKARTA BARAT'
+            rows={2}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Description
+          </label>
+          <textarea
+            name='description'
+            value={formData.description || ''}
+            onChange={handleInputChange}
+            placeholder='e.g., Supplier terpercaya untuk produk berkualitas'
+            rows={3}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Email
+          </label>
+          <input
+            type='email'
+            name='email'
+            value={formData.email || ''}
+            onChange={handleInputChange}
+            placeholder='e.g., supplier@example.com'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            Fax
+          </label>
+          <input
+            type='tel'
+            name='fax'
+            value={formData.fax || ''}
+            onChange={handleInputChange}
+            placeholder='e.g., 021-1234567'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        {/* Company Information Section */}
+        <div className='border-t pt-4 mt-4'>
+          <h4 className='text-md font-medium text-gray-800 mb-3'>Company Information</h4>
+          
+          <div className='space-y-4'>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Direktur
+              </label>
+              <input
+                type='text'
+                name='direktur'
+                value={formData.direktur || ''}
+                onChange={handleInputChange}
+                placeholder='e.g., Budi Santoso'
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                NPWP
+              </label>
+              <input
+                type='text'
+                name='npwp'
+                value={formData.npwp || ''}
+                onChange={handleInputChange}
+                placeholder='e.g., 01.234.567.8-901.000'
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                ID TKU
+              </label>
+              <input
+                type='text'
+                name='id_tku'
+                value={formData.id_tku || ''}
+                onChange={handleInputChange}
+                placeholder='e.g., TKU001'
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+            </div>
+
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                Logo
+              </label>
+              <input
+                type='file'
+                accept='image/*'
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      handleInputChange({
+                        target: {
+                          name: 'logo',
+                          value: reader.result
+                        }
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+              />
+              {formData.logo && (
+                <div className='mt-2'>
+                  <img 
+                    src={formData.logo} 
+                    alt='Logo preview' 
+                    className='h-20 w-20 object-contain border border-gray-300 rounded'
+                  />
+                </div>
+              )}
+              <p className='mt-1 text-xs text-gray-500'>Upload logo supplier (format: PNG, JPG, atau SVG)</p>
+            </div>
+          </div>
         </div>
 
         {/* Bank Information Section */}

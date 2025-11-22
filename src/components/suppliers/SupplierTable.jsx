@@ -11,6 +11,9 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Logo
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Nama Supplier
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -21,6 +24,9 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Alamat
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Email
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Telepon
@@ -39,7 +45,7 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
         <tbody className='bg-white divide-y divide-gray-200'>
           {!suppliers || suppliers.length === 0 ? (
             <tr>
-              <td colSpan="8" className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan="10" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'Tidak ada supplier yang ditemukan sesuai pencarian.' : 'Belum ada supplier tersedia.'}
               </td>
             </tr>
@@ -54,6 +60,19 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
                     : 'hover:bg-gray-50'
                 }`}
               >
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  {supplier.logo ? (
+                    <img
+                      src={supplier.logo}
+                      alt='Logo'
+                      className='h-8 w-8 object-contain rounded border border-gray-200'
+                    />
+                  ) : (
+                    <div className='h-8 w-8 bg-gray-100 rounded border border-gray-200 flex items-center justify-center'>
+                      <span className='text-xs text-gray-400'>-</span>
+                    </div>
+                  )}
+                </td>
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm font-medium text-gray-900'>
                     {supplier.name || '-'}
@@ -72,6 +91,11 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
                 <td className='px-6 py-4'>
                   <div className='text-sm text-gray-900 max-w-xs truncate' title={supplier.address}>
                     {supplier.address || '-'}
+                  </div>
+                </td>
+                <td className='px-6 py-4 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900 max-w-xs truncate' title={supplier.email}>
+                    {supplier.email || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

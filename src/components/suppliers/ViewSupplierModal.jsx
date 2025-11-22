@@ -6,6 +6,7 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     contactInfo: false,
+    companyInfo: false,
     bankInfo: false,
     metaInfo: false,
   });
@@ -75,9 +76,20 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
                   { label: 'Kode Supplier', value: supplier.code },
                   { label: 'Kode Supplier Surat', value: supplier.supplier_code_letter || '-' },
                   { label: 'ID Supplier', value: supplier.id, copyable: true },
+                  { label: 'Deskripsi', value: supplier.description || '-' },
                   { label: 'Alamat', value: supplier.address },
                 ]}
               />
+              {supplier.logo && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Logo:</p>
+                  <img
+                    src={supplier.logo}
+                    alt="Supplier Logo"
+                    className="h-24 w-24 object-contain border border-gray-300 rounded"
+                  />
+                </div>
+              )}
             </AccordionItem>
 
             {/* Contact Information */}
@@ -88,9 +100,31 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               bgColor='bg-gradient-to-r from-blue-50 to-blue-100'
             >
               <InfoTable
-                data={[{ label: 'Nomor Telepon', value: supplier.phoneNumber }]}
+                data={[
+                  { label: 'Nomor Telepon', value: supplier.phoneNumber },
+                  { label: 'Email', value: supplier.email || '-', copyable: !!supplier.email },
+                  { label: 'Fax', value: supplier.fax || '-' }
+                ]}
               />
             </AccordionItem>
+
+            {/* Company Information */}
+            {(supplier.direktur || supplier.npwp || supplier.id_tku) && (
+              <AccordionItem
+                title='Informasi Perusahaan'
+                isExpanded={expandedSections.companyInfo}
+                onToggle={() => toggleSection('companyInfo')}
+                bgColor='bg-gradient-to-r from-yellow-50 to-yellow-100'
+              >
+                <InfoTable
+                  data={[
+                    { label: 'Direktur', value: supplier.direktur || '-' },
+                    { label: 'NPWP', value: supplier.npwp || '-', copyable: !!supplier.npwp },
+                    { label: 'ID TKU', value: supplier.id_tku || '-', copyable: !!supplier.id_tku }
+                  ]}
+                />
+              </AccordionItem>
+            )}
 
             {/* Bank Information */}
             {supplier.bank && (

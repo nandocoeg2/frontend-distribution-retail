@@ -13,6 +13,13 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
     supplier_code_letter: '',
     address: '',
     phoneNumber: '',
+    description: '',
+    email: '',
+    fax: '',
+    direktur: '',
+    npwp: '',
+    id_tku: '',
+    logo: '',
     bank: {
       name: '',
       account: '',

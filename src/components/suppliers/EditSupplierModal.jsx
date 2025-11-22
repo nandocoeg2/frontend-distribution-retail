@@ -11,6 +11,13 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
     supplier_code_letter: '',
     address: '',
     phoneNumber: '',
+    description: '',
+    email: '',
+    fax: '',
+    direktur: '',
+    npwp: '',
+    id_tku: '',
+    logo: '',
     bank: {
       name: '',
       account: '',
@@ -26,6 +33,13 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
         supplier_code_letter: supplier.supplier_code_letter || '',
         address: supplier.address || '',
         phoneNumber: supplier.phoneNumber || '',
+        description: supplier.description || '',
+        email: supplier.email || '',
+        fax: supplier.fax || '',
+        direktur: supplier.direktur || '',
+        npwp: supplier.npwp || '',
+        id_tku: supplier.id_tku || '',
+        logo: supplier.logo || '',
         bank: {
           name: supplier.bank?.name || '',
           account: supplier.bank?.account || '',
@@ -96,7 +110,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
 
   return (
     <div className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'>
-      <div className='bg-white rounded-lg p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto'>
+      <div className='bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto'>
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
           Edit Supplier
         </h3>
