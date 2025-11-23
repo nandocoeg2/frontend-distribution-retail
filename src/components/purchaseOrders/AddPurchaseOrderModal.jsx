@@ -38,6 +38,7 @@ const AddPurchaseOrderModal = ({
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeTab, setActiveTab] = useState('bulk');
   const [uploadMode, setUploadMode] = useState('files');
+  const [processingMethod, setProcessingMethod] = useState('ai');
 
   // Refs for file inputs
   const manualFileInputRef = useRef(null);
@@ -146,12 +147,20 @@ const AddPurchaseOrderModal = ({
     setLoading(true);
     setError(null);
     try {
-      const result = await fileService.uploadBulkPurchaseOrders(selectedFile);
+      // Use selected processing method
+      const result = processingMethod === 'ai' 
+        ? await fileService.uploadBulkPurchaseOrders(selectedFile)
+        : await fileService.uploadBulkPurchaseOrdersTextExtraction(selectedFile);
+      
       if (result.success) {
-        toast.success(result.data.message || 'File uploaded successfully!');
+        const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
+        toast.success(result.data.message || `File uploaded successfully using ${methodLabel}!`);
         setSelectedFile(null);
         if (bulkFileInputRef.current) {
           bulkFileInputRef.current.value = '';
+        }
+        if (folderInputRef.current) {
+          folderInputRef.current.value = '';
         }
         if (onFinished) onFinished();
       } else {
@@ -524,8 +533,43 @@ const AddPurchaseOrderModal = ({
                     Upload Bulk Purchase Orders (PDF / EDI)
                   </label>
                   
+                  {/* Processing Method Selection */}
+                  <div className='mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md'>
+                  <label className='block mb-2 text-sm font-medium text-gray-700'>
+                    Processing Method
+                  </label>
+                  <div className='flex items-start space-x-6'>
+                    <label className='flex items-start space-x-2 cursor-pointer'>
+                      <input
+                          type='radio'
+                          name='processingMethod'
+                          value='ai'
+                          checked={processingMethod === 'ai'}
+                          onChange={(e) => setProcessingMethod(e.target.value)}
+                          className='w-4 h-4 text-blue-600 mt-0.5'
+                        />
+                        <div>
+                          <span className='text-sm font-medium text-gray-700'>AI Method</span>
+                        </div>
+                      </label>
+                      <label className='flex items-start space-x-2 cursor-pointer'>
+                        <input
+                          type='radio'
+                          name='processingMethod'
+                          value='text-extraction'
+                          checked={processingMethod === 'text-extraction'}
+                          onChange={(e) => setProcessingMethod(e.target.value)}
+                          className='w-4 h-4 text-blue-600 mt-0.5'
+                        />
+                        <div>
+                          <span className='text-sm font-medium text-gray-700'>Normal Method</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Upload Mode Selection */}
-                  <div className='flex items-center space-x-6 mb-3'>
+                  <div className='flex items-center space-x-6 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-md'>
                     <label className='flex items-center space-x-2 cursor-pointer'>
                       <input
                         type='radio'
@@ -593,7 +637,7 @@ const AddPurchaseOrderModal = ({
                 <div className='p-3 border border-yellow-200 rounded-md bg-yellow-50'>
                   <div className='flex'>
                     <svg
-                      className='w-4 h-4 text-yellow-500 mt-0.5 mr-2'
+                      className='w-4 h-4 text-yellow-500 mt-0.5 mr-2 flex-shrink-0'
                       fill='none'
                       stroke='currentColor'
                       viewBox='0 0 24 24'
@@ -615,6 +659,13 @@ const AddPurchaseOrderModal = ({
                       <p className='mt-1 text-sm text-yellow-700'>
                         <strong>Upload Folder:</strong> Pilih folder yang berisi file PDF/EDI. Hanya file dengan ekstensi .pdf dan .edi yang akan diupload.
                       </p>
+                      <p className='mt-2 text-sm text-yellow-700'>
+                        <strong>Processing Method:</strong>
+                      </p>
+                      <ul className='mt-1 ml-4 text-sm text-yellow-700 list-disc'>
+                        <li><strong>AI:</strong> Lebih fleksibel, cocok untuk format bervariasi</li>
+                        <li><strong>Text Extraction:</strong> Lebih cepat, cocok untuk format standar</li>
+                      </ul>
                     </div>
                   </div>
                 </div>

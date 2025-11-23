@@ -5,6 +5,7 @@ const bulkPurchaseOrderService = {
   getStatus: (bulkId) => get('/bulk-purchase-order/bulk/status/' + bulkId),
   getFileById: (fileId) => get('/bulk-purchase-order/bulk/file/' + fileId),
   retryFile: (fileId, data) => post('/bulk-purchase-order/bulk/file/' + fileId + '/retry', data || {}),
+  retryFileTextExtraction: (fileId) => post('/bulk-purchase-order/bulk/file/' + fileId + '/retry-text-extraction', {}),
 };
 
 export default bulkPurchaseOrderService;
