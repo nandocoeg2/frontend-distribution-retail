@@ -146,7 +146,7 @@ const ItemTable = ({
                       {item.plu}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-600 font-mono bg-gray-100 rounded whitespace-nowrap'>
-                      {item.kode_barang || 'N/A'}
+                      {item.eanBarcode || item.item_code || 'N/A'}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
                       {berat}
