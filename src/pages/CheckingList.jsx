@@ -40,6 +40,7 @@ const CheckingList = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedChecklist, setSelectedChecklist] = useState(null);
+  const [selectedChecklists, setSelectedChecklists] = useState([]);
 
   const pageSubtitle = useMemo(
     () =>
@@ -132,6 +133,18 @@ const CheckingList = () => {
     handleRetryFetch();
   };
 
+  const handleSelectChecklist = useCallback((checklistId, isSelected) => {
+    setSelectedChecklists((prev) => {
+      if (isSelected) {
+        return prev.includes(checklistId) ? prev : [...prev, checklistId];
+      } else {
+        return prev.filter((id) => id !== checklistId);
+      }
+    });
+  }, []);
+
+  const hasSelectedChecklists = selectedChecklists.length > 0;
+
   return (
     <div className='p-6'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
@@ -174,6 +187,9 @@ const CheckingList = () => {
               selectedChecklistId={selectedChecklist?.id}
               initialPage={pagination?.currentPage || 1}
               initialLimit={pagination?.itemsPerPage || 10}
+              selectedChecklists={selectedChecklists}
+              onSelectChecklist={handleSelectChecklist}
+              hasSelectedChecklists={hasSelectedChecklists}
             />
           )}
         </div>

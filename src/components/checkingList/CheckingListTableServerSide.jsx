@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
 import { formatDateTime } from '../../utils/formatUtils';
+import checkingListService from '../../services/checkingListService';
+import toastService from '../../services/toastService';
+import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 
@@ -67,13 +70,17 @@ const resolveStatusText = (status) => {
 
 const CheckingListTableServerSide = ({
   onViewDetail,
-
   onDelete,
   deleteLoading = false,
   selectedChecklistId = null,
   initialPage = 1,
   initialLimit = 10,
+  selectedChecklists = [],
+  onSelectChecklist,
+  hasSelectedChecklists = false,
 }) => {
+  const [isExporting, setIsExporting] = useState(false);
+  const [isExportingGrouped, setIsExportingGrouped] = useState(false);
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -101,8 +108,201 @@ const CheckingListTableServerSide = ({
     globalFilter: globalFilterConfig,
   });
 
+  // Handler untuk select all toggle
+  const handleSelectAllInternalToggle = useCallback(() => {
+    const currentPageChecklistIds = checklists
+      .map((checklist) => resolveChecklistId(checklist))
+      .filter(Boolean);
+    
+    const allCurrentPageSelected = currentPageChecklistIds.every((id) =>
+      selectedChecklists.includes(id)
+    );
+
+    if (allCurrentPageSelected) {
+      currentPageChecklistIds.forEach((id) => {
+        if (selectedChecklists.includes(id)) {
+          onSelectChecklist(id, false);
+        }
+      });
+    } else {
+      currentPageChecklistIds.forEach((id) => {
+        if (!selectedChecklists.includes(id)) {
+          onSelectChecklist(id, true);
+        }
+      });
+    }
+  }, [checklists, selectedChecklists, onSelectChecklist]);
+
+  // Handler untuk Export PDF
+  const handleExportSelected = async () => {
+    if (!selectedChecklists || selectedChecklists.length === 0) {
+      toastService.error('Tidak ada checklist yang dipilih');
+      return;
+    }
+
+    const companyData = authService.getCompanyData();
+    if (!companyData || !companyData.id) {
+      toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      toastService.info(`Memproses ${selectedChecklists.length} checklist...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < selectedChecklists.length; i++) {
+        const checklistId = selectedChecklists[i];
+        
+        try {
+          const html = await checkingListService.exportCheckingList(checklistId, companyData.id);
+          
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+          }
+
+          successCount++;
+
+          if (i < selectedChecklists.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error exporting checklist ${checklistId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil memproses ${successCount} checklist${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
+        );
+      } else {
+        toastService.error('Gagal memproses checklist');
+      }
+    } catch (error) {
+      console.error('Error in bulk export checklist:', error);
+      toastService.error(error.message || 'Gagal memproses checklist');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Handler untuk Export PDF Grouped
+  const handleExportGroupedSelected = async () => {
+    if (!selectedChecklists || selectedChecklists.length === 0) {
+      toastService.error('Tidak ada checklist yang dipilih');
+      return;
+    }
+
+    const companyData = authService.getCompanyData();
+    if (!companyData || !companyData.id) {
+      toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+      return;
+    }
+
+    setIsExportingGrouped(true);
+    try {
+      toastService.info(`Memproses ${selectedChecklists.length} checklist grouped...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < selectedChecklists.length; i++) {
+        const checklistId = selectedChecklists[i];
+        
+        try {
+          const html = await checkingListService.exportCheckingListGrouped(checklistId, companyData.id);
+          
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+          }
+
+          successCount++;
+
+          if (i < selectedChecklists.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error exporting checklist grouped ${checklistId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil memproses ${successCount} checklist grouped${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
+        );
+      } else {
+        toastService.error('Gagal memproses checklist grouped');
+      }
+    } catch (error) {
+      console.error('Error in bulk export checklist grouped:', error);
+      toastService.error(error.message || 'Gagal memproses checklist grouped');
+    } finally {
+      setIsExportingGrouped(false);
+    }
+  };
+
   const columns = useMemo(
     () => [
+      columnHelper.display({
+        id: 'select',
+        header: () => {
+          const currentPageChecklistIds = checklists
+            .map((checklist) => resolveChecklistId(checklist))
+            .filter(Boolean);
+          
+          const isAllSelected =
+            checklists.length > 0 &&
+            currentPageChecklistIds.length > 0 &&
+            currentPageChecklistIds.every((id) => selectedChecklists.includes(id));
+          
+          const isIndeterminate =
+            currentPageChecklistIds.some((id) => selectedChecklists.includes(id)) &&
+            !isAllSelected;
+
+          return (
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = isIndeterminate;
+              }}
+              onChange={handleSelectAllInternalToggle}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          );
+        },
+        cell: ({ row }) => {
+          const checklistId = resolveChecklistId(row.original);
+          return (
+            <input
+              type="checkbox"
+              checked={selectedChecklists.includes(checklistId)}
+              onChange={() =>
+                onSelectChecklist(checklistId, !selectedChecklists.includes(checklistId))
+              }
+              onClick={(e) => e.stopPropagation()}
+              disabled={!checklistId}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+      }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
           <div className="space-y-2">
@@ -308,7 +508,15 @@ const CheckingListTableServerSide = ({
         enableSorting: false,
       }),
     ],
-    [onDelete, deleteLoading]
+    [
+      checklists,
+      selectedChecklists,
+      onSelectChecklist,
+      handleSelectAllInternalToggle,
+      onDelete,
+      deleteLoading,
+      setPage,
+    ]
   );
 
   const table = useReactTable({
@@ -327,6 +535,35 @@ const CheckingListTableServerSide = ({
           >
             Reset Semua Filter
           </button>
+        </div>
+      )}
+
+      {/* Bulk Action Bar */}
+      {hasSelectedChecklists && (
+        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedChecklists.length} checklist dipilih
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleExportSelected}
+              disabled={isExporting || isExportingGrouped}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4" />
+              <span>{isExporting ? 'Memproses...' : 'Export PDF'}</span>
+            </button>
+            <button
+              onClick={handleExportGroupedSelected}
+              disabled={isExporting || isExportingGrouped}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <DocumentArrowDownIcon className="h-4 w-4" />
+              <span>{isExportingGrouped ? 'Memproses...' : 'Export PDF Grouped'}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -363,12 +600,19 @@ const CheckingListTableServerSide = ({
             headerRowClassName="bg-gray-50"
             headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
             bodyClassName="divide-y divide-gray-200 bg-white"
-            rowClassName={({ row }) => {
+            rowClassName="hover:bg-gray-50 cursor-pointer"
+            getRowClassName={({ row }) => {
               const checklistId = resolveChecklistId(row.original);
-              return `transition-colors ${selectedChecklistId === checklistId
-                ? 'bg-blue-50 hover:bg-blue-100'
-                : 'hover:bg-gray-50'
-                }`;
+              
+              if (checklistId === selectedChecklistId) {
+                return 'bg-indigo-100 hover:bg-indigo-150 border-l-4 border-indigo-500';
+              }
+              
+              if (checklistId && selectedChecklists.includes(checklistId)) {
+                return 'bg-blue-50 hover:bg-blue-100';
+              }
+              
+              return undefined;
             }}
             cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
             onRowClick={(checklist) => {
