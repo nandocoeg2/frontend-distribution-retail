@@ -4,7 +4,6 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  PlayIcon,
   CheckIcon,
   LinkIcon,
   LinkSlashIcon,
@@ -30,9 +29,9 @@ const TAB_STATUS_CONFIG = {
     label: 'Pending',
     statusCode: 'PENDING LAPORAN PENERIMAAN BARANG',
   },
-  processing: {
-    label: 'Processing',
-    statusCode: 'PROCESSING LAPORAN PENERIMAAN BARANG',
+  indikasi_pengganti: {
+    label: 'Indikasi Pengganti',
+    statusCode: 'INDIKASI PENGGANTI',
   },
   completed: {
     label: 'Completed',
@@ -41,10 +40,6 @@ const TAB_STATUS_CONFIG = {
   failed: {
     label: 'Failed',
     statusCode: 'FAILED LAPORAN PENERIMAAN BARANG',
-  },
-  failed: {
-    label: 'Indikasi Pengganti',
-    statusCode: 'INDIKASI PENGGANTI',
   },
 };
 
@@ -90,9 +85,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   selectedReports = [],
   onSelectReport,
   onSelectAllReports,
-  onProcessSelected,
   onCompleteSelected,
-  isProcessing = false,
   isCompleting = false,
   hasSelectedReports = false,
   initialPage = 1,
@@ -608,7 +601,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     columns,
   });
 
-  const actionDisabled = isProcessing || isCompleting;
+  const actionDisabled = isCompleting;
 
   return (
     <div className="space-y-4">
@@ -638,14 +631,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
             >
               <PrinterIcon className="h-4 w-4" />
               <span>{isPrinting ? 'Mendownload...' : 'Print LPB'}</span>
-            </button>
-            <button
-              onClick={onProcessSelected}
-              disabled={actionDisabled}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <PlayIcon className="h-4 w-4" />
-              <span>{isProcessing ? 'Memproses...' : 'Proses'}</span>
             </button>
             <button
               onClick={onCompleteSelected}

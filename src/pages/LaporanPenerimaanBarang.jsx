@@ -20,9 +20,9 @@ const TAB_STATUS_CONFIG = {
     label: 'Pending',
     statusCode: 'PENDING LAPORAN PENERIMAAN BARANG',
   },
-  processing: {
-    label: 'Processing',
-    statusCode: 'PROCESSING LAPORAN PENERIMAAN BARANG',
+  indikasi_pengganti: {
+    label: 'Indikasi Pengganti',
+    statusCode: 'INDIKASI PENGGANTI',
   },
   completed: {
     label: 'Completed',
@@ -34,7 +34,7 @@ const TAB_STATUS_CONFIG = {
   },
 };
 
-const TAB_ORDER = ['all', 'pending', 'processing', 'completed', 'failed'];
+const TAB_ORDER = ['all', 'pending', 'indikasi_pengganti', 'completed', 'failed'];
 
 const INITIAL_PAGINATION = {
   currentPage: 1,
@@ -59,7 +59,6 @@ const LaporanPenerimaanBarang = () => {
     deleteReport,
     deleteReportConfirmation,
     fetchReportById,
-    processReports,
     completeReports,
   } = useLaporanPenerimaanBarangPage();
 
@@ -70,16 +69,8 @@ const LaporanPenerimaanBarang = () => {
   const [selectedReportForDetail, setSelectedReportForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReportIds, setSelectedReportIds] = useState([]);
-  const [isProcessingReports, setIsProcessingReports] = useState(false);
   const [isCompletingReports, setIsCompletingReports] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-
-  const {
-    showDialog: showProcessDialog,
-    hideDialog: hideProcessDialog,
-    setLoading: setProcessDialogLoading,
-    ConfirmationDialog: ProcessConfirmationDialog,
-  } = useConfirmationDialog();
 
   const {
     showDialog: showCompleteDialog,
@@ -129,47 +120,6 @@ const LaporanPenerimaanBarang = () => {
   }, [queryClient]);
 
   const hasSelectedReports = selectedReportIds.length > 0;
-
-  const handleProcessSelected = useCallback(() => {
-    if (!hasSelectedReports) {
-      return;
-    }
-
-    showProcessDialog({
-      title: 'Proses Laporan Penerimaan Barang',
-      message: `Apakah Anda yakin ingin memproses ${selectedReportIds.length} laporan penerimaan barang yang dipilih?`,
-      confirmText: 'Proses',
-      cancelText: 'Batal',
-      type: 'warning',
-    });
-  }, [hasSelectedReports, selectedReportIds.length, showProcessDialog]);
-
-  const handleConfirmProcess = useCallback(async () => {
-    setProcessDialogLoading(true);
-    setIsProcessingReports(true);
-
-    try {
-      const result = await processReports(selectedReportIds);
-
-      if (result && Array.isArray(result.failed)) {
-        const failedIds = result.failed
-          .map((item) => resolveReportId(item))
-          .filter(Boolean);
-
-        setSelectedReportIds(Array.from(new Set(failedIds)));
-      } else if (result) {
-        setSelectedReportIds([]);
-      }
-
-      await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
-      hideProcessDialog();
-    } catch (error) {
-      console.error('Failed to process laporan penerimaan barang:', error);
-    } finally {
-      setProcessDialogLoading(false);
-      setIsProcessingReports(false);
-    }
-  }, [processReports, selectedReportIds, resolveReportId, hideProcessDialog, setProcessDialogLoading, queryClient]);
 
   const handleCompleteSelected = useCallback(() => {
     if (!hasSelectedReports) {
@@ -349,9 +299,7 @@ const LaporanPenerimaanBarang = () => {
               selectedReports={selectedReportIds}
               onSelectReport={handleSelectReport}
               onSelectAllReports={handleSelectAllReports}
-              onProcessSelected={handleProcessSelected}
               onCompleteSelected={handleCompleteSelected}
-              isProcessing={isProcessingReports}
               isCompleting={isCompletingReports}
               hasSelectedReports={hasSelectedReports}
               initialPage={1}
@@ -387,7 +335,6 @@ const LaporanPenerimaanBarang = () => {
         onFetchBulkFiles={fetchBulkFiles}
       />
 
-      <ProcessConfirmationDialog onConfirm={handleConfirmProcess} />
       <CompleteConfirmationDialog onConfirm={handleConfirmComplete} />
 
       <ConfirmationDialog
