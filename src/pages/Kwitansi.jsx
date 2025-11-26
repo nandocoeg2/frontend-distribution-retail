@@ -77,6 +77,7 @@ const KwitansiPage = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [exportingId, setExportingId] = useState(null);
   const [exportingPaketId, setExportingPaketId] = useState(null);
+  const [selectedKwitansis, setSelectedKwitansis] = useState([]);
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
@@ -220,9 +221,23 @@ const KwitansiPage = () => {
   const handleTabChange = useCallback(
     (tabId) => {
       setActiveTab(tabId);
+      // Reset selection when tab changes
+      setSelectedKwitansis([]);
     },
     []
   );
+
+  const handleSelectKwitansi = useCallback((kwitansiId, isSelected) => {
+    setSelectedKwitansis((prev) => {
+      if (isSelected) {
+        return prev.includes(kwitansiId) ? prev : [...prev, kwitansiId];
+      } else {
+        return prev.filter((id) => id !== kwitansiId);
+      }
+    });
+  }, []);
+
+  const hasSelectedKwitansis = selectedKwitansis.length > 0;
 
   const handleModalSuccess = useCallback(async () => {
     // Invalidate queries to refresh data
@@ -299,14 +314,15 @@ const KwitansiPage = () => {
           <div className='space-y-4'>
             <KwitansiTableServerSide
               onDelete={handleDelete}
-              onExport={handleExportKwitansi}
-              exportingId={exportingId}
               deleteLoading={deleteKwitansiConfirmation.loading}
               initialPage={1}
               initialLimit={10}
               activeTab={activeTab}
               onRowClick={handleViewDetail}
               selectedKwitansiId={selectedKwitansiForDetail?.id}
+              selectedKwitansis={selectedKwitansis}
+              onSelectKwitansi={handleSelectKwitansi}
+              hasSelectedKwitansis={hasSelectedKwitansis}
             />
           </div>
         </div>

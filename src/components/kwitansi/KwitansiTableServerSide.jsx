@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  ArrowDownTrayIcon,
   TrashIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useKwitansiQuery } from '../../hooks/useKwitansiQuery';
 import { formatCurrency, formatDate } from '@/utils/formatUtils';
+import kwitansiService from '../../services/kwitansiService';
+import toastService from '../../services/toastService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 
@@ -48,17 +50,27 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
+const resolveKwitansiId = (kwitansi) => {
+  if (!kwitansi) {
+    return null;
+  }
+  return kwitansi.id || kwitansi._id || kwitansi.uuid || null;
+};
+
 const KwitansiTableServerSide = ({
   onDelete,
-  onExport,
-  exportingId,
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
   activeTab = 'all',
   onRowClick,
   selectedKwitansiId,
+  selectedKwitansis = [],
+  onSelectKwitansi,
+  hasSelectedKwitansis = false,
 }) => {
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isPrintingPaket, setIsPrintingPaket] = useState(false);
   const lockedFilters = useMemo(() => {
     const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
     if (!statusCode || activeTab === 'all') {
@@ -95,8 +107,201 @@ const KwitansiTableServerSide = ({
     lockedFilters,
   });
 
+  // Handler untuk select all toggle
+  const handleSelectAllInternalToggle = useCallback(() => {
+    const currentPageKwitansiIds = kwitansis
+      .map((kwitansi) => resolveKwitansiId(kwitansi))
+      .filter(Boolean);
+    
+    const allCurrentPageSelected = currentPageKwitansiIds.every((id) =>
+      selectedKwitansis.includes(id)
+    );
+
+    if (allCurrentPageSelected) {
+      // Deselect all on current page
+      currentPageKwitansiIds.forEach((id) => {
+        if (selectedKwitansis.includes(id)) {
+          onSelectKwitansi(id, false);
+        }
+      });
+    } else {
+      // Select all on current page
+      currentPageKwitansiIds.forEach((id) => {
+        if (!selectedKwitansis.includes(id)) {
+          onSelectKwitansi(id, true);
+        }
+      });
+    }
+  }, [kwitansis, selectedKwitansis, onSelectKwitansi]);
+
+  // Handler untuk print Kwitansi
+  const handlePrintSelected = async () => {
+    if (!selectedKwitansis || selectedKwitansis.length === 0) {
+      toastService.error('Tidak ada kwitansi yang dipilih');
+      return;
+    }
+
+    setIsPrinting(true);
+    try {
+      toastService.info(`Memproses ${selectedKwitansis.length} kwitansi...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < selectedKwitansis.length; i++) {
+        const kwitansiId = selectedKwitansis[i];
+        
+        try {
+          const kwitansi = kwitansis.find(k => resolveKwitansiId(k) === kwitansiId);
+          const companyId = kwitansi?.invoicePenagihan?.purchaseOrder?.customer?.companyId || 1;
+          
+          const html = await kwitansiService.exportKwitansi(kwitansiId, companyId);
+          
+          // Open in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+          }
+
+          successCount++;
+
+          // Small delay between prints
+          if (i < selectedKwitansis.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error printing kwitansi ${kwitansiId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil memproses ${successCount} kwitansi${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
+        );
+      } else {
+        toastService.error('Gagal memproses kwitansi');
+      }
+    } catch (error) {
+      console.error('Error in bulk print kwitansi:', error);
+      toastService.error(error.message || 'Gagal memproses kwitansi');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  // Handler untuk print Kwitansi Paket
+  const handlePrintPaketSelected = async () => {
+    if (!selectedKwitansis || selectedKwitansis.length === 0) {
+      toastService.error('Tidak ada kwitansi yang dipilih');
+      return;
+    }
+
+    setIsPrintingPaket(true);
+    try {
+      toastService.info(`Memproses ${selectedKwitansis.length} kwitansi paket...`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < selectedKwitansis.length; i++) {
+        const kwitansiId = selectedKwitansis[i];
+        
+        try {
+          const kwitansi = kwitansis.find(k => resolveKwitansiId(k) === kwitansiId);
+          const companyId = kwitansi?.invoicePenagihan?.purchaseOrder?.customer?.companyId || 1;
+          
+          const html = await kwitansiService.exportKwitansiPaket(kwitansiId, companyId);
+          
+          // Open in new window for printing
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+          }
+
+          successCount++;
+
+          // Small delay between prints
+          if (i < selectedKwitansis.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`Error printing kwitansi paket ${kwitansiId}:`, error);
+        }
+      }
+
+      if (successCount > 0) {
+        toastService.success(
+          `Berhasil memproses ${successCount} kwitansi paket${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
+        );
+      } else {
+        toastService.error('Gagal memproses kwitansi paket');
+      }
+    } catch (error) {
+      console.error('Error in bulk print kwitansi paket:', error);
+      toastService.error(error.message || 'Gagal memproses kwitansi paket');
+    } finally {
+      setIsPrintingPaket(false);
+    }
+  };
+
   const columns = useMemo(
     () => [
+      columnHelper.display({
+        id: 'select',
+        header: () => {
+          const currentPageKwitansiIds = kwitansis
+            .map((kwitansi) => resolveKwitansiId(kwitansi))
+            .filter(Boolean);
+          
+          const isAllSelected =
+            kwitansis.length > 0 &&
+            currentPageKwitansiIds.length > 0 &&
+            currentPageKwitansiIds.every((id) => selectedKwitansis.includes(id));
+          
+          const isIndeterminate =
+            currentPageKwitansiIds.some((id) => selectedKwitansis.includes(id)) &&
+            !isAllSelected;
+
+          return (
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(input) => {
+                if (input) input.indeterminate = isIndeterminate;
+              }}
+              onChange={handleSelectAllInternalToggle}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          );
+        },
+        cell: ({ row }) => {
+          const kwitansiId = resolveKwitansiId(row.original);
+          return (
+            <input
+              type="checkbox"
+              checked={selectedKwitansis.includes(kwitansiId)}
+              onChange={() =>
+                onSelectKwitansi(kwitansiId, !selectedKwitansis.includes(kwitansiId))
+              }
+              onClick={(e) => e.stopPropagation()}
+              disabled={!kwitansiId}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+      }),
       columnHelper.accessor('invoicePenagihan.no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
         header: ({ column }) => (
@@ -272,7 +477,6 @@ const KwitansiTableServerSide = ({
         header: 'Actions',
         cell: ({ row }) => {
           const kwitansi = row.original;
-          const isExporting = exportingId === kwitansi.id;
 
           return (
             <div className="flex items-center space-x-2">
@@ -287,17 +491,6 @@ const KwitansiTableServerSide = ({
               >
                 <TrashIcon className="h-5 w-5" />
               </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExport(kwitansi);
-                }}
-                disabled={isExporting}
-                className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Export PDF"
-              >
-                <ArrowDownTrayIcon className="h-5 w-5" />
-              </button>
             </div>
           );
         },
@@ -306,10 +499,11 @@ const KwitansiTableServerSide = ({
     ],
     [
       kwitansis,
+      selectedKwitansis,
+      onSelectKwitansi,
+      handleSelectAllInternalToggle,
       onDelete,
-      onExport,
       deleteLoading,
-      exportingId,
       activeTab,
       setPage,
     ]
@@ -333,6 +527,34 @@ const KwitansiTableServerSide = ({
         </div>
       )}
 
+      {hasSelectedKwitansis && (
+        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedKwitansis.length} kwitansi dipilih
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handlePrintSelected}
+              disabled={isPrinting || isPrintingPaket}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <PrinterIcon className="h-4 w-4" />
+              <span>{isPrinting ? 'Memproses...' : 'Print'}</span>
+            </button>
+            <button
+              onClick={handlePrintPaketSelected}
+              disabled={isPrinting || isPrintingPaket}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <PrinterIcon className="h-4 w-4" />
+              <span>{isPrintingPaket ? 'Memproses...' : 'Print Paket'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <DataTable
         table={table}
         isLoading={isLoading}
@@ -345,15 +567,19 @@ const KwitansiTableServerSide = ({
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName={(row) => {
-          // Add null check for row.original
-          if (!row || !row.original) {
-            return 'hover:bg-gray-50 cursor-pointer transition-colors';
+        rowClassName="hover:bg-gray-50 cursor-pointer"
+        getRowClassName={({ row }) => {
+          const kwitansiId = resolveKwitansiId(row.original);
+          
+          if (kwitansiId === selectedKwitansiId) {
+            return 'bg-indigo-100 hover:bg-indigo-150 border-l-4 border-indigo-500';
           }
-          const isSelected = selectedKwitansiId === row.original.id;
-          return `cursor-pointer transition-colors ${
-            isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
-          }`;
+          
+          if (kwitansiId && selectedKwitansis.includes(kwitansiId)) {
+            return 'bg-blue-50 hover:bg-blue-100';
+          }
+          
+          return undefined;
         }}
         onRowClick={(rowData, event) => {
           if (onRowClick) {
