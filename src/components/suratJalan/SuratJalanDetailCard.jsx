@@ -565,7 +565,7 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
                         {
                           label: 'Supplier',
                           value:
-                            suratJalan.invoice.purchaseOrder?.supplier
+                            suratJalan.invoice?.purchaseOrder?.supplier
                               ?.nama_supplier,
                         },
                       ]}
@@ -592,22 +592,22 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
                       },
                       {
                         label: 'Supplier ID',
-                        value: suratJalan.invoice.purchaseOrder?.supplier?.id,
+                        value: suratJalan.invoice?.purchaseOrder?.supplier?.id,
                         copyable: Boolean(
-                          suratJalan.invoice.purchaseOrder?.supplier?.id
+                          suratJalan.invoice?.purchaseOrder?.supplier?.id
                         ),
                       },
                       {
                         label: 'Customer ID',
-                        value: suratJalan.invoice.purchaseOrder?.customer?.id,
+                        value: suratJalan.invoice?.purchaseOrder?.customer?.id,
                         copyable: Boolean(
-                          suratJalan.invoice.purchaseOrder?.customer?.id
+                          suratJalan.invoice?.purchaseOrder?.customer?.id
                         ),
                       },
                       {
                         label: 'Purchase Order ID',
-                        value: suratJalan.invoice.purchaseOrder?.id,
-                        copyable: Boolean(suratJalan.invoice.purchaseOrder?.id),
+                        value: suratJalan.invoice?.purchaseOrder?.id,
+                        copyable: Boolean(suratJalan.invoice?.purchaseOrder?.id),
                       },
                       {
                         label: 'Surat Jalan ID',
