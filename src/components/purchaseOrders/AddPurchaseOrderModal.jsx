@@ -38,7 +38,7 @@ const AddPurchaseOrderModal = ({
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeTab, setActiveTab] = useState('bulk');
   const [uploadMode, setUploadMode] = useState('files');
-  const [processingMethod, setProcessingMethod] = useState('ai');
+  const [processingMethod, setProcessingMethod] = useState('text-extraction');
 
   // Refs for file inputs
   const manualFileInputRef = useRef(null);
@@ -539,19 +539,6 @@ const AddPurchaseOrderModal = ({
                     Processing Method
                   </label>
                   <div className='flex items-start space-x-6'>
-                    <label className='flex items-start space-x-2 cursor-pointer'>
-                      <input
-                          type='radio'
-                          name='processingMethod'
-                          value='ai'
-                          checked={processingMethod === 'ai'}
-                          onChange={(e) => setProcessingMethod(e.target.value)}
-                          className='w-4 h-4 text-blue-600 mt-0.5'
-                        />
-                        <div>
-                          <span className='text-sm font-medium text-gray-700'>AI Method</span>
-                        </div>
-                      </label>
                       <label className='flex items-start space-x-2 cursor-pointer'>
                         <input
                           type='radio'
@@ -563,6 +550,19 @@ const AddPurchaseOrderModal = ({
                         />
                         <div>
                           <span className='text-sm font-medium text-gray-700'>Normal Method</span>
+                        </div>
+                      </label>
+                      <label className='flex items-start space-x-2 cursor-pointer'>
+                        <input
+                          type='radio'
+                          name='processingMethod'
+                          value='ai'
+                          checked={processingMethod === 'ai'}
+                          onChange={(e) => setProcessingMethod(e.target.value)}
+                          className='w-4 h-4 text-blue-600 mt-0.5'
+                        />
+                        <div>
+                          <span className='text-sm font-medium text-gray-700'>AI Method</span>
                         </div>
                       </label>
                     </div>
@@ -659,13 +659,6 @@ const AddPurchaseOrderModal = ({
                       <p className='mt-1 text-sm text-yellow-700'>
                         <strong>Upload Folder:</strong> Pilih folder yang berisi file PDF/EDI. Hanya file dengan ekstensi .pdf dan .edi yang akan diupload.
                       </p>
-                      <p className='mt-2 text-sm text-yellow-700'>
-                        <strong>Processing Method:</strong>
-                      </p>
-                      <ul className='mt-1 ml-4 text-sm text-yellow-700 list-disc'>
-                        <li><strong>AI:</strong> Lebih fleksibel, cocok untuk format bervariasi</li>
-                        <li><strong>Text Extraction:</strong> Lebih cepat, cocok untuk format standar</li>
-                      </ul>
                     </div>
                   </div>
                 </div>
