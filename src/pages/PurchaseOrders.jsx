@@ -132,10 +132,10 @@ const PurchaseOrders = () => {
   }, []);
 
   // This function is now the callback for when the Add modal is finished.
-  const handleAddFinished = () => {
+  const handleAddFinished = async () => {
     setAddModalOpen(false);
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+    // Refetch queries to ensure fresh data is loaded
+    await queryClient.refetchQueries({ queryKey: ['purchaseOrders'] });
   };
 
   const handleEditOrder = async (id, formData) => {
