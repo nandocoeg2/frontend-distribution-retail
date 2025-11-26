@@ -89,11 +89,15 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
         : 'secondary';
 
   // Options for disabled autocomplete fields
-  const invoicePenagihanOptions = detail?.invoicePenagihan ? [
+  // invoicePenagihan from API is an array, get the first item or use direct ID
+  const invoicePenagihanData = Array.isArray(detail?.invoicePenagihan) 
+    ? detail.invoicePenagihan[0] 
+    : detail?.invoicePenagihan;
+  const invoicePenagihanOptions = invoicePenagihanData ? [
     {
-      id: detail.invoicePenagihan.id,
-      label: detail.invoicePenagihan.no_invoice_penagihan || detail.invoicePenagihan.no_invoice || 'N/A',
-      value: detail.invoicePenagihan.id
+      id: invoicePenagihanData.id,
+      label: invoicePenagihanData.no_invoice_penagihan || invoicePenagihanData.no_invoice || 'N/A',
+      value: invoicePenagihanData.id
     }
   ] : [];
 
@@ -121,16 +125,21 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
   // Sync formData with fakturPajak
   useEffect(() => {
     if (fakturPajak) {
+      // Handle invoicePenagihan which can be an array from API
+      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan) 
+        ? fakturPajak.invoicePenagihan[0] 
+        : fakturPajak.invoicePenagihan;
+      
       setFormData({
         no_pajak: fakturPajak.no_pajak || '',
-        invoicePenagihanId: fakturPajak.invoicePenagihanId || fakturPajak.invoicePenagihan?.id || '',
+        invoicePenagihanId: fakturPajak.invoicePenagihanId || invoicePenagihanItem?.id || '',
         tanggal_invoice: toDateInputValue(fakturPajak.tanggal_invoice),
         laporanPenerimaanBarangId: fakturPajak.laporanPenerimaanBarangId || fakturPajak.laporanPenerimaanBarang?.id || '',
         customerId: fakturPajak.customerId || fakturPajak.customer?.id || '',
         total_harga_jual: toInputString(fakturPajak.total_harga_jual),
         potongan_harga: toInputString(fakturPajak.potongan_harga),
         dasar_pengenaan_pajak: toInputString(fakturPajak.dasar_pengenaan_pajak),
-        ppn_rp: toInputString(fakturPajak.ppn_rp),
+        ppn_rp: toInputString(fakturPajak.ppnRupiah || fakturPajak.ppn_rp),
         ppn_percentage: toInputString(fakturPajak.ppn_percentage != null ? fakturPajak.ppn_percentage : 11),
         termOfPaymentId: fakturPajak.termOfPaymentId || fakturPajak.termOfPayment?.id || '',
         statusId: fakturPajak.statusId || fakturPajak.status?.id || '',
@@ -150,16 +159,21 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
     isPpnTouchedRef.current = false;
     // Reset to original values
     if (fakturPajak) {
+      // Handle invoicePenagihan which can be an array from API
+      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan) 
+        ? fakturPajak.invoicePenagihan[0] 
+        : fakturPajak.invoicePenagihan;
+      
       setFormData({
         no_pajak: fakturPajak.no_pajak || '',
-        invoicePenagihanId: fakturPajak.invoicePenagihanId || fakturPajak.invoicePenagihan?.id || '',
+        invoicePenagihanId: fakturPajak.invoicePenagihanId || invoicePenagihanItem?.id || '',
         tanggal_invoice: toDateInputValue(fakturPajak.tanggal_invoice),
         laporanPenerimaanBarangId: fakturPajak.laporanPenerimaanBarangId || fakturPajak.laporanPenerimaanBarang?.id || '',
         customerId: fakturPajak.customerId || fakturPajak.customer?.id || '',
         total_harga_jual: toInputString(fakturPajak.total_harga_jual),
         potongan_harga: toInputString(fakturPajak.potongan_harga),
         dasar_pengenaan_pajak: toInputString(fakturPajak.dasar_pengenaan_pajak),
-        ppn_rp: toInputString(fakturPajak.ppn_rp),
+        ppn_rp: toInputString(fakturPajak.ppnRupiah || fakturPajak.ppn_rp),
         ppn_percentage: toInputString(fakturPajak.ppn_percentage != null ? fakturPajak.ppn_percentage : 11),
         termOfPaymentId: fakturPajak.termOfPaymentId || fakturPajak.termOfPayment?.id || '',
         statusId: fakturPajak.statusId || fakturPajak.status?.id || '',
