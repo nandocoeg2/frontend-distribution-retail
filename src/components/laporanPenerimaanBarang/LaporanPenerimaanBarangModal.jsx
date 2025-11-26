@@ -318,7 +318,7 @@ const LaporanPenerimaanBarangModal = ({
   const fetchStatusOptions = useCallback(async () => {
     setStatusLoading(true);
     try {
-      const response = await statusService.getAllStatuses();
+      const response = await statusService.getLaporanPenerimaanBarangStatuses();
       const items = extractArray(response).map(mapStatusOption).filter(Boolean);
 
       setStatusOptions((prev) => mergeUniqueOptions(items, prev));

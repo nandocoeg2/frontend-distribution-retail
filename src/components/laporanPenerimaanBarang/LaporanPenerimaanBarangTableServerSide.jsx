@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   EyeIcon,
@@ -20,6 +20,7 @@ import AssignPurchaseOrderModal from './AssignPurchaseOrderModal';
 import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerimaanBarangOperations';
 import laporanPenerimaanBarangService from '../../services/laporanPenerimaanBarangService';
 import toastService from '../../services/toastService';
+import statusService from '../../services/statusService';
 
 const columnHelper = createColumnHelper();
 
@@ -106,6 +107,22 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const [showAssignConfirmation, setShowAssignConfirmation] = useState(false);
   const [showUnassignConfirmation, setShowUnassignConfirmation] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [lpbStatuses, setLpbStatuses] = useState([]);
+
+  // Fetch statuses from API
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const response = await statusService.getLaporanPenerimaanBarangStatuses();
+        if (response?.data) {
+          setLpbStatuses(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching LPB statuses:', error);
+      }
+    };
+    fetchStatuses();
+  }, []);
 
   const { isAssigning, isUnassigning, assignPurchaseOrder, unassignPurchaseOrder } =
     useLaporanPenerimaanBarangOperations();
@@ -490,10 +507,11 @@ const LaporanPenerimaanBarangTableServerSide = ({
                   onClick={(event) => event.stopPropagation()}
                 >
                   <option value="">Semua</option>
-                  <option value="PENDING LAPORAN PENERIMAAN BARANG">Pending</option>
-                  <option value="PROCESSING LAPORAN PENERIMAAN BARANG">Processing</option>
-                  <option value="COMPLETED LAPORAN PENERIMAAN BARANG">Completed</option>
-                  <option value="FAILED LAPORAN PENERIMAAN BARANG">Failed</option>
+                  {lpbStatuses.map((status) => (
+                    <option key={status.status_code} value={status.status_code}>
+                      {status.status_name}
+                    </option>
+                  ))}
                 </select>
               )}
             </div>
@@ -581,6 +599,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
       setPage,
       handleOpenAssignModal,
       handleUnassignClick,
+      lpbStatuses,
     ]
   );
 
