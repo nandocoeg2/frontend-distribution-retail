@@ -1,9 +1,10 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { formatDate, resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
+import { termOfPaymentService } from '../../services/termOfPaymentService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 
@@ -116,6 +117,11 @@ const PurchaseOrderTableServerSide = ({
         delete mappedFilters.customer;
       }
 
+      if (mappedFilters.top) {
+        mappedFilters.termin_bayar = mappedFilters.top;
+        delete mappedFilters.top;
+      }
+
       return {
         ...rest,
         filters: mappedFilters,
@@ -123,6 +129,22 @@ const PurchaseOrderTableServerSide = ({
     },
     []
   );
+
+  const [termOfPayments, setTermOfPayments] = useState([]);
+
+  useEffect(() => {
+    const fetchTermOfPayments = async () => {
+      try {
+        const response = await termOfPaymentService.getAllTermOfPayments(1, 100);
+        const data = response?.data?.data || response?.data || [];
+        setTermOfPayments(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch term of payments:', error);
+        setTermOfPayments([]);
+      }
+    };
+    fetchTermOfPayments();
+  }, []);
 
   const {
     data: orders,
@@ -279,7 +301,28 @@ const PurchaseOrderTableServerSide = ({
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top',
         size: 60,
-        header: () => <div className="font-medium text-xs">TOP</div>,
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">TOP</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+              style={{ maxHeight: '200px' }}
+            >
+              <option value="">Semua</option>
+              {termOfPayments.map((top) => (
+                <option key={top.id} value={top.id}>
+                  {top.kode_top} ({top.batas_hari} hari)
+                </option>
+              ))}
+            </select>
+          </div>
+        ),
         cell: (info) => {
           const top = info.row.original.termOfPayment;
           return (
@@ -290,7 +333,11 @@ const PurchaseOrderTableServerSide = ({
             </div>
           );
         },
-        enableColumnFilter: false,
+        enableColumnFilter: true,
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue) return true;
+          return row.original.termin_bayar === filterValue;
+        },
       }),
       columnHelper.accessor('po_type', {
         size: 80,
@@ -440,6 +487,7 @@ const PurchaseOrderTableServerSide = ({
       deleteLoading,
       cancelLoading,
       setPage,
+      termOfPayments,
     ]
   );
 
