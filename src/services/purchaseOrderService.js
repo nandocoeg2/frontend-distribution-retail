@@ -399,6 +399,33 @@ const purchaseOrderService = {
     }
 
     return response.json();
+  },
+
+  // Cancel purchase order
+  cancelPurchaseOrder: async (id, alasan = null) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const body = alasan ? { alasan } : {};
+
+    const response = await fetch(`${API_URL}/${id}/cancel`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Gagal membatalkan purchase order');
+    }
+
+    return response.json();
   }
 };
 

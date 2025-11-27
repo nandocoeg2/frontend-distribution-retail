@@ -16,6 +16,7 @@ import usePurchaseOrders from '../hooks/usePurchaseOrders';
 
 const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
 const FAILED_STATUS_CODE = 'FAILED PURCHASE ORDER';
+const CANCELED_STATUS_CODE = 'CANCELED PURCHASE ORDER';
 
 
 const extractDuplicateGroups = (failedItems = []) => {
@@ -101,6 +102,7 @@ const PurchaseOrders = () => {
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
@@ -175,6 +177,31 @@ const PurchaseOrders = () => {
       }
     });
   }, [deletePurchaseOrder, hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, queryClient]);
+
+  const handleCancelOrder = useCallback(async (id, poNumber) => {
+    openConfirmationDialog({
+      title: 'Cancel Purchase Order',
+      message: `Apakah Anda yakin ingin membatalkan Purchase Order "${poNumber}"?`,
+      confirmText: 'Cancel',
+      cancelText: 'Batal',
+      type: 'warning',
+    }, async () => {
+      setLoading(true);
+      setCancelLoading(true);
+      try {
+        await purchaseOrderService.cancelPurchaseOrder(id);
+        hideDialog();
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+        showSuccess('Purchase order berhasil dibatalkan');
+      } catch (error) {
+        showError(`Gagal membatalkan purchase order: ${error.message}`);
+      } finally {
+        setLoading(false);
+        setCancelLoading(false);
+      }
+    });
+  }, [hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, queryClient]);
 
   // Bulk selection handlers
   const handleSelectionChange = (orderId, checked) => {
@@ -590,6 +617,8 @@ const PurchaseOrders = () => {
             onViewDetail={handleViewDetail}
             onEdit={handleEditModalOpen}
             onDelete={handleDeleteOrder}
+            onCancel={handleCancelOrder}
+            cancelLoading={cancelLoading}
             selectedOrders={selectedOrders}
             onSelectionChange={handleSelectionChange}
             onSelectAll={handleSelectAll}

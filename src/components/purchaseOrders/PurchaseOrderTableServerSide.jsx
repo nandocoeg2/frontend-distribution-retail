@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { formatDate, resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
@@ -35,11 +35,30 @@ const isEditDisabled = (order) => {
   );
 };
 
+const isCancelAllowed = (order) => {
+  if (!order?.status) {
+    return false;
+  }
+
+  const normalize = (value) => {
+    if (!value) {
+      return '';
+    }
+    return value.toString().trim().toLowerCase().replace(/_/g, ' ');
+  };
+
+  const normalizedCode = normalize(order.status.status_code);
+  // Cancel hanya diizinkan untuk status PROCESSING PURCHASE ORDER
+  return normalizedCode === 'processing purchase order';
+};
+
 const PurchaseOrderTableServerSide = ({
   onViewDetail,
   onEdit,
   onDelete,
+  onCancel,
   deleteLoading = false,
+  cancelLoading = false,
   selectedOrders = [],
   onSelectionChange,
   onSelectAll,
@@ -328,6 +347,7 @@ const PurchaseOrderTableServerSide = ({
               <option value="PROCESSED PURCHASE ORDER">Processed</option>
               <option value="COMPLETED PURCHASE ORDER">Completed</option>
               <option value="FAILED PURCHASE ORDER">Failed</option>
+              <option value="CANCELED PURCHASE ORDER">Canceled</option>
             </select>
           </div>
         ),
@@ -348,11 +368,12 @@ const PurchaseOrderTableServerSide = ({
       }),
       columnHelper.display({
         id: 'actions',
-        size: 70,
+        size: 100,
         header: () => <div className="font-medium text-xs">Actions</div>,
         cell: ({ row }) => {
           const order = row.original;
           const editDisabled = isEditDisabled(order);
+          const cancelAllowed = isCancelAllowed(order);
 
           return (
             <div className="flex space-x-1">
@@ -376,6 +397,20 @@ const PurchaseOrderTableServerSide = ({
               >
                 <PencilIcon className="h-4 w-4" />
               </button>
+              {cancelAllowed && onCancel && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancel(order.id, order.po_number);
+                  }}
+                  disabled={cancelLoading}
+                  className="p-0.5 text-orange-600 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Cancel"
+                >
+                  <XCircleIcon className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => {
@@ -401,7 +436,9 @@ const PurchaseOrderTableServerSide = ({
       handleSelectAllInternalToggle,
       onEdit,
       onDelete,
+      onCancel,
       deleteLoading,
+      cancelLoading,
       setPage,
     ]
   );
