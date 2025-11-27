@@ -75,7 +75,6 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
       email: customerData?.email || '',
       NPWP: customerData?.NPWP || '',
       alamatNPWP: customerData?.alamatNPWP || '',
-      description: customerData?.description || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
         nama_pic: pic.nama_pic || '',
@@ -458,13 +457,6 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
             </div>
           )}
 
-          {/* Description if available */}
-          {displayCustomer.description && (
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">Description</h4>
-              <p className="text-sm text-gray-600">{displayCustomer.description}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

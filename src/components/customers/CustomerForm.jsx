@@ -16,7 +16,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     email: '',
     NPWP: '',
     alamatNPWP: '',
-    description: '',
     customerPics: [],
   });
   const [groupCustomers, setGroupCustomers] = useState([]);
@@ -33,7 +32,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     initialData?.email,
     initialData?.NPWP,
     initialData?.alamatNPWP,
-    initialData?.description,
     initialData?.customerPics
   ]);
 
@@ -49,7 +47,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
         email: memoizedInitialData.email || '',
         NPWP: memoizedInitialData.NPWP || '',
         alamatNPWP: memoizedInitialData.alamatNPWP || '',
-        description: memoizedInitialData.description || '',
         customerPics: memoizedInitialData.customerPics?.map(pic => ({
           nama_pic: pic.nama_pic || '',
           dept: pic.dept || '',
@@ -264,20 +261,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           />
         </div>
 
-        {/* Description */}
-        <div className="md:col-span-2">
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Description
-          </label>
-          <textarea
-            name='description'
-            value={formData.description}
-            onChange={handleChange}
-            disabled={isLoading}
-            rows='2'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
-          />
-        </div>
       </div>
 
       {/* Customer PICs Section */}

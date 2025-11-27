@@ -45,6 +45,9 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
               Region
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              Alamat
+            </th>
+            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
               Phone
             </th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -55,7 +58,7 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
         <tbody className='bg-white divide-y divide-gray-200'>
           {customers.length === 0 ? (
             <tr>
-              <td colSpan="6" className='px-6 py-4 text-center text-gray-500'>
+              <td colSpan="7" className='px-6 py-4 text-center text-gray-500'>
                 {searchQuery ? 'No customers found matching your search.' : 'No customers available.'}
               </td>
             </tr>
@@ -91,6 +94,11 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {customer.region?.nama_region || 'N/A'}
+                  </div>
+                </td>
+                <td className='px-6 py-4'>
+                  <div className='text-sm text-gray-900 max-w-xs truncate' title={customer.alamatPengiriman || '-'}>
+                    {customer.alamatPengiriman || '-'}
                   </div>
                 </td>
                 <td className='px-6 py-4 whitespace-nowrap'>

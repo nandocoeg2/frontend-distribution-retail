@@ -74,7 +74,6 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
       email: customerData?.email || '',
       NPWP: customerData?.NPWP || '',
       alamatNPWP: customerData?.alamatNPWP || '',
-      description: customerData?.description || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
         nama_pic: pic.nama_pic || '',
@@ -343,16 +342,6 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData?.description || ''}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
               </div>
 
               {/* PICs Form */}
@@ -559,13 +548,6 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                 </div>
               )}
 
-              {/* Description if available */}
-              {displayCustomer.description && (
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Description</h4>
-                  <p className="text-sm text-gray-600">{displayCustomer.description}</p>
-                </div>
-              )}
             </>
           )}
         </div>
