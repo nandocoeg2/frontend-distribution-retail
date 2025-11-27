@@ -12,23 +12,11 @@ import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
 import { getItemById } from '../services/itemService';
-import { TabContainer, Tab } from '../components/ui/Tabs';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 
 const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
 const FAILED_STATUS_CODE = 'FAILED PURCHASE ORDER';
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null, poType: null },
-  pendingManual: { label: 'Pending - Manual', statusCode: 'PENDING PURCHASE ORDER', poType: 'MANUAL' },
-  pendingAuto: { label: 'Pending - Auto', statusCode: 'PENDING PURCHASE ORDER', poType: 'AUTO' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER', poType: null },
-  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER', poType: null },
-  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER', poType: null },
-  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER', poType: null },
-};
-
-const TAB_ORDER = ['all', 'pendingManual', 'pendingAuto', 'processing', 'processed', 'completed', 'failed'];
 
 const extractDuplicateGroups = (failedItems = []) => {
   const groupsMap = new Map();
@@ -113,7 +101,6 @@ const PurchaseOrders = () => {
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
 
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
@@ -124,12 +111,6 @@ const PurchaseOrders = () => {
     confirmActionRef.current = onConfirm;
     showDialog(options);
   };
-
-  // Tab change handler
-  const handleTabChange = useCallback((newTab) => {
-    setActiveTab(newTab);
-    setSelectedOrders([]); // Clear selection when changing tabs
-  }, []);
 
   // This function is now the callback for when the Add modal is finished.
   const handleAddFinished = async () => {
@@ -604,23 +585,6 @@ const PurchaseOrders = () => {
             </div>
           </div>
 
-          {/* Tabs for filtering by status */}
-          <div className="mb-4">
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant="underline"
-            >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId].label}
-                />
-              ))}
-            </TabContainer>
-          </div>
-
           {/* TanStack Table with Server-Side Features */}
           <PurchaseOrderTableServerSide
             onViewDetail={handleViewDetail}
@@ -632,7 +596,6 @@ const PurchaseOrders = () => {
             onBulkProcess={handleBulkProcess}
             isProcessing={bulkProcessing}
             hasSelectedOrders={selectedOrders.length > 0}
-            activeTab={activeTab}
             initialPage={1}
             initialLimit={10}
             selectedOrderId={selectedOrderForDetail?.id}

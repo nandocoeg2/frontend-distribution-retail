@@ -9,16 +9,6 @@ import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null, poType: null },
-  pendingManual: { label: 'Pending - Manual', statusCode: 'PENDING PURCHASE ORDER', poType: 'MANUAL' },
-  pendingAuto: { label: 'Pending - Auto', statusCode: 'PENDING PURCHASE ORDER', poType: 'AUTO' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING PURCHASE ORDER', poType: null },
-  processed: { label: 'Processed', statusCode: 'PROCESSED PURCHASE ORDER', poType: null },
-  completed: { label: 'Completed', statusCode: 'COMPLETED PURCHASE ORDER', poType: null },
-  failed: { label: 'Failed', statusCode: 'FAILED PURCHASE ORDER', poType: null },
-};
-
 const isEditDisabled = (order) => {
   if (!order?.status) {
     return false;
@@ -58,24 +48,8 @@ const PurchaseOrderTableServerSide = ({
   hasSelectedOrders = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   selectedOrderId = null,
 }) => {
-  const lockedFilters = useMemo(() => {
-    const config = TAB_STATUS_CONFIG[activeTab] || {};
-    const entries = [];
-
-    if (config.statusCode) {
-      entries.push({ id: 'status', value: config.statusCode });
-    }
-
-    if (config.poType) {
-      entries.push({ id: 'po_type', value: config.poType });
-    }
-
-    return entries;
-  }, [activeTab]);
-
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -148,7 +122,6 @@ const PurchaseOrderTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
-    lockedFilters,
     getQueryParams,
   });
 
@@ -302,38 +275,24 @@ const PurchaseOrderTableServerSide = ({
       }),
       columnHelper.accessor('po_type', {
         size: 80,
-        header: ({ column }) => {
-          const tabConfig = TAB_STATUS_CONFIG[activeTab];
-          const lockedPoType = tabConfig?.poType;
-          const isLocked =
-            (activeTab === 'pendingManual' || activeTab === 'pendingAuto') &&
-            lockedPoType;
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Type</div>
-              {isLocked ? (
-                <div className="w-full px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {lockedPoType}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  <option value="MANUAL">MANUAL</option>
-                  <option value="AUTO">AUTO</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Type</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="MANUAL">MANUAL</option>
+              <option value="AUTO">AUTO</option>
+            </select>
+          </div>
+        ),
         cell: (info) => {
           const type = info.getValue();
           if (!type) return <span className="text-xs text-gray-500">-</span>;
@@ -351,39 +310,27 @@ const PurchaseOrderTableServerSide = ({
       columnHelper.accessor('status.status_name', {
         id: 'status',
         size: 110,
-        header: ({ column }) => {
-          const tabConfig = TAB_STATUS_CONFIG[activeTab];
-          const lockedStatus = tabConfig?.statusCode;
-          const isLocked = activeTab !== 'all' && lockedStatus;
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Status</div>
-              {isLocked ? (
-                <div className="w-full px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {tabConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  <option value="PENDING PURCHASE ORDER">Pending</option>
-                  <option value="PROCESSING PURCHASE ORDER">Processing</option>
-                  <option value="PROCESSED PURCHASE ORDER">Processed</option>
-                  <option value="COMPLETED PURCHASE ORDER">Completed</option>
-                  <option value="FAILED PURCHASE ORDER">Failed</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="PENDING PURCHASE ORDER">Pending</option>
+              <option value="PROCESSING PURCHASE ORDER">Processing</option>
+              <option value="PROCESSED PURCHASE ORDER">Processed</option>
+              <option value="COMPLETED PURCHASE ORDER">Completed</option>
+              <option value="FAILED PURCHASE ORDER">Failed</option>
+            </select>
+          </div>
+        ),
         cell: (info) => {
           const statusName = info.getValue();
           return statusName ? (
@@ -455,7 +402,6 @@ const PurchaseOrderTableServerSide = ({
       onEdit,
       onDelete,
       deleteLoading,
-      activeTab,
       setPage,
     ]
   );
