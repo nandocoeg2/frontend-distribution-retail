@@ -17,7 +17,6 @@ import { formatDateTime } from '../../utils/formatUtils';
 import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
 import { groupCustomerService } from '@/services/groupCustomerService';
-import regionService from '@/services/regionService';
 import Autocomplete from '@/components/common/Autocomplete';
 
 const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
@@ -27,7 +26,6 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(null);
   const [groupCustomers, setGroupCustomers] = useState([]);
-  const [regions, setRegions] = useState([]);
   const [dropdownLoading, setDropdownLoading] = useState(false);
 
   useEffect(() => {
@@ -69,7 +67,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
       namaCustomer: customerData?.namaCustomer || '',
       kodeCustomer: customerData?.kodeCustomer || '',
       groupCustomerId: customerData?.groupCustomerId || '',
-      regionId: customerData?.regionId || '',
+      region: customerData?.region || '',
       alamatPengiriman: customerData?.alamatPengiriman || '',
       phoneNumber: customerData?.phoneNumber || '',
       email: customerData?.email || '',
@@ -88,16 +86,11 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
   const fetchDropdownData = async () => {
     try {
       setDropdownLoading(true);
-      const [groupCustomersResponse, regionsResponse] = await Promise.all([
-        groupCustomerService.getAllGroupCustomers(1, 100),
-        regionService.getAllRegions(1, 100)
-      ]);
+      const groupCustomersResponse = await groupCustomerService.getAllGroupCustomers(1, 100);
       
       if (groupCustomersResponse.success) {
         setGroupCustomers(groupCustomersResponse.data.data || []);
       }
-      
-      setRegions(regionsResponse.data || []);
     } catch (error) {
       console.error('Error fetching dropdown data:', error);
       toastService.error('Failed to load dropdown data.');
@@ -288,7 +281,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
                 </div>
                 <div>
                   <span className="text-gray-500 text-xs">Region:</span>
-                  <p className="font-medium text-gray-900">{displayCustomer.region?.nama_region || 'N/A'}</p>
+                  <p className="font-medium text-gray-900">{displayCustomer.region || 'N/A'}</p>
                 </div>
               </div>
             </div>
