@@ -31,7 +31,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
   const initializeFormData = (data) => {
     setFormData({
       kode_group: data?.kode_group || '',
-      kode_group_surat: data?.kode_group_surat || '',
       nama_group: data?.nama_group || '',
       alamat: data?.alamat || '',
       npwp: data?.npwp || '',
@@ -192,19 +191,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Kode Group Surat</label>
-                        <input
-                          type="text"
-                          name="kode_group_surat"
-                          value={formData?.kode_group_surat || ''}
-                          onChange={handleInputChange}
-                          maxLength={5}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p className="mt-1 text-xs text-gray-500">Kode ini akan digunakan untuk generate nomor Surat Jalan (max 5 karakter)</p>
-                      </div>
-
-                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nama Group Customer *</label>
                         <input
                           type="text"
@@ -254,7 +240,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                       data={[
                         { label: 'Group Name', value: groupCustomer?.nama_group },
                         { label: 'Group Code', value: groupCustomer?.kode_group, copyable: true },
-                        { label: 'Kode Group Surat', value: groupCustomer?.kode_group_surat || '-' },
                         {
                           label: 'Status',
                           component: (

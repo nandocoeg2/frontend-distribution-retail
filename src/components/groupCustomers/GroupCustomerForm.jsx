@@ -45,29 +45,6 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
         )}
       </div>
 
-      {/* Kode Group Surat */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Kode Group Surat
-        </label>
-        <input
-          type="text"
-          name="kode_group_surat"
-          value={formData.kode_group_surat}
-          onChange={handleInputChange}
-          disabled={loading}
-          maxLength={5}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
-            errors.kode_group_surat ? 'border-red-500' : 'border-gray-300'
-          }`}
-          placeholder="Masukkan kode untuk Surat Jalan (max 5 karakter)"
-        />
-        {errors.kode_group_surat && (
-          <p className="mt-1 text-sm text-red-600">{errors.kode_group_surat}</p>
-        )}
-        <p className="mt-1 text-xs text-gray-500">Kode ini akan digunakan untuk generate nomor Surat Jalan</p>
-      </div>
-
       {/* Nama Group */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">

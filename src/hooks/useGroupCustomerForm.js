@@ -6,7 +6,6 @@ import { groupCustomerService } from '../services/groupCustomerService';
 const useGroupCustomerForm = (initialData = null) => {
   const [formData, setFormData] = useState({
     kode_group: '',
-    kode_group_surat: '',
     nama_group: '',
     alamat: '',
     npwp: '',
@@ -72,7 +71,6 @@ const useGroupCustomerForm = (initialData = null) => {
 
       const submitData = {
         kode_group: formData.kode_group.trim(),
-        kode_group_surat: formData.kode_group_surat.trim() || null,
         nama_group: formData.nama_group.trim(),
         alamat: formData.alamat.trim() || null,
         npwp: formData.npwp.trim() || null
@@ -136,7 +134,6 @@ const useGroupCustomerForm = (initialData = null) => {
   const resetForm = useCallback(() => {
     setFormData({
       kode_group: '',
-      kode_group_surat: '',
       nama_group: '',
       alamat: '',
       npwp: '',
