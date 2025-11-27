@@ -85,44 +85,53 @@ const ItemTable = ({
   };
 
   return (
-    <>
-      <div className='overflow-x-auto bg-white rounded-lg shadow'>
-        <table className='min-w-full divide-y divide-gray-200'>
+    <div className='space-y-4'>
+      <div className='overflow-x-auto'>
+        <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
+          <colgroup>
+            <col style={{ width: '180px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '120px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '60px' }} />
+          </colgroup>
           <thead className='bg-gray-50'>
             <tr>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Nama Barang
               </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 PLU
               </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Kode Barang
               </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Berat (kg)
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Berat
               </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                Dimensi (cm)
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Dimensi
               </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Updated
               </th>
-              <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className='bg-white divide-y divide-gray-200'>
+          <tbody className='bg-white divide-y divide-gray-100'>
             {loading ? (
               <tr>
-                <td colSpan='6' className='py-4 text-center'>
-                  <div className='w-8 h-8 mx-auto border-b-2 border-blue-600 rounded-full animate-spin'></div>
+                <td colSpan='7' className='px-2 py-1 text-center'>
+                  <div className='w-6 h-6 mx-auto border-b-2 border-blue-600 rounded-full animate-spin'></div>
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan='6' className='py-4 text-center text-gray-500'>
+                <td colSpan='7' className='px-2 py-1 text-center text-gray-500 text-xs'>
                   No items found.
                 </td>
               </tr>
@@ -133,41 +142,41 @@ const ItemTable = ({
                   <tr 
                     key={item.id} 
                     onClick={() => onViewDetail(item)}
-                    className={`cursor-pointer transition-colors ${
+                    className={`cursor-pointer transition-colors h-8 ${
                       selectedItemId === item.id 
-                        ? 'bg-blue-50 hover:bg-blue-100' 
+                        ? 'bg-blue-50 border-l-4 border-blue-500' 
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={item.nama_barang}>
                       {item.nama_barang}
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-600 font-mono bg-gray-100 rounded whitespace-nowrap'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900'>
                       {item.plu}
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-600 font-mono bg-gray-100 rounded whitespace-nowrap'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
                       {item.eanBarcode || item.item_code || 'N/A'}
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
                       {berat}
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
                       {formattedSize}
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-500 whitespace-nowrap'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-600'>
                       {formatDate(item.updatedAt)}
                     </td>
-                    <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
-                      <div className='flex items-center justify-end space-x-2'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs'>
+                      <div className='flex space-x-1'>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDelete(item.id);
                           }}
-                          className='text-red-600 hover:text-red-900'
+                          className='p-0.5 text-red-600 hover:text-red-900'
                           title='Delete'
                         >
-                          <TrashIcon className='w-5 h-5' />
+                          <TrashIcon className='h-4 w-4' />
                         </button>
                       </div>
                     </td>
@@ -186,7 +195,7 @@ const ItemTable = ({
       />
 
       <ConfirmationDialog onConfirm={handleConfirmDelete} />
-    </>
+    </div>
   );
 };
 

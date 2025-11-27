@@ -28,111 +28,100 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
     hideDialog();
   };
   return (
-    <div className='overflow-x-auto'>
-      <table className='min-w-full divide-y divide-gray-200'>
-        <thead>
-          <tr>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Customer Name
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Customer Code
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Group
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Region
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Alamat
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Phone
-            </th>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className='bg-white divide-y divide-gray-200'>
-          {customers.length === 0 ? (
+    <div className='space-y-4'>
+      <div className='overflow-x-auto'>
+        <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
+          <colgroup>
+            <col style={{ width: '180px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '120px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '200px' }} />
+            <col style={{ width: '120px' }} />
+            <col style={{ width: '60px' }} />
+          </colgroup>
+          <thead className='bg-gray-50'>
             <tr>
-              <td colSpan="7" className='px-6 py-4 text-center text-gray-500'>
-                {searchQuery ? 'No customers found matching your search.' : 'No customers available.'}
-              </td>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Customer Name
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Code
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Group
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Region
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Alamat
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Phone
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Actions
+              </th>
             </tr>
-          ) : (
-            customers.map((customer) => {
-              const isSelected = selectedCustomerId === customer.id;
-              return (
-              <tr 
-                key={customer.id}
-                onClick={() => onViewDetail && onViewDetail(customer)}
-                className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                  isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                }`}
-              >
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm font-medium text-gray-900'>
-                    {customer.namaCustomer}
-                  </div>
-                  <div className='text-sm text-gray-500'>
-                    {customer.email || 'No email'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-600 font-mono bg-gray-100 px-2 py-1 rounded'>
-                    {customer.kodeCustomer}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {customer.groupCustomer?.nama_group || 'N/A'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {customer.region?.nama_region || 'N/A'}
-                  </div>
-                </td>
-                <td className='px-6 py-4'>
-                  <div className='text-sm text-gray-900 max-w-xs truncate' title={customer.alamatPengiriman || '-'}>
-                    {customer.alamatPengiriman || '-'}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {customer.phoneNumber || '-'}
-                  </div>
-                  {customer.customerPics && customer.customerPics.length > 0 && (() => {
-                    const defaultPic = customer.customerPics.find(pic => pic.default);
-                    const pic = defaultPic || customer.customerPics[0];
-                    return (
-                      <div className='text-xs text-gray-500'>
-                        PIC: {pic.nama_pic} ({pic.dept})
-                      </div>
-                    );
-                  })()}
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(customer.id);
-                    }}
-                    className='text-red-600 hover:text-red-900 p-1 transition-colors'
-                    title='Delete'
-                  >
-                    <TrashIcon className='h-4 w-4' />
-                  </button>
+          </thead>
+          <tbody className='bg-white divide-y divide-gray-100'>
+            {customers.length === 0 ? (
+              <tr>
+                <td colSpan="7" className='px-2 py-1 text-center text-gray-500 text-xs'>
+                  {searchQuery ? 'No customers found matching your search.' : 'No customers available.'}
                 </td>
               </tr>
-            );
-            })
-          )}
-        </tbody>
-      </table>
+            ) : (
+              customers.map((customer) => {
+                const isSelected = selectedCustomerId === customer.id;
+                return (
+                <tr 
+                  key={customer.id}
+                  onClick={() => onViewDetail && onViewDetail(customer)}
+                  className={`cursor-pointer transition-colors h-8 ${
+                    isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.namaCustomer}>
+                    {customer.namaCustomer}
+                  </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900'>
+                    {customer.kodeCustomer}
+                  </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.groupCustomer?.nama_group || 'N/A'}>
+                    {customer.groupCustomer?.nama_group || 'N/A'}
+                  </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.region?.nama_region || 'N/A'}>
+                    {customer.region?.nama_region || 'N/A'}
+                  </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.alamatPengiriman || '-'}>
+                    {customer.alamatPengiriman || '-'}
+                  </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
+                    {customer.phoneNumber || '-'}
+                  </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs'>
+                    <div className='flex space-x-1'>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(customer.id);
+                        }}
+                        className='p-0.5 text-red-600 hover:text-red-900'
+                        title='Delete'
+                      >
+                        <TrashIcon className='h-4 w-4' />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
       <Pagination pagination={pagination} onPageChange={onPageChange} onLimitChange={onLimitChange} />
       
       <ConfirmationDialog 

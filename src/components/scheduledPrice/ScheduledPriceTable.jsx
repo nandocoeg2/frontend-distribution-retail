@@ -26,8 +26,7 @@ const ScheduledPriceTable = ({
     const config = statusConfig[status] || statusConfig.PENDING;
     
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
-        <span className="mr-1">{config.icon}</span>
+      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
         {config.label}
       </span>
     );
@@ -38,129 +37,121 @@ const ScheduledPriceTable = ({
     return formatDate(dateString);
   };
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-8 text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Loading schedules...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!schedules || schedules.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-8 text-center">
-          <p className="text-gray-600">No schedules found</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="space-y-4">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+        <table className="min-w-full bg-white border border-gray-200 text-xs table-fixed">
+          <colgroup>
+            <col style={{ width: '180px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '100px' }} />
+            <col style={{ width: '90px' }} />
+            <col style={{ width: '80px' }} />
+          </colgroup>
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Item
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 PLU
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Current Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Scheduled Price
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                New Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Effective Date
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Effective
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {schedules.map((schedule) => (
-              <tr key={schedule.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {schedule.itemPrice?.item?.nama_barang || '-'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {schedule.itemPrice?.item?.plu || '-'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {formatCurrency(schedule.itemPrice?.harga)}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(schedule.harga)}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">
-                    {formatDateShort(schedule.effectiveDate)}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(schedule.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onView(schedule)}
-                      className="text-blue-600 hover:text-blue-900"
-                      title="View Details"
-                    >
-                      <EyeIcon className="w-5 h-5" />
-                    </button>
-                    
-                    {schedule.status === 'PENDING' && (
-                      <>
-                        <button
-                          onClick={() => onEdit(schedule)}
-                          className="text-green-600 hover:text-green-900"
-                          title="Edit Schedule"
-                        >
-                          <PencilIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => onDelete(schedule)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete Schedule"
-                        >
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
-                      </>
-                    )}
-                    
-                    {(schedule.status === 'PENDING' || schedule.status === 'ACTIVE') && (
-                      <button
-                        onClick={() => onCancel(schedule)}
-                        className="text-orange-600 hover:text-orange-900"
-                        title="Cancel Schedule"
-                      >
-                        <XCircleIcon className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="px-2 py-1 text-center">
+                  <div className="w-6 h-6 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
                 </td>
               </tr>
-            ))}
+            ) : !schedules || schedules.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="px-2 py-1 text-center text-gray-500 text-xs">
+                  No schedules found
+                </td>
+              </tr>
+            ) : (
+              schedules.map((schedule) => (
+                <tr key={schedule.id} className="hover:bg-gray-50 h-8 cursor-pointer transition-colors">
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate" title={schedule.itemPrice?.item?.nama_barang || '-'}>
+                    {schedule.itemPrice?.item?.nama_barang || '-'}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">
+                    {schedule.itemPrice?.item?.plu || '-'}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900">
+                    {formatCurrency(schedule.itemPrice?.harga)}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">
+                    {formatCurrency(schedule.harga)}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600">
+                    {formatDateShort(schedule.effectiveDate)}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap">
+                    {getStatusBadge(schedule.status)}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs">
+                    <div className="flex space-x-1">
+                      <button
+                        onClick={() => onView(schedule)}
+                        className="p-0.5 text-blue-600 hover:text-blue-900"
+                        title="View Details"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </button>
+                      
+                      {schedule.status === 'PENDING' && (
+                        <>
+                          <button
+                            onClick={() => onEdit(schedule)}
+                            className="p-0.5 text-green-600 hover:text-green-900"
+                            title="Edit Schedule"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(schedule)}
+                            className="p-0.5 text-red-600 hover:text-red-900"
+                            title="Delete Schedule"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                      
+                      {(schedule.status === 'PENDING' || schedule.status === 'ACTIVE') && (
+                        <button
+                          onClick={() => onCancel(schedule)}
+                          className="p-0.5 text-orange-600 hover:text-orange-900"
+                          title="Cancel Schedule"
+                        >
+                          <XCircleIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
