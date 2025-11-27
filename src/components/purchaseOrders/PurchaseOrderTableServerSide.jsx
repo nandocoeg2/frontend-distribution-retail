@@ -156,6 +156,7 @@ const PurchaseOrderTableServerSide = ({
     () => [
       columnHelper.display({
         id: 'select',
+        size: 40,
         header: () => {
           const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
           
@@ -177,7 +178,7 @@ const PurchaseOrderTableServerSide = ({
               }}
               onChange={handleSelectAllInternalToggle}
               onClick={(e) => e.stopPropagation()}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -190,16 +191,17 @@ const PurchaseOrderTableServerSide = ({
               onSelectionChange(row.original.id, event.target.checked)
             }
             onClick={(e) => e.stopPropagation()}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
         ),
         enableSorting: false,
         enableColumnFilter: false,
       }),
       columnHelper.accessor('po_number', {
+        size: 60,
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">PO Number</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">PO Number</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -208,22 +210,23 @@ const PurchaseOrderTableServerSide = ({
                 setPage(1);
               }}
               placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
         cell: (info) => (
-          <div className="text-sm font-medium text-gray-900">
+          <span className="text-xs font-medium text-gray-900">
             {info.getValue() || 'N/A'}
-          </div>
+          </span>
         ),
       }),
       columnHelper.accessor('customer.namaCustomer', {
         id: 'customer',
+        size: 120,
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Customer</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -232,7 +235,7 @@ const PurchaseOrderTableServerSide = ({
                 setPage(1);
               }}
               placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -240,107 +243,65 @@ const PurchaseOrderTableServerSide = ({
         cell: (info) => {
           const customer = info.row.original.customer;
           return (
-            <div>
-              <div className="text-sm text-gray-900">
+            <div className="leading-tight">
+              <div className="text-xs text-gray-900">
                 {customer?.namaCustomer || '-'}
               </div>
-              {customer?.kodeCustomer && (
-                <div className="text-xs text-gray-500">
-                  {customer.kodeCustomer}
-                </div>
-              )}
             </div>
           );
         },
       }),
-      columnHelper.accessor('total_items', {
+      columnHelper.accessor('tanggal_masuk_po', {
+        size: 110,
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Total Items</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tanggal Masuk</div>
             <input
-              type="text"
+              type="date"
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
         cell: (info) => (
-          <div className="text-sm text-gray-900">
-            {info.getValue() || 0}
-          </div>
+          <span className="text-xs text-gray-600">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
+          </span>
         ),
-        enableColumnFilter: false,
-      }),
-      columnHelper.accessor('tanggal_masuk_po', {
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal Masuk PO</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) =>
-          info.getValue()
-            ? formatDate(info.getValue())
-            : '-',
       }),
       columnHelper.accessor('delivery_date', {
-        header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Delivery Date</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
+        size: 90,
+        header: () => <div className="font-medium text-xs">Delivery</div>,
+        cell: (info) => (
+          <span className="text-xs text-gray-600">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
+          </span>
         ),
-        cell: (info) =>
-          info.getValue()
-            ? formatDate(info.getValue())
-            : '-',
         enableColumnFilter: false,
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top',
-        header: 'TOP',
+        size: 60,
+        header: () => <div className="font-medium text-xs">TOP</div>,
         cell: (info) => {
           const top = info.row.original.termOfPayment;
           return (
-            <div>
-              <div className="text-sm text-gray-900">
+            <div className="leading-tight">
+              <div className="text-xs text-gray-900">
                 {top?.kode_top || '-'}
               </div>
-              {top?.batas_hari && (
-                <div className="text-xs text-gray-500">
-                  {top.batas_hari} hari
-                </div>
-              )}
             </div>
           );
         },
         enableColumnFilter: false,
       }),
       columnHelper.accessor('po_type', {
+        size: 80,
         header: ({ column }) => {
           const tabConfig = TAB_STATUS_CONFIG[activeTab];
           const lockedPoType = tabConfig?.poType;
@@ -349,10 +310,10 @@ const PurchaseOrderTableServerSide = ({
             lockedPoType;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Type</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Type</div>
               {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                <div className="w-full px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {lockedPoType}
                 </div>
               ) : (
@@ -362,7 +323,7 @@ const PurchaseOrderTableServerSide = ({
                     column.setFilterValue(event.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <option value="">Semua</option>
@@ -373,23 +334,33 @@ const PurchaseOrderTableServerSide = ({
             </div>
           );
         },
-        cell: (info) => (
-          <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
-        ),
+        cell: (info) => {
+          const type = info.getValue();
+          if (!type) return <span className="text-xs text-gray-500">-</span>;
+          return (
+            <StatusBadge
+              status={type}
+              variant={type === 'MANUAL' ? 'primary' : 'info'}
+              size="xs"
+              dot
+            />
+          );
+        },
         enableSorting: false,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
+        size: 110,
         header: ({ column }) => {
           const tabConfig = TAB_STATUS_CONFIG[activeTab];
           const lockedStatus = tabConfig?.statusCode;
           const isLocked = activeTab !== 'all' && lockedStatus;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Status</div>
               {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
+                <div className="w-full px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {tabConfig?.label || 'N/A'}
                 </div>
               ) : (
@@ -399,7 +370,7 @@ const PurchaseOrderTableServerSide = ({
                     column.setFilterValue(event.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   onClick={(event) => event.stopPropagation()}
                 >
                   <option value="">Semua</option>
@@ -419,31 +390,32 @@ const PurchaseOrderTableServerSide = ({
             <StatusBadge
               status={statusName}
               variant={resolveStatusVariant(statusName)}
-              size="sm"
+              size="xs"
               dot
             />
           ) : (
-            <span className="text-sm text-gray-500">-</span>
+            <span className="text-xs text-gray-500">-</span>
           );
         },
         enableSorting: false,
       }),
       columnHelper.display({
         id: 'actions',
-        header: 'Actions',
+        size: 70,
+        header: () => <div className="font-medium text-xs">Actions</div>,
         cell: ({ row }) => {
           const order = row.original;
           const editDisabled = isEditDisabled(order);
 
           return (
-            <div className="flex space-x-2">
+            <div className="flex space-x-1">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   !editDisabled && onEdit(order);
                 }}
-                className={`p-1 ${
+                className={`p-0.5 ${
                   editDisabled
                     ? 'text-gray-400 cursor-not-allowed'
                     : 'text-green-600 hover:text-green-900'
@@ -455,7 +427,7 @@ const PurchaseOrderTableServerSide = ({
                 }
                 disabled={editDisabled}
               >
-                <PencilIcon className="h-5 w-5" />
+                <PencilIcon className="h-4 w-4" />
               </button>
               <button
                 type="button"
@@ -464,10 +436,10 @@ const PurchaseOrderTableServerSide = ({
                   onDelete(order.id, order.po_number);
                 }}
                 disabled={deleteLoading}
-                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete"
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className="h-4 w-4" />
               </button>
             </div>
           );
@@ -551,11 +523,11 @@ const PurchaseOrderTableServerSide = ({
         emptyMessage="Tidak ada data purchase order."
         emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian."
         wrapperClassName="overflow-x-auto"
-        tableClassName="min-w-full bg-white border border-gray-200"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50"
+        headerCellClassName="px-2 py-1.5 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 h-8"
         getRowClassName={({ row }) => {
           if (selectedOrderId === row.original.id) {
             return 'bg-blue-50 border-l-4 border-blue-500';
@@ -565,8 +537,8 @@ const PurchaseOrderTableServerSide = ({
           }
           return undefined;
         }}
-        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-        emptyCellClassName="px-6 py-4 text-center text-gray-500"
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-2 py-1 text-center text-gray-500"
         onRowClick={onViewDetail}
       />
 
