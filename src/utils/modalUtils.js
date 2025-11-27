@@ -56,7 +56,11 @@ export const resolveStatusVariant = (status) => {
     value.includes('success') ||
     value.includes('approve') ||
     value.includes('approved') ||
-    value.includes('delivered')
+    value.includes('delivered') ||
+    value.includes('paid') ||
+    value.includes('issued') ||
+    value.includes('received') ||
+    value.includes('terkirim')
   ) {
     return 'success';
   }
@@ -70,7 +74,9 @@ export const resolveStatusVariant = (status) => {
     value.includes('rejected') ||
     value.includes('cancel') ||
     value.includes('cancelled') ||
-    value.includes('batal')
+    value.includes('batal') ||
+    value.includes('overdue') ||
+    value.includes('jatuh tempo')
   ) {
     return 'danger';
   }
