@@ -310,7 +310,7 @@ const PackingTableServerSide = ({
                 if (input) input.indeterminate = isIndeterminate;
               }}
               onChange={onSelectAllPackings}
-              className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+              className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
             />
           );
         },
@@ -319,7 +319,7 @@ const PackingTableServerSide = ({
             type='checkbox'
             checked={selectedPackings.includes(row.original.id)}
             onChange={() => onSelectPacking(row.original.id)}
-            className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
           />
         ),
         enableSorting: false,
@@ -329,8 +329,8 @@ const PackingTableServerSide = ({
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>No PO</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>No PO</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -349,8 +349,8 @@ const PackingTableServerSide = ({
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'customer_name',
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Customer Name</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Customer</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -368,8 +368,8 @@ const PackingTableServerSide = ({
       }),
       columnHelper.accessor('tanggal_packing', {
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Tanggal Packing</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Tgl Packing</div>
             <input
               type='date'
               value={column.getFilterValue() ?? ''}
@@ -387,8 +387,8 @@ const PackingTableServerSide = ({
       columnHelper.accessor('purchaseOrder.delivery_date', {
         id: 'tanggal_expired',
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Tanggal Expired</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Tgl Expired</div>
             <input
               type='date'
               value={column.getFilterValue() ?? ''}
@@ -409,8 +409,8 @@ const PackingTableServerSide = ({
       columnHelper.display({
         id: 'is_printed',
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Status Print</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Print</div>
             <select
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
@@ -461,8 +461,8 @@ const PackingTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className='space-y-2'>
-              <div className='font-medium'>Status</div>
+            <div className='space-y-1'>
+              <div className='font-medium text-xs'>Status</div>
               {isLocked ? (
                 <div className='w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700'>
                   {statusConfig?.label || 'N/A'}
@@ -544,7 +544,7 @@ const PackingTableServerSide = ({
                 }
                 disabled={processing}
               >
-                <PencilIcon className='h-5 w-5' />
+                <PencilIcon className='h-4 w-4' />
               </button>
               <button
                 type='button'
@@ -556,7 +556,7 @@ const PackingTableServerSide = ({
                 className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
                 title='Delete'
               >
-                <TrashIcon className='h-5 w-5' />
+                <TrashIcon className='h-4 w-4' />
               </button>
             </div>
           );
@@ -651,23 +651,23 @@ const PackingTableServerSide = ({
         loadingMessage='Memuat data packing...'
         emptyMessage='Tidak ada data packing'
         emptyFilteredMessage='Tidak ada data yang sesuai dengan pencarian'
-        tableClassName='min-w-full bg-white border border-gray-200'
+        tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
         headerRowClassName='bg-gray-50'
-        headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
-        bodyClassName='bg-white divide-y divide-gray-200'
-        rowClassName='hover:bg-gray-50 cursor-pointer'
+        headerCellClassName='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+        bodyClassName='bg-white divide-y divide-gray-100'
+        rowClassName='hover:bg-gray-50 cursor-pointer h-8'
         onRowClick={onRowClick}
         getRowClassName={({ row }) => {
           if (selectedPackingId === row.original.id) {
-            return 'bg-blue-100 hover:bg-blue-150';
+            return 'bg-blue-50 border-l-4 border-blue-500';
           }
           if (selectedPackings.includes(row.original.id)) {
-            return 'bg-blue-50 hover:bg-blue-100';
+            return 'bg-blue-50';
           }
           return undefined;
         }}
-        cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
-        emptyCellClassName='px-6 py-4 text-center text-gray-500'
+        cellClassName='px-2 py-1 whitespace-nowrap text-xs text-gray-900'
+        emptyCellClassName='px-2 py-1 text-center text-gray-500 text-xs'
       />
 
       {!isLoading && !error && (

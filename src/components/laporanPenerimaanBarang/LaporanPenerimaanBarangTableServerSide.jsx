@@ -354,7 +354,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
               }}
               onChange={handleSelectAllInternalToggle}
               onClick={(e) => e.stopPropagation()}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -369,7 +369,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
               }
               onClick={(e) => e.stopPropagation()}
               disabled={!reportId}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -380,8 +380,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('no_lpb', {
         id: 'no_lpb',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No LPB</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No LPB</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -400,8 +400,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No PO</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No PO</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -420,8 +420,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('customer.namaCustomer', {
         id: 'customer',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Customer</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -440,8 +440,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('purchaseOrder.invoice.no_invoice', {
         id: 'invoice',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Invoice</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Invoice</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -460,8 +460,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('tanggal_po', {
         id: 'tanggal_po',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal LPB</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tanggal</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
@@ -483,8 +483,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Status</div>
               {isLocked ? (
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {statusConfig?.label || 'N/A'}
@@ -535,7 +535,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
                 className="text-indigo-600 hover:text-indigo-900"
                 title="View Details"
               >
-                <EyeIcon className="h-5 w-5" />
+                <EyeIcon className="h-4 w-4" />
               </button>
               <button
                 type="button"
@@ -543,7 +543,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
                 className="text-green-600 hover:text-green-900"
                 title="Edit"
               >
-                <PencilIcon className="h-5 w-5" />
+                <PencilIcon className="h-4 w-4" />
               </button>
               {!hasPurchaseOrder ? (
                 <button
@@ -552,7 +552,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
                   className="text-blue-600 hover:text-blue-900"
                   title="Assign Purchase Order"
                 >
-                  <LinkIcon className="h-5 w-5" />
+                  <LinkIcon className="h-4 w-4" />
                 </button>
               ) : (
                 <button
@@ -561,7 +561,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
                   className="text-orange-600 hover:text-orange-900"
                   title="Unassign Purchase Order"
                 >
-                  <LinkSlashIcon className="h-5 w-5" />
+                  <LinkSlashIcon className="h-4 w-4" />
                 </button>
               )}
               <button
@@ -571,7 +571,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
                 className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete"
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className="h-4 w-4" />
               </button>
             </div>
           );
@@ -652,11 +652,11 @@ const LaporanPenerimaanBarangTableServerSide = ({
         loadingMessage="Memuat data laporan..."
         emptyMessage="Tidak ada data laporan penerimaan barang"
         emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian"
-        tableClassName="min-w-full bg-white border border-gray-200"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50 cursor-pointer"
+        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
         onRowClick={(rowData) => {
           // rowData is row.original from DataTable
           if (rowData && onView) {
@@ -667,17 +667,17 @@ const LaporanPenerimaanBarangTableServerSide = ({
           const reportId = resolveReportId(row.original);
           
           if (reportId === selectedReportId) {
-            return 'bg-indigo-100 hover:bg-indigo-150 border-l-4 border-indigo-500';
+            return 'bg-blue-50 border-l-4 border-blue-500';
           }
           
           if (reportId && selectedReports.includes(reportId)) {
-            return 'bg-blue-50 hover:bg-blue-100';
+            return 'bg-blue-50';
           }
           
           return undefined;
         }}
-        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-        emptyCellClassName="px-6 py-4 text-center text-gray-500"
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-2 py-1 text-center text-gray-500 text-xs"
       />
 
       {!isLoading && !error && (

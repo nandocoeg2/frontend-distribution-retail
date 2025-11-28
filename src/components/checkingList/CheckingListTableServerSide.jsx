@@ -280,7 +280,7 @@ const CheckingListTableServerSide = ({
               }}
               onChange={handleSelectAllInternalToggle}
               onClick={(e) => e.stopPropagation()}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -295,7 +295,7 @@ const CheckingListTableServerSide = ({
               }
               onClick={(e) => e.stopPropagation()}
               disabled={!checklistId}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -305,8 +305,8 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal Checklist</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tanggal</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
@@ -323,8 +323,8 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('no_checklist_surat_jalan', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No Checklist</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Checklist</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -343,8 +343,8 @@ const CheckingListTableServerSide = ({
       columnHelper.accessor('suratJalan', {
         id: 'surat_jalan',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Surat Jalan</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Surat Jalan</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -385,8 +385,8 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('checker', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Checker</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Checker</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -404,8 +404,8 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('driver', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Driver</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Driver</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -423,8 +423,8 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('mobil', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kendaraan</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Kendaraan</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -442,8 +442,8 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('kota', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kota</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Kota</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -497,10 +497,9 @@ const CheckingListTableServerSide = ({
                   onDelete && checklistId && onDelete(checklistId);
                 }}
                 disabled={deleteLoading}
-                className="inline-flex items-center rounded-md border border-transparent bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <TrashIcon className="mr-1 h-4 w-4" />
-                Hapus
+                <TrashIcon className="h-4 w-4" />
               </button>
             </div>
           );
@@ -595,30 +594,30 @@ const CheckingListTableServerSide = ({
             loadingMessage="Memuat data checklist surat jalan..."
             emptyMessage="Belum ada checklist surat jalan."
             emptyFilteredMessage="Tidak ada checklist surat jalan yang cocok dengan pencarian."
-            wrapperClassName="overflow-x-auto rounded-xl border border-gray-200 shadow-sm"
-            tableClassName="min-w-full divide-y divide-gray-200 bg-white"
+            wrapperClassName="overflow-x-auto"
+            tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
             headerRowClassName="bg-gray-50"
-            headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-            bodyClassName="divide-y divide-gray-200 bg-white"
-            rowClassName="hover:bg-gray-50 cursor-pointer"
+            headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            bodyClassName="divide-y divide-gray-100 bg-white"
+            rowClassName="hover:bg-gray-50 cursor-pointer h-8"
             getRowClassName={({ row }) => {
               const checklistId = resolveChecklistId(row.original);
               
               if (checklistId === selectedChecklistId) {
-                return 'bg-indigo-100 hover:bg-indigo-150 border-l-4 border-indigo-500';
+                return 'bg-blue-50 border-l-4 border-blue-500';
               }
               
               if (checklistId && selectedChecklists.includes(checklistId)) {
-                return 'bg-blue-50 hover:bg-blue-100';
+                return 'bg-blue-50';
               }
               
               return undefined;
             }}
-            cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+            cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
             onRowClick={(checklist) => {
               onViewDetail && onViewDetail(checklist);
             }}
-            emptyCellClassName="px-6 py-6 text-center text-sm text-gray-500"
+            emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
           />
 
           <DataTablePagination

@@ -190,7 +190,7 @@ const SuratJalanTableServerSide = ({
               }}
               onChange={() => onSelectAllSuratJalan && onSelectAllSuratJalan(selectableItems)}
               disabled={selectableItems.length === 0}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
             />
           );
         },
@@ -204,7 +204,7 @@ const SuratJalanTableServerSide = ({
               checked={isChecked}
               onChange={() => onSelectSuratJalan && onSelectSuratJalan(row.original)}
               disabled={isDisabled}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
               title={isDisabled ? 'Surat jalan sudah diproses checklist' : ''}
             />
           );
@@ -214,8 +214,8 @@ const SuratJalanTableServerSide = ({
       }),
       columnHelper.accessor('no_surat_jalan', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No Surat Jalan</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Surat Jalan</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -234,8 +234,8 @@ const SuratJalanTableServerSide = ({
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No PO</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No PO</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -254,8 +254,8 @@ const SuratJalanTableServerSide = ({
       }),
       columnHelper.accessor('deliver_to', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Deliver</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Deliver</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -274,8 +274,8 @@ const SuratJalanTableServerSide = ({
       columnHelper.accessor('invoice.no_invoice', {
         id: 'no_invoice',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No Invoice</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Invoice</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -299,8 +299,8 @@ const SuratJalanTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Status</div>
               {isLocked ? (
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {statusConfig?.label || 'N/A'}
@@ -336,8 +336,8 @@ const SuratJalanTableServerSide = ({
       }),
       columnHelper.accessor('is_printed', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Status Print</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Print</div>
             <select
               value={column.getFilterValue() ?? ''}
               onChange={(event) => {
@@ -382,7 +382,7 @@ const SuratJalanTableServerSide = ({
                 className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete"
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className="h-4 w-4" />
               </button>
             </div>
           );
@@ -460,23 +460,23 @@ const SuratJalanTableServerSide = ({
         emptyMessage="Tidak ada data surat jalan."
         emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian."
         wrapperClassName="overflow-x-auto"
-        tableClassName="min-w-full bg-white border border-gray-200"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50 cursor-pointer"
+        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
         getRowClassName={({ row }) => {
           if (selectedSuratJalanId === row.original.id) {
-            return 'bg-blue-50 hover:bg-blue-100';
+            return 'bg-blue-50 border-l-4 border-blue-500';
           }
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
           return selectedIds.includes(row.original.id)
-            ? 'bg-blue-50 hover:bg-blue-100'
+            ? 'bg-blue-50'
             : undefined;
         }}
         onRowClick={onRowClick}
-        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-        emptyCellClassName="px-6 py-4 text-center text-gray-500"
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-2 py-1 text-center text-gray-500 text-xs"
       />
 
       {!loading && !error && (

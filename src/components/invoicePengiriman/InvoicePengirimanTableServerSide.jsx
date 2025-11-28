@@ -244,7 +244,7 @@ const InvoicePengirimanTableServerSide = ({
                 if (input) input.indeterminate = isIndeterminate;
               }}
               onChange={() => onSelectAllInvoices(invoices)}
-              className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+              className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
             />
           );
         },
@@ -253,7 +253,7 @@ const InvoicePengirimanTableServerSide = ({
             type='checkbox'
             checked={selectedInvoices.includes(row.original.id)}
             onChange={() => onSelectInvoice(row.original.id)}
-            className='h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
           />
         ),
         enableSorting: false,
@@ -262,8 +262,8 @@ const InvoicePengirimanTableServerSide = ({
       }),
       columnHelper.accessor('no_invoice', {
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>No Invoice</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>No Invoice</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -286,8 +286,8 @@ const InvoicePengirimanTableServerSide = ({
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>No PO</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>No PO</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -310,8 +310,8 @@ const InvoicePengirimanTableServerSide = ({
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'nama_customer',
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Customer</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Customer</div>
             <input
               type='text'
               value={column.getFilterValue() ?? ''}
@@ -329,8 +329,8 @@ const InvoicePengirimanTableServerSide = ({
       }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
-          <div className='space-y-2'>
-            <div className='font-medium'>Tanggal Invoice</div>
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Tanggal</div>
             <input
               type='date'
               value={column.getFilterValue() ?? ''}
@@ -413,7 +413,7 @@ const InvoicePengirimanTableServerSide = ({
               className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
               title='Delete'
             >
-              <TrashIcon className='w-5 h-5' />
+              <TrashIcon className='h-4 w-4' />
             </button>
           </div>
         ),
@@ -490,24 +490,24 @@ const InvoicePengirimanTableServerSide = ({
         loadingMessage='Memuat data invoice pengiriman...'
         emptyMessage='Tidak ada data invoice pengiriman.'
         emptyFilteredMessage='Tidak ada data yang sesuai dengan pencarian.'
-        wrapperClassName='overflow-x-auto border border-gray-200 rounded-lg'
-        tableClassName='min-w-full bg-white'
+        wrapperClassName='overflow-x-auto'
+        tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
         headerRowClassName='bg-gray-50'
-        headerCellClassName='px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider'
-        bodyClassName='divide-y divide-gray-200'
-        rowClassName='hover:bg-gray-50 cursor-pointer'
+        headerCellClassName='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+        bodyClassName='divide-y divide-gray-100'
+        rowClassName='hover:bg-gray-50 cursor-pointer h-8'
         getRowClassName={({ row }) => {
           if (selectedInvoiceId === row.original.id) {
-            return 'bg-blue-50 hover:bg-blue-100';
+            return 'bg-blue-50 border-l-4 border-blue-500';
           }
           if (selectedInvoices.includes(row.original.id)) {
-            return 'bg-blue-50 hover:bg-blue-100';
+            return 'bg-blue-50';
           }
           return undefined;
         }}
         onRowClick={onViewDetail}
-        cellClassName='px-6 py-4 whitespace-nowrap text-sm text-gray-900'
-        emptyCellClassName='px-6 py-4 text-center text-sm text-gray-500'
+        cellClassName='px-2 py-1 whitespace-nowrap text-xs text-gray-900'
+        emptyCellClassName='px-2 py-1 text-center text-xs text-gray-500'
       />
 
       {!loading && !error && (
