@@ -11,30 +11,7 @@ import {
   ConfirmationDialog,
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: {
-    label: 'Pending',
-    statusCode: 'PENDING LAPORAN PENERIMAAN BARANG',
-  },
-  indikasi_pengganti: {
-    label: 'Indikasi Pengganti',
-    statusCode: 'INDIKASI PENGGANTI',
-  },
-  completed: {
-    label: 'Completed',
-    statusCode: 'COMPLETED LAPORAN PENERIMAAN BARANG',
-  },
-  failed: {
-    label: 'Failed',
-    statusCode: 'FAILED LAPORAN PENERIMAAN BARANG',
-  },
-};
-
-const TAB_ORDER = ['all', 'pending', 'indikasi_pengganti', 'completed', 'failed'];
 
 const INITIAL_PAGINATION = {
   currentPage: 1,
@@ -70,7 +47,6 @@ const LaporanPenerimaanBarang = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReportIds, setSelectedReportIds] = useState([]);
   const [isCompletingReports, setIsCompletingReports] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
 
   const {
     showDialog: showCompleteDialog,
@@ -103,14 +79,7 @@ const LaporanPenerimaanBarang = () => {
   }, []);
 
   const handleSelectAllReports = useCallback(() => {
-    // This will be handled by the table component
-    // Just toggle the selection state
     setSelectedReportIds((prev) => (prev.length > 0 ? [] : []));
-  }, []);
-
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-    setSelectedReportIds([]);
   }, []);
 
   const refreshData = useCallback(() => {
@@ -244,70 +213,36 @@ const LaporanPenerimaanBarang = () => {
   }, [deleteReportConfirmation, queryClient]);
 
   return (
-    <div className='p-6'>
+    <div className='p-3 space-y-3'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
-            <div>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Laporan Penerimaan Barang
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Kelola dan pantau laporan penerimaan barang dari supplier.
-              </p>
-            </div>
-            <div className='flex items-center gap-2'>
-              <button
-                onClick={openBulkModal}
-                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-indigo-500 rounded-md shadow-sm hover:bg-indigo-600'
-              >
-                <HeroIcon name='arrow-up-tray' className='w-5 h-5 mr-2' />
-                Upload Bulk
+        <div className='px-3 py-3'>
+          <div className='flex items-center justify-between mb-2'>
+            <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
+            <div className='flex items-center gap-1'>
+              <button onClick={openBulkModal} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-indigo-500 rounded hover:bg-indigo-600'>
+                <HeroIcon name='arrow-up-tray' className='w-3 h-3 mr-1' />Bulk
               </button>
-              <button
-                onClick={openCreateModal}
-                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
-              >
-                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-                Tambah Laporan
+              <button onClick={openCreateModal} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'>
+                <HeroIcon name='plus' className='w-3 h-3 mr-1' />Tambah
               </button>
             </div>
           </div>
 
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
-            >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId].label}
-                />
-              ))}
-            </TabContainer>
-          </div>
-
-          <div className='space-y-4'>
-            <LaporanPenerimaanBarangTableServerSide
-              onView={handleViewDetail}
-              onEdit={openEditModal}
-              onDelete={deleteReport}
-              deleteLoading={deleteReportConfirmation.loading}
-              selectedReports={selectedReportIds}
-              onSelectReport={handleSelectReport}
-              onSelectAllReports={handleSelectAllReports}
-              onCompleteSelected={handleCompleteSelected}
-              isCompleting={isCompletingReports}
-              hasSelectedReports={hasSelectedReports}
-              initialPage={1}
-              initialLimit={10}
-              activeTab={activeTab}
-              selectedReportId={selectedReportForDetail?.id}
-            />
-          </div>
+          <LaporanPenerimaanBarangTableServerSide
+            onView={handleViewDetail}
+            onEdit={openEditModal}
+            onDelete={deleteReport}
+            deleteLoading={deleteReportConfirmation.loading}
+            selectedReports={selectedReportIds}
+            onSelectReport={handleSelectReport}
+            onSelectAllReports={handleSelectAllReports}
+            onCompleteSelected={handleCompleteSelected}
+            isCompleting={isCompletingReports}
+            hasSelectedReports={hasSelectedReports}
+            initialPage={1}
+            initialLimit={10}
+            selectedReportId={selectedReportForDetail?.id}
+          />
         </div>
       </div>
 
@@ -349,13 +284,8 @@ const LaporanPenerimaanBarang = () => {
         loading={deleteReportConfirmation.loading}
       />
 
-      {/* Laporan Penerimaan Barang Detail Card */}
       {selectedReportForDetail && (
-        <LaporanPenerimaanBarangDetailCard
-          report={selectedReportForDetail}
-          onClose={handleCloseDetail}
-          loading={detailLoading}
-        />
+        <LaporanPenerimaanBarangDetailCard report={selectedReportForDetail} onClose={handleCloseDetail} loading={detailLoading} />
       )}
     </div>
   );

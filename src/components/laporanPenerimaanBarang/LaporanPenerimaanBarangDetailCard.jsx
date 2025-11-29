@@ -36,32 +36,16 @@ const formatFileSize = (bytes) => {
 
 const renderFileList = (files) => {
   if (!Array.isArray(files) || files.length === 0) {
-    return <span className='text-sm text-gray-500'>Tidak ada lampiran</span>;
+    return <span className='text-xs text-gray-500'>Tidak ada lampiran</span>;
   }
-
   return (
-    <ul className='space-y-3'>
+    <ul className='space-y-1'>
       {files.map((file) => {
         const key = file?.id || file?.filename || file;
         return (
-          <li
-            key={key}
-            className='flex items-start justify-between p-3 rounded-lg border border-gray-200 bg-white shadow-sm'
-          >
-            <div>
-              <p className='text-sm font-medium text-gray-900'>
-                {file?.originalName || file?.filename || key}
-              </p>
-              <p className='text-xs text-gray-500 mt-1'>
-                {(file?.mimeType || file?.mimetype || 'Tipe tidak dikenal')} •{' '}
-                {formatFileSize(file?.size)}
-              </p>
-              {file?.createdAt && (
-                <p className='text-[11px] text-gray-400 mt-0.5'>
-                  Diunggah: {formatDateTime(file.createdAt)}
-                </p>
-              )}
-            </div>
+          <li key={key} className='flex items-center justify-between p-1.5 rounded border border-gray-200 bg-white text-xs'>
+            <span className='font-medium text-gray-900 truncate'>{file?.originalName || file?.filename || key}</span>
+            <span className='text-gray-500 ml-2'>{formatFileSize(file?.size)}</span>
           </li>
         );
       })}
@@ -191,115 +175,63 @@ const LaporanPenerimaanBarangDetailCard = ({
   if (!report) return null;
 
   return (
-    <div className='bg-white shadow-md rounded-lg p-6 mt-6'>
-      {/* Header */}
-      <div className='flex justify-between items-start mb-6'>
-        <div>
-          <h2 className='text-xl font-bold text-gray-900'>
-            Detail Laporan Penerimaan Barang
-          </h2>
-          <p className='text-sm text-gray-600 flex items-center gap-2 mt-1'>
-            <TagIcon className='h-4 w-4 text-gray-400' />
-            Purchase Order: {loading ? 'Memuat...' : purchaseOrderNumber}
-          </p>
-          <p className='text-xs text-gray-500 mt-1'>
-            Lampiran: {loading ? '...' : fileCount} • Audit Trail:{' '}
-            {loading ? '...' : auditTrailCount}
-          </p>
+    <div className='bg-white shadow rounded-lg p-3 mt-3'>
+      <div className='flex justify-between items-center mb-2'>
+        <div className='flex items-center gap-2'>
+          <TagIcon className='h-4 w-4 text-orange-600' />
+          <div>
+            <h2 className='text-sm font-bold text-gray-900'>Detail LPB</h2>
+            <p className='text-xs text-gray-600'>PO: {loading ? '...' : purchaseOrderNumber}</p>
+          </div>
         </div>
-        <div className='flex items-center space-x-2'>
-          <StatusBadge status={statusLabel || '-'} variant={statusVariant} />
+        <div className='flex items-center gap-1'>
+          <StatusBadge status={statusLabel || '-'} variant={statusVariant} size='xs' />
           {onClose && (
-            <button
-              onClick={onClose}
-              className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
-              title='Close'
-            >
-              <XMarkIcon className='w-5 h-5 text-gray-500' />
+            <button onClick={onClose} className='p-1 hover:bg-gray-100 rounded' title='Close'>
+              <XMarkIcon className='w-4 h-4 text-gray-500' />
             </button>
           )}
         </div>
       </div>
 
       {loading ? (
-        <div className='flex justify-center items-center py-12'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-          <span className='ml-3 text-sm text-gray-600'>
-            Loading laporan detail...
-          </span>
+        <div className='flex justify-center items-center py-4'>
+          <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600'></div>
+          <span className='ml-2 text-xs text-gray-600'>Loading...</span>
         </div>
       ) : (
         <div>
-          {/* Tab Navigation */}
-          <TabContainer
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant='underline'
-            className='mb-6'
-          >
-            <Tab
-              id='overview'
-              label='Overview'
-              icon={<DocumentTextIcon className='w-4 h-4' />}
-            />
-            <Tab
-              id='timeline'
-              label='Timeline'
-              icon={<ClockIcon className='w-4 h-4' />}
-              badge={auditTrailCount}
-            />
+          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
+            <Tab id='overview' label='Overview' icon={<DocumentTextIcon className='w-3 h-3' />} />
+            <Tab id='timeline' label='Timeline' icon={<ClockIcon className='w-3 h-3' />} badge={auditTrailCount} />
           </TabContainer>
 
-          {/* Tab Content */}
           <TabContent activeTab={activeTab}>
             <TabPanel tabId='overview'>
-              <div className='space-y-6'>
-                {/* Informasi Utama */}
-                <div className='bg-white rounded-lg border border-gray-200 p-6 shadow-sm'>
-                  <div className='flex items-center mb-4'>
-                    <DocumentTextIcon className='h-5 w-5 text-gray-500 mr-2' />
-                    <h3 className='text-lg font-semibold text-gray-900'>
-                      Informasi Utama
-                    </h3>
+              <div className='space-y-2'>
+                <div className='border border-gray-200 rounded p-2'>
+                  <div className='flex items-center mb-2'>
+                    <DocumentTextIcon className='h-3 w-3 text-gray-500 mr-1' />
+                    <span className='text-xs font-semibold text-gray-900'>Info Utama</span>
                   </div>
-                  <InfoTable data={overviewDetails} />
+                  <InfoTable compact data={overviewDetails} />
                 </div>
-
-                {/* Metadata */}
-                <div className='bg-white rounded-lg border border-gray-200 p-6 shadow-sm'>
-                  <div className='flex items-center mb-4'>
-                    <ClockIcon className='h-5 w-5 text-gray-500 mr-2' />
-                    <h3 className='text-lg font-semibold text-gray-900'>
-                      Metadata
-                    </h3>
+                <div className='border border-gray-200 rounded p-2'>
+                  <div className='flex items-center mb-2'>
+                    <ClockIcon className='h-3 w-3 text-gray-500 mr-1' />
+                    <span className='text-xs font-semibold text-gray-900'>Metadata</span>
                   </div>
-                  <InfoTable data={metadataDetails} />
+                  <InfoTable compact data={metadataDetails} />
                 </div>
               </div>
             </TabPanel>
 
             <TabPanel tabId='timeline'>
-              <div className='bg-white rounded-lg border border-gray-200 p-6 shadow-sm'>
-                <div className='flex items-center mb-4'>
-                  <ClockIcon className='h-5 w-5 text-gray-500 mr-2' />
-                  <h3 className='text-lg font-semibold text-gray-900'>
-                    Riwayat Aktivitas
-                  </h3>
-                </div>
-
-                {auditTrails.length > 0 ? (
-                  <ActivityTimeline
-                    auditTrails={auditTrails}
-                    title=''
-                    showCount={false}
-                    emptyMessage='Belum ada aktivitas untuk laporan ini.'
-                  />
-                ) : (
-                  <div className='text-center py-8 text-gray-500'>
-                    Belum ada aktivitas untuk laporan ini.
-                  </div>
-                )}
-              </div>
+              {auditTrails.length > 0 ? (
+                <ActivityTimeline auditTrails={auditTrails} title='' showCount={false} emptyMessage='Belum ada aktivitas.' />
+              ) : (
+                <div className='py-4 text-center text-xs text-gray-500'>Belum ada aktivitas</div>
+              )}
             </TabPanel>
           </TabContent>
         </div>

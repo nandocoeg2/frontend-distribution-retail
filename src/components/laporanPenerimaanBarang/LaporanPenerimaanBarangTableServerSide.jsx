@@ -23,26 +23,6 @@ import statusService from '../../services/statusService';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: {
-    label: 'Pending',
-    statusCode: 'PENDING LAPORAN PENERIMAAN BARANG',
-  },
-  indikasi_pengganti: {
-    label: 'Indikasi Pengganti',
-    statusCode: 'INDIKASI PENGGANTI',
-  },
-  completed: {
-    label: 'Completed',
-    statusCode: 'COMPLETED LAPORAN PENERIMAAN BARANG',
-  },
-  failed: {
-    label: 'Failed',
-    statusCode: 'FAILED LAPORAN PENERIMAAN BARANG',
-  },
-};
-
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -90,7 +70,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
   hasSelectedReports = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   selectedReportId = null,
 }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -120,14 +99,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const { isAssigning, isUnassigning, assignPurchaseOrder, unassignPurchaseOrder } =
     useLaporanPenerimaanBarangOperations();
 
-  const lockedFilters = useMemo(() => {
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode || activeTab === 'all') {
-      return [];
-    }
-    return [{ id: 'status_code', value: statusCode }];
-  }, [activeTab]);
-
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -154,7 +125,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
-    lockedFilters,
   });
 
   // Handler untuk membuka modal assign
@@ -478,38 +448,27 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status_code',
-        header: ({ column }) => {
-          const statusConfig = TAB_STATUS_CONFIG[activeTab];
-          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Status</div>
-              {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {statusConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  {lpbStatuses.map((status) => (
-                    <option key={status.status_code} value={status.status_code}>
-                      {status.status_name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              {lpbStatuses.map((status) => (
+                <option key={status.status_code} value={status.status_code}>
+                  {status.status_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ),
         cell: (info) => (
           <StatusBadge
             status={info.getValue() || 'Unknown'}
@@ -588,7 +547,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
       onEdit,
       onDelete,
       deleteLoading,
-      activeTab,
       setPage,
       handleOpenAssignModal,
       handleUnassignClick,
@@ -604,43 +562,23 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const actionDisabled = isCompleting;
 
   return (
-    <div className="space-y-4">
-      {hasActiveFilters && (
-        <div className="flex justify-end">
-          <button
-            onClick={resetFilters}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
-          >
-            Reset Semua Filter
-          </button>
-        </div>
-      )}
-
-      {hasSelectedReports && (
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-blue-900">
-              {selectedReports.length} laporan dipilih
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handlePrintSelected}
-              disabled={isPrinting}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <PrinterIcon className="h-4 w-4" />
-              <span>{isPrinting ? 'Mendownload...' : 'Print LPB'}</span>
-            </button>
-            <button
-              onClick={onCompleteSelected}
-              disabled={actionDisabled}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <CheckIcon className="h-4 w-4" />
-              <span>{isCompleting ? 'Menyelesaikan...' : 'Selesaikan'}</span>
-            </button>
-          </div>
+    <div className="space-y-2">
+      {(hasActiveFilters || hasSelectedReports) && (
+        <div className="flex justify-between items-center">
+          {hasSelectedReports ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-blue-700">{selectedReports.length} dipilih</span>
+              <button onClick={handlePrintSelected} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
+                <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print'}
+              </button>
+              <button onClick={onCompleteSelected} disabled={actionDisabled} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+                <CheckIcon className="h-3 w-3 mr-1" />{isCompleting ? '...' : 'Selesai'}
+              </button>
+            </div>
+          ) : <div />}
+          {hasActiveFilters && (
+            <button onClick={resetFilters} className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">Reset Filter</button>
+          )}
         </div>
       )}
 
@@ -649,35 +587,23 @@ const LaporanPenerimaanBarangTableServerSide = ({
         isLoading={isLoading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage="Memuat data laporan..."
-        emptyMessage="Tidak ada data laporan penerimaan barang"
-        emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian"
+        loadingMessage="Memuat..."
+        emptyMessage="Tidak ada data"
+        emptyFilteredMessage="Tidak ada data sesuai filter"
         tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-100"
-        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
-        onRowClick={(rowData) => {
-          // rowData is row.original from DataTable
-          if (rowData && onView) {
-            onView(rowData);
-          }
-        }}
+        rowClassName="hover:bg-gray-50 cursor-pointer h-7"
+        onRowClick={(rowData) => rowData && onView && onView(rowData)}
         getRowClassName={({ row }) => {
           const reportId = resolveReportId(row.original);
-          
-          if (reportId === selectedReportId) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
-          }
-          
-          if (reportId && selectedReports.includes(reportId)) {
-            return 'bg-blue-50';
-          }
-          
+          if (reportId === selectedReportId) return 'bg-blue-50 border-l-2 border-blue-500';
+          if (reportId && selectedReports.includes(reportId)) return 'bg-green-50';
           return undefined;
         }}
-        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
-        emptyCellClassName="px-2 py-1 text-center text-gray-500 text-xs"
+        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
       />
 
       {!isLoading && !error && (
