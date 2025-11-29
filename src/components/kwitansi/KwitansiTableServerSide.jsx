@@ -14,16 +14,6 @@ import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: { label: 'Pending', statusCode: 'PENDING KWITANSI' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING KWITANSI' },
-  paid: { label: 'Paid', statusCode: 'PAID KWITANSI' },
-  overdue: { label: 'Overdue', statusCode: 'OVERDUE KWITANSI' },
-  completed: { label: 'Completed', statusCode: 'COMPLETED KWITANSI' },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED KWITANSI' },
-};
-
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -62,7 +52,6 @@ const KwitansiTableServerSide = ({
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   onRowClick,
   selectedKwitansiId,
   selectedKwitansis = [],
@@ -71,13 +60,6 @@ const KwitansiTableServerSide = ({
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingPaket, setIsPrintingPaket] = useState(false);
-  const lockedFilters = useMemo(() => {
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode || activeTab === 'all') {
-      return [];
-    }
-    return [{ id: 'status_code', value: statusCode }];
-  }, [activeTab]);
 
   const globalFilterConfig = useMemo(
     () => ({
@@ -104,7 +86,6 @@ const KwitansiTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
-    lockedFilters,
   });
 
   // Handler untuk select all toggle
@@ -430,39 +411,28 @@ const KwitansiTableServerSide = ({
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status_code',
-        header: ({ column }) => {
-          const statusConfig = TAB_STATUS_CONFIG[activeTab];
-          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Status</div>
-              {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {statusConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  <option value="PENDING KWITANSI">Pending</option>
-                  <option value="PROCESSING KWITANSI">Processing</option>
-                  <option value="PAID KWITANSI">Paid</option>
-                  <option value="OVERDUE KWITANSI">Overdue</option>
-                  <option value="COMPLETED KWITANSI">Completed</option>
-                  <option value="CANCELLED KWITANSI">Cancelled</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="PENDING KWITANSI">Pending</option>
+              <option value="PROCESSING KWITANSI">Processing</option>
+              <option value="PAID KWITANSI">Paid</option>
+              <option value="OVERDUE KWITANSI">Overdue</option>
+              <option value="COMPLETED KWITANSI">Completed</option>
+              <option value="CANCELLED KWITANSI">Cancelled</option>
+            </select>
+          </div>
+        ),
         cell: (info) => (
           <StatusBadge
             status={info.getValue() || 'Unknown'}
@@ -504,7 +474,6 @@ const KwitansiTableServerSide = ({
       handleSelectAllInternalToggle,
       onDelete,
       deleteLoading,
-      activeTab,
       setPage,
     ]
   );

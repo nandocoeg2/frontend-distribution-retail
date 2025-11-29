@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useKwitansiPage from '@/hooks/useKwitansiPage';
 import {
@@ -6,60 +6,10 @@ import {
   KwitansiModal,
   KwitansiDetailCard,
 } from '@/components/kwitansi';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import toastService from '@/services/toastService';
 import kwitansiService from '@/services/kwitansiService';
 import authService from '@/services/authService';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', filters: null },
-  pending: {
-    label: 'Pending',
-    filters: { status_code: 'PENDING KWITANSI' },
-  },
-  processing: {
-    label: 'Processing',
-    filters: { status_code: 'PROCESSING KWITANSI' },
-  },
-  paid: {
-    label: 'Paid',
-    filters: { status_code: 'PAID KWITANSI' },
-  },
-  overdue: {
-    label: 'Overdue',
-    filters: { status_code: 'OVERDUE KWITANSI' },
-  },
-  completed: {
-    label: 'Completed',
-    filters: { status_code: 'COMPLETED KWITANSI' },
-  },
-  cancelled: {
-    label: 'Cancelled',
-    filters: { status_code: 'CANCELLED KWITANSI' },
-  },
-};
-
-const TAB_ORDER = [
-  'all',
-  'pending',
-  'processing',
-  'paid',
-  'overdue',
-  'completed',
-  'cancelled',
-];
-
-const INITIAL_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
 
 const KwitansiPage = () => {
   const queryClient = useQueryClient();
@@ -74,7 +24,6 @@ const KwitansiPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedKwitansiForDetail, setSelectedKwitansiForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
   const [exportingId, setExportingId] = useState(null);
   const [exportingPaketId, setExportingPaketId] = useState(null);
   const [selectedKwitansis, setSelectedKwitansis] = useState([]);
@@ -218,15 +167,6 @@ const KwitansiPage = () => {
     []
   );
 
-  const handleTabChange = useCallback(
-    (tabId) => {
-      setActiveTab(tabId);
-      // Reset selection when tab changes
-      setSelectedKwitansis([]);
-    },
-    []
-  );
-
   const handleSelectKwitansi = useCallback((kwitansiId, isSelected) => {
     setSelectedKwitansis((prev) => {
       if (isSelected) {
@@ -280,51 +220,24 @@ const KwitansiPage = () => {
   }, [deleteKwitansiConfirmation, queryClient]);
 
   return (
-    <div className='p-6'>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
-            <div>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Manajemen Kwitansi
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Pantau dan kelola bukti pembayaran dari invoice penagihan
-                pelanggan.
-              </p>
-            </div>
+    <div className='p-3 space-y-3'>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-3 py-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>Kwitansi</h3>
           </div>
 
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
-            >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId]?.label || tabId}
-                />
-              ))}
-            </TabContainer>
-          </div>
-
-          <div className='space-y-4'>
-            <KwitansiTableServerSide
-              onDelete={handleDelete}
-              deleteLoading={deleteKwitansiConfirmation.loading}
-              initialPage={1}
-              initialLimit={10}
-              activeTab={activeTab}
-              onRowClick={handleViewDetail}
-              selectedKwitansiId={selectedKwitansiForDetail?.id}
-              selectedKwitansis={selectedKwitansis}
-              onSelectKwitansi={handleSelectKwitansi}
-              hasSelectedKwitansis={hasSelectedKwitansis}
-            />
-          </div>
+          <KwitansiTableServerSide
+            onDelete={handleDelete}
+            deleteLoading={deleteKwitansiConfirmation.loading}
+            initialPage={1}
+            initialLimit={10}
+            onRowClick={handleViewDetail}
+            selectedKwitansiId={selectedKwitansiForDetail?.id}
+            selectedKwitansis={selectedKwitansis}
+            onSelectKwitansi={handleSelectKwitansi}
+            hasSelectedKwitansis={hasSelectedKwitansis}
+          />
         </div>
       </div>
 
