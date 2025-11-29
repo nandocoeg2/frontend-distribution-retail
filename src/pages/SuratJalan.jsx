@@ -1,42 +1,18 @@
 import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { SuratJalanTableServerSide } from '@/components/suratJalan';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
 import {
   ConfirmationDialog as BaseConfirmationDialog,
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
-
-
 import SuratJalanDetailCard from '../components/suratJalan/SuratJalanDetailCard';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
 import { useNavigate } from 'react-router-dom';
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  draft: { label: 'Draft', statusCode: 'DRAFT SURAT JALAN' },
-  readyToShip: {
-    label: 'Ready to Ship',
-    statusCode: 'READY TO SHIP SURAT JALAN',
-  },
-  delivered: { label: 'Delivered', statusCode: 'DELIVERED SURAT JALAN' },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED SURAT JALAN' },
-};
-
-const TAB_ORDER = [
-  'all',
-  'draft',
-  'readyToShip',
-  'delivered',
-  'cancelled',
-];
-
 const SuratJalan = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-
-  const [activeTab, setActiveTab] = useState('all');
 
   const [selectedSuratJalanForDetail, setSelectedSuratJalanForDetail] = useState(null);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
@@ -57,16 +33,6 @@ const SuratJalan = () => {
     navigate('/login');
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
-
-
-
-  const handleTabChange = useCallback(
-    (tabId) => {
-      setActiveTab(tabId);
-      setSelectedSuratJalan([]);
-    },
-    []
-  );
 
   const handleViewDetail = async (suratJalanItem) => {
     if (!suratJalanItem?.id) {
@@ -268,35 +234,11 @@ const SuratJalan = () => {
   }, [queryClient, selectedSuratJalanForDetail]);
 
   return (
-    <div className='p-6'>
+    <div className='p-3 space-y-3'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Manajemen Surat Jalan
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Kelola dan pantau surat jalan pengiriman pelanggan.
-              </p>
-            </div>
-
-          </div>
-
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
-            >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId].label}
-                />
-              ))}
-            </TabContainer>
+        <div className='px-3 py-3'>
+          <div className='flex items-center justify-between mb-2'>
+            <h3 className='text-sm font-semibold text-gray-900'>Manajemen Surat Jalan</h3>
           </div>
 
           <SuratJalanTableServerSide
@@ -308,25 +250,16 @@ const SuratJalan = () => {
             onProcessSelected={handleProcessSelected}
             isProcessing={isProcessing}
             hasSelectedSuratJalan={selectedSuratJalan.length > 0}
-            activeTab={activeTab}
             onRowClick={handleViewDetail}
             selectedSuratJalanId={selectedSuratJalanForDetail?.id}
           />
         </div>
       </div>
 
-
-
       <DeleteConfirmationDialog />
 
-      {/* Surat Jalan Detail Card */}
       {selectedSuratJalanForDetail && (
-        <SuratJalanDetailCard
-          suratJalan={selectedSuratJalanForDetail}
-          onClose={handleCloseDetail}
-          loading={detailLoading}
-          onUpdate={handleSuratJalanUpdated}
-        />
+        <SuratJalanDetailCard suratJalan={selectedSuratJalanForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleSuratJalanUpdated} />
       )}
     </div>
   );
