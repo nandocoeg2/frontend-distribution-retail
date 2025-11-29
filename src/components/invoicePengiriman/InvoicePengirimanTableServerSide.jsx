@@ -15,14 +15,6 @@ import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED INVOICE' },
-  pending: { label: 'Pending', statusCode: 'PENDING INVOICE' },
-  paid: { label: 'Paid', statusCode: 'PAID INVOICE' },
-  overdue: { label: 'Overdue', statusCode: 'OVERDUE INVOICE' },
-};
-
 const getStatusVariant = (status) => {
   const value = (status?.status_name || status?.status_code || '').toLowerCase();
   if (value.includes('paid') || value.includes('completed') || value.includes('sudah')) return 'success';
@@ -43,7 +35,6 @@ const InvoicePengirimanTableServerSide = ({
   hasSelectedInvoices = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   onViewDetail,
   selectedInvoiceId,
 }) => {
@@ -188,14 +179,6 @@ const InvoicePengirimanTableServerSide = ({
       setIsGenerating(false);
     }
   };
-  const lockedFilters = useMemo(() => {
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode || activeTab === 'all') {
-      return [];
-    }
-    return [{ id: 'status_code', value: statusCode }];
-  }, [activeTab]);
-
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -222,7 +205,6 @@ const InvoicePengirimanTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
-    lockedFilters,
   });
 
   const columns = useMemo(
@@ -426,10 +408,8 @@ const InvoicePengirimanTableServerSide = ({
       onSelectInvoice,
       onSelectAllInvoices,
       onView,
-
       onDelete,
       deleteLoading,
-      activeTab,
       setPage,
     ]
   );
@@ -442,43 +422,23 @@ const InvoicePengirimanTableServerSide = ({
   const loading = isLoading || isFetching;
 
   return (
-    <div className='space-y-4'>
-      {hasActiveFilters && (
-        <div className='flex justify-end'>
-          <button
-            onClick={resetFilters}
-            className='px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded hover:text-gray-800 hover:bg-gray-50'
-          >
-            Reset Semua Filter
-          </button>
-        </div>
-      )}
-
-      {hasSelectedInvoices && (
-        <div className='flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4'>
-          <div className='flex items-center space-x-2'>
-            <span className='text-sm font-medium text-blue-900'>
-              {selectedInvoices.length} invoice dipilih
-            </span>
-          </div>
-          <div className='flex items-center space-x-2'>
-            <button
-              onClick={handleBulkGenerateInvoicePenagihan}
-              disabled={isGenerating}
-              className='flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
-              <DocumentPlusIcon className='h-4 w-4' />
-              <span>{isGenerating ? 'Generating All Documents...' : 'Generate All Documents'}</span>
-            </button>
-            <button
-              onClick={handleBulkPrintInvoice}
-              disabled={isPrinting}
-              className='flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
-              <PrinterIcon className='h-4 w-4' />
-              <span>{isPrinting ? 'Mencetak...' : 'Print Invoice'}</span>
-            </button>
-          </div>
+    <div className='space-y-2'>
+      {(hasActiveFilters || hasSelectedInvoices) && (
+        <div className='flex justify-between items-center'>
+          {hasSelectedInvoices ? (
+            <div className='flex items-center gap-2'>
+              <span className='text-xs font-medium text-blue-700'>{selectedInvoices.length} dipilih</span>
+              <button onClick={handleBulkGenerateInvoicePenagihan} disabled={isGenerating} className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'>
+                <DocumentPlusIcon className='h-3 w-3 mr-1' />{isGenerating ? '...' : 'Generate'}
+              </button>
+              <button onClick={handleBulkPrintInvoice} disabled={isPrinting} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
+                <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Print'}
+              </button>
+            </div>
+          ) : <div />}
+          {hasActiveFilters && (
+            <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
+          )}
         </div>
       )}
 
@@ -487,27 +447,22 @@ const InvoicePengirimanTableServerSide = ({
         isLoading={loading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage='Memuat data invoice pengiriman...'
-        emptyMessage='Tidak ada data invoice pengiriman.'
-        emptyFilteredMessage='Tidak ada data yang sesuai dengan pencarian.'
-        wrapperClassName='overflow-x-auto'
+        loadingMessage='Memuat...'
+        emptyMessage='Tidak ada data'
+        emptyFilteredMessage='Tidak ada data sesuai filter'
         tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
         headerRowClassName='bg-gray-50'
-        headerCellClassName='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+        headerCellClassName='px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider'
         bodyClassName='divide-y divide-gray-100'
-        rowClassName='hover:bg-gray-50 cursor-pointer h-8'
+        rowClassName='hover:bg-gray-50 cursor-pointer h-7'
         getRowClassName={({ row }) => {
-          if (selectedInvoiceId === row.original.id) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
-          }
-          if (selectedInvoices.includes(row.original.id)) {
-            return 'bg-blue-50';
-          }
+          if (selectedInvoiceId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
+          if (selectedInvoices.includes(row.original.id)) return 'bg-green-50';
           return undefined;
         }}
         onRowClick={onViewDetail}
-        cellClassName='px-2 py-1 whitespace-nowrap text-xs text-gray-900'
-        emptyCellClassName='px-2 py-1 text-center text-xs text-gray-500'
+        cellClassName='px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900'
+        emptyCellClassName='px-1.5 py-0.5 text-center text-gray-500'
       />
 
       {!loading && !error && (

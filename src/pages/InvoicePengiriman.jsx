@@ -3,22 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
 import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
-
 import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED INVOICE' },
-  pending: { label: 'Pending', statusCode: 'PENDING INVOICE' },
-  paid: { label: 'Paid', statusCode: 'PAID INVOICE' },
-  overdue: { label: 'Overdue', statusCode: 'OVERDUE INVOICE' },
-};
-
-const TAB_ORDER = ['all', 'cancelled', 'pending', 'paid', 'overdue'];
 
 const INITIAL_TAB_PAGINATION = {
   currentPage: 1,
@@ -53,8 +41,6 @@ const InvoicePengirimanPage = () => {
   const [viewModalError, setViewModalError] = useState(null);
   const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-
-  const [activeTab, setActiveTab] = useState('all');
   const [selectedInvoices, setSelectedInvoices] = useState([]);
 
   const fetchInvoiceDetail = useCallback(
@@ -103,17 +89,6 @@ const InvoicePengirimanPage = () => {
     },
     [fetchInvoiceDetail]
   );
-
-  const getStatusCodeForTab = useCallback(
-    (tabId) => TAB_STATUS_CONFIG[tabId]?.statusCode ?? null,
-    []
-  );
-
-  const handleTabChange = useCallback((newTab) => {
-    setActiveTab(newTab);
-    setSelectedInvoices([]); // Clear selection when changing tabs
-    // The server-side table will handle filtering automatically based on activeTab
-  }, []);
 
   const handleTablePageChange = useCallback(
     (page) => {
@@ -303,45 +278,15 @@ const InvoicePengirimanPage = () => {
   const resolvedPagination = pagination || INITIAL_TAB_PAGINATION;
 
   return (
-    <div className='p-6'>
+    <div className='p-3 space-y-3'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex items-center justify-between mb-4'>
-            <div>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Daftar Invoice Pengiriman
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Pantau seluruh invoice pengiriman termasuk informasi pelanggan
-                dan status pembayaran.
-              </p>
-            </div>
-          </div>
-
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
-            >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId].label}
-                  badge={
-                    activeTab === tabId
-                      ? (resolvedPagination?.totalItems ?? 0)
-                      : null
-                  }
-                />
-              ))}
-            </TabContainer>
+        <div className='px-3 py-3'>
+          <div className='flex items-center justify-between mb-2'>
+            <h3 className='text-sm font-semibold text-gray-900'>Invoice Pengiriman</h3>
           </div>
 
           <InvoicePengirimanTableServerSide
             onView={openViewModal}
-
             onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
             deleteLoading={deleteInvoiceConfirmation.loading}
             selectedInvoices={selectedInvoices}
@@ -350,21 +295,14 @@ const InvoicePengirimanPage = () => {
             hasSelectedInvoices={hasSelectedInvoices}
             initialPage={resolvedPagination.currentPage}
             initialLimit={resolvedPagination.itemsPerPage}
-            activeTab={activeTab}
             onViewDetail={handleViewDetail}
             selectedInvoiceId={selectedInvoiceForDetail?.id}
           />
         </div>
       </div>
 
-      {/* Invoice Pengiriman Detail Card */}
       {selectedInvoiceForDetail && (
-        <InvoicePengirimanDetailCard
-          invoice={selectedInvoiceForDetail}
-          onClose={handleCloseDetail}
-          loading={detailLoading}
-          onUpdate={handleInvoiceUpdated}
-        />
+        <InvoicePengirimanDetailCard invoice={selectedInvoiceForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleInvoiceUpdated} />
       )}
 
       <AddInvoicePengirimanModal

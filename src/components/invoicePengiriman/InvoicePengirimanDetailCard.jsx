@@ -17,7 +17,7 @@ import toastService from '../../services/toastService';
 import InvoicePengirimanForm from './InvoicePengirimanForm';
 
 const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpdate }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('details');
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -154,71 +154,38 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
           : 'secondary';
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mt-6">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Detail Invoice Pengiriman</h2>
-          <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-            <DocumentTextIcon className="h-4 w-4 text-gray-400" />
-            {invoice?.no_invoice || 'No invoice number available'}
-          </p>
+    <div className='bg-white shadow rounded-lg p-3 mt-3'>
+      <div className='flex justify-between items-center mb-2'>
+        <div className='flex items-center gap-2'>
+          <DocumentTextIcon className='h-4 w-4 text-indigo-600' />
+          <div>
+            <h2 className='text-sm font-bold text-gray-900'>Invoice Pengiriman</h2>
+            <p className='text-xs text-gray-600'>{invoice?.no_invoice || '-'}</p>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className='flex items-center gap-1'>
           {!isEditMode ? (
             <>
-              <button
-                onClick={handleEditClick}
-                className="inline-flex items-center px-3 py-2 border border-yellow-600 text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-              >
-                <PencilIcon className="w-4 h-4 mr-1" />
-                Edit
+              <button onClick={handleEditClick} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-yellow-600 rounded hover:bg-yellow-700'>
+                <PencilIcon className='w-3 h-3 mr-1' />Edit
               </button>
-              <button
-                onClick={handleGenerateInvoicePenagihan}
-                disabled={isGenerating || loading}
-                className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                title="Generate All Documents (Invoice Penagihan, Kwitansi, Faktur Pajak)"
-              >
-                <DocumentPlusIcon className="w-4 h-4 mr-1" />
-                {isGenerating ? 'Generating...' : 'Generate Docs'}
+              <button onClick={handleGenerateInvoicePenagihan} disabled={isGenerating || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50'>
+                {isGenerating ? '...' : 'Generate'}
               </button>
-              <button
-                onClick={handlePrintInvoice}
-                disabled={isPrinting || loading}
-                className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                title="Print Invoice"
-              >
-                <PrinterIcon className="w-4 h-4 mr-1" />
-                {isPrinting ? 'Printing...' : 'Print'}
+              <button onClick={handlePrintInvoice} disabled={isPrinting || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
+                {isPrinting ? '...' : 'Print'}
               </button>
               {onClose && (
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Close"
-                >
-                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                <button onClick={onClose} className='p-1 hover:bg-gray-100 rounded' title='Close'>
+                  <XMarkIcon className='w-4 h-4 text-gray-500' />
                 </button>
               )}
             </>
           ) : (
             <>
-              <button
-                type='button'
-                onClick={handleCancelEdit}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50'
-                disabled={saving}
-              >
-                Batal
-              </button>
-              <button
-                type='submit'
-                form='invoice-pengiriman-form'
-                className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50'
-                disabled={saving}
-              >
-                {saving ? 'Menyimpan...' : 'Simpan'}
+              <button onClick={handleCancelEdit} disabled={saving} className='px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50'>Batal</button>
+              <button type='submit' form='invoice-pengiriman-form' disabled={saving} className='px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
+                {saving ? '...' : 'Simpan'}
               </button>
             </>
           )}
@@ -226,12 +193,12 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-sm text-gray-600">Loading invoice details...</span>
+        <div className='flex justify-center items-center py-4'>
+          <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600'></div>
+          <span className='ml-2 text-xs text-gray-600'>Loading...</span>
         </div>
       ) : isEditMode ? (
-        <div className="mt-6">
+        <div className='bg-gray-50 rounded p-3'>
           <InvoicePengirimanForm
             initialValues={invoice}
             onSubmit={handleSave}
@@ -242,236 +209,74 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
         </div>
       ) : (
         <div>
-          {/* Tab Navigation */}
-          <TabContainer
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant="underline"
-            className="mb-6"
-          >
-            <Tab
-              id="overview"
-              label="Ringkasan"
-              icon={<DocumentTextIcon className="w-4 h-4" />}
-            />
-            <Tab
-              id="details"
-              label="Detail Barang"
-              icon={<ShoppingCartIcon className="w-4 h-4" />}
-              badge={detailCount}
-            />
+          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
+            <Tab id='overview' label='Ringkasan' icon={<DocumentTextIcon className='w-3 h-3' />} />
+            <Tab id='details' label='Items' icon={<ShoppingCartIcon className='w-3 h-3' />} badge={detailCount} />
           </TabContainer>
 
-          {/* Tab Content */}
           <TabContent activeTab={activeTab}>
-            <TabPanel tabId="overview">
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <AccordionItem
-                  title="Informasi Dasar"
-                  isExpanded={expandedSections.basicInfo}
-                  onToggle={() => toggleSection('basicInfo')}
-                  bgColor="bg-gradient-to-r from-indigo-50 to-indigo-100"
-                >
-                  <InfoTable
-                    data={[
-                      { label: 'Nomor Invoice', value: invoice.no_invoice },
-                      {
-                        label: 'Tanggal',
-                        value: formatDate(invoice.tanggal),
-                      },
-                      {
-                        label: 'Jatuh Tempo',
-                        value: formatDate(invoice.expired_date),
-                      },
-                      {
-                        label: 'Term of Payment',
-                        value:
-                          invoice.termOfPayment?.kode_top ||
-                          invoice.termOfPayment?.kodeTop ||
-                          invoice.termOfPaymentId ||
-                          invoice.TOP ||
-                          '-',
-                      },
-                      {
-                        label: 'Tujuan Pengiriman',
-                        value: invoice.deliver_to || '-',
-                      },
-                      {
-                        label: 'Tipe Invoice',
-                        value: invoice.type || '-',
-                      },
-                      {
-                        label: 'Status',
-                        component: (
-                          <StatusBadge
-                            status={statusLabel || '-'}
-                            variant={statusVariant}
-                            dot
-                          />
-                        ),
-                      },
-                      {
-                        label: 'Purchase Order',
-                        value: invoice.purchaseOrder?.po_number || '-',
-                      },
-                      {
-                        label: 'Customer',
-                        value: invoice.purchaseOrder?.customer?.namaCustomer || '-',
-                      },
-                      {
-                        label: 'Status Print',
-                        component: (
-                          <StatusBadge
-                            status={invoice.is_printed ? 'Sudah di Print' : 'Belum Print'}
-                            variant={invoice.is_printed ? 'success' : 'secondary'}
-                            dot
-                          />
-                        ),
-                      },
-                    ]}
-                  />
+            <TabPanel tabId='overview'>
+              <div className='space-y-2'>
+                <AccordionItem title='Info Dasar' isExpanded={expandedSections.basicInfo} onToggle={() => toggleSection('basicInfo')} bgColor='bg-indigo-50' compact>
+                  <InfoTable compact data={[
+                    { label: 'No. Invoice', value: invoice.no_invoice },
+                    { label: 'Tanggal', value: formatDate(invoice.tanggal) },
+                    { label: 'Jatuh Tempo', value: formatDate(invoice.expired_date) },
+                    { label: 'TOP', value: invoice.termOfPayment?.kode_top || invoice.TOP || '-' },
+                    { label: 'Status', component: <StatusBadge status={statusLabel || '-'} variant={statusVariant} size='xs' dot /> },
+                    { label: 'PO#', value: invoice.purchaseOrder?.po_number || '-' },
+                    { label: 'Customer', value: invoice.purchaseOrder?.customer?.namaCustomer || '-' },
+                    { label: 'Print', component: <StatusBadge status={invoice.is_printed ? 'Printed' : 'Not Printed'} variant={invoice.is_printed ? 'success' : 'secondary'} size='xs' dot /> },
+                  ]} />
                 </AccordionItem>
 
-                {/* Financial Details */}
-                <AccordionItem
-                  title="Rincian Finansial"
-                  isExpanded={expandedSections.pricingInfo}
-                  onToggle={() => toggleSection('pricingInfo')}
-                  bgColor="bg-gradient-to-r from-green-50 to-green-100"
-                >
-                  <InfoTable
-                    data={[
-                      {
-                        label: 'Sub Total',
-                        value: formatCurrency(invoice.sub_total),
-                      },
-                      {
-                        label: 'Total Diskon',
-                        value: formatCurrency(invoice.total_discount),
-                      },
-                      {
-                        label: 'Total Harga',
-                        value: formatCurrency(invoice.total_price),
-                      },
-                      {
-                        label: 'PPN (%)',
-                        value: invoice.ppn_percentage
-                          ? `${invoice.ppn_percentage}%`
-                          : '-',
-                      },
-                      {
-                        label: 'PPN (Rp)',
-                        value: formatCurrency(invoice.ppnRupiah ?? invoice.ppn_rupiah),
-                      },
-                      {
-                        label: 'Grand Total',
-                        value: formatCurrency(invoice.grand_total),
-                      },
-                    ]}
-                  />
+                <AccordionItem title='Finansial' isExpanded={expandedSections.pricingInfo} onToggle={() => toggleSection('pricingInfo')} bgColor='bg-green-50' compact>
+                  <InfoTable compact data={[
+                    { label: 'Sub Total', value: formatCurrency(invoice.sub_total) },
+                    { label: 'Diskon', value: formatCurrency(invoice.total_discount) },
+                    { label: 'PPN', value: invoice.ppn_percentage ? `${invoice.ppn_percentage}%` : '-' },
+                    { label: 'Grand Total', value: formatCurrency(invoice.grand_total) },
+                  ]} />
                 </AccordionItem>
 
-                {/* System Information */}
-                <AccordionItem
-                  title="Informasi Sistem"
-                  isExpanded={expandedSections.metaInfo}
-                  onToggle={() => toggleSection('metaInfo')}
-                  bgColor="bg-gradient-to-r from-purple-50 to-purple-100"
-                >
-                  <InfoTable
-                    data={[
-                      {
-                        label: 'Dibuat Pada',
-                        value: formatDateTime(invoice.createdAt),
-                      },
-                      {
-                        label: 'Diperbarui Pada',
-                        value: formatDateTime(invoice.updatedAt),
-                      },
-                      {
-                        label: 'Dibuat Oleh',
-                        value: invoice.createdBy || '-',
-                      },
-                      {
-                        label: 'Diperbarui Oleh',
-                        value: invoice.updatedBy || '-',
-                      },
-                    ]}
-                  />
+                <AccordionItem title='System' isExpanded={expandedSections.metaInfo} onToggle={() => toggleSection('metaInfo')} bgColor='bg-purple-50' compact>
+                  <InfoTable compact data={[
+                    { label: 'Created', value: formatDateTime(invoice.createdAt) },
+                    { label: 'Updated', value: formatDateTime(invoice.updatedAt) },
+                  ]} />
                 </AccordionItem>
               </div>
             </TabPanel>
 
-            <TabPanel tabId="details">
-              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <ShoppingCartIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Rincian Barang</h3>
-                  </div>
-                  <div className="px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full">
-                    {detailCount} item
-                  </div>
-                </div>
-
-                {invoice.invoiceDetails && invoice.invoiceDetails.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Barang
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            PLU
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Qty
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Satuan
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Harga
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {invoice.invoiceDetails.map((detail, index) => (
-                          <tr key={detail.id || index} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {detail.nama_barang}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {detail.PLU}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {detail.quantity}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {detail.satuan}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatCurrency(detail.harga)}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {formatCurrency(detail.total)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    Tidak ada detail barang untuk invoice ini.
-                  </div>
-                )}
+            <TabPanel tabId='details'>
+              <div className='flex items-center justify-between mb-2'>
+                <span className='text-xs font-medium text-gray-700'>Rincian Barang</span>
+                <span className='px-2 py-0.5 text-xs font-medium text-blue-800 bg-blue-100 rounded-full'>{detailCount} item</span>
               </div>
+              {invoice.invoiceDetails && invoice.invoiceDetails.length > 0 ? (
+                <div className='overflow-x-auto'>
+                  <table className='min-w-full divide-y divide-gray-200 text-xs'>
+                    <thead className='bg-gray-50'>
+                      <tr>
+                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Barang</th>
+                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Qty</th>
+                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Harga</th>
+                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className='bg-white divide-y divide-gray-100'>
+                      {invoice.invoiceDetails.map((d, i) => (
+                        <tr key={d.id || i} className='hover:bg-gray-50'>
+                          <td className='px-2 py-1 text-xs text-gray-900'>{d.nama_barang}</td>
+                          <td className='px-2 py-1 text-xs text-gray-900'>{d.quantity}</td>
+                          <td className='px-2 py-1 text-xs text-gray-900'>{formatCurrency(d.harga)}</td>
+                          <td className='px-2 py-1 text-xs font-medium text-gray-900'>{formatCurrency(d.total)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : <div className='py-4 text-center text-xs text-gray-500'>Tidak ada detail barang</div>}
             </TabPanel>
           </TabContent>
         </div>
