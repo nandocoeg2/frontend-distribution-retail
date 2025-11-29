@@ -36,7 +36,9 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
         <table className="min-w-full bg-white border border-gray-200 text-xs table-fixed">
           <colgroup>
             <col style={{ width: '180px' }} />
-            <col style={{ width: '100px' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '120px' }} />
+            <col style={{ width: '180px' }} />
             <col style={{ width: '200px' }} />
             <col style={{ width: '120px' }} />
             <col style={{ width: '60px' }} />
@@ -44,7 +46,9 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
           <thead className="bg-gray-50">
             <tr>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company Name</th>
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. Rekening</th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank</th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -53,13 +57,13 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
           <tbody className="bg-white divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td colSpan="5" className="px-2 py-1 text-center">
+                <td colSpan="7" className="px-2 py-1 text-center">
                   <div className="w-6 h-6 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
                 </td>
               </tr>
             ) : companiesArray.length === 0 ? (
               <tr>
-                <td colSpan="5" className="px-2 py-1 text-center text-gray-500 text-xs">
+                <td colSpan="7" className="px-2 py-1 text-center text-gray-500 text-xs">
                   {searchQuery ? 'No companies found matching your search.' : 'No companies available.'}
                 </td>
               </tr>
@@ -75,9 +79,11 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
                   }`}
                 >
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate" title={company.nama_perusahaan}>{company.nama_perusahaan}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">{company.kode_company}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate" title={company.alamat || 'N/A'}>{company.alamat || 'N/A'}</td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900">{company.telp || 'N/A'}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900">{company.no_rekening || '-'}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900">{company.bank || '-'}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate" title={company.email || '-'}>{company.email || '-'}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate" title={company.alamat || '-'}>{company.alamat || '-'}</td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900">{company.telp || '-'}</td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs">
                     <div className="flex space-x-1">
                       <button
