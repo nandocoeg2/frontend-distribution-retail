@@ -11,15 +11,6 @@ import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: { label: 'Pending', statusCode: 'PENDING FAKTUR PAJAK' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING FAKTUR PAJAK' },
-  issued: { label: 'Issued', statusCode: 'ISSUED FAKTUR PAJAK' },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED FAKTUR PAJAK' },
-  completed: { label: 'Completed', statusCode: 'COMPLETED FAKTUR PAJAK' },
-};
-
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -78,16 +69,8 @@ const FakturPajakTableServerSide = ({
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   selectedFakturPajakId = null,
 }) => {
-  const lockedFilters = useMemo(() => {
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode || activeTab === 'all') {
-      return [];
-    }
-    return [{ id: 'status', value: statusCode }];
-  }, [activeTab]);
 
   const {
     data: fakturPajaks,
@@ -105,7 +88,6 @@ const FakturPajakTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    lockedFilters,
   });
 
   const columns = useMemo(
@@ -323,38 +305,27 @@ const FakturPajakTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
         id: 'status',
-        header: ({ column }) => {
-          const statusConfig = TAB_STATUS_CONFIG[activeTab];
-          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Status</div>
-              {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {statusConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  <option value="PENDING FAKTUR PAJAK">Pending</option>
-                  <option value="PROCESSING FAKTUR PAJAK">Processing</option>
-                  <option value="ISSUED FAKTUR PAJAK">Issued</option>
-                  <option value="CANCELLED FAKTUR PAJAK">Cancelled</option>
-                  <option value="COMPLETED FAKTUR PAJAK">Completed</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="PENDING FAKTUR PAJAK">Pending</option>
+              <option value="PROCESSING FAKTUR PAJAK">Processing</option>
+              <option value="ISSUED FAKTUR PAJAK">Issued</option>
+              <option value="CANCELLED FAKTUR PAJAK">Cancelled</option>
+              <option value="COMPLETED FAKTUR PAJAK">Completed</option>
+            </select>
+          </div>
+        ),
         cell: (info) => (
           <StatusBadge
             status={info.getValue() || 'Unknown'}
@@ -395,7 +366,6 @@ const FakturPajakTableServerSide = ({
       onView,
       onDelete,
       deleteLoading,
-      activeTab,
       setPage,
       selectedFakturPajakId,
     ]

@@ -2,18 +2,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   XMarkIcon,
   DocumentTextIcon,
-  UserIcon,
-  ClockIcon,
-  BanknotesIcon,
-  DocumentCheckIcon,
-  InboxStackIcon,
-  CalendarIcon,
   PencilIcon,
   CheckIcon,
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
-import { TabContainer, Tab, TabContent, TabPanel, InfoTable, StatusBadge } from '../ui';
+import { InfoTable, StatusBadge, AccordionItem } from '../ui';
 import Autocomplete from '../common/Autocomplete';
 import ActivityTimeline from '../common/ActivityTimeline';
 import toastService from '@/services/toastService';
@@ -37,8 +31,21 @@ const toInputString = (value) => {
 };
 
 const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFakturPajak, onUpdate }) => {
-  const [activeTab, setActiveTab] = useState('overview');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    main: true,
+    financial: false,
+    customer: false,
+    related: false,
+    activity: false,
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isDppTouched, setIsDppTouched] = useState(false);
@@ -388,560 +395,175 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+    <div className="bg-white shadow rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">
-            Detail Faktur Pajak
-            {isEditMode && <span className="ml-3 text-sm font-normal text-blue-600">(Editing)</span>}
-          </h2>
-          <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-            <DocumentTextIcon className="h-4 w-4 text-gray-400" />
-            {detail?.no_pajak || 'No faktur pajak available'}
-          </p>
+      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-amber-50">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded bg-orange-100">
+            <DocumentTextIcon className="w-4 h-4 text-orange-600" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">
+              Faktur Pajak
+              {isEditMode && <span className="ml-2 text-xs font-normal text-blue-600">(Editing)</span>}
+            </h3>
+            <p className="text-xs text-gray-600">{detail?.no_pajak || '-'}</p>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           {!isEditMode ? (
             <>
               <button
                 onClick={handleUploadClick}
                 disabled={uploading || loading}
-                className="inline-flex items-center px-3 py-2 border border-green-600 text-sm font-medium rounded-md text-green-600 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Upload e-Faktur DJP Evidence"
+                className="inline-flex items-center px-2 py-1 text-xs font-medium text-green-600 bg-white border border-green-600 rounded hover:bg-green-50 disabled:opacity-50"
+                title="Upload e-Faktur"
               >
-                <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
-                {uploading ? 'Uploading...' : 'Upload e-Faktur'}
+                <ArrowUpTrayIcon className="w-3 h-3 mr-1" />
+                {uploading ? '...' : 'Upload'}
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" accept="application/pdf,.pdf" onChange={handleFileSelect} className="hidden" />
               {updateFakturPajak && (
                 <button
                   onClick={handleEditClick}
                   disabled={uploading}
-                  className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-white border border-blue-600 rounded hover:bg-blue-50 disabled:opacity-50"
                   title="Edit"
                 >
-                  <PencilIcon className="w-4 h-4 mr-1" />
+                  <PencilIcon className="w-3 h-3 mr-1" />
                   Edit
                 </button>
               )}
               {onClose && (
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Close"
-                >
-                  <XMarkIcon className="w-5 h-5 text-gray-500" />
+                <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" title="Close">
+                  <XMarkIcon className="w-4 h-4 text-gray-500" />
                 </button>
               )}
             </>
           ) : (
             <>
-              <button
-                onClick={handleCancelEdit}
-                disabled={saving}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-              >
+              <button onClick={handleCancelEdit} disabled={saving} className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50">
                 Cancel
               </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-              >
-                <CheckIcon className="w-4 h-4 mr-1" />
-                {saving ? 'Saving...' : 'Save'}
+              <button onClick={handleSave} disabled={saving} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50">
+                <CheckIcon className="w-3 h-3 mr-1" />
+                {saving ? '...' : 'Save'}
               </button>
             </>
           )}
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-sm text-gray-600">Loading faktur pajak details...</span>
-        </div>
-      ) : isEditMode ? (
-        /* EDIT MODE */
-        <div className="bg-gray-50 rounded-lg p-6">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nomor Faktur Pajak <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.no_pajak}
-                  onChange={handleInputChange('no_pajak')}
-                  placeholder="010.000-24.12345678"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+      <div className="p-3 max-h-[500px] overflow-y-auto">
+        {loading ? (
+          <div className="flex justify-center items-center py-6">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-xs text-gray-600">Memuat...</span>
+          </div>
+        ) : isEditMode ? (
+          <div className="bg-gray-50 rounded p-3">
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">No. Faktur *</label>
+                  <input type="text" value={formData.no_pajak} onChange={handleInputChange('no_pajak')} placeholder="010.000-24.12345678" className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Invoice</label>
+                  <Autocomplete label="" options={invoicePenagihanOptions} value={formData.invoicePenagihanId} onChange={handleInputChange('invoicePenagihanId')} placeholder="Invoice" displayKey="label" valueKey="id" name="invoicePenagihanId" disabled showId />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Tanggal *</label>
+                  <input type="date" value={formData.tanggal_invoice} onChange={handleInputChange('tanggal_invoice')} className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">LPB</label>
+                  <Autocomplete label="" options={laporanPenerimaanBarangOptions} value={formData.laporanPenerimaanBarangId} onChange={handleInputChange('laporanPenerimaanBarangId')} placeholder="LPB" displayKey="label" valueKey="id" name="laporanPenerimaanBarangId" disabled showId />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Customer *</label>
+                  <Autocomplete label="" options={customerOptions} value={formData.customerId} onChange={handleInputChange('customerId')} placeholder="Customer" displayKey="namaCustomer" valueKey="id" name="customerId" loading={customersLoading} onSearch={async (q) => { try { await searchCustomers(q, 1, 20); } catch (e) { console.error(e); } }} showId />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Total Harga *</label>
+                  <input type="number" min="0" value={formData.total_harga_jual} onChange={handleInputChange('total_harga_jual')} placeholder="0" className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Potongan</label>
+                  <input type="number" min="0" value={formData.potongan_harga} onChange={handleInputChange('potongan_harga')} placeholder="0" className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">DPP *</label>
+                  <input type="number" min="0" value={formData.dasar_pengenaan_pajak} onChange={handleInputChange('dasar_pengenaan_pajak')} placeholder="0" className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">PPN % *</label>
+                  <input type="number" min="0" max="100" value={formData.ppn_percentage} onChange={handleInputChange('ppn_percentage')} placeholder="11" className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">PPN Rp *</label>
+                  <input type="number" min="0" value={formData.ppn_rp} onChange={handleInputChange('ppn_rp')} placeholder="0" className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">TOP *</label>
+                  <Autocomplete label="" options={termOfPaymentOptions} value={formData.termOfPaymentId} onChange={handleInputChange('termOfPaymentId')} placeholder="TOP" displayKey="label" valueKey="id" name="termOfPaymentId" loading={termOfPaymentLoading} onSearch={searchTermOfPayments} showId />
+                </div>
               </div>
+            </form>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <AccordionItem title="Info Utama" isExpanded={expandedSections.main} onToggle={() => toggleSection('main')} bgColor="bg-orange-50" compact>
+              <InfoTable compact data={[
+                { label: 'No. Faktur', value: detail?.no_pajak, copyable: true },
+                { label: 'Tanggal', value: detail?.tanggal_invoice ? formatDate(detail.tanggal_invoice) : '-' },
+                { label: 'Status', component: <StatusBadge status={detail?.status?.status_name || detail?.status?.status_code || 'Unknown'} variant={statusVariant} size="xs" dot /> },
+              ]} />
+            </AccordionItem>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Invoice Penagihan <span className="text-red-500">*</span>
-                </label>
-                <Autocomplete
-                  label=""
-                  options={invoicePenagihanOptions}
-                  value={formData.invoicePenagihanId}
-                  onChange={handleInputChange('invoicePenagihanId')}
-                  placeholder="Invoice Penagihan"
-                  displayKey="label"
-                  valueKey="id"
-                  name="invoicePenagihanId"
-                  required
-                  disabled
-                  showId
-                />
-              </div>
+            <AccordionItem title="Keuangan" isExpanded={expandedSections.financial} onToggle={() => toggleSection('financial')} bgColor="bg-green-50" compact>
+              <InfoTable compact data={[
+                { label: 'Total Harga', value: formatCurrency(detail?.total_harga_jual) },
+                { label: 'Potongan', value: formatCurrency(detail?.potongan_harga) },
+                { label: 'DPP', value: formatCurrency(detail?.dasar_pengenaan_pajak) },
+                { label: 'PPN', value: `${formatCurrency(detail?.ppn_rp)} (${detail?.ppn_percentage || 0}%)` },
+                { label: 'TOP', value: detail?.termOfPayment?.kode_top || '-' },
+              ]} />
+            </AccordionItem>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tanggal Invoice <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.tanggal_invoice}
-                  onChange={handleInputChange('tanggal_invoice')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <AccordionItem title="Customer" isExpanded={expandedSections.customer} onToggle={() => toggleSection('customer')} bgColor="bg-blue-50" compact>
+              <InfoTable compact data={[
+                { label: 'Nama', value: detail?.customer?.nama_customer || detail?.customer?.namaCustomer || '-' },
+                { label: 'Kode', value: detail?.customer?.kode_customer || detail?.customer?.kodeCustomer || '-' },
+                { label: 'NPWP', value: detail?.customer?.npwp || detail?.customer?.NPWP || '-' },
+              ]} />
+            </AccordionItem>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Laporan Penerimaan Barang <span className="text-red-500">*</span>
-                </label>
-                <Autocomplete
-                  label=""
-                  options={laporanPenerimaanBarangOptions}
-                  value={formData.laporanPenerimaanBarangId}
-                  onChange={handleInputChange('laporanPenerimaanBarangId')}
-                  placeholder="Laporan Penerimaan Barang"
-                  displayKey="label"
-                  valueKey="id"
-                  name="laporanPenerimaanBarangId"
-                  required
-                  disabled
-                  showId
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Customer <span className="text-red-500">*</span>
-                </label>
-                <Autocomplete
-                  label=""
-                  options={customerOptions}
-                  value={formData.customerId}
-                  onChange={handleInputChange('customerId')}
-                  placeholder="Cari nama atau ID customer"
-                  displayKey="namaCustomer"
-                  valueKey="id"
-                  name="customerId"
-                  required
-                  loading={customersLoading}
-                  onSearch={async (query) => {
-                    try {
-                      await searchCustomers(query, 1, 20);
-                    } catch (error) {
-                      console.error('Failed to search customers:', error);
-                    }
-                  }}
-                  showId
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Harga Jual (IDR) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.total_harga_jual}
-                  onChange={handleInputChange('total_harga_jual')}
-                  placeholder="Masukkan total harga jual"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Potongan Harga (IDR)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.potongan_harga}
-                  onChange={handleInputChange('potongan_harga')}
-                  placeholder="Masukkan potongan (opsional)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dasar Pengenaan Pajak (DPP) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.dasar_pengenaan_pajak}
-                  onChange={handleInputChange('dasar_pengenaan_pajak')}
-                  placeholder="Total harga jual - potongan"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Persentase PPN (%) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={formData.ppn_percentage}
-                  onChange={handleInputChange('ppn_percentage')}
-                  placeholder="Contoh: 11"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  PPN (Rp) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.ppn_rp}
-                  onChange={handleInputChange('ppn_rp')}
-                  placeholder="DPP x % PPN"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Term of Payment <span className="text-red-500">*</span>
-                </label>
-                <Autocomplete
-                  label=""
-                  options={termOfPaymentOptions}
-                  value={formData.termOfPaymentId}
-                  onChange={handleInputChange('termOfPaymentId')}
-                  placeholder="Cari Term of Payment"
-                  displayKey="label"
-                  valueKey="id"
-                  name="termOfPaymentId"
-                  required
-                  loading={termOfPaymentLoading}
-                  onSearch={searchTermOfPayments}
-                  showId
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status <span className="text-red-500">*</span>
-                </label>
-                <Autocomplete
-                  label=""
-                  options={statusOptions}
-                  value={formData.statusId}
-                  onChange={handleInputChange('statusId')}
-                  placeholder="Status"
-                  displayKey="label"
-                  valueKey="id"
-                  name="statusId"
-                  required
-                  disabled
-                  showId
-                />
-              </div>
-            </div>
-          </form>
-        </div>
-      ) : (
-        /* VIEW MODE */
-        <div>
-          {/* Tab Navigation */}
-          <TabContainer
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant="underline"
-            className="mb-6"
-          >
-            <Tab
-              id="overview"
-              label="Overview"
-              icon={<DocumentTextIcon className="w-4 h-4" />}
-            />
-            <Tab
-              id="customer"
-              label="Customer"
-              icon={<UserIcon className="w-4 h-4" />}
-            />
-            <Tab
-              id="related"
-              label="Related Data"
-              icon={<DocumentCheckIcon className="w-4 h-4" />}
-            />
-            <Tab
-              id="activity"
-              label="Activity"
-              icon={<ClockIcon className="w-4 h-4" />}
-              badge={detail?.auditTrails?.length || 0}
-            />
-          </TabContainer>
-
-          {/* Tab Content */}
-          <TabContent activeTab={activeTab}>
-            <TabPanel tabId="overview">
-              <div className="space-y-6">
-                {/* Main Information */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <DocumentTextIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Informasi Utama</h3>
+            <AccordionItem title="Data Terkait" isExpanded={expandedSections.related} onToggle={() => toggleSection('related')} bgColor="bg-purple-50" compact>
+              <div className="space-y-2">
+                <div className="text-xs font-medium text-gray-700">Invoice Penagihan:</div>
+                {detail?.invoicePenagihan && Array.isArray(detail.invoicePenagihan) && detail.invoicePenagihan.length > 0 ? (
+                  <div className="text-xs text-gray-600">
+                    {detail.invoicePenagihan.map((inv, i) => (
+                      <div key={inv.id || i}>{inv.no_invoice_penagihan || '-'} - {formatCurrency(inv.total_price)}</div>
+                    ))}
                   </div>
-                  <InfoTable
-                    data={[
-                      { label: 'Nomor Faktur Pajak', value: detail?.no_pajak, copyable: true },
-                      {
-                        label: 'Tanggal Invoice',
-                        value: detail?.tanggal_invoice ? formatDate(detail.tanggal_invoice) : '-',
-                      },
-                      {
-                        label: 'Status',
-                        component: (
-                          <StatusBadge
-                            status={detail?.status?.status_name || detail?.status?.status_code || 'Unknown'}
-                            variant={statusVariant}
-                            dot
-                          />
-                        ),
-                      },
-                    ]}
-                  />
-                </div>
-
-                {/* Financial Information */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <BanknotesIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Informasi Keuangan</h3>
-                  </div>
-                  <InfoTable
-                    data={[
-                      { label: 'Total Harga Jual', value: formatCurrency(detail?.total_harga_jual) },
-                      { label: 'Potongan Harga', value: formatCurrency(detail?.potongan_harga) },
-                      { label: 'Dasar Pengenaan Pajak (DPP)', value: formatCurrency(detail?.dasar_pengenaan_pajak) },
-                      { label: 'PPN (Rp)', value: formatCurrency(detail?.ppn_rp) },
-                      {
-                        label: 'PPN (%)',
-                        value: detail?.ppn_percentage != null ? `${detail.ppn_percentage}%` : '-',
-                      },
-                    ]}
-                  />
-                </div>
-
-                {/* Term of Payment */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <CalendarIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Term of Payment</h3>
-                  </div>
-                  <InfoTable
-                    data={[
-                      { label: 'Term of Payment', value: detail?.termOfPayment?.name || '-' },
-                      {
-                        label: 'Jumlah Hari',
-                        value: detail?.termOfPayment?.days != null ? `${detail.termOfPayment.days} hari` : '-',
-                      },
-                      { label: 'Deskripsi', value: detail?.termOfPayment?.description || '-' },
-                    ]}
-                  />
-                </div>
-
-                {/* Audit Information */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <ClockIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Audit Information</h3>
-                  </div>
-                  <InfoTable
-                    data={[
-                      { label: 'Created By', value: detail?.createdBy || '-' },
-                      {
-                        label: 'Created At',
-                        value: detail?.createdAt ? formatDateTime(detail.createdAt) : '-',
-                      },
-                      { label: 'Updated By', value: detail?.updatedBy || '-' },
-                      {
-                        label: 'Updated At',
-                        value: detail?.updatedAt ? formatDateTime(detail.updatedAt) : '-',
-                      },
-                    ]}
-                  />
-                </div>
+                ) : <div className="text-xs text-gray-500">-</div>}
+                <div className="text-xs font-medium text-gray-700 mt-2">LPB:</div>
+                <div className="text-xs text-gray-600">{detail?.laporanPenerimaanBarang?.no_lpb || '-'}</div>
               </div>
-            </TabPanel>
+            </AccordionItem>
 
-            <TabPanel tabId="customer">
-              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center mb-4">
-                  <UserIcon className="h-5 w-5 text-gray-500 mr-2" />
-                  <h3 className="text-lg font-semibold text-gray-900">Informasi Customer</h3>
-                </div>
-                <InfoTable
-                  data={[
-                    { label: 'Nama Customer', value: detail?.customer?.nama_customer || '-' },
-                    { label: 'Kode Customer', value: detail?.customer?.kode_customer || '-', copyable: true },
-                    { label: 'Alamat', value: detail?.customer?.alamat || '-' },
-                    { label: 'NPWP', value: detail?.customer?.npwp || '-', copyable: true },
-                  ]}
-                />
-              </div>
-            </TabPanel>
-
-            <TabPanel tabId="related">
-              <div className="space-y-6">
-                {/* Invoice Penagihan */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <DocumentCheckIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Invoice Penagihan Terkait</h3>
-                  </div>
-                  {detail?.invoicePenagihan && Array.isArray(detail.invoicePenagihan) && detail.invoicePenagihan.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Nomor Invoice
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Tanggal Invoice
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Total Invoice
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Customer
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {detail.invoicePenagihan.map((invoice, index) => (
-                            <tr key={invoice.id || index} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {invoice.no_invoice_penagihan || '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {invoice.tanggal ? formatDate(invoice.tanggal) : '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {formatCurrency(invoice.total_price)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {invoice.customer?.nama_customer || '-'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : detail?.invoicePenagihan && !Array.isArray(detail.invoicePenagihan) ? (
-                    <InfoTable
-                      data={[
-                        { label: 'Nomor Invoice', value: detail.invoicePenagihan.no_invoice || '-' },
-                        {
-                          label: 'Tanggal Invoice',
-                          value: formatDate(detail.invoicePenagihan.tanggal_invoice),
-                        },
-                        { label: 'Total Invoice', value: formatCurrency(detail.invoicePenagihan.total_price) },
-                        { label: 'Customer Invoice', value: detail.invoicePenagihan.customer?.nama_customer || '-' },
-                      ]}
-                    />
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">No invoice penagihan data available.</div>
-                  )}
-                </div>
-
-                {/* Laporan Penerimaan Barang */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                  <div className="flex items-center mb-4">
-                    <InboxStackIcon className="h-5 w-5 text-gray-500 mr-2" />
-                    <h3 className="text-lg font-semibold text-gray-900">Laporan Penerimaan Barang</h3>
-                  </div>
-                  {detail?.laporanPenerimaanBarang ? (
-                    <InfoTable
-                      data={[
-                        { label: 'Nomor LPB', value: detail.laporanPenerimaanBarang.no_lpb || '-', copyable: true },
-                        {
-                          label: 'Tanggal Terima',
-                          value: formatDate(detail.laporanPenerimaanBarang.tanggal_terima),
-                        },
-                        {
-                          label: 'Total Kuantitas',
-                          value: detail.laporanPenerimaanBarang.total_quantity != null
-                            ? detail.laporanPenerimaanBarang.total_quantity
-                            : '-',
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">No laporan penerimaan barang data available.</div>
-                  )}
-                </div>
-              </div>
-            </TabPanel>
-
-            <TabPanel tabId="activity">
-              <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center mb-4">
-                  <ClockIcon className="h-5 w-5 text-gray-500 mr-2" />
-                  <h3 className="text-lg font-semibold text-gray-900">Activity Timeline</h3>
-                </div>
-
-                {detail?.auditTrails && Array.isArray(detail.auditTrails) && detail.auditTrails.length > 0 ? (
-                  <ActivityTimeline
-                    auditTrails={detail.auditTrails.map((trail) => ({
-                      ...trail,
-                      details: trail.changes || {},
-                      timestamp: trail.timestamp,
-                      user: trail.userId,
-                    }))}
-                    title=""
-                    showCount={false}
-                    emptyMessage="No activity found."
-                  />
-                ) : (
-                  <div className="text-center py-8 text-gray-500">No activity found.</div>
-                )}
-              </div>
-            </TabPanel>
-          </TabContent>
-        </div>
-      )}
+            <AccordionItem title="Riwayat" isExpanded={expandedSections.activity} onToggle={() => toggleSection('activity')} bgColor="bg-gray-50" compact>
+              {detail?.auditTrails && Array.isArray(detail.auditTrails) && detail.auditTrails.length > 0 ? (
+                <ActivityTimeline auditTrails={detail.auditTrails.map((t) => ({ ...t, details: t.changes || {}, timestamp: t.timestamp, user: t.userId }))} showCount={false} emptyMessage="Tidak ada riwayat." />
+              ) : (
+                <div className="text-xs text-gray-500 py-2">Tidak ada riwayat.</div>
+              )}
+            </AccordionItem>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

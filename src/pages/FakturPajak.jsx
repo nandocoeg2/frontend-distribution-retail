@@ -8,51 +8,7 @@ import {
   FakturPajakExportModal,
 } from '@/components/fakturPajak';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: {
-    label: 'Pending',
-    statusCode: 'PENDING FAKTUR PAJAK',
-  },
-  processing: {
-    label: 'Processing',
-    statusCode: 'PROCESSING FAKTUR PAJAK',
-  },
-  issued: {
-    label: 'Issued',
-    statusCode: 'ISSUED FAKTUR PAJAK',
-  },
-  cancelled: {
-    label: 'Cancelled',
-    statusCode: 'CANCELLED FAKTUR PAJAK',
-  },
-  completed: {
-    label: 'Completed',
-    statusCode: 'COMPLETED FAKTUR PAJAK',
-  },
-};
-
-const TAB_ORDER = [
-  'all',
-  'pending',
-  'processing',
-  'issued',
-  'cancelled',
-  'completed',
-];
-
-const INITIAL_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
+import { ArchiveBoxIcon } from '@heroicons/react/24/outline';
 
 const FakturPajakPage = () => {
   const queryClient = useQueryClient();
@@ -65,15 +21,10 @@ const FakturPajakPage = () => {
     fetchFakturPajakById,
   } = useFakturPajakPage();
 
-  const [activeTab, setActiveTab] = useState('all');
   const [selectedFakturPajakForDetail, setSelectedFakturPajakForDetail] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-  }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
     await deleteFakturPajakConfirmation.confirmDelete();
@@ -151,44 +102,18 @@ const FakturPajakPage = () => {
   };
 
   return (
-    <div className='p-6'>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
-            <div>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Manajemen Faktur Pajak
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Kelola faktur pajak penjualan beserta relasi invoice dan laporan
-                penerimaan barang.
-              </p>
-            </div>
-            <div className='flex items-center gap-2'>
-              <button
-                onClick={openExportModal}
-                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-md shadow-sm hover:bg-emerald-700'
-              >
-                <HeroIcon name='archive-box' className='w-5 h-5 mr-2' />
-                Export e-Faktur DJP
-              </button>
-            </div>
-          </div>
-
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
+    <div className='p-3 space-y-3'>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-3 py-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>Faktur Pajak</h3>
+            <button
+              onClick={openExportModal}
+              className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700'
             >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId].label}
-                />
-              ))}
-            </TabContainer>
+              <ArchiveBoxIcon className='w-3.5 h-3.5 mr-1' />
+              Export e-Faktur
+            </button>
           </div>
 
           <FakturPajakTableServerSide
@@ -197,7 +122,6 @@ const FakturPajakPage = () => {
             deleteLoading={deleteFakturPajakConfirmation.loading}
             initialPage={1}
             initialLimit={10}
-            activeTab={activeTab}
             selectedFakturPajakId={selectedFakturPajakForDetail?.id}
           />
         </div>
