@@ -7,25 +7,12 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
-import { TabContainer, Tab } from '../ui/Tabs.jsx';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { useMutasiBankQuery } from '../../hooks/useMutasiBankQuery';
 import { DataTable, DataTablePagination } from '../table';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'Semua', filters: {} },
-  pending: { label: 'Pending', filters: { validation_status: 'PENDING' } },
-  matched: { label: 'Matched', filters: { validation_status: 'MATCHED' } },
-  unmatched: { label: 'Unmatched', filters: { validation_status: 'UNMATCHED' } },
-  valid: { label: 'Valid', filters: { validation_status: 'VALID' } },
-  invalid: { label: 'Invalid', filters: { validation_status: 'INVALID' } },
-  reconciled: { label: 'Reconciled', filters: { validation_status: 'RECONCILED' } },
-};
-
-const TAB_ORDER = ['all', 'pending', 'matched', 'unmatched', 'valid', 'invalid', 'reconciled'];
 
 const toCamelCase = (value = '') =>
   value.replace(/[_-](\w)/g, (_, letter) => letter.toUpperCase());
@@ -283,7 +270,6 @@ const formatSummaryValue = (keyPath, value) => {
 
 const MutasiBankTableServerSide = ({
   filters = {},
-  activeTab = 'all',
   onViewMutation,
   onValidateMutation,
   onAssignDocument,
@@ -293,17 +279,8 @@ const MutasiBankTableServerSide = ({
   isUnassigning = false,
   initialPage = 1,
   initialLimit = 10,
-  onTabChange,
   onManualRefresh,
 }) => {
-  const lockedFilters = useMemo(() => {
-    const config = TAB_STATUS_CONFIG[activeTab] || {};
-    const statusFilters = config.filters || {};
-    return Object.entries(statusFilters).map(([key, value]) => ({
-      id: key,
-      value,
-    }));
-  }, [activeTab]);
 
   const {
     data: mutations,
@@ -319,7 +296,6 @@ const MutasiBankTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    lockedFilters,
     getQueryParams: useCallback(
       ({ filters: columnFilters, ...rest }) => {
         const sanitized = sanitizeFilters(filters);
@@ -583,28 +559,7 @@ const MutasiBankTableServerSide = ({
   }, [queryResult?.data?.meta]);
 
   return (
-    <div className='bg-white border border-gray-200 rounded-lg shadow-sm'>
-      <div className='p-4 border-b border-gray-200 overflow-x-auto'>
-        <TabContainer
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-          size='sm'
-          variant='underline'
-          className='min-w-max'
-        >
-          {TAB_ORDER.map((tabId) => {
-            const config = TAB_STATUS_CONFIG[tabId] || { label: tabId };
-            return (
-              <Tab
-                key={tabId}
-                id={tabId}
-                label={config.label}
-              />
-            );
-          })}
-        </TabContainer>
-      </div>
-
+    <div className='space-y-2'>
       {summaryData ? (() => {
         const summaryEntries = Object.entries(summaryData).filter(([key, value]) => {
           const normalizedKey = String(key).toLowerCase();
@@ -619,23 +574,14 @@ const MutasiBankTableServerSide = ({
         }
 
         return (
-        <div className='px-4 py-3 border-b border-gray-200 bg-gray-50'>
-          <div className='flex flex-wrap gap-3'>
+          <div className='flex flex-wrap gap-2 p-2 bg-gray-50 rounded border border-gray-200'>
             {summaryEntries.map(([key, value]) => (
-              <div
-                key={key}
-                className='px-4 py-2 bg-white border border-gray-200 rounded-md shadow-sm'
-              >
-                <div className='text-xs uppercase tracking-wide text-gray-500'>
-                  {key.replace(/[_-]/g, ' ')}
-                </div>
-                <div className='text-base font-semibold text-gray-900'>
-                  {formatSummaryValue(key, value)}
-                </div>
+              <div key={key} className='px-2 py-1 bg-white border border-gray-200 rounded text-xs'>
+                <span className='text-gray-500'>{key.replace(/[_-]/g, ' ')}: </span>
+                <span className='font-medium text-gray-900'>{formatSummaryValue(key, value)}</span>
               </div>
             ))}
           </div>
-        </div>
         );
       })() : null}
 

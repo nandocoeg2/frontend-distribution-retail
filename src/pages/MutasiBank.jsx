@@ -1,11 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  BanknotesIcon,
   ArrowPathIcon,
   PlusIcon,
 } from '@heroicons/react/24/outline';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import {
   MutasiBankTableServerSide,
   MutasiBankUploadModal,
@@ -20,27 +18,8 @@ const resolveMutationId = (mutation) => {
   if (!mutation) {
     return null;
   }
-
-  return (
-    mutation.id ??
-    mutation.mutationId ??
-    mutation.uuid ??
-    mutation._id ??
-    mutation.transactionId ??
-    mutation.bankMutationId ??
-    null
-  );
+  return mutation.id ?? mutation.mutationId ?? mutation.uuid ?? mutation._id ?? mutation.transactionId ?? mutation.bankMutationId ?? null;
 };
-
-const TAB_DEFINITIONS = [
-  { id: 'all', label: 'Semua', description: 'Seluruh mutasi bank' },
-  { id: 'pending', label: 'Pending', description: 'Menunggu pencocokan' },
-  { id: 'matched', label: 'Matched', description: 'Sudah terhubung ke dokumen' },
-  { id: 'unmatched', label: 'Unmatched', description: 'Belum memiliki dokumen' },
-  { id: 'valid', label: 'Valid', description: 'Telah divalidasi' },
-  { id: 'invalid', label: 'Invalid', description: 'Perlu tindak lanjut manual' },
-  { id: 'reconciled', label: 'Reconciled', description: 'Rekonsiliasi selesai' },
-];
 
 const MutasiBank = () => {
   const queryClient = useQueryClient();
@@ -58,7 +37,6 @@ const MutasiBank = () => {
     unassigning,
   } = useMutasiBankPage();
 
-  const [activeTab, setActiveTab] = useState('all');
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailData, setDetailData] = useState(null);
@@ -83,10 +61,6 @@ const MutasiBank = () => {
     },
     [uploadMutationFile, invalidateMutations]
   );
-
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-  }, []);
 
   const handleViewMutation = useCallback(
     async (mutation, mutationId) => {
@@ -217,50 +191,32 @@ const MutasiBank = () => {
   );
 
   return (
-    <div className='min-h-screen bg-gray-50 p-6'>
-      <div className='mx-auto max-w-7xl space-y-6'>
-        <header className='flex flex-col justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:flex-row md:items-center'>
-          <div className='flex items-center gap-4'>
-            <HeroIcon icon={BanknotesIcon} className='h-12 w-12 text-blue-600' />
-            <div>
-              <h1 className='text-2xl font-semibold text-gray-900'>
-                Mutasi Bank
-              </h1>
-              <p className='text-sm text-gray-600'>
-                Kelola mutasi bank untuk proses rekonsiliasi pembayaran dan validasi dokumen penagihan.
-              </p>
-              <div className='mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500'>
-                <span className='inline-flex items-center rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-600'>
-                  <ArrowPathIcon className='mr-1 h-4 w-4' />
-                  {TAB_DEFINITIONS.find((tab) => tab.id === activeTab)?.label || 'Semua'}
-                </span>
-              </div>
+    <div className='p-3 space-y-3'>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-3 py-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>Mutasi Bank</h3>
+            <div className='flex items-center gap-1'>
+              <button
+                type='button'
+                onClick={() => setUploadModalOpen(true)}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'
+              >
+                <PlusIcon className='w-3.5 h-3.5 mr-1' />
+                Upload
+              </button>
+              <button
+                type='button'
+                onClick={invalidateMutations}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50'
+              >
+                <ArrowPathIcon className='w-3.5 h-3.5 mr-1' />
+                Refresh
+              </button>
             </div>
           </div>
-          <div className='flex flex-wrap items-center gap-3'>
-            <button
-              type='button'
-              onClick={() => setUploadModalOpen(true)}
-              className='inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700'
-            >
-              <PlusIcon className='mr-2 h-4 w-4' />
-              Unggah Mutasi
-            </button>
-            <button
-              type='button'
-              onClick={invalidateMutations}
-              className='inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'
-            >
-              <ArrowPathIcon className='mr-2 h-4 w-4' />
-              Segarkan Data
-            </button>
-          </div>
-        </header>
 
-        <section>
           <MutasiBankTableServerSide
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
             onViewMutation={handleViewMutation}
             onValidateMutation={handleOpenValidateModal}
             onAssignDocument={handleOpenAssignModal}
@@ -270,7 +226,7 @@ const MutasiBank = () => {
             isUnassigning={unassigning}
             onManualRefresh={invalidateMutations}
           />
-        </section>
+        </div>
       </div>
 
       <MutasiBankUploadModal
