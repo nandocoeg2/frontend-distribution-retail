@@ -17,14 +17,6 @@ import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: { label: 'Pending', statusCode: 'PENDING PACKING' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING PACKING' },
-  completed: { label: 'Completed', statusCode: 'COMPLETED PACKING' },
-  failed: { label: 'Failed', statusCode: 'FAILED PACKING' },
-};
-
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -101,7 +93,6 @@ const PackingTableServerSide = ({
   hasSelectedPackings = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   onRowClick,
   selectedPackingId,
 }) => {
@@ -255,14 +246,6 @@ const PackingTableServerSide = ({
       setIsPrintingTandaTerima(false);
     }
   };
-  const lockedFilters = useMemo(() => {
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode || activeTab === 'all') {
-      return [];
-    }
-    return [{ id: 'status_code', value: statusCode }];
-  }, [activeTab]);
-
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -288,7 +271,6 @@ const PackingTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
-    lockedFilters,
   });
 
   const columns = useMemo(
@@ -456,37 +438,26 @@ const PackingTableServerSide = ({
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
-        header: ({ column }) => {
-          const statusConfig = TAB_STATUS_CONFIG[activeTab];
-          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
-
-          return (
-            <div className='space-y-1'>
-              <div className='font-medium text-xs'>Status</div>
-              {isLocked ? (
-                <div className='w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700'>
-                  {statusConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value=''>Semua</option>
-                  <option value='PENDING PACKING'>Pending</option>
-                  <option value='PROCESSING PACKING'>Processing</option>
-                  <option value='COMPLETED PACKING'>Completed</option>
-                  <option value='FAILED PACKING'>Failed</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value=''>Semua</option>
+              <option value='PENDING PACKING'>Pending</option>
+              <option value='PROCESSING PACKING'>Processing</option>
+              <option value='COMPLETED PACKING'>Completed</option>
+              <option value='FAILED PACKING'>Failed</option>
+            </select>
+          </div>
+        ),
         cell: (info) => (
           <StatusBadge
             status={info.getValue() || 'Unknown'}
@@ -572,7 +543,6 @@ const PackingTableServerSide = ({
       onEdit,
       onDelete,
       deleteLoading,
-      activeTab,
       setPage,
     ]
   );
@@ -585,61 +555,29 @@ const PackingTableServerSide = ({
   const actionDisabled = isProcessing || isCompleting;
 
   return (
-    <div className='space-y-4'>
-      {hasActiveFilters && (
-        <div className='flex justify-end'>
-          <button
-            onClick={resetFilters}
-            className='px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50'
-          >
-            Reset Semua Filter
-          </button>
-        </div>
-      )}
-
-      {hasSelectedPackings && (
-        <div className='flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4'>
-          <div className='flex items-center space-x-2'>
-            <span className='text-sm font-medium text-blue-900'>
-              {selectedPackings.length} packing dipilih
-            </span>
-          </div>
-          <div className='flex items-center space-x-2'>
-            <button
-              onClick={handleBulkPrintSticker}
-              disabled={isPrinting || actionDisabled}
-              className='flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
-              <PrinterIcon className='h-4 w-4' />
-              <span>{isPrinting ? 'Mencetak...' : 'Print Stiker'}</span>
-            </button>
-            <button
-              onClick={handleBulkPrintTandaTerima}
-              disabled={isPrintingTandaTerima || actionDisabled}
-              className='flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
-              <PrinterIcon className='h-4 w-4' />
-              <span>{isPrintingTandaTerima ? 'Mencetak...' : 'Print Tanda Terima'}</span>
-            </button>
-            <button
-              onClick={onProcessSelected}
-              disabled={actionDisabled}
-              className='flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
-              <PlayIcon className='h-4 w-4' />
-              <span>{isProcessing ? 'Memproses...' : 'Proses Packing'}</span>
-            </button>
-            <button
-              onClick={onCompleteSelected}
-              disabled={actionDisabled}
-              className='flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-            >
-              <CheckIcon className='h-4 w-4' />
-              <span>
-                {isCompleting ? 'Menyelesaikan...' : 'Selesaikan Packing'}
-              </span>
-            </button>
-          </div>
+    <div className='space-y-2'>
+      {(hasActiveFilters || hasSelectedPackings) && (
+        <div className='flex justify-between items-center'>
+          {hasSelectedPackings ? (
+            <div className='flex items-center gap-2'>
+              <span className='text-xs font-medium text-blue-700'>{selectedPackings.length} dipilih</span>
+              <button onClick={handleBulkPrintSticker} disabled={isPrinting || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50'>
+                <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Stiker'}
+              </button>
+              <button onClick={handleBulkPrintTandaTerima} disabled={isPrintingTandaTerima || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50'>
+                <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerima ? '...' : 'T.Terima'}
+              </button>
+              <button onClick={onProcessSelected} disabled={actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
+                <PlayIcon className='h-3 w-3 mr-1' />{isProcessing ? '...' : 'Proses'}
+              </button>
+              <button onClick={onCompleteSelected} disabled={actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'>
+                <CheckIcon className='h-3 w-3 mr-1' />{isCompleting ? '...' : 'Selesai'}
+              </button>
+            </div>
+          ) : <div />}
+          {hasActiveFilters && (
+            <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
+          )}
         </div>
       )}
 
@@ -648,26 +586,22 @@ const PackingTableServerSide = ({
         isLoading={isLoading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage='Memuat data packing...'
-        emptyMessage='Tidak ada data packing'
-        emptyFilteredMessage='Tidak ada data yang sesuai dengan pencarian'
+        loadingMessage='Memuat...'
+        emptyMessage='Tidak ada data'
+        emptyFilteredMessage='Tidak ada data sesuai filter'
         tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
         headerRowClassName='bg-gray-50'
-        headerCellClassName='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+        headerCellClassName='px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider'
         bodyClassName='bg-white divide-y divide-gray-100'
-        rowClassName='hover:bg-gray-50 cursor-pointer h-8'
+        rowClassName='hover:bg-gray-50 cursor-pointer h-7'
         onRowClick={onRowClick}
         getRowClassName={({ row }) => {
-          if (selectedPackingId === row.original.id) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
-          }
-          if (selectedPackings.includes(row.original.id)) {
-            return 'bg-blue-50';
-          }
+          if (selectedPackingId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
+          if (selectedPackings.includes(row.original.id)) return 'bg-green-50';
           return undefined;
         }}
-        cellClassName='px-2 py-1 whitespace-nowrap text-xs text-gray-900'
-        emptyCellClassName='px-2 py-1 text-center text-gray-500 text-xs'
+        cellClassName='px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900'
+        emptyCellClassName='px-1.5 py-0.5 text-center text-gray-500'
       />
 
       {!isLoading && !error && (
