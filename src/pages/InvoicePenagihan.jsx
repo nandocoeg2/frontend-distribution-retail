@@ -1,179 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePenagihan from '@/hooks/useInvoicePenagihanPage';
 import InvoicePenagihanTableServerSide from '@/components/invoicePenagihan/InvoicePenagihanTableServerSide';
-import InvoicePenagihanSearch from '@/components/invoicePenagihan/InvoicePenagihanSearch';
 import AddInvoicePenagihanModal from '@/components/invoicePenagihan/AddInvoicePenagihanModal';
 import InvoicePenagihanDetailCard from '@/components/invoicePenagihan/InvoicePenagihanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
 import invoicePenagihanService from '@/services/invoicePenagihanService';
 import toastService from '@/services/toastService';
-import useStatuses from '@/hooks/useStatuses';
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: {
-    label: 'Pending',
-    statusCode: 'PENDING INVOICE PENAGIHAN',
-  },
-  processing: {
-    label: 'Processing',
-    statusCode: 'PROCESSING INVOICE PENAGIHAN',
-  },
-  paid: {
-    label: 'Paid',
-    statusCode: 'PAID INVOICE PENAGIHAN',
-  },
-  overdue: {
-    label: 'Overdue',
-    statusCode: 'OVERDUE INVOICE PENAGIHAN',
-  },
-  completed: {
-    label: 'Completed',
-    statusCode: 'COMPLETED INVOICE PENAGIHAN',
-  },
-  cancelled: {
-    label: 'Cancelled',
-    statusCode: 'CANCELLED INVOICE PENAGIHAN',
-  },
-};
-
-const TAB_ORDER = [
-  'all',
-  'pending',
-  'processing',
-  'paid',
-  'overdue',
-  'completed',
-  'cancelled',
-];
-
-const INITIAL_TAB_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
-
-const parseInvoicePenagihanListResponse = (response = {}) => {
-  if (response?.success === false) {
-    throw new Error(
-      response?.error?.message || 'Failed to fetch invoice penagihan'
-    );
-  }
-
-  const rawData = response?.data?.data || response?.data || [];
-  const results = Array.isArray(rawData)
-    ? rawData
-    : Array.isArray(rawData?.data)
-      ? rawData.data
-      : [];
-
-  const paginationData = response?.data?.pagination || {};
-  const currentPage =
-    paginationData.currentPage ||
-    paginationData.page ||
-    INITIAL_TAB_PAGINATION.currentPage;
-  const itemsPerPage =
-    paginationData.itemsPerPage ||
-    paginationData.limit ||
-    INITIAL_TAB_PAGINATION.itemsPerPage;
-  const totalItems =
-    paginationData.totalItems ||
-    paginationData.total ||
-    (Array.isArray(results) ? results.length : 0);
-  const totalPages =
-    paginationData.totalPages ||
-    Math.max(Math.ceil((totalItems || 1) / (itemsPerPage || 1)), 1);
-
-  return {
-    results,
-    pagination: {
-      currentPage,
-      page: currentPage,
-      totalPages,
-      totalItems,
-      total: totalItems,
-      itemsPerPage,
-      limit: itemsPerPage,
-    },
-  };
-};
 
 const InvoicePenagihanPage = () => {
   const queryClient = useQueryClient();
   
   const {
-    invoicePenagihan,
     setInvoicePenagihan,
-    pagination,
-    loading,
-    error,
-    filters,
-    searchQuery,
-    searchLoading,
-    hasActiveFilters,
-    handleFiltersChange,
-    handleSearchSubmit,
-    handleResetFilters,
-    handlePageChange,
-    handleLimitChange,
     deleteInvoiceConfirmation,
-    fetchInvoicePenagihan,
     createInvoice,
     updateInvoice,
     handleAuthError,
   } = useInvoicePenagihan();
-
-  const { invoiceStatuses, fetchInvoiceStatuses } = useStatuses();
-
-  useEffect(() => {
-    fetchInvoiceStatuses();
-  }, [fetchInvoiceStatuses]);
-
-  const invoiceStatusList = useMemo(() => {
-    if (Array.isArray(invoiceStatuses)) {
-      return invoiceStatuses;
-    }
-    if (Array.isArray(invoiceStatuses?.data)) {
-      return invoiceStatuses.data;
-    }
-    if (Array.isArray(invoiceStatuses?.data?.data)) {
-      return invoiceStatuses.data.data;
-    }
-    return [];
-  }, [invoiceStatuses]);
-
-  const statusCodeToIdMap = useMemo(() => {
-    return invoiceStatusList.reduce((acc, status) => {
-      if (status?.status_code && status?.id) {
-        acc[status.status_code] = status.id;
-      }
-      return acc;
-    }, {});
-  }, [invoiceStatusList]);
-
-  const resolveTabFilters = useCallback(
-    (tabId) => {
-      if (!tabId || tabId === 'all') {
-        return null;
-      }
-      const statusCode = TAB_STATUS_CONFIG[tabId]?.statusCode;
-      if (!statusCode) {
-        return null;
-      }
-      const statusId = statusCodeToIdMap[statusCode];
-      if (statusId) {
-        return { statusId };
-      }
-      return { status_code: statusCode };
-    },
-    [statusCodeToIdMap]
-  );
 
   const {
     showConfirm: showDeleteDialog,
@@ -195,175 +39,18 @@ const InvoicePenagihanPage = () => {
     invoice: null,
   });
   const [generatingTtfInvoiceId, setGeneratingTtfInvoiceId] = useState(null);
-  const [activeTab, setActiveTab] = useState('all');
-  const [tabInvoices, setTabInvoices] = useState([]);
-  const [tabPagination, setTabPagination] = useState(INITIAL_TAB_PAGINATION);
-  const [tabLoading, setTabLoading] = useState(false);
-  const [tabError, setTabError] = useState(null);
 
   const generateTtfDialogInvoice = generateTtfConfirmation.invoice;
   const generateTtfDialogLoading =
     Boolean(generateTtfDialogInvoice) &&
     generatingTtfInvoiceId === generateTtfDialogInvoice.id;
 
-  const isSearchActive = hasActiveFilters;
-
-  const tableInvoices = useMemo(() => {
-    const dataSource =
-      isSearchActive || activeTab === 'all' ? invoicePenagihan : tabInvoices;
-    return Array.isArray(dataSource) ? dataSource : [];
-  }, [activeTab, invoicePenagihan, isSearchActive, tabInvoices]);
-
-  const tablePagination = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return pagination;
-    }
-    return tabPagination;
-  }, [activeTab, isSearchActive, pagination, tabPagination]);
-
-  const tableLoading = useMemo(() => {
-    if (isSearchActive || activeTab === 'all') {
-      return loading;
-    }
-    return tabLoading;
-  }, [activeTab, isSearchActive, loading, tabLoading]);
-
-  const resolvedPagination = tablePagination || INITIAL_TAB_PAGINATION;
-  const activeTabBadge =
-    resolvedPagination?.totalItems ?? resolvedPagination?.total ?? 0;
-
-  const fetchDataByTab = useCallback(
-    async (tab = activeTab, page = 1, limit) => {
-      const effectiveLimit =
-        typeof limit === 'number' && !Number.isNaN(limit) && limit > 0
-          ? limit
-          : tabPagination.itemsPerPage ||
-            tabPagination.limit ||
-            INITIAL_TAB_PAGINATION.itemsPerPage;
-
-      if (tab === 'all') {
-        await fetchInvoicePenagihan(page, effectiveLimit);
-        return;
-      }
-
-      const tabFilters = resolveTabFilters(tab);
-      if (!tabFilters) {
-        setTabInvoices([]);
-        setTabPagination({
-          ...INITIAL_TAB_PAGINATION,
-          itemsPerPage: effectiveLimit,
-          limit: effectiveLimit,
-        });
-        setTabError(null);
-        return;
-      }
-
-      setTabLoading(true);
-      setTabError(null);
-      try {
-        const response = await invoicePenagihanService.searchInvoicePenagihan(
-          tabFilters,
-          page,
-          effectiveLimit
-        );
-        const { results, pagination: parsedPagination } =
-          parseInvoicePenagihanListResponse(response);
-        setTabInvoices(results);
-        setTabPagination({
-          ...parsedPagination,
-          itemsPerPage:
-            parsedPagination?.itemsPerPage ||
-            parsedPagination?.limit ||
-            effectiveLimit,
-          limit:
-            parsedPagination?.limit ||
-            parsedPagination?.itemsPerPage ||
-            effectiveLimit,
-        });
-      } catch (err) {
-        if (err?.response?.status === 401 || err?.response?.status === 403) {
-          handleAuthError();
-        }
-        console.error('Failed to fetch invoice penagihan by status:', err);
-        setTabInvoices([]);
-        setTabPagination({
-          ...INITIAL_TAB_PAGINATION,
-          itemsPerPage: effectiveLimit,
-          limit: effectiveLimit,
-        });
-        setTabError(
-          err?.response?.data?.error?.message ||
-            err?.message ||
-            'Gagal memuat invoice penagihan untuk status ini.'
-        );
-      } finally {
-        setTabLoading(false);
-      }
-    },
-    [
-      activeTab,
-      fetchInvoicePenagihan,
-      handleAuthError,
-      tabPagination.itemsPerPage,
-      tabPagination.limit,
-      resolveTabFilters,
-    ]
-  );
-
-  const refreshActiveTab = useCallback(async () => {
-    if (isSearchActive) {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      const currentLimit =
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      await fetchInvoicePenagihan(currentPage, currentLimit);
-      return;
-    }
-
-    if (activeTab === 'all') {
-      const currentPage = pagination?.currentPage || pagination?.page || 1;
-      const currentLimit =
-        pagination?.itemsPerPage ||
-        pagination?.limit ||
-        INITIAL_TAB_PAGINATION.itemsPerPage;
-      await fetchInvoicePenagihan(currentPage, currentLimit);
-      return;
-    }
-
-    const currentPage = tabPagination.currentPage || tabPagination.page || 1;
-    const currentLimit =
-      tabPagination.itemsPerPage ||
-      tabPagination.limit ||
-      INITIAL_TAB_PAGINATION.itemsPerPage;
-    await fetchDataByTab(activeTab, currentPage, currentLimit);
-  }, [
-    activeTab,
-    fetchDataByTab,
-    fetchInvoicePenagihan,
-    isSearchActive,
-    pagination,
-    tabPagination,
-  ]);
-
-  const handleSearch = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleSearchSubmit();
-  }, [activeTab, handleSearchSubmit]);
-
-  const handleReset = useCallback(async () => {
-    if (activeTab !== 'all') {
-      setActiveTab('all');
-    }
-    await handleResetFilters();
-  }, [activeTab, handleResetFilters]);
+  const refreshData = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
+  }, [queryClient]);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
-
-
 
   const openGenerateTtfDialog = useCallback((invoice) => {
     if (
@@ -430,9 +117,7 @@ const InvoicePenagihanPage = () => {
         };
       });
 
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
-      await refreshActiveTab();
+      await refreshData();
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
         handleAuthError();
@@ -456,8 +141,7 @@ const InvoicePenagihanPage = () => {
     closeGenerateTtfDialog,
     generateTtfDialogInvoice,
     handleAuthError,
-    refreshActiveTab,
-    queryClient,
+    refreshData,
   ]);
 
 
@@ -533,55 +217,6 @@ const InvoicePenagihanPage = () => {
     setViewDetailLoading(false);
   }, []);
 
-  const handleTabChange = useCallback(
-    (newTab) => {
-      setActiveTab(newTab);
-
-      if (newTab === 'all') {
-        const currentPage = pagination?.currentPage || pagination?.page || 1;
-        const currentLimit =
-          pagination?.itemsPerPage ||
-          pagination?.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchInvoicePenagihan(currentPage, currentLimit);
-      } else {
-        setTabPagination((prev) => ({
-          ...prev,
-          currentPage: 1,
-          page: 1,
-        }));
-        const currentLimit =
-          tabPagination.itemsPerPage ||
-          tabPagination.limit ||
-          INITIAL_TAB_PAGINATION.itemsPerPage;
-        fetchDataByTab(newTab, 1, currentLimit);
-      }
-    },
-    [fetchDataByTab, fetchInvoicePenagihan, pagination, tabPagination]
-  );
-
-  const handleTablePageChange = useCallback(
-    (page) => {
-      if (isSearchActive || activeTab === 'all') {
-        handlePageChange(page);
-      } else {
-        fetchDataByTab(activeTab, page);
-      }
-    },
-    [activeTab, fetchDataByTab, handlePageChange, isSearchActive]
-  );
-
-  const handleTableLimitChange = useCallback(
-    (limit) => {
-      if (isSearchActive || activeTab === 'all') {
-        handleLimitChange(limit);
-      } else {
-        fetchDataByTab(activeTab, 1, limit);
-      }
-    },
-    [activeTab, fetchDataByTab, handleLimitChange, isSearchActive]
-  );
-
   const handleInvoiceCreated = useCallback(
     async (payload) => {
       const createdInvoice = await createInvoice(payload);
@@ -596,13 +231,11 @@ const InvoicePenagihanPage = () => {
           }
           return [...previous, createdInvoice];
         });
-        // Invalidate queries to refresh data
-        await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
-        await refreshActiveTab();
+        await refreshData();
       }
       return createdInvoice;
     },
-    [createInvoice, refreshActiveTab, setInvoicePenagihan, queryClient]
+    [createInvoice, setInvoicePenagihan, refreshData]
   );
 
   const handleInvoiceUpdated = useCallback(
@@ -615,72 +248,26 @@ const InvoicePenagihanPage = () => {
             invoice.id === updatedInvoice.id ? updatedInvoice : invoice
           );
         });
-        // Invalidate queries to refresh data
-        await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
-        await refreshActiveTab();
+        await refreshData();
       }
       return updatedInvoice;
     },
-    [refreshActiveTab, setInvoicePenagihan, updateInvoice, queryClient]
+    [setInvoicePenagihan, updateInvoice, refreshData]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
     await confirmDelete();
-    // Invalidate queries to refresh data
-    await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
-    await refreshActiveTab();
-  }, [confirmDelete, refreshActiveTab, queryClient]);
-
-  const handleRetry = useCallback(() => {
-    refreshActiveTab();
-  }, [refreshActiveTab]);
-
-  const handleTabRetry = useCallback(() => {
-    const currentPage = tabPagination.currentPage || tabPagination.page || 1;
-    const currentLimit =
-      tabPagination.itemsPerPage ||
-      tabPagination.limit ||
-      INITIAL_TAB_PAGINATION.itemsPerPage;
-    fetchDataByTab(activeTab, currentPage, currentLimit);
-  }, [activeTab, fetchDataByTab, tabPagination]);
-
-  const shouldShowGlobalError =
-    error && (isSearchActive || activeTab === 'all');
-  const shouldShowTabError =
-    !shouldShowGlobalError && !isSearchActive && activeTab !== 'all' && tabError;
+    await refreshData();
+  }, [confirmDelete, refreshData]);
 
   return (
-    <div className='p-6'>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between'>
-            <div>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Daftar Invoice Penagihan
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Kelola invoice penagihan termasuk informasi pelanggan, status,
-                serta rincian pembayaran.
-              </p>
-            </div>
-          </div>
-
-
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
-            >
-              {TAB_ORDER.map((tabId) => (
-                <Tab
-                  key={tabId}
-                  id={tabId}
-                  label={TAB_STATUS_CONFIG[tabId]?.label || tabId}
-                  badge={activeTab === tabId ? activeTabBadge : null}
-                />
-              ))}
-            </TabContainer>
+    <div className='p-3 space-y-3'>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-3 py-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>
+              Invoice Penagihan
+            </h3>
           </div>
 
           <InvoicePenagihanTableServerSide
@@ -690,7 +277,6 @@ const InvoicePenagihanPage = () => {
             deleteLoading={deleteDialogLoading}
             initialPage={1}
             initialLimit={10}
-            activeTab={activeTab}
             selectedInvoiceId={viewingInvoice?.id}
             onRowClick={handleViewDetail}
           />

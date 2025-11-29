@@ -9,16 +9,6 @@ import { DataTable, DataTablePagination } from '../table';
 
 const columnHelper = createColumnHelper();
 
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: { label: 'Pending', statusCode: 'PENDING INVOICE PENAGIHAN' },
-  processing: { label: 'Processing', statusCode: 'PROCESSING INVOICE PENAGIHAN' },
-  paid: { label: 'Paid', statusCode: 'PAID INVOICE PENAGIHAN' },
-  overdue: { label: 'Overdue', statusCode: 'OVERDUE INVOICE PENAGIHAN' },
-  completed: { label: 'Completed', statusCode: 'COMPLETED INVOICE PENAGIHAN' },
-  cancelled: { label: 'Cancelled', statusCode: 'CANCELLED INVOICE PENAGIHAN' },
-};
-
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
 
@@ -58,17 +48,9 @@ const InvoicePenagihanTableServerSide = ({
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
-  activeTab = 'all',
   selectedInvoiceId,
   onRowClick,
 }) => {
-  const lockedFilters = useMemo(() => {
-    const statusCode = TAB_STATUS_CONFIG[activeTab]?.statusCode;
-    if (!statusCode || activeTab === 'all') {
-      return [];
-    }
-    return [{ id: 'status_code', value: statusCode }];
-  }, [activeTab]);
 
   const {
     data: invoices,
@@ -86,7 +68,6 @@ const InvoicePenagihanTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    lockedFilters,
   });
 
   const columns = useMemo(
@@ -255,39 +236,28 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
         id: 'status_code',
-        header: ({ column }) => {
-          const statusConfig = TAB_STATUS_CONFIG[activeTab];
-          const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Status</div>
-              {isLocked ? (
-                <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
-                  {statusConfig?.label || 'N/A'}
-                </div>
-              ) : (
-                <select
-                  value={column.getFilterValue() ?? ''}
-                  onChange={(event) => {
-                    column.setFilterValue(event.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <option value="">Semua</option>
-                  <option value="PENDING INVOICE PENAGIHAN">Pending</option>
-                  <option value="PROCESSING INVOICE PENAGIHAN">Processing</option>
-                  <option value="PAID INVOICE PENAGIHAN">Paid</option>
-                  <option value="OVERDUE INVOICE PENAGIHAN">Overdue</option>
-                  <option value="COMPLETED INVOICE PENAGIHAN">Completed</option>
-                  <option value="CANCELLED INVOICE PENAGIHAN">Cancelled</option>
-                </select>
-              )}
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="PENDING INVOICE PENAGIHAN">Pending</option>
+              <option value="PROCESSING INVOICE PENAGIHAN">Processing</option>
+              <option value="PAID INVOICE PENAGIHAN">Paid</option>
+              <option value="OVERDUE INVOICE PENAGIHAN">Overdue</option>
+              <option value="COMPLETED INVOICE PENAGIHAN">Completed</option>
+              <option value="CANCELLED INVOICE PENAGIHAN">Cancelled</option>
+            </select>
+          </div>
+        ),
         cell: (info) => (
           <StatusBadge
             status={info.getValue() || 'Unknown'}
@@ -455,7 +425,6 @@ const InvoicePenagihanTableServerSide = ({
       onGenerateTandaTerimaFaktur,
       generatingTandaTerimaInvoiceId,
       deleteLoading,
-      activeTab,
       setPage,
     ]
   );

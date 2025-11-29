@@ -3,13 +3,10 @@ import {
   XMarkIcon,
   DocumentTextIcon,
   CurrencyDollarIcon,
-  ClockIcon,
-  FlagIcon,
   PencilIcon,
-  CheckIcon
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
-import { AccordionItem, InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
+import { AccordionItem, InfoTable } from '../ui';
 import InvoicePenagihanForm from './InvoicePenagihanForm';
 import toastService from '../../services/toastService';
 
@@ -71,188 +68,138 @@ const InvoicePenagihanDetailCard = ({
   };
 
   return (
-    <div className='bg-white shadow-md rounded-lg p-6 mt-6'>
+    <div className='bg-white shadow rounded-lg overflow-hidden'>
       {/* Header */}
-      <div className='flex items-center justify-between mb-6 border-b border-gray-200 pb-4'>
-        <div className='flex items-center space-x-4'>
-          <div className='p-2 bg-indigo-100 rounded-lg'>
-            <DocumentTextIcon className='w-6 h-6 text-indigo-600' />
+      <div className='flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50'>
+        <div className='flex items-center gap-2'>
+          <div className='p-1.5 rounded bg-indigo-100'>
+            <DocumentTextIcon className='w-4 h-4 text-indigo-600' />
           </div>
           <div>
-            <h2 className='text-xl font-bold text-gray-900'>
-              Detail Invoice Penagihan
-              {isEditMode && <span className="ml-3 text-sm font-normal text-indigo-600">(Editing)</span>}
-            </h2>
-            <p className='text-sm text-gray-600'>
+            <h3 className='text-sm font-bold text-gray-900'>
+              Invoice Penagihan
+              {isEditMode && <span className="ml-2 text-xs font-normal text-indigo-600">(Editing)</span>}
+            </h3>
+            <p className='text-xs text-gray-600'>
               {invoice.no_invoice_penagihan || '-'}
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           {!isEditMode ? (
             <>
               {onUpdate && (
                 <button
                   onClick={handleEditClick}
-                  className="inline-flex items-center px-3 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 bg-white border border-indigo-600 rounded hover:bg-indigo-50"
                   title="Edit"
                 >
-                  <PencilIcon className="w-4 h-4 mr-1" />
+                  <PencilIcon className="w-3 h-3 mr-1" />
                   Edit
                 </button>
               )}
               {onClose && (
                 <button
                   onClick={onClose}
-                  className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
-                  title='Tutup detail'
+                  className='p-1 rounded hover:bg-gray-100'
+                  title='Tutup'
                 >
-                  <XMarkIcon className='w-5 h-5 text-gray-500' />
+                  <XMarkIcon className='w-4 h-4 text-gray-500' />
                 </button>
               )}
             </>
           ) : (
-            <>
-              <button
-                onClick={handleCancelEdit}
-                disabled={saving}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              {/* Save button is handled by the form, but we can show a placeholder if needed, 
-                  however InvoicePenagihanForm usually has its own buttons. 
-                  Let's see InvoicePenagihanForm implementation. 
-                  It accepts onCancel and onSubmit. We don't need a save button here if the form has it. 
-                  But CompanyDetailCard had it in the header. 
-                  Let's stick to InvoicePenagihanForm's buttons for now, so we just hide the header buttons or show Cancel.
-              */}
-            </>
+            <button
+              onClick={handleCancelEdit}
+              disabled={saving}
+              className="inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
           )}
         </div>
       </div>
 
-      {isLoading ? (
-        <div className='flex justify-center items-center py-12'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-          <span className='ml-3 text-sm text-gray-600'>Memuat detail invoice...</span>
-        </div>
-      ) : isEditMode ? (
-        <div className='bg-gray-50 rounded-lg p-6'>
-          <InvoicePenagihanForm
-            initialValues={invoice}
-            onSubmit={handleSave}
-            onCancel={handleCancelEdit}
-            submitLabel='Simpan Perubahan'
-            loading={saving}
-            isEditMode={true}
-          />
-        </div>
-      ) : (
-        <div>
-          {/* Tab Navigation */}
-          <TabContainer
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant='underline'
-            className='mb-6'
+      {/* Tab Navigation */}
+      <div className='border-b border-gray-200 bg-gray-50'>
+        <nav className='flex px-2 gap-1'>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`py-1.5 px-2 border-b-2 text-xs font-medium flex items-center gap-1 ${activeTab === 'overview' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
           >
-            <Tab
-              id='overview'
-              label='Ringkasan'
-              icon={<DocumentTextIcon className='w-4 h-4' />}
-            />
-            <Tab
-              id='details'
-              label='Detail Barang'
-              icon={<CurrencyDollarIcon className='w-4 h-4' />}
-              badge={invoice.invoicePenagihanDetails?.length || 0}
-            />
-          </TabContainer>
+            <DocumentTextIcon className='w-4 h-4' />
+            <span>Ringkasan</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`py-1.5 px-2 border-b-2 text-xs font-medium flex items-center gap-1 ${activeTab === 'details' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            <CurrencyDollarIcon className='w-4 h-4' />
+            <span>Detail</span>
+            <span className='px-1.5 py-0.5 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full'>
+              {invoice.invoicePenagihanDetails?.length || 0}
+            </span>
+          </button>
+        </nav>
+      </div>
 
-          {/* Tab Content */}
-          <TabContent activeTab={activeTab}>
-            <TabPanel tabId='overview'>
-              <div className='space-y-6'>
+      <div className='p-3 max-h-[500px] overflow-y-auto'>
+        {isLoading ? (
+          <div className='flex justify-center items-center py-6'>
+            <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
+            <span className='ml-2 text-xs text-gray-600'>Memuat...</span>
+          </div>
+        ) : isEditMode ? (
+          <div className='bg-gray-50 rounded p-3'>
+            <InvoicePenagihanForm
+              initialValues={invoice}
+              onSubmit={handleSave}
+              onCancel={handleCancelEdit}
+              submitLabel='Simpan'
+              loading={saving}
+              isEditMode={true}
+            />
+          </div>
+        ) : (
+          <>
+            {activeTab === 'overview' && (
+              <div className='space-y-2'>
                 <AccordionItem
-                  title='Informasi Dasar'
+                  title='Info Dasar'
                   isExpanded={expandedSections.basicInfo}
                   onToggle={() => toggleSection('basicInfo')}
-                  bgColor='bg-gradient-to-r from-indigo-50 to-indigo-100'
+                  bgColor='bg-indigo-50'
+                  compact
                 >
                   <InfoTable
+                    compact
                     data={[
-                      {
-                        label: 'Nomor Invoice',
-                        value: invoice.no_invoice_penagihan || '-',
-                      },
+                      { label: 'No. Invoice', value: invoice.no_invoice_penagihan || '-' },
                       { label: 'Tanggal', value: formatDate(invoice.tanggal) },
                       { label: 'Kepada', value: invoice.kepada || '-' },
-                      {
-                        label: 'Purchase Order',
-                        value:
-                          invoice?.purchaseOrder?.po_number ||
-                          invoice.purchaseOrderId ||
-                          '-',
-                      },
-                      {
-                        label: 'Kode Customer',
-                        value:
-                          invoice?.purchaseOrder?.customer?.kodeCustomer ||
-                          invoice?.purchaseOrder?.customer?.id ||
-                          '-',
-                      },
-                      {
-                        label: 'Nama Customer',
-                        value:
-                          invoice?.purchaseOrder?.customer?.namaCustomer || '-',
-                      },
-                      {
-                        label: 'Term of Payment',
-                        value:
-                          invoice?.termOfPayment?.kode_top ||
-                          invoice.termOfPaymentId ||
-                          '-',
-                      },
+                      { label: 'PO#', value: invoice?.purchaseOrder?.po_number || invoice.purchaseOrderId || '-' },
+                      { label: 'Customer', value: invoice?.purchaseOrder?.customer?.namaCustomer || '-' },
+                      { label: 'TOP', value: invoice?.termOfPayment?.kode_top || invoice.termOfPaymentId || '-' },
                     ]}
                   />
                 </AccordionItem>
 
                 <AccordionItem
-                  title='Informasi Pembayaran'
+                  title='Pembayaran'
                   isExpanded={expandedSections.paymentInfo}
                   onToggle={() => toggleSection('paymentInfo')}
-                  bgColor='bg-gradient-to-r from-emerald-50 to-emerald-100'
+                  bgColor='bg-emerald-50'
+                  compact
                 >
                   <InfoTable
+                    compact
                     data={[
-                      {
-                        label: 'Sub Total',
-                        value: formatCurrency(invoice.sub_total),
-                      },
-                      {
-                        label: 'Total Diskon',
-                        value: formatCurrency(invoice.total_discount),
-                      },
-                      {
-                        label: 'Total Harga',
-                        value: formatCurrency(invoice.total_price),
-                      },
-                      {
-                        label: 'PPN (%)',
-                        value:
-                          typeof invoice.ppn_percentage === 'number'
-                            ? `${invoice.ppn_percentage}%`
-                            : invoice.ppn_percentage || '0%',
-                      },
-                      {
-                        label: 'PPN (Rp)',
-                        value: formatCurrency(invoice.ppnRupiah ?? invoice.ppn_rupiah),
-                      },
-                      {
-                        label: 'Grand Total',
-                        value: formatCurrency(invoice.grand_total),
-                      },
+                      { label: 'Sub Total', value: formatCurrency(invoice.sub_total) },
+                      { label: 'Diskon', value: formatCurrency(invoice.total_discount) },
+                      { label: 'Total', value: formatCurrency(invoice.total_price) },
+                      { label: 'PPN', value: typeof invoice.ppn_percentage === 'number' ? `${invoice.ppn_percentage}%` : invoice.ppn_percentage || '0%' },
+                      { label: 'PPN (Rp)', value: formatCurrency(invoice.ppnRupiah ?? invoice.ppn_rupiah) },
+                      { label: 'Grand Total', value: formatCurrency(invoice.grand_total) },
                     ]}
                   />
                 </AccordionItem>
@@ -261,159 +208,83 @@ const InvoicePenagihanDetailCard = ({
                   title='Status & Dokumen'
                   isExpanded={expandedSections.statusInfo}
                   onToggle={() => toggleSection('statusInfo')}
-                  bgColor='bg-gradient-to-r from-yellow-50 to-yellow-100'
+                  bgColor='bg-yellow-50'
+                  compact
                 >
                   <InfoTable
+                    compact
                     data={[
-                      {
-                        label: 'Status',
-                        value:
-                          invoice?.status?.status_name ||
-                          invoice?.status?.status_code ||
-                          invoice.statusId ||
-                          '-',
-                      },
-                      {
-                        label: 'Kwitansi',
-                        value: invoice?.kwitansi?.no_kwitansi || (invoice?.kwitansiId ? 'Ada' : 'Belum ada'),
-                      },
-                      {
-                        label: 'Faktur Pajak',
-                        value: invoice?.fakturPajak?.no_faktur_pajak || (invoice?.fakturPajakId ? 'Ada' : 'Belum ada'),
-                      },
-                      {
-                        label: 'Tanda Terima Faktur',
-                        value: invoice?.tandaTerimaFaktur?.no_tanda_terima_faktur || (invoice?.tandaTerimaFakturId ? 'Ada' : 'Belum ada'),
-                      },
+                      { label: 'Status', value: invoice?.status?.status_name || invoice?.status?.status_code || '-' },
+                      { label: 'Kwitansi', value: invoice?.kwitansi?.no_kwitansi || (invoice?.kwitansiId ? 'Ada' : '-') },
+                      { label: 'Faktur Pajak', value: invoice?.fakturPajak?.no_faktur_pajak || (invoice?.fakturPajakId ? 'Ada' : '-') },
+                      { label: 'TTF', value: invoice?.tandaTerimaFaktur?.no_tanda_terima_faktur || (invoice?.tandaTerimaFakturId ? 'Ada' : '-') },
                     ]}
                   />
                 </AccordionItem>
 
                 <AccordionItem
-                  title='Informasi Sistem'
+                  title='Info Sistem'
                   isExpanded={expandedSections.metaInfo}
                   onToggle={() => toggleSection('metaInfo')}
-                  bgColor='bg-gradient-to-r from-purple-50 to-purple-100'
+                  bgColor='bg-gray-50'
+                  compact
                 >
                   <InfoTable
+                    compact
                     data={[
-                      {
-                        label: 'Dibuat Pada',
-                        value: formatDateTime(invoice.createdAt),
-                      },
-                      {
-                        label: 'Diperbarui Pada',
-                        value: formatDateTime(invoice.updatedAt),
-                      },
-                      { label: 'Dibuat Oleh', value: invoice.createdBy || '-' },
-                      {
-                        label: 'Diperbarui Oleh',
-                        value: invoice.updatedBy || '-',
-                      },
+                      { label: 'Dibuat', value: formatDateTime(invoice.createdAt) },
+                      { label: 'Diperbarui', value: formatDateTime(invoice.updatedAt) },
+                      { label: 'Oleh', value: invoice.createdBy || '-' },
                     ]}
                   />
                 </AccordionItem>
               </div>
-            </TabPanel>
+            )}
 
-            <TabPanel tabId='details'>
-              <div className='bg-white rounded-lg border border-gray-200 p-6 shadow-sm'>
-                <div className='flex items-center justify-between mb-6'>
-                  <h3 className='text-lg font-semibold text-gray-900'>
-                    Rincian Barang
-                  </h3>
-                  <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
-                    {invoice.invoicePenagihanDetails?.length || 0} item
-                  </div>
-                </div>
-
-                {invoice.invoicePenagihanDetails &&
-                invoice.invoicePenagihanDetails.length > 0 ? (
+            {activeTab === 'details' && (
+              <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+                {invoice.invoicePenagihanDetails && invoice.invoicePenagihanDetails.length > 0 ? (
                   <div className='overflow-x-auto'>
-                    <table className='min-w-full divide-y divide-gray-200'>
+                    <table className='min-w-full divide-y divide-gray-200 text-xs'>
                       <thead className='bg-gray-50'>
                         <tr>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Barang
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            PLU
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Qty
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Satuan
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Harga
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Diskon (%)
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Diskon (Rp)
-                          </th>
-                          <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-                            Total
-                          </th>
+                          <th className='px-2 py-1.5 text-left font-medium text-gray-500'>Barang</th>
+                          <th className='px-2 py-1.5 text-left font-medium text-gray-500'>PLU</th>
+                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Qty</th>
+                          <th className='px-2 py-1.5 text-left font-medium text-gray-500'>Sat</th>
+                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Harga</th>
+                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Disc%</th>
+                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Total</th>
                         </tr>
                       </thead>
-                      <tbody className='bg-white divide-y divide-gray-200'>
+                      <tbody className='bg-white divide-y divide-gray-100'>
                         {invoice.invoicePenagihanDetails.map((detail, index) => (
-                          <tr
-                            key={detail.id || index}
-                            className='hover:bg-gray-50'
-                          >
-                            <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-                              {detail.nama_barang}
+                          <tr key={detail.id || index} className='hover:bg-gray-50'>
+                            <td className='px-2 py-1.5 text-gray-900'>{detail.nama_barang}</td>
+                            <td className='px-2 py-1.5 text-gray-600'>{detail.PLU}</td>
+                            <td className='px-2 py-1.5 text-right text-gray-900'>{detail.quantity}</td>
+                            <td className='px-2 py-1.5 text-gray-600'>{detail.satuan}</td>
+                            <td className='px-2 py-1.5 text-right text-gray-900'>{formatCurrency(detail.harga)}</td>
+                            <td className='px-2 py-1.5 text-right text-gray-600'>
+                              {typeof detail.discount_percentage === 'number' ? `${detail.discount_percentage}%` : '-'}
                             </td>
-                            <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                              {detail.PLU}
-                            </td>
-                            <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                              {detail.quantity}
-                            </td>
-                            <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                              {detail.satuan}
-                            </td>
-                            <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                              {formatCurrency(detail.harga)}
-                            </td>
-                            <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                              {typeof detail.discount_percentage === 'number'
-                                ? `${detail.discount_percentage}%`
-                                : detail.discount_percentage || '-'}
-                            </td>
-                            <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                              {formatCurrency(detail.discount_rupiah)}
-                            </td>
-                            <td className='px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap'>
-                              {formatCurrency(detail.total)}
-                            </td>
+                            <td className='px-2 py-1.5 text-right font-medium text-gray-900'>{formatCurrency(detail.total)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <div className='py-12 text-center'>
-                    <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                      <DocumentTextIcon className='w-8 h-8 text-gray-400' />
-                    </div>
-                    <h3 className='mb-2 text-lg font-medium text-gray-900'>
-                      Belum ada detail barang
-                    </h3>
-                    <p className='text-gray-500'>
-                      Tidak ditemukan item untuk invoice penagihan ini.
-                    </p>
+                  <div className='py-6 text-center'>
+                    <DocumentTextIcon className='w-8 h-8 mx-auto text-gray-300 mb-2' />
+                    <p className='text-xs text-gray-500'>Tidak ada detail barang</p>
                   </div>
                 )}
               </div>
-            </TabPanel>
-          </TabContent>
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
