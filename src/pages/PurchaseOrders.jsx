@@ -596,20 +596,18 @@ const PurchaseOrders = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 space-y-3">
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="mb-4 flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-900">Purchase Orders</h3>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setAddModalOpen(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-                Add Purchase Order
-              </button>
-            </div>
+        <div className="px-3 py-3">
+          <div className="mb-2 flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-gray-900">Purchase Orders</h3>
+            <button
+              onClick={() => setAddModalOpen(true)}
+              className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              <HeroIcon name='plus' className='w-4 h-4 mr-1' />
+              Add PO
+            </button>
           </div>
 
           {/* TanStack Table with Server-Side Features */}
@@ -632,7 +630,6 @@ const PurchaseOrders = () => {
         </div>
       </div>
 
-      {/* Purchase Order Detail Card */}
       {selectedOrderForDetail && (
         <PurchaseOrderDetailCard
           order={selectedOrderForDetail}
@@ -661,10 +658,7 @@ const PurchaseOrders = () => {
         />
       )}
 
-      {/* Bulk Process Confirmation Dialog */}
       <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
-      
-      {/* Alert Component */}
       <AlertComponent />
     </div>
   );

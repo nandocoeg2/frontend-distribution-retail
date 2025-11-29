@@ -2,11 +2,7 @@ import React from 'react';
 
 const PurchaseOrderDetailsTable = ({ details }) => {
   if (!details || details.length === 0) {
-    return (
-      <div className='py-4 text-center'>
-        <p className='text-gray-500'>No purchase order details available.</p>
-      </div>
-    );
+    return <div className='py-2 text-center text-xs text-gray-500'>No details available.</div>;
   }
 
   // Calculate totals
@@ -19,137 +15,48 @@ const PurchaseOrderDetailsTable = ({ details }) => {
     0
   );
 
+  const thClass = 'px-2 py-1 text-xs font-medium text-left text-gray-500 uppercase';
+  const tdClass = 'px-2 py-1 text-xs text-gray-900 whitespace-nowrap';
+
   return (
     <div className='overflow-x-auto'>
-      <table className='min-w-full divide-y divide-gray-200'>
+      <table className='min-w-full divide-y divide-gray-200 text-xs'>
         <thead className='bg-gray-50'>
           <tr>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              PLU
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Nama Barang
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Quantity Order
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Harga
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Pot A
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Harga After Pot A
-            </th>
-
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Pot B
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Harga After Pot B
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Harga Netto
-            </th>
-            <th
-              scope='col'
-              className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'
-            >
-              Total Pembelian
-            </th>
+            <th className={thClass}>PLU</th>
+            <th className={thClass}>Nama</th>
+            <th className={thClass}>Qty</th>
+            <th className={thClass}>Harga</th>
+            <th className={thClass}>Pot A</th>
+            <th className={thClass}>H. Pot A</th>
+            <th className={thClass}>Pot B</th>
+            <th className={thClass}>H. Pot B</th>
+            <th className={thClass}>Netto</th>
+            <th className={thClass}>Total</th>
           </tr>
         </thead>
-        <tbody className='bg-white divide-y divide-gray-200'>
+        <tbody className='bg-white divide-y divide-gray-100'>
           {details.map((item, index) => (
-            <tr
-              key={item.id || index}
-              className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-            >
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.plu || '-'}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.nama_barang || '-'}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900'>
-                <div className='space-y-1'>
-                {
-                 item.total_quantity_order || 0 
-                } pcs
-                </div>
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.harga?.toLocaleString() || 0}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.potongan_a || '-'}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.harga_after_potongan_a?.toLocaleString() || '-'}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.potongan_b || '-'}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.harga_after_potongan_b?.toLocaleString() || '-'}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.harga_netto?.toLocaleString() || 0}
-              </td>
-              <td className='px-6 py-4 text-sm text-gray-900 whitespace-nowrap'>
-                {item.total_pembelian?.toLocaleString() || 0}
-              </td>
+            <tr key={item.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <td className={tdClass}>{item.plu || '-'}</td>
+              <td className={`${tdClass} max-w-[120px] truncate`} title={item.nama_barang}>{item.nama_barang || '-'}</td>
+              <td className={tdClass}>{item.total_quantity_order || 0}</td>
+              <td className={tdClass}>{item.harga?.toLocaleString() || 0}</td>
+              <td className={tdClass}>{item.potongan_a || '-'}</td>
+              <td className={tdClass}>{item.harga_after_potongan_a?.toLocaleString() || '-'}</td>
+              <td className={tdClass}>{item.potongan_b || '-'}</td>
+              <td className={tdClass}>{item.harga_after_potongan_b?.toLocaleString() || '-'}</td>
+              <td className={tdClass}>{item.harga_netto?.toLocaleString() || 0}</td>
+              <td className={tdClass}>{item.total_pembelian?.toLocaleString() || 0}</td>
             </tr>
           ))}
         </tbody>
-        <tfoot className='bg-gray-50'>
+        <tfoot className='bg-gray-100'>
           <tr>
-            <td
-              colSpan='2'
-              className='px-6 py-3 text-sm font-medium text-gray-900'
-            >
-              Total
-            </td>
-            <td className='px-6 py-3 text-sm font-bold text-blue-900'>
-              {totalQuantityOrder.toLocaleString()} pcs
-            </td>
-            <td
-              colSpan='6'
-              className='px-6 py-3 text-sm font-medium text-gray-900'
-            >
-              {/* Empty cells for spacing */}
-            </td>
-            <td className='px-6 py-3 text-sm font-bold text-gray-900'>
-              Rp {totalAmount.toLocaleString()}
-            </td>
+            <td colSpan='2' className='px-2 py-1 text-xs font-semibold'>Total</td>
+            <td className='px-2 py-1 text-xs font-bold text-blue-700'>{totalQuantityOrder.toLocaleString()}</td>
+            <td colSpan='6'></td>
+            <td className='px-2 py-1 text-xs font-bold'>Rp {totalAmount.toLocaleString()}</td>
           </tr>
         </tfoot>
       </table>

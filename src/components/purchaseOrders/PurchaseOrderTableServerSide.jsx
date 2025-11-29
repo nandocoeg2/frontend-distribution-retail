@@ -187,12 +187,10 @@ const PurchaseOrderTableServerSide = ({
             <input
               type="checkbox"
               checked={isAllSelected}
-              ref={(input) => {
-                if (input) input.indeterminate = isIndeterminate;
-              }}
+              ref={(input) => { if (input) input.indeterminate = isIndeterminate; }}
               onChange={handleSelectAllInternalToggle}
               onClick={(e) => e.stopPropagation()}
-              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3 w-3 text-blue-600 border-gray-300 rounded"
             />
           );
         },
@@ -200,275 +198,163 @@ const PurchaseOrderTableServerSide = ({
           <input
             type="checkbox"
             checked={selectedOrders.includes(row.original.id)}
-            onChange={(event) =>
-              onSelectionChange &&
-              onSelectionChange(row.original.id, event.target.checked)
-            }
+            onChange={(e) => onSelectionChange?.(row.original.id, e.target.checked)}
             onClick={(e) => e.stopPropagation()}
-            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            className="h-3 w-3 text-blue-600 border-gray-300 rounded"
           />
         ),
         enableSorting: false,
         enableColumnFilter: false,
       }),
       columnHelper.accessor('po_number', {
-        size: 60,
+        size: 55,
         header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">PO Number</div>
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">PO#</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="..."
+              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) => (
-          <span className="text-xs font-medium text-gray-900">
-            {info.getValue() || 'N/A'}
-          </span>
-        ),
+        cell: (info) => <span className="text-xs font-medium">{info.getValue() || '-'}</span>,
       }),
       columnHelper.accessor('customer.namaCustomer', {
         id: 'customer',
-        size: 120,
+        size: 100,
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="..."
+              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) => {
-          const customer = info.row.original.customer;
-          return (
-            <div className="leading-tight">
-              <div className="text-xs text-gray-900">
-                {customer?.namaCustomer || '-'}
-              </div>
-            </div>
-          );
-        },
+        cell: (info) => <span className="text-xs truncate">{info.row.original.customer?.namaCustomer || '-'}</span>,
       }),
       columnHelper.accessor('tanggal_masuk_po', {
-        size: 110,
+        size: 90,
         header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Tanggal Masuk</div>
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Tgl Masuk</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         ),
-        cell: (info) => (
-          <span className="text-xs text-gray-600">
-            {info.getValue() ? formatDate(info.getValue()) : '-'}
-          </span>
-        ),
+        cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor('delivery_date', {
-        size: 90,
+        size: 70,
         header: () => <div className="font-medium text-xs">Delivery</div>,
-        cell: (info) => (
-          <span className="text-xs text-gray-600">
-            {info.getValue() ? formatDate(info.getValue()) : '-'}
-          </span>
-        ),
+        cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
         enableColumnFilter: false,
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top',
-        size: 60,
+        size: 50,
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">TOP</div>
             <select
               value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-              style={{ maxHeight: '200px' }}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
             >
-              <option value="">Semua</option>
-              {termOfPayments.map((top) => (
-                <option key={top.id} value={top.id}>
-                  {top.kode_top} ({top.batas_hari} hari)
-                </option>
-              ))}
+              <option value="">All</option>
+              {termOfPayments.map((t) => <option key={t.id} value={t.id}>{t.kode_top}</option>)}
             </select>
           </div>
         ),
-        cell: (info) => {
-          const top = info.row.original.termOfPayment;
-          return (
-            <div className="leading-tight">
-              <div className="text-xs text-gray-900">
-                {top?.kode_top || '-'}
-              </div>
-            </div>
-          );
-        },
+        cell: (info) => <span className="text-xs">{info.row.original.termOfPayment?.kode_top || '-'}</span>,
         enableColumnFilter: true,
-        filterFn: (row, columnId, filterValue) => {
-          if (!filterValue) return true;
-          return row.original.termin_bayar === filterValue;
-        },
+        filterFn: (row, columnId, filterValue) => !filterValue || row.original.termin_bayar === filterValue,
       }),
       columnHelper.accessor('po_type', {
-        size: 80,
+        size: 60,
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">Type</div>
             <select
               value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
             >
-              <option value="">Semua</option>
-              <option value="MANUAL">MANUAL</option>
+              <option value="">All</option>
+              <option value="MANUAL">MAN</option>
               <option value="AUTO">AUTO</option>
             </select>
           </div>
         ),
         cell: (info) => {
           const type = info.getValue();
-          if (!type) return <span className="text-xs text-gray-500">-</span>;
-          return (
-            <StatusBadge
-              status={type}
-              variant={type === 'MANUAL' ? 'primary' : 'info'}
-              size="xs"
-              dot
-            />
-          );
+          return type ? <StatusBadge status={type} variant={type === 'MANUAL' ? 'primary' : 'info'} size="xs" dot /> : <span className="text-xs text-gray-500">-</span>;
         },
         enableSorting: false,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
-        size: 110,
+        size: 90,
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">Status</div>
             <select
               value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+              onClick={(e) => e.stopPropagation()}
             >
-              <option value="">Semua</option>
+              <option value="">All</option>
               <option value="PENDING PURCHASE ORDER">Pending</option>
-              <option value="PROCESSING PURCHASE ORDER">Processing</option>
-              <option value="PROCESSED PURCHASE ORDER">Processed</option>
-              <option value="COMPLETED PURCHASE ORDER">Completed</option>
+              <option value="PROCESSING PURCHASE ORDER">Process</option>
+              <option value="PROCESSED PURCHASE ORDER">Done</option>
+              <option value="COMPLETED PURCHASE ORDER">Complete</option>
               <option value="FAILED PURCHASE ORDER">Failed</option>
-              <option value="CANCELED PURCHASE ORDER">Canceled</option>
+              <option value="CANCELED PURCHASE ORDER">Cancel</option>
             </select>
           </div>
         ),
         cell: (info) => {
-          const statusName = info.getValue();
-          return statusName ? (
-            <StatusBadge
-              status={statusName}
-              variant={resolveStatusVariant(statusName)}
-              size="xs"
-              dot
-            />
-          ) : (
-            <span className="text-xs text-gray-500">-</span>
-          );
+          const s = info.getValue();
+          return s ? <StatusBadge status={s} variant={resolveStatusVariant(s)} size="xs" dot /> : <span className="text-xs text-gray-500">-</span>;
         },
         enableSorting: false,
       }),
       columnHelper.display({
         id: 'actions',
-        size: 100,
-        header: () => <div className="font-medium text-xs">Actions</div>,
+        size: 70,
+        header: () => <div className="font-medium text-xs">Act</div>,
         cell: ({ row }) => {
           const order = row.original;
           const editDisabled = isEditDisabled(order);
           const cancelAllowed = isCancelAllowed(order);
-
           return (
-            <div className="flex space-x-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  !editDisabled && onEdit(order);
-                }}
-                className={`p-0.5 ${
-                  editDisabled
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-green-600 hover:text-green-900'
-                }`}
-                title={
-                  editDisabled
-                    ? 'Purchase order tidak dapat diedit.'
-                    : 'Edit'
-                }
-                disabled={editDisabled}
-              >
-                <PencilIcon className="h-4 w-4" />
+            <div className="flex gap-0.5">
+              <button type="button" onClick={(e) => { e.stopPropagation(); !editDisabled && onEdit(order); }} className={`p-0.5 ${editDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:text-green-900'}`} disabled={editDisabled} title="Edit">
+                <PencilIcon className="h-3.5 w-3.5" />
               </button>
               {cancelAllowed && onCancel && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCancel(order.id, order.po_number);
-                  }}
-                  disabled={cancelLoading}
-                  className="p-0.5 text-orange-600 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Cancel"
-                >
-                  <XCircleIcon className="h-4 w-4" />
+                <button type="button" onClick={(e) => { e.stopPropagation(); onCancel(order.id, order.po_number); }} disabled={cancelLoading} className="p-0.5 text-orange-600 hover:text-orange-900 disabled:opacity-50" title="Cancel">
+                  <XCircleIcon className="h-3.5 w-3.5" />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(order.id, order.po_number);
-                }}
-                disabled={deleteLoading}
-                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Delete"
-              >
-                <TrashIcon className="h-4 w-4" />
+              <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(order.id, order.po_number); }} disabled={deleteLoading} className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50" title="Delete">
+                <TrashIcon className="h-3.5 w-3.5" />
               </button>
             </div>
           );
@@ -499,49 +385,31 @@ const PurchaseOrderTableServerSide = ({
   const loading = isLoading || isFetching;
 
   return (
-    <div className="space-y-4">
-      {hasActiveFilters && (
-        <div className="flex justify-end">
-          <button
-            onClick={resetFilters}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
-          >
-            Reset Semua Filter
-          </button>
-        </div>
-      )}
-
-      {hasSelectedOrders && onBulkProcess && (
-        <div className="flex justify-between items-center bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-green-900">
-              {selectedOrders.length} purchase order dipilih
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
+    <div className="space-y-2">
+      {(hasActiveFilters || hasSelectedOrders) && (
+        <div className="flex justify-between items-center">
+          {hasSelectedOrders && onBulkProcess ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-green-700">
+                {selectedOrders.length} dipilih
+              </span>
+              <button
+                onClick={onBulkProcess}
+                disabled={isProcessing}
+                className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {isProcessing ? 'Proses...' : `Proses (${selectedOrders.length})`}
+              </button>
+            </div>
+          ) : <div />}
+          {hasActiveFilters && (
             <button
-              onClick={onBulkProcess}
-              disabled={isProcessing}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={resetFilters}
+              className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
             >
-              {isProcessing ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Memproses...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Proses ({selectedOrders.length})
-                </>
-              )}
+              Reset Filter
             </button>
-          </div>
+          )}
         </div>
       )}
 
@@ -550,26 +418,22 @@ const PurchaseOrderTableServerSide = ({
         isLoading={loading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage="Memuat data purchase orders..."
-        emptyMessage="Tidak ada data purchase order."
-        emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian."
+        loadingMessage="Memuat data..."
+        emptyMessage="Tidak ada data."
+        emptyFilteredMessage="Tidak ada data sesuai filter."
         wrapperClassName="overflow-x-auto"
         tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-2 py-1.5 text-left text-xs text-gray-500 uppercase tracking-wider"
+        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="bg-white divide-y divide-gray-100"
-        rowClassName="hover:bg-gray-50 h-8"
+        rowClassName="hover:bg-gray-50 h-7"
         getRowClassName={({ row }) => {
-          if (selectedOrderId === row.original.id) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
-          }
-          if (selectedOrders.includes(row.original.id)) {
-            return 'bg-green-50';
-          }
+          if (selectedOrderId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
+          if (selectedOrders.includes(row.original.id)) return 'bg-green-50';
           return undefined;
         }}
-        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
-        emptyCellClassName="px-2 py-1 text-center text-gray-500"
+        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
         onRowClick={onViewDetail}
       />
 

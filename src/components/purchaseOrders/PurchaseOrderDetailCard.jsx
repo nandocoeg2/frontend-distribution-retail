@@ -26,7 +26,7 @@ import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
 
 const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('details');
   const { showSuccess, showError, AlertComponent } = useAlert();
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
@@ -314,27 +314,10 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
   };
 
   const tabs = [
-    {
-      id: 'overview',
-      label: 'Overview',
-      icon: <DocumentTextIcon className='w-5 h-5' aria-hidden='true' />,
-    },
-    {
-      id: 'details',
-      label: 'Order Details',
-      icon: <ListBulletIcon className='w-5 h-5' aria-hidden='true' />,
-    },
-    {
-      id: 'documents',
-      label: 'Documents Information',
-      icon: <FolderIcon className='w-5 h-5' aria-hidden='true' />,
-    },
-    {
-      id: 'timeline',
-      label: 'Timeline',
-      icon: <ClockIcon className='w-5 h-5' aria-hidden='true' />,
-      badge: order?.auditTrails?.length,
-    },
+    { id: 'overview', label: 'Overview', icon: <DocumentTextIcon className='w-4 h-4' /> },
+    { id: 'details', label: 'Details', icon: <ListBulletIcon className='w-4 h-4' /> },
+    { id: 'documents', label: 'Documents', icon: <FolderIcon className='w-4 h-4' /> },
+    { id: 'timeline', label: 'Timeline', icon: <ClockIcon className='w-4 h-4' />, badge: order?.auditTrails?.length },
   ];
 
   const purchaseOrderExportInfoParts = [];
@@ -403,659 +386,150 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
 
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className='flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
-        <div className='flex items-center space-x-3'>
-          <div className='p-2 rounded-lg bg-emerald-100'>
-            <ShoppingCartIcon
-              className='w-6 h-6 text-emerald-600'
-              aria-hidden='true'
-            />
+      <div className='flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
+        <div className='flex items-center gap-2'>
+          <div className='p-1.5 rounded bg-emerald-100'>
+            <ShoppingCartIcon className='w-4 h-4 text-emerald-600' />
           </div>
           <div>
-            <h3 className='text-lg font-bold text-gray-900'>
-              Purchase Order Details
-            </h3>
-            <p className='text-sm text-gray-600'>
-              {order?.po_number || 'N/A'}
-            </p>
+            <h3 className='text-sm font-bold text-gray-900'>PO Details</h3>
+            <p className='text-xs text-gray-600'>{order?.po_number || 'N/A'}</p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className='p-2 transition-colors rounded-lg hover:bg-gray-100'
-          title="Close"
-        >
-          <XMarkIcon className='w-5 h-5 text-gray-500' />
+        <button onClick={onClose} className='p-1 rounded hover:bg-gray-100' title="Close">
+          <XMarkIcon className='w-4 h-4 text-gray-500' />
         </button>
       </div>
 
-      {/* Tabs Navigation */}
       <div className='border-b border-gray-200 bg-gray-50'>
-        <nav className='flex px-4 space-x-6' aria-label='Tabs'>
+        <nav className='flex px-2 gap-1'>
           {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-3 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.badge && (
-                <span className='px-2 py-1 ml-2 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full'>
-                  {tab.badge}
-                </span>
-              )}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-1.5 px-2 border-b-2 text-xs font-medium flex items-center gap-1 ${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {tab.icon}<span>{tab.label}</span>
+              {tab.badge && <span className='px-1.5 py-0.5 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full'>{tab.badge}</span>}
             </button>
           ))}
         </nav>
       </div>
 
-      {/* Tab Content */}
-      <div className='p-4 max-h-[600px] overflow-y-auto'>
+      <div className='p-3 max-h-[500px] overflow-y-auto'>
         {activeTab === 'overview' && (
-          <div className='space-y-4'>
-            {/* Basic Information */}
-            <AccordionItem
-              title='Basic Information'
-              isExpanded={expandedSections.basicInfo}
-              onToggle={() => toggleSection('basicInfo')}
-              bgColor='bg-gradient-to-r from-emerald-50 to-emerald-100'
-            >
-              <InfoTable
-                data={[
-                  { label: 'PO Number', value: order.po_number },
-                  {
-                    label: 'Tanggal Masuk PO',
-                    value: formatDate(order.tanggal_masuk_po),
-                  },
-                  {
-                    label: 'Tanggal Batas Kirim',
-                    value: formatDate(order.tanggal_batas_kirim),
-                  },
-                  { label: 'PO Type', value: order.po_type },
-                  { label: 'Total Items', value: order.total_items },
-                  {
-                    label: 'TOP',
-                    value: order.termOfPayment?.kode_top || '-',
-                  },
-                ]}
-              />
+          <div className='space-y-2'>
+            <AccordionItem title='Basic Info' isExpanded={expandedSections.basicInfo} onToggle={() => toggleSection('basicInfo')} bgColor='bg-emerald-50' compact>
+              <InfoTable compact data={[
+                { label: 'PO#', value: order.po_number },
+                { label: 'Tgl Masuk', value: formatDate(order.tanggal_masuk_po) },
+                { label: 'Batas Kirim', value: formatDate(order.tanggal_batas_kirim) },
+                { label: 'Type', value: order.po_type },
+                { label: 'Items', value: order.total_items },
+                { label: 'TOP', value: order.termOfPayment?.kode_top || '-' },
+              ]} />
             </AccordionItem>
 
-            {/* Customer & Supplier Information */}
-            <AccordionItem
-              title='Customer & Supplier Information'
-              isExpanded={expandedSections.customerSupplier}
-              onToggle={() => toggleSection('customerSupplier')}
-              bgColor='bg-gradient-to-r from-blue-50 to-blue-100'
-            >
-              <InfoTable
-                data={[
-                  {
-                    label: 'Customer Name',
-                    value: order.customer?.namaCustomer || '-',
-                  },
-                  {
-                    label: 'Customer Code',
-                    value: order.customer?.kodeCustomer || '-',
-                  },
-                  {
-                    label: 'Customer Email',
-                    value: order.customer?.email || '-',
-                  },
-                  {
-                    label: 'Customer Phone',
-                    value: order.customer?.phoneNumber || '-',
-                  },
-                  {
-                    label: 'Supplier Name',
-                    value: order.supplier?.name || 'Not assigned',
-                  },
-                ]}
-              />
+            <AccordionItem title='Customer & Supplier' isExpanded={expandedSections.customerSupplier} onToggle={() => toggleSection('customerSupplier')} bgColor='bg-blue-50' compact>
+              <InfoTable compact data={[
+                { label: 'Customer', value: order.customer?.namaCustomer || '-' },
+                { label: 'Code', value: order.customer?.kodeCustomer || '-' },
+                { label: 'Email', value: order.customer?.email || '-' },
+                { label: 'Phone', value: order.customer?.phoneNumber || '-' },
+                { label: 'Supplier', value: order.supplier?.name || 'Not assigned' },
+              ]} />
             </AccordionItem>
 
-            {/* Status Information */}
-            <AccordionItem
-              title='Status Information'
-              isExpanded={expandedSections.statusInfo}
-              onToggle={() => toggleSection('statusInfo')}
-              bgColor='bg-gradient-to-r from-yellow-50 to-yellow-100'
-            >
-              <InfoTable
-                data={[
-                  {
-                    label: 'Status',
-                    component: (
-                      <StatusBadge
-                        status={order.status?.status_name}
-                        variant={resolveStatusVariant(
-                          order.status?.status_name
-                        )}
-                        size='sm'
-                        dot
-                      />
-                    ),
-                  },
-                  {
-                    label: 'Status Code',
-                    value: order.status?.status_code || '-',
-                  },
-                ]}
-              />
+            <AccordionItem title='Status' isExpanded={expandedSections.statusInfo} onToggle={() => toggleSection('statusInfo')} bgColor='bg-yellow-50' compact>
+              <InfoTable compact data={[
+                { label: 'Status', component: <StatusBadge status={order.status?.status_name} variant={resolveStatusVariant(order.status?.status_name)} size='xs' dot /> },
+                { label: 'Code', value: order.status?.status_code || '-' },
+              ]} />
             </AccordionItem>
 
-            {/* System Information */}
-            <AccordionItem
-              title='System Information'
-              isExpanded={expandedSections.metaInfo}
-              onToggle={() => toggleSection('metaInfo')}
-              bgColor='bg-gradient-to-r from-gray-50 to-gray-100'
-            >
-              <InfoTable
-                data={[
-                  {
-                    label: 'Created At',
-                    value: formatDateTime(order.createdAt),
-                  },
-                  {
-                    label: 'Updated At',
-                    value: formatDateTime(order.updatedAt),
-                  },
-                  { label: 'PO ID', value: order.id, copyable: true },
-                  {
-                    label: 'Customer ID',
-                    value: order.customerId || '-',
-                    copyable: order.customerId ? true : false,
-                  },
-                  {
-                    label: 'Supplier ID',
-                    value: order.supplierId || 'Not assigned',
-                    copyable: order.supplierId ? true : false,
-                  },
-                ]}
-              />
+            <AccordionItem title='System Info' isExpanded={expandedSections.metaInfo} onToggle={() => toggleSection('metaInfo')} bgColor='bg-gray-50' compact>
+              <InfoTable compact data={[
+                { label: 'Created', value: formatDateTime(order.createdAt) },
+                { label: 'Updated', value: formatDateTime(order.updatedAt) },
+                { label: 'PO ID', value: order.id, copyable: true },
+                { label: 'Customer ID', value: order.customerId || '-', copyable: !!order.customerId },
+                { label: 'Supplier ID', value: order.supplierId || '-', copyable: !!order.supplierId },
+              ]} />
             </AccordionItem>
           </div>
         )}
 
         {activeTab === 'details' && (
-          <div className='space-y-4'>
-            <div className='flex items-center justify-between mb-4'>
-              <h4 className='text-lg font-semibold text-gray-900'>
-                Purchase Order Details
-              </h4>
-            </div>
-            <div className='overflow-hidden bg-white border border-gray-200 rounded-lg'>
-              <PurchaseOrderDetailsTable
-                details={order.purchaseOrderDetails || []}
-              />
-            </div>
+          <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+            <PurchaseOrderDetailsTable details={order.purchaseOrderDetails || []} />
           </div>
         )}
 
         {activeTab === 'documents' && (
-          <div className='space-y-4'>
-            {/* Print Documents */}
-            <AccordionItem
-              title='Print Documents'
-              isExpanded={expandedSections.documentsPrint}
-              onToggle={() => toggleSection('documentsPrint')}
-              bgColor='bg-gradient-to-r from-orange-50 to-orange-100'
-            >
-              <div className='py-4 space-y-4'>
-                {/* Select All Checkbox */}
-                <div className='flex items-center p-3 border border-gray-200 rounded-lg bg-gray-50'>
-                  <input
-                    type='checkbox'
-                    id='select-all'
-                    checked={Object.values(selectedDocuments).every(
-                      (val) => val
-                    )}
-                    onChange={handleSelectAll}
-                    className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
-                  />
-                  <label
-                    htmlFor='select-all'
-                    className='ml-3 text-sm font-semibold text-gray-900'
-                  >
-                    Select All Documents
-                  </label>
+          <div className='space-y-2'>
+            <AccordionItem title='Print Documents' isExpanded={expandedSections.documentsPrint} onToggle={() => toggleSection('documentsPrint')} bgColor='bg-orange-50' compact>
+              <div className='py-2 space-y-2'>
+                <label className='flex items-center p-2 border border-gray-200 rounded bg-gray-50 cursor-pointer'>
+                  <input type='checkbox' checked={Object.values(selectedDocuments).every((v) => v)} onChange={handleSelectAll} className='w-3 h-3 text-blue-600 border-gray-300 rounded' />
+                  <span className='ml-2 text-xs font-semibold text-gray-900'>Select All</span>
+                </label>
+
+                <div className='space-y-1'>
+                  {[{ key: 'PURCHASE_ORDER', label: 'Purchase Order', info: purchaseOrderPrintInfo, enabled: true },
+                    { key: 'PACKING', label: 'Packing', info: order.packing ? `${order.packing.packing_number} • ${order.packing.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.packing },
+                    { key: 'INVOICE_PENGIRIMAN', label: 'Invoice', info: order.invoice ? `${order.invoice.no_invoice} • ${order.invoice.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.invoice },
+                    { key: 'SURAT_JALAN', label: 'Surat Jalan', info: order.suratJalan ? `${order.suratJalan.no_surat_jalan} • ${order.suratJalan.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.suratJalan },
+                  ].map((doc) => (
+                    <label key={doc.key} className={`flex items-center p-2 border rounded cursor-pointer ${doc.enabled ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-gray-100 border-gray-200 opacity-50'}`}>
+                      <input type='checkbox' checked={selectedDocuments[doc.key]} onChange={() => handleDocumentCheckbox(doc.key)} disabled={!doc.enabled} className='w-3 h-3 text-blue-600 border-gray-300 rounded disabled:opacity-50' />
+                      <div className='ml-2 flex-1'>
+                        <p className='text-xs font-medium text-gray-900'>{doc.label}</p>
+                        <p className='text-xs text-gray-500'>{doc.info}</p>
+                      </div>
+                    </label>
+                  ))}
                 </div>
 
-                {/* Document Checkboxes */}
-                <div className='space-y-2'>
-                  {/* Purchase Order */}
-                  <div className='flex items-center justify-between p-3 border border-gray-200 rounded-lg transition-colors bg-white hover:bg-gray-50'>
-                    <div className='flex items-center flex-1'>
-                      <input
-                        type='checkbox'
-                        id='purchase-order-checkbox'
-                        checked={selectedDocuments.PURCHASE_ORDER}
-                        onChange={() =>
-                          handleDocumentCheckbox('PURCHASE_ORDER')
-                        }
-                        className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
-                      />
-                      <label
-                        htmlFor='purchase-order-checkbox'
-                        className='flex-1 ml-3'
-                      >
-                        <p className='text-sm font-medium text-gray-900'>
-                          Purchase Order
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          {purchaseOrderPrintInfo}
-                        </p>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Packing */}
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                      order.packing
-                        ? 'bg-white border-gray-200 hover:bg-gray-50'
-                        : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className='flex items-center flex-1'>
-                      <input
-                        type='checkbox'
-                        id='packing-checkbox'
-                        checked={selectedDocuments.PACKING}
-                        onChange={() => handleDocumentCheckbox('PACKING')}
-                        disabled={!order.packing}
-                        className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
-                      />
-                      <label
-                        htmlFor='packing-checkbox'
-                        className='flex-1 ml-3'
-                      >
-                        <p className='text-sm font-medium text-gray-900'>
-                          Packing List
-                        </p>
-                        {order.packing ? (
-                          <p className='text-xs text-gray-500'>
-                            {order.packing.packing_number} • Printed:{' '}
-                            {order.packing.is_printed ? 'Yes' : 'No'} • Counter:{' '}
-                            {order.packing.print_counter || 0}
-                          </p>
-                        ) : (
-                          <p className='text-xs text-gray-500'>
-                            Document not available
-                          </p>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Invoice Pengiriman */}
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                      order.invoice
-                        ? 'bg-white border-gray-200 hover:bg-gray-50'
-                        : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className='flex items-center flex-1'>
-                      <input
-                        type='checkbox'
-                        id='invoice-checkbox'
-                        checked={selectedDocuments.INVOICE_PENGIRIMAN}
-                        onChange={() =>
-                          handleDocumentCheckbox('INVOICE_PENGIRIMAN')
-                        }
-                        disabled={!order.invoice}
-                        className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
-                      />
-                      <label
-                        htmlFor='invoice-checkbox'
-                        className='flex-1 ml-3'
-                      >
-                        <p className='text-sm font-medium text-gray-900'>
-                          Invoice Pengiriman
-                        </p>
-                        {order.invoice ? (
-                          <p className='text-xs text-gray-500'>
-                            {order.invoice.no_invoice} • Printed:{' '}
-                            {order.invoice.is_printed ? 'Yes' : 'No'} • Counter:{' '}
-                            {order.invoice.print_counter || 0}
-                          </p>
-                        ) : (
-                          <p className='text-xs text-gray-500'>
-                            Document not available
-                          </p>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Surat Jalan */}
-                  <div
-                    className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
-                      order.suratJalan
-                        ? 'bg-white border-gray-200 hover:bg-gray-50'
-                        : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className='flex items-center flex-1'>
-                      <input
-                        type='checkbox'
-                        id='surat-jalan-checkbox'
-                        checked={selectedDocuments.SURAT_JALAN}
-                        onChange={() =>
-                          handleDocumentCheckbox('SURAT_JALAN')
-                        }
-                        disabled={!order.suratJalan}
-                        className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50'
-                      />
-                      <label
-                        htmlFor='surat-jalan-checkbox'
-                        className='flex-1 ml-3'
-                      >
-                        <p className='text-sm font-medium text-gray-900'>
-                          Surat Jalan
-                        </p>
-                        {order.suratJalan ? (
-                          <p className='text-xs text-gray-500'>
-                            {order.suratJalan.no_surat_jalan} • Printed:{' '}
-                            {order.suratJalan.is_printed ? 'Yes' : 'No'} • Counter:{' '}
-                            {order.suratJalan.print_counter || 0}
-                          </p>
-                        ) : (
-                          <p className='text-xs text-gray-500'>
-                            Document not available
-                          </p>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Print Button */}
-                <div className='flex justify-end pt-3'>
-                  <button
-                    onClick={handlePrintDocuments}
-                    disabled={
-                      printing ||
-                      !Object.values(selectedDocuments).some((val) => val)
-                    }
-                    className='inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
-                  >
-                    {printing ? (
-                      <>
-                        <svg
-                          className='w-4 h-4 mr-2 animate-spin'
-                          xmlns='http://www.w3.org/2000/svg'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                        >
-                          <circle
-                            className='opacity-25'
-                            cx='12'
-                            cy='12'
-                            r='10'
-                            stroke='currentColor'
-                            strokeWidth='4'
-                          ></circle>
-                          <path
-                            className='opacity-75'
-                            fill='currentColor'
-                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                          ></path>
-                        </svg>
-                        Printing...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          className='w-4 h-4 mr-2'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z'
-                          />
-                        </svg>
-                        Mark as Printed
-                      </>
-                    )}
+                <div className='flex justify-end pt-2'>
+                  <button onClick={handlePrintDocuments} disabled={printing || !Object.values(selectedDocuments).some((v) => v)} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
+                    {printing ? 'Printing...' : 'Mark as Printed'}
                   </button>
                 </div>
               </div>
             </AccordionItem>
 
-            {/* Surat Jalan */}
-            <AccordionItem
-              title='Surat Jalan'
-              isExpanded={expandedSections.documentsSuratJalan}
-              onToggle={() => toggleSection('documentsSuratJalan')}
-              bgColor='bg-gradient-to-r from-blue-50 to-blue-100'
-            >
+            <AccordionItem title='Surat Jalan' isExpanded={expandedSections.documentsSuratJalan} onToggle={() => toggleSection('documentsSuratJalan')} bgColor='bg-blue-50' compact>
               {order.suratJalan ? (
-                <InfoTable
-                  data={[
-                    {
-                      label: 'No. Surat Jalan',
-                      value: order.suratJalan.no_surat_jalan,
-                      copyable: true,
-                    },
-                    {
-                      label: 'Deliver To',
-                      value: order.suratJalan.deliver_to,
-                    },
-                    {
-                      label: 'PIC',
-                      value: order.suratJalan.PIC,
-                    },
-                    {
-                      label: 'Alamat Tujuan',
-                      value: order.suratJalan.alamat_tujuan,
-                    },
-                    {
-                      label: 'Status',
-                      component: (
-                        <StatusBadge
-                          status={order.suratJalan.status?.status_name}
-                          variant={resolveStatusVariant(
-                            order.suratJalan.status?.status_name
-                          )}
-                          size='sm'
-                          dot
-                        />
-                      ),
-                    },
-                    {
-                      label: 'Is Printed',
-                      value: order.suratJalan.is_printed ? 'Yes' : 'No',
-                    },
-                    {
-                      label: 'Print Counter',
-                      value: order.suratJalan.print_counter || 0,
-                    },
-                    {
-                      label: 'Created At',
-                      value: formatDateTime(order.suratJalan.createdAt),
-                    },
-                  ]}
-                />
-              ) : (
-                <div className='py-6 text-center text-gray-500'>
-                  <div className='flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full'>
-                    <TruckIcon
-                      className='w-6 h-6 text-gray-400'
-                      aria-hidden='true'
-                    />
-                  </div>
-                  <p className='text-sm'>No Surat Jalan available</p>
-                </div>
-              )}
+                <InfoTable compact data={[
+                  { label: 'No. SJ', value: order.suratJalan.no_surat_jalan, copyable: true },
+                  { label: 'Deliver To', value: order.suratJalan.deliver_to },
+                  { label: 'PIC', value: order.suratJalan.PIC },
+                  { label: 'Alamat', value: order.suratJalan.alamat_tujuan },
+                  { label: 'Status', component: <StatusBadge status={order.suratJalan.status?.status_name} variant={resolveStatusVariant(order.suratJalan.status?.status_name)} size='xs' dot /> },
+                  { label: 'Printed', value: order.suratJalan.is_printed ? 'Yes' : 'No' },
+                ]} />
+              ) : <div className='py-2 text-center text-xs text-gray-500'>No Surat Jalan</div>}
             </AccordionItem>
 
-            {/* Invoice Pengiriman */}
-            <AccordionItem
-              title='Invoice Pengiriman'
-              isExpanded={expandedSections.documentsInvoice}
-              onToggle={() => toggleSection('documentsInvoice')}
-              bgColor='bg-gradient-to-r from-green-50 to-green-100'
-            >
+            <AccordionItem title='Invoice' isExpanded={expandedSections.documentsInvoice} onToggle={() => toggleSection('documentsInvoice')} bgColor='bg-green-50' compact>
               {order.invoice ? (
-                <InfoTable
-                  data={[
-                    {
-                      label: 'No. Invoice',
-                      value: order.invoice.no_invoice,
-                      copyable: true,
-                    },
-                    {
-                      label: 'Deliver To',
-                      value: order.invoice.deliver_to,
-                    },
-                    {
-                      label: 'Tanggal',
-                      value: formatDate(order.invoice.tanggal),
-                    },
-                    {
-                      label: 'Sub Total',
-                      value: `Rp ${parseInt(order.invoice.sub_total).toLocaleString('id-ID')}`,
-                    },
-                    {
-                      label: 'Total Discount',
-                      value: `Rp ${parseInt(order.invoice.total_discount).toLocaleString('id-ID')}`,
-                    },
-                    {
-                      label: 'Total Price',
-                      value: `Rp ${parseInt(order.invoice.total_price).toLocaleString('id-ID')}`,
-                    },
-                    {
-                      label: 'Grand Total',
-                      value: `Rp ${parseInt(order.invoice.grand_total).toLocaleString('id-ID')}`,
-                    },
-                    {
-                      label: 'PPN Percentage',
-                      value: `${order.invoice.ppn_percentage}%`,
-                    },
-                    {
-                      label: 'TOP',
-                      value: `${order.invoice.TOP} hari`,
-                    },
-                    {
-                      label: 'Type',
-                      value: order.invoice.type,
-                    },
-                    {
-                      label: 'Status',
-                      component: (
-                        <StatusBadge
-                          status={
-                            order.invoice.status?.status_name ||
-                            order.invoice.status?.status_code ||
-                            order.invoice.statusPembayaran?.status_name ||
-                            order.invoice.statusPembayaran?.status_code ||
-                            '-'
-                          }
-                          variant={resolveStatusVariant(
-                            order.invoice.status?.status_name ||
-                              order.invoice.statusPembayaran?.status_name ||
-                              order.invoice.status?.status_code ||
-                              order.invoice.statusPembayaran?.status_code
-                          )}
-                          size='sm'
-                          dot
-                        />
-                      ),
-                    },
-                    {
-                      label: 'Created At',
-                      value: formatDateTime(order.invoice.createdAt),
-                    },
-                  ]}
-                />
-              ) : (
-                <div className='py-6 text-center text-gray-500'>
-                  <div className='flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full'>
-                    <DocumentTextIcon
-                      className='w-6 h-6 text-gray-400'
-                      aria-hidden='true'
-                    />
-                  </div>
-                  <p className='text-sm'>No Invoice available</p>
-                </div>
-              )}
+                <InfoTable compact data={[
+                  { label: 'No. Invoice', value: order.invoice.no_invoice, copyable: true },
+                  { label: 'Tanggal', value: formatDate(order.invoice.tanggal) },
+                  { label: 'Grand Total', value: `Rp ${parseInt(order.invoice.grand_total).toLocaleString('id-ID')}` },
+                  { label: 'PPN', value: `${order.invoice.ppn_percentage}%` },
+                  { label: 'TOP', value: `${order.invoice.TOP} hari` },
+                  { label: 'Status', component: <StatusBadge status={order.invoice.status?.status_name || order.invoice.statusPembayaran?.status_name || '-'} variant={resolveStatusVariant(order.invoice.status?.status_name || order.invoice.statusPembayaran?.status_name)} size='xs' dot /> },
+                ]} />
+              ) : <div className='py-2 text-center text-xs text-gray-500'>No Invoice</div>}
             </AccordionItem>
 
-            {/* Packing List */}
-            <AccordionItem
-              title='Packing'
-              isExpanded={expandedSections.documentsPacking}
-              onToggle={() => toggleSection('documentsPacking')}
-              bgColor='bg-gradient-to-r from-purple-50 to-purple-100'
-            >
+            <AccordionItem title='Packing' isExpanded={expandedSections.documentsPacking} onToggle={() => toggleSection('documentsPacking')} bgColor='bg-purple-50' compact>
               {order.packing ? (
-                <InfoTable
-                  data={[
-                    {
-                      label: 'Packing Number',
-                      value: order.packing.packing_number,
-                      copyable: true,
-                    },
-                    {
-                      label: 'Tanggal Packing',
-                      value: formatDate(order.packing.tanggal_packing),
-                    },
-                    {
-                      label: 'Total Boxes',
-                      value: order.packing.packingBoxes?.length || 0,
-                    },
-                    {
-                      label: 'Total Items',
-                      value:
-                        order.packing.packingBoxes?.reduce(
-                          (sum, box) =>
-                            sum + (box.packingBoxItems?.length || 0),
-                          0
-                        ) || 0,
-                    },
-                    {
-                      label: 'Status',
-                      component: (
-                        <StatusBadge
-                          status={order.packing.status?.status_name}
-                          variant={resolveStatusVariant(
-                            order.packing.status?.status_name
-                          )}
-                          size='sm'
-                          dot
-                        />
-                      ),
-                    },
-                    {
-                      label: 'Created At',
-                      value: formatDateTime(order.packing.createdAt),
-                    },
-                  ]}
-                />
-              ) : (
-                <div className='py-6 text-center text-gray-500'>
-                  <div className='flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full'>
-                    <ArchiveBoxIcon
-                      className='w-6 h-6 text-gray-400'
-                      aria-hidden='true'
-                    />
-                  </div>
-                  <p className='text-sm'>No Packing List available</p>
-                </div>
-              )}
+                <InfoTable compact data={[
+                  { label: 'Number', value: order.packing.packing_number, copyable: true },
+                  { label: 'Tanggal', value: formatDate(order.packing.tanggal_packing) },
+                  { label: 'Boxes', value: order.packing.packingBoxes?.length || 0 },
+                  { label: 'Items', value: order.packing.packingBoxes?.reduce((s, b) => s + (b.packingBoxItems?.length || 0), 0) || 0 },
+                  { label: 'Status', component: <StatusBadge status={order.packing.status?.status_name} variant={resolveStatusVariant(order.packing.status?.status_name)} size='xs' dot /> },
+                ]} />
+              ) : <div className='py-2 text-center text-xs text-gray-500'>No Packing</div>}
             </AccordionItem>
           </div>
         )}
@@ -1070,7 +544,6 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         )}
       </div>
 
-      {/* Alert Component */}
       <AlertComponent />
     </div>
   );
