@@ -458,11 +458,11 @@ const MutasiBankTableServerSide = ({
         cell: ({ row }) => {
           const matched = resolveMatchedDocument(row.original);
           if (!matched) {
-            return <span className='text-sm text-gray-400'>Belum ada</span>;
+            return <span className='text-xs text-gray-400'>Belum ada</span>;
           }
 
           return (
-            <div className='text-sm leading-tight'>
+            <div className='text-xs leading-tight'>
               <div className='font-medium text-gray-800'>{matched.type}</div>
               {matched.number && (
                 <div className='text-gray-600'>No: {matched.number}</div>
@@ -495,7 +495,7 @@ const MutasiBankTableServerSide = ({
                 }}
                 className='inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800'
               >
-                <EyeIcon className='w-4 h-4 mr-1' />
+                <EyeIcon className='w-3.5 h-3.5 mr-0.5' />
                 Detail
               </button>
 
@@ -510,7 +510,7 @@ const MutasiBankTableServerSide = ({
                 className='inline-flex items-center px-2 py-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-40'
                 title='Kaitkan dokumen ke mutasi'
               >
-                <LinkIcon className='w-4 h-4 mr-1' />
+                <LinkIcon className='w-3.5 h-3.5 mr-0.5' />
                 Bind
               </button>
 
@@ -525,7 +525,7 @@ const MutasiBankTableServerSide = ({
                 className='inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 hover:text-amber-800 disabled:opacity-40'
                 title={hasDocument ? 'Lepas kaitan dokumen' : 'Tidak ada dokumen terhubung'}
               >
-                <XMarkIcon className='w-4 h-4 mr-1' />
+                <XMarkIcon className='w-3.5 h-3.5 mr-0.5' />
                 Unbind
               </button>
 
@@ -539,7 +539,7 @@ const MutasiBankTableServerSide = ({
                 disabled={isValidating}
                 className='inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-40'
               >
-                <CheckBadgeIcon className='w-4 h-4 mr-1' />
+                <CheckBadgeIcon className='w-3.5 h-3.5 mr-0.5' />
                 Validasi
               </button>
             </div>
@@ -646,6 +646,13 @@ const MutasiBankTableServerSide = ({
         hasActiveFilters={hasActiveFilters}
         emptyMessage='Belum ada mutasi bank.'
         emptyFilteredMessage='Tidak ditemukan mutasi sesuai filter.'
+        tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
+        headerRowClassName='bg-gray-50'
+        headerCellClassName='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+        bodyClassName='bg-white divide-y divide-gray-100'
+        rowClassName='hover:bg-gray-50 cursor-pointer h-8'
+        cellClassName='px-2 py-1 whitespace-nowrap text-xs text-gray-900'
+        emptyCellClassName='px-2 py-1 text-center text-xs text-gray-500'
       />
 
       <DataTablePagination table={table} pagination={pagination} itemLabel='mutasi' />

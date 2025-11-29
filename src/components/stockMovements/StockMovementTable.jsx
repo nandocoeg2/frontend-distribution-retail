@@ -110,79 +110,79 @@ const StockMovementTable = ({
   return (
     <div className='bg-white rounded-lg shadow'>
       <div className='overflow-x-auto'>
-        <table className='min-w-full divide-y divide-gray-200'>
+        <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <thead className='bg-gray-50'>
             <tr>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Movement
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Type
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Status
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Supplier
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Product
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Items
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Quantity
+                Qty
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Created At
+                Created
               </th>
               <th
                 scope='col'
-                className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
                 Notes
               </th>
               {onClassify && (
                 <th
                   scope='col'
-                  className='px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                  className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
                 >
                   Actions
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className='divide-y divide-gray-200 bg-white'>
+          <tbody className='divide-y divide-gray-100 bg-white'>
             {renderedMovements.length === 0 ? (
               <tr>
                 <td
                   colSpan={9}
-                  className='px-6 py-10 text-center text-sm text-gray-500'
+                  className='px-2 py-4 text-center text-xs text-gray-500'
                 >
                   {searchLoading
                     ? 'Searching stock movements...'
@@ -199,11 +199,11 @@ const StockMovementTable = ({
                 const isClassifying = classifyLoadingId === movement.id;
 
                 return (
-                  <tr key={movement.id || movement.movementNumber}>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                  <tr key={movement.id || movement.movementNumber} className='h-8 hover:bg-gray-50'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900'>
                       {movement.movementNumber}
                     </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
                       <StatusBadge
                         status={resolveTypeLabel(movement.type)}
                         variant={resolveTypeVariant(movement.type)}
@@ -211,7 +211,7 @@ const StockMovementTable = ({
                         dot
                       />
                     </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
                       <StatusBadge
                         status={resolveTypeLabel(movement.status)}
                         variant={resolveStatusVariant(movement.status)}
@@ -219,30 +219,30 @@ const StockMovementTable = ({
                         dot
                       />
                     </td>
-                    <td className='px-6 py-4 text-xs text-gray-500'>
+                    <td className='px-2 py-1 text-xs text-gray-500'>
                       <div className='max-w-xs truncate' title={movement.supplierName || '-'}>
                         {movement.supplierName || '-'}
                       </div>
                     </td>
-                    <td className='px-6 py-4 text-xs text-gray-900'>
+                    <td className='px-2 py-1 text-xs text-gray-900'>
                       <div className='max-w-xs truncate' title={movement.productDisplay}>
                         {movement.productDisplay}
                       </div>
                     </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
                       {movement.totalItems}
                     </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
                       {movement.totalQuantity}
                     </td>
-                    <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500'>
                       {formatDateTime(movement.createdAt)}
                     </td>
-                    <td className='px-6 py-4 text-sm text-gray-500'>
+                    <td className='px-2 py-1 text-xs text-gray-500'>
                       {movement.notes || '-'}
                     </td>
                     {onClassify && (
-                      <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right'>
+                      <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
                         {classificationEnabled ? (
                           <div className='flex justify-end space-x-2'>
                             <button
@@ -251,7 +251,7 @@ const StockMovementTable = ({
                                 onClassify(movement.source, 'restock')
                               }
                               disabled={isClassifying}
-                              className='inline-flex items-center rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 transition-colors'
+                              className='inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-green-700 hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60'
                             >
                               {isClassifying ? 'Memproses...' : 'Restock'}
                             </button>
@@ -261,7 +261,7 @@ const StockMovementTable = ({
                                 onClassify(movement.source, 'reject')
                               }
                               disabled={isClassifying}
-                              className='inline-flex items-center rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 transition-colors'
+                              className='inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60'
                             >
                               {isClassifying ? 'Memproses...' : 'Reject'}
                             </button>

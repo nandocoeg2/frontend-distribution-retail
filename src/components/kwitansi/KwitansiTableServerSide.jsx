@@ -279,7 +279,7 @@ const KwitansiTableServerSide = ({
               }}
               onChange={handleSelectAllInternalToggle}
               onClick={(e) => e.stopPropagation()}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -294,7 +294,7 @@ const KwitansiTableServerSide = ({
               }
               onClick={(e) => e.stopPropagation()}
               disabled={!kwitansiId}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -305,8 +305,8 @@ const KwitansiTableServerSide = ({
       columnHelper.accessor('invoicePenagihan.no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">No Invoice</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Invoice</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -324,7 +324,7 @@ const KwitansiTableServerSide = ({
           const invoicePenagihan = info.row.original?.invoicePenagihan;
           return (
             <div>
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-xs font-medium text-gray-900">
                 {invoicePenagihan?.no_invoice_penagihan || '-'}
               </div>
             </div>
@@ -333,8 +333,8 @@ const KwitansiTableServerSide = ({
       }),
       columnHelper.accessor('no_kwitansi', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kwitansi</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Kwitansi</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -352,7 +352,7 @@ const KwitansiTableServerSide = ({
           const kwitansi = info.row.original;
           return (
             <div>
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-xs font-medium text-gray-900">
                 {kwitansi?.no_kwitansi || '-'}
               </div>
             </div>
@@ -361,8 +361,8 @@ const KwitansiTableServerSide = ({
       }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tanggal</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
@@ -379,8 +379,8 @@ const KwitansiTableServerSide = ({
       }),
       columnHelper.accessor('grand_total', {
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Grand Total</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Total</div>
             <input
               type="number"
               min="0"
@@ -401,8 +401,8 @@ const KwitansiTableServerSide = ({
       columnHelper.accessor((row) => row.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer, {
         id: 'customer_name',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Customer</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -420,7 +420,7 @@ const KwitansiTableServerSide = ({
           const customer = info.row.original?.invoicePenagihan?.purchaseOrder?.customer;
           return (
             <div>
-              <div className="text-sm text-gray-900">{customer?.namaCustomer || '-'}</div>
+              <div className="text-xs text-gray-900">{customer?.namaCustomer || '-'}</div>
               {customer?.kodeCustomer && (
                 <div className="text-xs text-gray-500">{customer.kodeCustomer}</div>
               )}
@@ -435,8 +435,8 @@ const KwitansiTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Status</div>
               {isLocked ? (
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {statusConfig?.label || 'N/A'}
@@ -489,7 +489,7 @@ const KwitansiTableServerSide = ({
                 className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Hapus"
               >
-                <TrashIcon className="h-5 w-5" />
+                <TrashIcon className="h-4 w-4" />
               </button>
             </div>
           );
@@ -563,20 +563,20 @@ const KwitansiTableServerSide = ({
         loadingMessage="Memuat data kwitansi..."
         emptyMessage="Belum ada data kwitansi."
         emptyFilteredMessage="Kwitansi tidak ditemukan."
-        tableClassName="min-w-full bg-white border border-gray-200 divide-y divide-gray-200"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50 cursor-pointer"
+        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
         getRowClassName={({ row }) => {
           const kwitansiId = resolveKwitansiId(row.original);
           
           if (kwitansiId === selectedKwitansiId) {
-            return 'bg-indigo-100 hover:bg-indigo-150 border-l-4 border-indigo-500';
+            return 'bg-blue-50 border-l-4 border-blue-500';
           }
           
           if (kwitansiId && selectedKwitansis.includes(kwitansiId)) {
-            return 'bg-blue-50 hover:bg-blue-100';
+            return 'bg-blue-50';
           }
           
           return undefined;
@@ -586,8 +586,8 @@ const KwitansiTableServerSide = ({
             onRowClick(rowData);
           }
         }}
-        cellClassName="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-        emptyCellClassName="px-6 py-6 text-center text-sm text-gray-500"
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
       />
 
       {!isLoading && !error && (

@@ -83,42 +83,42 @@ const TandaTerimaFakturGroupedTable = ({
   }
 
   return (
-    <div className='overflow-x-auto border-2 border-gray-300 rounded-lg shadow-sm'>
-      <table className='w-full border-collapse'>
+    <div className='overflow-x-auto'>
+      <table className='w-full bg-white border border-gray-200 text-xs table-fixed'>
         <thead>
-          <tr className='border-b-2 border-gray-300 bg-gray-50'>
+          <tr className='border-b border-gray-200 bg-gray-50'>
             <th
               rowSpan={2}
-              className='px-4 py-3 text-sm font-semibold text-left text-gray-900 border-r border-gray-300'
+              className='px-2 py-1.5 text-xs font-medium text-left text-gray-500 uppercase tracking-wider border-r border-gray-200'
             >
               Tanggal
             </th>
             <th
               rowSpan={2}
-              className='px-4 py-3 text-sm font-semibold text-left text-gray-900 border-r border-gray-300'
+              className='px-2 py-1.5 text-xs font-medium text-left text-gray-500 uppercase tracking-wider border-r border-gray-200'
             >
               Group Customer
             </th>
             <th
               colSpan={allTopCodes.length}
-              className='px-4 py-3 text-sm font-semibold text-center text-gray-900 border-r border-gray-300'
+              className='px-2 py-1.5 text-xs font-medium text-center text-gray-500 uppercase tracking-wider border-r border-gray-200'
             >
               Term of Payment
             </th>
             <th
               rowSpan={2}
-              className='px-4 py-3 text-sm font-semibold text-center text-gray-900'
+              className='px-2 py-1.5 text-xs font-medium text-center text-gray-500 uppercase tracking-wider'
             >
               Action
             </th>
           </tr>
           {/* Column Letters Header Row */}
           {allTopCodes.length > 0 && (
-            <tr className='border-b-2 border-gray-300 bg-gray-100'>
+            <tr className='border-b border-gray-200 bg-gray-100'>
               {allTopCodes.map((code, index) => (
                 <th
                   key={`letter-${code}`}
-                  className='px-4 py-2 text-sm font-semibold text-center text-gray-900 border-r border-gray-300 last:border-r-0'
+                  className='px-2 py-1 text-xs font-medium text-center text-gray-500 border-r border-gray-200 last:border-r-0'
                 >
                   {getColumnLetter(index)}
                 </th>
@@ -126,37 +126,37 @@ const TandaTerimaFakturGroupedTable = ({
             </tr>
           )}
         </thead>
-        <tbody>
+        <tbody className='divide-y divide-gray-100'>
           {groupedData.map((item, idx) => (
             <tr
               key={`${item.tanggal}-${item.groupCustomer?.id || idx}`}
-              className='border-b border-gray-300 hover:bg-gray-50 transition'
+              className='hover:bg-gray-50 h-8'
             >
-              <td className='px-4 py-3 text-sm text-gray-900 border-r border-gray-300'>
+              <td className='px-2 py-1 text-xs text-gray-900 border-r border-gray-100'>
                 {new Date(item.tanggal).toLocaleDateString('id-ID')}
               </td>
-              <td className='px-4 py-3 text-sm text-gray-900 border-r border-gray-300'>
+              <td className='px-2 py-1 text-xs text-gray-900 border-r border-gray-100 truncate' title={item.groupCustomer?.nama_group || '-'}>
                 {item.groupCustomer?.nama_group || '-'}
               </td>
               {allTopCodes.map((code) => (
                 <td
                   key={`${item.tanggal}-${item.groupCustomer?.id}-${code}`}
-                  className='px-4 py-3 text-sm text-center text-gray-700 border-r border-gray-300 last:border-r-0'
+                  className='px-2 py-1 text-xs text-center text-gray-700 border-r border-gray-100 last:border-r-0'
                 >
                   {getCountForTop(item.topGroups, code)}
                 </td>
               ))}
-              <td className='px-4 py-3 text-center'>
-                <div className='flex items-center justify-center gap-2'>
+              <td className='px-2 py-1 text-center'>
+                <div className='flex items-center justify-center gap-1'>
                   <button
                     onClick={() => onViewDetail && onViewDetail(item)}
-                    className='inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition'
+                    className='inline-flex items-center px-2 py-0.5 text-xs font-medium text-blue-600 hover:text-blue-800'
                   >
-                    <HeroIcon name='eye' className='w-4 h-4 mr-1' />
-                    view detail
+                    <HeroIcon name='eye' className='w-3.5 h-3.5 mr-0.5' />
+                    view
                   </button>
-                  <button className='inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition'>
-                    <HeroIcon name='arrow-down-tray' className='w-4 h-4 mr-1' />
+                  <button className='inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-600 hover:text-gray-800'>
+                    <HeroIcon name='arrow-down-tray' className='w-3.5 h-3.5 mr-0.5' />
                     download
                   </button>
                 </div>

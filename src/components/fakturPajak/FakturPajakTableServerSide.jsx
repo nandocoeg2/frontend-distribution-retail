@@ -113,8 +113,8 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor('no_pajak', {
         id: 'no_pajak',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nomor Faktur</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Faktur</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -132,7 +132,7 @@ const FakturPajakTableServerSide = ({
           const item = info.row.original;
           return (
             <div>
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-xs font-medium text-gray-900">
                 {info.getValue() || '-'}
               </div>
             </div>
@@ -142,8 +142,8 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'no_invoice_penagihan',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nomor Invoice</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Invoice</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -160,10 +160,10 @@ const FakturPajakTableServerSide = ({
         cell: (info) => {
           const invoices = info.getValue();
           if (!invoices || invoices.length === 0) {
-            return <div className="text-sm text-gray-900">-</div>;
+            return <div className="text-xs text-gray-900">-</div>;
           }
           return (
-            <div className="text-sm text-gray-900">
+            <div className="text-xs text-gray-900">
               {invoices.map((invoice, index) => (
                 <div key={invoice.id || index}>
                   {invoice.no_invoice_penagihan || '-'}
@@ -176,8 +176,8 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'tanggal_invoice',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal Invoice</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tgl Invoice</div>
             <input
               type="date"
               value={column.getFilterValue() ?? ''}
@@ -193,10 +193,10 @@ const FakturPajakTableServerSide = ({
         cell: (info) => {
           const invoices = info.getValue();
           if (!invoices || invoices.length === 0) {
-            return <div className="text-sm text-gray-900">-</div>;
+            return <div className="text-xs text-gray-900">-</div>;
           }
           return (
-            <div className="text-sm text-gray-900">
+            <div className="text-xs text-gray-900">
               {invoices.map((invoice, index) => (
                 <div key={invoice.id || index}>
                   {formatDate(invoice.tanggal)}
@@ -209,8 +209,8 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor((row) => row.laporanPenerimaanBarang?.no_lpb, {
         id: 'no_lpb',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nomor LPB</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No LPB</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -228,7 +228,7 @@ const FakturPajakTableServerSide = ({
           const item = info.row.original;
           return (
             <div>
-              <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
+              <div className="text-xs text-gray-900">{info.getValue() || '-'}</div>
               {item?.laporanPenerimaanBarang?.tanggal_terima && (
                 <div className="text-xs text-gray-500">
                   {formatDate(item.laporanPenerimaanBarang.tanggal_terima)}
@@ -241,8 +241,8 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor((row) => row.customer?.namaCustomer, {
         id: 'customer',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Nama Customer</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -260,7 +260,7 @@ const FakturPajakTableServerSide = ({
           const item = info.row.original;
           return (
             <div>
-              <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
+              <div className="text-xs text-gray-900">{info.getValue() || '-'}</div>
               {item?.customer?.groupCustomer?.nama_group && (
                 <div className="text-xs text-gray-500">
                   {item.customer.groupCustomer?.nama_group}
@@ -289,7 +289,7 @@ const FakturPajakTableServerSide = ({
           const item = info.row.original;
           return (
             <div className="text-right">
-              <div className="text-sm text-gray-900">
+              <div className="text-xs text-gray-900">
                 {formatCurrency(info.getValue())}
               </div>
               {item.ppn_percentage != null && (
@@ -310,7 +310,7 @@ const FakturPajakTableServerSide = ({
           const item = info.row.original;
           return (
             <div>
-              <div className="text-sm text-gray-900">{info.getValue() || '-'}</div>
+              <div className="text-xs text-gray-900">{info.getValue() || '-'}</div>
               {item?.termOfPayment?.batas_hari != null && (
                 <div className="text-xs text-gray-500">
                   {item.termOfPayment.batas_hari} hari
@@ -328,8 +328,8 @@ const FakturPajakTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Status</div>
               {isLocked ? (
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {statusConfig?.label || 'N/A'}
@@ -381,7 +381,7 @@ const FakturPajakTableServerSide = ({
                   title="Hapus"
                   disabled={deleteLoading}
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -427,28 +427,28 @@ const FakturPajakTableServerSide = ({
         loadingMessage="Memuat data..."
         emptyMessage="Tidak ada data faktur pajak"
         emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian"
-        wrapperClassName="overflow-x-auto border border-gray-200 rounded-lg"
-        tableClassName="min-w-full divide-y divide-gray-200"
+        wrapperClassName="overflow-x-auto"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName={(row) => {
-          // Add null check for row.original
+        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
+        getRowClassName={({ row }) => {
           if (!row || !row.original) {
-            return 'hover:bg-gray-50 cursor-pointer transition-colors';
+            return undefined;
           }
-          const isSelected = row.original.id === selectedFakturPajakId;
-          return `hover:bg-gray-50 cursor-pointer transition-colors ${
-            isSelected ? 'bg-blue-50 hover:bg-blue-100' : ''
-          }`;
+          if (row.original.id === selectedFakturPajakId) {
+            return 'bg-blue-50 border-l-4 border-blue-500';
+          }
+          return undefined;
         }}
         onRowClick={(rowData, event) => {
           if (onView) {
             onView(rowData);
           }
         }}
-        cellClassName="px-6 py-4 whitespace-nowrap"
-        emptyCellClassName="px-6 py-8 text-center text-gray-500"
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
       />
 
       {!isLoading && !error && (

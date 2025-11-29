@@ -99,8 +99,8 @@ const InvoicePenagihanTableServerSide = ({
           const endValue = (typeof filterValue === 'object' && filterValue?.end) || '';
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">No Invoice</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">No Invoice</div>
               <input
                 type="text"
                 value={startValue}
@@ -145,7 +145,7 @@ const InvoicePenagihanTableServerSide = ({
           );
         },
         cell: (info) => (
-          <div className="text-sm font-medium text-gray-900">
+          <div className="text-xs font-medium text-gray-900">
             {info.getValue() || '-'}
           </div>
         ),
@@ -153,8 +153,8 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Tanggal</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tanggal</div>
             {/* date picker */}
             <input
               type="date"
@@ -170,7 +170,7 @@ const InvoicePenagihanTableServerSide = ({
           </div>
         ),
         cell: (info) => (
-          <div className="text-sm text-gray-900">
+          <div className="text-xs text-gray-900">
             {formatDate(info.getValue())}
           </div>
         ),
@@ -180,8 +180,8 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.accessor('purchaseOrder.customer.groupCustomer.nama_group', {
         id: 'group_customer',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Group Customer</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Group</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -196,7 +196,7 @@ const InvoicePenagihanTableServerSide = ({
           </div>
         ),
         cell: (info) => (
-          <div className="text-sm text-gray-900">
+          <div className="text-xs text-gray-900">
             {info.getValue() || '-'}
           </div>
         ),
@@ -204,8 +204,8 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.accessor('kepada', {
         id: 'kepada',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kepada</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Kepada</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -220,7 +220,7 @@ const InvoicePenagihanTableServerSide = ({
           </div>
         ),
         cell: (info) => (
-          <div className="text-sm text-gray-900">
+          <div className="text-xs text-gray-900">
             {info.getValue() || '-'}
           </div>
         ),
@@ -228,8 +228,8 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Grand Total</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Total</div>
             {/* amount filter, cannot be negative */}
             <input
               type="number"
@@ -246,7 +246,7 @@ const InvoicePenagihanTableServerSide = ({
           </div>
         ),
         cell: (info) => (
-          <div className="text-sm text-gray-900">
+          <div className="text-xs text-gray-900">
             {formatCurrency(info.getValue())}
           </div>
         ),
@@ -260,8 +260,8 @@ const InvoicePenagihanTableServerSide = ({
           const isLocked = activeTab !== 'all' && statusConfig?.statusCode;
 
           return (
-            <div className="space-y-2">
-              <div className="font-medium">Status</div>
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Status</div>
               {isLocked ? (
                 <div className="w-full px-2 py-1 text-xs bg-gray-100 border border-gray-300 rounded text-gray-700">
                   {statusConfig?.label || 'N/A'}
@@ -300,8 +300,8 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.display({
         id: 'kwitansi',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Kwitansi</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Kwitansi</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -323,7 +323,7 @@ const InvoicePenagihanTableServerSide = ({
             <div className="flex flex-col items-center justify-center space-y-1">
               {hasKwitansi && invoice?.kwitansi?.no_kwitansi ? (
                 <div className="text-center">
-                  <div className="text-sm text-gray-900">
+                  <div className="text-xs text-gray-900">
                     {invoice.kwitansi.no_kwitansi}
                   </div>
                 </div>
@@ -338,8 +338,8 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.display({
         id: 'fakturPajak',
         header: ({ column }) => (
-          <div className="space-y-2">
-            <div className="font-medium">Faktur Pajak</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Faktur Pajak</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -361,7 +361,7 @@ const InvoicePenagihanTableServerSide = ({
             <div className="flex flex-col items-center justify-center space-y-1">
               {hasFaktur && (invoice?.fakturPajak?.no_pajak || invoice?.fakturPajak?.no_faktur_pajak) ? (
                 <div className="text-center">
-                  <div className="text-sm text-gray-900">
+                  <div className="text-xs text-gray-900">
                     {invoice.fakturPajak.no_pajak || invoice.fakturPajak.no_faktur_pajak}
                   </div>
                 </div>
@@ -425,7 +425,7 @@ const InvoicePenagihanTableServerSide = ({
                   className="p-1 text-yellow-600 hover:text-yellow-900"
                   title="Edit"
                 >
-                  <PencilIcon className="w-5 h-5" />
+                  <PencilIcon className="h-4 w-4" />
                 </button>
               )}
               {onDelete && (
@@ -438,7 +438,7 @@ const InvoicePenagihanTableServerSide = ({
                   title="Hapus"
                   disabled={deleteLoading}
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -488,28 +488,28 @@ const InvoicePenagihanTableServerSide = ({
         loadingMessage="Memuat data invoice penagihan..."
         emptyMessage="Tidak ada data invoice penagihan."
         emptyFilteredMessage="Tidak ada data yang sesuai dengan pencarian."
-        wrapperClassName="overflow-x-auto border border-gray-200 rounded-lg"
-        tableClassName="min-w-full divide-y divide-gray-200"
+        wrapperClassName="overflow-x-auto"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName={(row) => {
-          // Add null check for row.original
+        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
+        getRowClassName={({ row }) => {
           if (!row || !row.original) {
-            return 'hover:bg-gray-50 cursor-pointer transition-colors';
+            return undefined;
           }
-          const isSelected = selectedInvoiceId === row.original.id;
-          return `cursor-pointer transition-colors ${
-            isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
-          }`;
+          if (selectedInvoiceId === row.original.id) {
+            return 'bg-blue-50 border-l-4 border-blue-500';
+          }
+          return undefined;
         }}
         onRowClick={(rowData, event) => {
           if (onRowClick) {
             onRowClick(rowData);
           }
         }}
-        cellClassName="px-6 py-4 whitespace-nowrap"
-        emptyCellClassName="px-6 py-8 text-center text-gray-500"
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
       />
 
       {!loading && !error && (
