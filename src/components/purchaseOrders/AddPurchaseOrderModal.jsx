@@ -154,7 +154,23 @@ const AddPurchaseOrderModal = ({
       
       if (result.success) {
         const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
-        toast.success(result.data.message || `File uploaded successfully using ${methodLabel}!`);
+        const data = result.data?.data || result.data;
+        const successFiles = data?.successFiles;
+        const errorFiles = data?.errorFiles;
+
+        // Show appropriate toast based on results
+        if (typeof successFiles === 'number' && typeof errorFiles === 'number') {
+          if (errorFiles === 0) {
+            toast.success(`${successFiles} file berhasil diproses (${methodLabel})`);
+          } else if (successFiles === 0) {
+            toast.error(`${errorFiles} file gagal diproses (${methodLabel})`);
+          } else {
+            toast.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`);
+          }
+        } else {
+          toast.success(data?.message || `File uploaded successfully using ${methodLabel}!`);
+        }
+
         setSelectedFile(null);
         if (bulkFileInputRef.current) {
           bulkFileInputRef.current.value = '';
