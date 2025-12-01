@@ -221,6 +221,51 @@ class SupplierService {
 
     return response.json();
   }
+
+  /**
+   * Export suppliers to Excel
+   * @param {string} searchQuery - Optional search query to filter data
+   */
+  async exportExcel(searchQuery = '') {
+    const url = searchQuery
+      ? `${API_BASE_URL}/suppliers/export-excel?q=${encodeURIComponent(searchQuery)}`
+      : `${API_BASE_URL}/suppliers/export-excel`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeader()
+    });
+
+    if (!response.ok) {
+      const errorMessage = await parseErrorMessage(response, 'Failed to export data');
+      throw new Error(errorMessage);
+    }
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'Suppliers.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    // Convert response to blob and trigger download
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+
+    return { success: true, filename };
+  }
 }
 
 export default new SupplierService();

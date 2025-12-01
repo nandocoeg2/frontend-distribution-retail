@@ -295,6 +295,51 @@ export const termOfPaymentService = {
     }
 
     return response.json();
+  },
+
+  /**
+   * Export term of payments to Excel
+   * @param {string} searchQuery - Optional search query to filter data
+   */
+  exportExcel: async (searchQuery = '') => {
+    const url = searchQuery
+      ? `${API_URL}/export-excel?q=${encodeURIComponent(searchQuery)}`
+      : `${API_URL}/export-excel`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeader()
+    });
+
+    if (!response.ok) {
+      const errorMessage = await parseErrorMessage(response, 'Failed to export data');
+      throw new Error(errorMessage);
+    }
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'TermOfPayments.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    // Convert response to blob and trigger download
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+
+    return { success: true, filename };
   }
 };
 

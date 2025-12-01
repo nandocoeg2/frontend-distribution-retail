@@ -6,6 +6,8 @@ import AddItemModal from '../components/items/AddItemModal';
 import ItemDetailCard from '../components/items/ItemDetailCard';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { ConfirmationDialog } from '../components/ui';
+import { exportExcel } from '../services/itemService';
+import toastService from '../services/toastService';
 
 const Items = () => {
   const {
@@ -24,8 +26,22 @@ const Items = () => {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedItemForDetail, setSelectedItemForDetail] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const openAddModal = () => setIsAddModalOpen(true);
+
+  const handleExportExcel = async () => {
+    try {
+      setExportLoading(true);
+      await exportExcel(searchQuery);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     if (fetchItems) {
@@ -71,13 +87,32 @@ const Items = () => {
         <div className="px-4 py-5 sm:p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Items</h1>
-            <button
-              onClick={openAddModal}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Item
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <HeroIcon name='arrow-down-tray' className='w-5 h-5 mr-2' />
+                    Export Excel
+                  </>
+                )}
+              </button>
+              <button
+                onClick={openAddModal}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
+                Add Item
+              </button>
+            </div>
           </div>
           <ItemSearch
             searchQuery={searchQuery}

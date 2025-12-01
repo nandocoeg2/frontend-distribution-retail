@@ -6,6 +6,8 @@ import AddTermOfPaymentModal from '@/components/termOfPayments/AddTermOfPaymentM
 import TermOfPaymentDetailCard from '@/components/termOfPayments/TermOfPaymentDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import termOfPaymentService from '../services/termOfPaymentService';
+import toastService from '../services/toastService';
 
 const TermOfPayments = () => {
   const {
@@ -29,9 +31,23 @@ const TermOfPayments = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTermOfPaymentForDetail, setSelectedTermOfPaymentForDetail] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
+
+  const handleExportExcel = async () => {
+    try {
+      setExportLoading(true);
+      await termOfPaymentService.exportExcel(searchQuery);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleViewDetail = async (termOfPayment) => {
     try {
@@ -87,13 +103,32 @@ const TermOfPayments = () => {
         <div className='px-4 py-5 sm:p-6'>
           <div className='mb-4 flex justify-between items-center'>
             <h3 className='text-lg font-medium text-gray-900'>Term of Payment List</h3>
-            <button
-              onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
-            >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Term of Payment
-            </button>
+            <div className='flex gap-2'>
+              <button
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className='inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {exportLoading ? (
+                  <>
+                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <HeroIcon name='arrow-down-tray' className='w-5 h-5 mr-2' />
+                    Export Excel
+                  </>
+                )}
+              </button>
+              <button
+                onClick={openAddModal}
+                className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+              >
+                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
+                Add Term of Payment
+              </button>
+            </div>
           </div>
 
           <TermOfPaymentSearch 

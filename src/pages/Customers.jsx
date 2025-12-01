@@ -6,9 +6,11 @@ import CustomerTable from '@/components/customers/CustomerTable';
 import CustomerSearch from '@/components/customers/CustomerSearch';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
 import CustomerDetailCardEditable from '@/components/customers/CustomerDetailCardEditable';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import Pagination from '@/components/common/Pagination';
 import Loading from '@/components/ui/Loading';
+import customerService from '../services/customerService';
+import toastService from '../services/toastService';
 
 const Customers = () => {
   const {
@@ -26,9 +28,23 @@ const Customers = () => {
 
   const { modalState, openModal, closeModal } = useModal();
   const [selectedCustomerForDetail, setSelectedCustomerForDetail] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const handleAddCustomer = () => {
     openModal('add');
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setExportLoading(true);
+      await customerService.exportExcel(searchQuery);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   const handleViewDetail = (customer) => {
@@ -54,13 +70,32 @@ const Customers = () => {
               <h1 className="text-2xl font-bold text-gray-800">Customers</h1>
               <p className="text-sm text-gray-600">Manage your customer data</p>
             </div>
-            <button
-              onClick={handleAddCustomer}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Add Customer
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                    Export Excel
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleAddCustomer}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Add Customer
+              </button>
+            </div>
           </div>
 
           <CustomerSearch
