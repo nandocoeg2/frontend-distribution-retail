@@ -682,9 +682,9 @@ const ViewPurchaseOrderModal = ({
                           copyable: true,
                         },
                         {
-                          label: 'Supplier ID',
-                          value: order.supplierId || 'Not assigned',
-                          copyable: order.supplierId ? true : false,
+                          label: 'Company ID', // Changed from Supplier ID
+                          value: order.companyId || 'Not assigned',
+                          copyable: order.companyId ? true : false,
                         },
                       ]}
                     />

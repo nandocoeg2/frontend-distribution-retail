@@ -96,10 +96,10 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                 <div className="col-span-2">{formatDateTime(item.purchaseOrder.delivery_date)}</div>
                 <div className="text-gray-500">Grand Total</div>
                 <div className="col-span-2 font-semibold">Rp {item.purchaseOrder.grand_total?.toLocaleString()}</div>
-                {item.purchaseOrder.supplier && (
+                {item.purchaseOrder.company && (
                   <>
-                    <div className="text-gray-500">Supplier</div>
-                    <div className="col-span-2">{item.purchaseOrder.supplier.name} ({item.purchaseOrder.supplier.code})</div>
+                    <div className="text-gray-500">Company</div>
+                    <div className="col-span-2">{item.purchaseOrder.company.nama_perusahaan} ({item.purchaseOrder.company.kode_company})</div>
                   </>
                 )}
                 {item.purchaseOrder.customer && (

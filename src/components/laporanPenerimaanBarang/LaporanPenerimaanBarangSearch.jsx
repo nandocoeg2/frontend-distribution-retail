@@ -1,15 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React from 'react'; // Removed unused useEffect, useMemo
 import Autocomplete from '../common/Autocomplete';
 import useCustomersPage from '../../hooks/useCustomersPage';
-import useSupplierSearch from '../../hooks/useSupplierSearch';
+import useCompanyAutocomplete from '../../hooks/useCompanyAutocomplete'; // Changed from useSupplierSearch
 import useTermOfPaymentAutocomplete from '../../hooks/useTermOfPaymentAutocomplete';
 import usePurchaseOrderAutocomplete from '../../hooks/usePurchaseOrderAutocomplete';
-import supplierService from '../../services/supplierService';
-import {
-  formatSupplierOptions,
-  resolveSupplierFromResponse,
-  supplierMatchesId,
-} from '../../utils/supplierOptions';
 
 const LaporanPenerimaanBarangSearch = ({
   filters,
@@ -23,18 +17,13 @@ const LaporanPenerimaanBarangSearch = ({
     loading: customersLoading,
     searchCustomers,
   } = useCustomersPage();
-  const supplierFilterValue = filters?.supplierId;
+  const companyFilterValue = filters?.companyId; // Changed from supplierId
+  // Changed from useSupplierSearch to useCompanyAutocomplete
   const {
-    searchResults: supplierResults = [],
-    loading: supplierLoading,
-    searchSuppliers,
-    setSearchResults: setSupplierResults,
-  } = useSupplierSearch();
-
-  const supplierOptions = useMemo(
-    () => formatSupplierOptions(supplierResults, supplierFilterValue),
-    [supplierResults, supplierFilterValue]
-  );
+    options: companyOptions,
+    loading: companyLoading,
+    fetchOptions: searchCompanies,
+  } = useCompanyAutocomplete({ selectedValue: companyFilterValue });
 
   const {
     options: termOfPaymentOptions,
@@ -50,56 +39,6 @@ const LaporanPenerimaanBarangSearch = ({
   } = usePurchaseOrderAutocomplete({
     selectedValue: filters?.purchaseOrderId,
   });
-
-  useEffect(() => {
-    const selectedId = supplierFilterValue;
-    if (!selectedId) {
-      return;
-    }
-
-    const exists =
-      Array.isArray(supplierResults) &&
-      supplierResults.some((supplier) => supplierMatchesId(supplier, selectedId));
-
-    if (exists) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const fetchSupplier = async () => {
-      try {
-        const response = await supplierService.getSupplierById(selectedId);
-        const supplierData = resolveSupplierFromResponse(response, selectedId);
-
-        if (!supplierData) {
-          return;
-        }
-
-        if (isMounted) {
-          setSupplierResults((prev) => {
-            const next = Array.isArray(prev) ? [...prev] : [];
-            const alreadyIncluded = next.some((item) =>
-              supplierMatchesId(item, selectedId)
-            );
-            if (alreadyIncluded) {
-              return next;
-            }
-            next.push(supplierData);
-            return next;
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch supplier by ID:', error);
-      }
-    };
-
-    fetchSupplier();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [supplierFilterValue, setSupplierResults, supplierResults]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -119,9 +58,9 @@ const LaporanPenerimaanBarangSearch = ({
     onFiltersChange?.('customerId', value);
   };
 
-  const handleSupplierChange = (event) => {
+  const handleCompanyChange = (event) => {
     const value = event?.target ? event.target.value : event;
-    onFiltersChange?.('supplierId', value);
+    onFiltersChange?.('companyId', value); // Changed from supplierId
   };
 
   const handlePurchaseOrderChange = (event) => {
@@ -174,27 +113,27 @@ const LaporanPenerimaanBarangSearch = ({
 
         <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Supplier ID
+            Company ID
           </label>
           <Autocomplete
             label=''
-            options={supplierOptions}
+            options={companyOptions}
             value={
-              supplierFilterValue !== undefined && supplierFilterValue !== null
-                ? String(supplierFilterValue)
+              companyFilterValue !== undefined && companyFilterValue !== null
+                ? String(companyFilterValue)
                 : ''
             }
-            onChange={handleSupplierChange}
-            placeholder='Cari nama atau ID supplier'
+            onChange={handleCompanyChange}
+            placeholder='Cari nama atau ID company'
             displayKey='label'
             valueKey='id'
-            name='supplierId'
-            loading={supplierLoading}
+            name='companyId'
+            loading={companyLoading}
             onSearch={async (query) => {
               try {
-                await searchSuppliers(query, 1, 20);
+                await searchCompanies(query);
               } catch (error) {
-                console.error('Failed to search suppliers:', error);
+                console.error('Failed to search companies:', error);
               }
             }}
             showId

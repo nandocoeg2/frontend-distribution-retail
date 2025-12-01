@@ -19,7 +19,7 @@ const DEFAULT_FILTERS = {
   status_code: '',
   purchaseOrderId: '',
   customerId: '',
-  supplierId: '',
+  companyId: '', // Changed from supplierId
   termin_bayar: '',
   q: '',
 };
@@ -200,7 +200,7 @@ const useLaporanPenerimaanBarangPage = () => {
       active.q ||
       active.purchaseOrderId ||
       active.customerId ||
-      active.supplierId ||
+      active.companyId || // Changed from supplierId
       active.status_code ||
       active.termin_bayar ||
       'filter aktif'

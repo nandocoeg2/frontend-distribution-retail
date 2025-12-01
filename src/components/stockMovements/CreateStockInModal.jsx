@@ -1,16 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 import StockMovementItemsInput from './StockMovementItemsInput.jsx';
+import useCompanyAutocomplete from '../../hooks/useCompanyAutocomplete';
 import useSupplierSearch from '../../hooks/useSupplierSearch';
-import {
-  extractSupplierId,
-  formatSupplierOptions,
-  supplierMatchesId,
-} from '../../utils/supplierOptions';
 
 const initialFormState = {
-  supplierId: '',
+  companyId: '', // Company that owns products
+  supplierId: '', // Supplier who provides goods
   notes: '',
   items: [{ itemId: '', quantity: '' }],
 };
@@ -20,46 +17,33 @@ const CreateStockInModal = ({
   onClose,
   onSubmit,
   itemOptions = [],
-  suppliers = [],
+  companies = [], // Changed from suppliers
   optionsLoading = false,
 }) => {
   const [form, setForm] = useState(initialFormState);
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Company autocomplete (company that owns products)
+  const {
+    options: companyOptions,
+    loading: companySearchLoading,
+    fetchOptions: searchCompanies,
+  } = useCompanyAutocomplete({ selectedValue: form.companyId });
+
+  // Supplier autocomplete (supplier who provides goods)
   const {
     searchResults: supplierResults = [],
     loading: supplierSearchLoading,
     searchSuppliers,
-    setSearchResults: setSupplierResults,
   } = useSupplierSearch();
 
-  const supplierOptions = useMemo(
-    () => formatSupplierOptions(supplierResults, form.supplierId),
-    [supplierResults, form.supplierId]
-  );
-
-  useEffect(() => {
-    if (!Array.isArray(suppliers) || suppliers.length === 0) {
-      return;
-    }
-
-    setSupplierResults((prev) => {
-      const next = Array.isArray(prev) ? [...prev] : [];
-      suppliers.forEach((supplier) => {
-        const supplierId = extractSupplierId(supplier);
-        if (!supplierId) {
-          return;
-        }
-        const alreadyIncluded = next.some((item) =>
-          supplierMatchesId(item, supplierId)
-        );
-        if (!alreadyIncluded) {
-          next.push(supplier);
-        }
-      });
-      return next;
-    });
-  }, [suppliers, setSupplierResults]);
+  // Format supplier options for Autocomplete
+  const supplierOptions = supplierResults.map((supplier) => ({
+    id: supplier.id,
+    label: supplier.name,
+    code: supplier.code,
+  }));
 
   useEffect(() => {
     if (show) {
@@ -84,6 +68,14 @@ const CreateStockInModal = ({
     }));
   };
 
+  const handleCompanyChange = (event) => {
+    const value = event?.target ? event.target.value : event;
+    setForm((prev) => ({
+      ...prev,
+      companyId: value,
+    }));
+  };
+
   const handleSupplierChange = (event) => {
     const value = event?.target ? event.target.value : event;
     setForm((prev) => ({
@@ -93,6 +85,11 @@ const CreateStockInModal = ({
   };
 
   const validateForm = () => {
+    const companyId = form.companyId.trim();
+    if (!companyId) {
+      return 'Company wajib dipilih.';
+    }
+
     const supplierId = form.supplierId.trim();
     if (!supplierId) {
       return 'Supplier wajib dipilih.';
@@ -129,6 +126,7 @@ const CreateStockInModal = ({
     }
 
     const payload = {
+      companyId: form.companyId.trim(),
       supplierId: form.supplierId.trim(),
       notes: form.notes.trim(),
       items: form.items.map((item) => ({
@@ -186,42 +184,75 @@ const CreateStockInModal = ({
         >
           <section className='rounded-2xl border border-gray-100 bg-gray-50/80 p-4 shadow-sm'>
             <div className='grid gap-4 sm:grid-cols-2'>
+              {/* Company Selector */}
               <div className='flex flex-col'>
                 <label
-              htmlFor='supplierId'
-              className='text-sm font-medium text-gray-700'
-            >
-              Pilih Supplier
-            </label>
-            <Autocomplete
-              label=''
-              name='supplierId'
-              options={supplierOptions}
-              value={form.supplierId ? String(form.supplierId) : ''}
-              onChange={handleSupplierChange}
-              placeholder='Cari nama atau ID supplier'
-              displayKey='label'
-              valueKey='id'
-              loading={optionsLoading || supplierSearchLoading}
-              onSearch={async (query) => {
-                try {
-                  await searchSuppliers(query, 1, 20);
-                } catch (error) {
-                  console.error('Failed to search suppliers:', error);
-                }
-              }}
-              showId
-              className='mt-2'
-            />
-            <p className='mt-2 text-xs text-gray-500'>
-              Ketik minimal dua karakter untuk mencari supplier, lalu pilih ID yang valid dari hasil pencarian.
-              {(optionsLoading || supplierSearchLoading) && (
-                <span className='ml-1 text-indigo-600'>Memuat data supplier...</span>
-              )}
-            </p>
-          </div>
+                  htmlFor='companyId'
+                  className='text-sm font-medium text-gray-700'
+                >
+                  Pilih Company
+                </label>
+                <Autocomplete
+                  label=''
+                  name='companyId'
+                  options={companyOptions}
+                  value={form.companyId ? String(form.companyId) : ''}
+                  onChange={handleCompanyChange}
+                  placeholder='Cari nama atau ID company'
+                  displayKey='label'
+                  valueKey='id'
+                  loading={optionsLoading || companySearchLoading}
+                  onSearch={async (query) => {
+                    try {
+                      await searchCompanies(query);
+                    } catch (error) {
+                      console.error('Failed to search companies:', error);
+                    }
+                  }}
+                  showId
+                  className='mt-2'
+                />
+                <p className='mt-2 text-xs text-gray-500'>
+                  Company yang memiliki/mengelola produk.
+                </p>
+              </div>
 
+              {/* Supplier Selector */}
               <div className='flex flex-col'>
+                <label
+                  htmlFor='supplierId'
+                  className='text-sm font-medium text-gray-700'
+                >
+                  Pilih Supplier
+                </label>
+                <Autocomplete
+                  label=''
+                  name='supplierId'
+                  options={supplierOptions}
+                  value={form.supplierId ? String(form.supplierId) : ''}
+                  onChange={handleSupplierChange}
+                  placeholder='Cari nama atau ID supplier'
+                  displayKey='label'
+                  valueKey='id'
+                  loading={optionsLoading || supplierSearchLoading}
+                  onSearch={async (query) => {
+                    try {
+                      await searchSuppliers(query, 1, 20);
+                    } catch (error) {
+                      console.error('Failed to search suppliers:', error);
+                    }
+                  }}
+                  showId
+                  className='mt-2'
+                />
+                <p className='mt-2 text-xs text-gray-500'>
+                  Supplier yang memasok barang.
+                </p>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className='mt-4 flex flex-col'>
                 <label
                   htmlFor='notes'
                   className='text-sm font-medium text-gray-700'
@@ -241,7 +272,6 @@ const CreateStockInModal = ({
                   Opsional, gunakan untuk menyimpan catatan pengecekan, nomor dokumen, atau info tambahan.
                 </p>
               </div>
-            </div>
           </section>
 
           <StockMovementItemsInput

@@ -633,11 +633,11 @@ const Reporting = () => {
       overview = {},
       outstandingPayments = {},
       revenueByCustomer = [],
-      revenueBySupplier = [],
+      revenueByCompany = [], // Changed from revenueBySupplier
     } = metrics;
 
     const topCustomers = revenueByCustomer.slice(0, 5);
-    const topSuppliers = revenueBySupplier.slice(0, 5);
+    const topCompanies = revenueByCompany.slice(0, 5); // Changed from topSuppliers
 
     return (
       <div className='space-y-6'>
@@ -741,22 +741,22 @@ const Reporting = () => {
 
             <Card padding='lg'>
               <CardHeader
-                title='Top Supplier'
-                subtitle='Supplier dengan nilai transaksi terbesar'
+                title='Top Company'
+                subtitle='Company dengan nilai transaksi terbesar'
               />
               <div className='space-y-3'>
-                {topSuppliers.length > 0 ? (
-                  topSuppliers.map((supplier, index) => (
+                {topCompanies.length > 0 ? (
+                  topCompanies.map((company, index) => (
                     <div
                       key={
-                        supplier.supplierId ||
-                        `${supplier.supplierName}-${index}`
+                        company.companyId ||
+                        `${company.companyName}-${index}`
                       }
                       className='flex items-center justify-between p-3 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
                     >
                       <div>
                         <p className='text-sm font-semibold text-gray-900'>
-                          {supplier.supplierName}
+                          {company.companyName}
                         </p>
                         <p className='text-xs text-gray-500'>
                           Peringkat #{index + 1}
@@ -764,14 +764,14 @@ const Reporting = () => {
                       </div>
                       <div className='text-right'>
                         <p className='text-sm font-semibold text-gray-900'>
-                          {formatCurrency(supplier.totalRevenue)}
+                          {formatCurrency(company.totalRevenue)}
                         </p>
                       </div>
                     </div>
                   ))
                 ) : (
                   <p className='text-sm text-gray-500'>
-                    Belum ada data revenue per supplier.
+                    Belum ada data revenue per company.
                   </p>
                 )}
               </div>

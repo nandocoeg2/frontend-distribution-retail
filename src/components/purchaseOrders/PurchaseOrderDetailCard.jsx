@@ -449,7 +449,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
                 { label: 'Updated', value: formatDateTime(order.updatedAt) },
                 { label: 'PO ID', value: order.id, copyable: true },
                 { label: 'Customer ID', value: order.customerId || '-', copyable: !!order.customerId },
-                { label: 'Supplier ID', value: order.supplierId || '-', copyable: !!order.supplierId },
+                { label: 'Company ID', value: order.companyId || '-', copyable: !!order.companyId }, // Changed from supplierId
               ]} />
             </AccordionItem>
           </div>

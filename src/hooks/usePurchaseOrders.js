@@ -17,7 +17,7 @@ const createDefaultFilters = () => ({
   po_number: '',
   customer_name: '',
   customerId: '',
-  supplierId: '',
+  companyId: '', // Changed from supplierId
   status_code: '',
   tanggal_masuk_po: ''
 });
@@ -302,7 +302,7 @@ const usePurchaseOrders = () => {
       active.po_number ||
       active.customer_name ||
       active.customerId ||
-      active.supplierId ||
+      active.companyId || // Changed from supplierId
       active.status_code ||
       active.tanggal_masuk_po ||
       'filter aktif'
