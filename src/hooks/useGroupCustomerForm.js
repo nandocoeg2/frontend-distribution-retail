@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { groupCustomerService } from '../services/groupCustomerService';
+import { parentGroupCustomerService } from '../services/parentGroupCustomerService';
 
 const useGroupCustomerForm = (initialData = null) => {
   const [formData, setFormData] = useState({
@@ -9,11 +10,32 @@ const useGroupCustomerForm = (initialData = null) => {
     nama_group: '',
     alamat: '',
     npwp: '',
+    parentGroupCustomerId: '',
     ...initialData
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [parentGroupOptions, setParentGroupOptions] = useState([]);
+  const [loadingParentGroups, setLoadingParentGroups] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch parent group options on mount
+  useEffect(() => {
+    const fetchParentGroups = async () => {
+      try {
+        setLoadingParentGroups(true);
+        const result = await parentGroupCustomerService.getAllForDropdown();
+        if (result.success && result.data?.data) {
+          setParentGroupOptions(result.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching parent groups:', error);
+      } finally {
+        setLoadingParentGroups(false);
+      }
+    };
+    fetchParentGroups();
+  }, []);
 
   const handleAuthError = useCallback(() => {
     localStorage.clear();
@@ -73,7 +95,8 @@ const useGroupCustomerForm = (initialData = null) => {
         kode_group: formData.kode_group.trim(),
         nama_group: formData.nama_group.trim(),
         alamat: formData.alamat.trim() || null,
-        npwp: formData.npwp.trim() || null
+        npwp: formData.npwp.trim() || null,
+        parentGroupCustomerId: formData.parentGroupCustomerId || null
       };
 
       let result;
@@ -137,6 +160,7 @@ const useGroupCustomerForm = (initialData = null) => {
       nama_group: '',
       alamat: '',
       npwp: '',
+      parentGroupCustomerId: '',
       ...initialData
     });
     setErrors({});
@@ -163,7 +187,9 @@ const useGroupCustomerForm = (initialData = null) => {
     resetForm,
     setFieldError,
     clearErrors,
-    validateForm
+    validateForm,
+    parentGroupOptions,
+    loadingParentGroups
   };
 };
 

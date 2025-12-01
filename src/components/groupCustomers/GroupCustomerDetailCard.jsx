@@ -8,12 +8,14 @@ import {
   ChartBarIcon,
   XMarkIcon,
   PencilIcon,
-  CheckIcon
+  CheckIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable, StatusBadge, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { groupCustomerService } from '@/services/groupCustomerService';
+import { parentGroupCustomerService } from '@/services/parentGroupCustomerService';
 import toastService from '@/services/toastService';
 
 const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = false }) => {
@@ -21,6 +23,8 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
   const [isEditMode, setIsEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(null);
+  const [parentGroupOptions, setParentGroupOptions] = useState([]);
+  const [loadingParentGroups, setLoadingParentGroups] = useState(false);
 
   useEffect(() => {
     if (groupCustomer) {
@@ -28,12 +32,33 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
     }
   }, [groupCustomer]);
 
+  // Fetch parent group options when edit mode is enabled
+  useEffect(() => {
+    if (isEditMode) {
+      const fetchParentGroups = async () => {
+        try {
+          setLoadingParentGroups(true);
+          const result = await parentGroupCustomerService.getAllForDropdown();
+          if (result.success && result.data?.data) {
+            setParentGroupOptions(result.data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching parent groups:', error);
+        } finally {
+          setLoadingParentGroups(false);
+        }
+      };
+      fetchParentGroups();
+    }
+  }, [isEditMode]);
+
   const initializeFormData = (data) => {
     setFormData({
       kode_group: data?.kode_group || '',
       nama_group: data?.nama_group || '',
       alamat: data?.alamat || '',
       npwp: data?.npwp || '',
+      parentGroupCustomerId: data?.parentGroupCustomerId || data?.parentGroupCustomer?.id || '',
     });
   };
 
@@ -224,6 +249,27 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                           placeholder="Masukkan NPWP (15 digit)"
                         />
                       </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Group Customer</label>
+                        <select
+                          name="parentGroupCustomerId"
+                          value={formData?.parentGroupCustomerId || ''}
+                          onChange={handleInputChange}
+                          disabled={loadingParentGroups}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                        >
+                          <option value="">-- Pilih Parent Group (Opsional) --</option>
+                          {parentGroupOptions.map((parent) => (
+                            <option key={parent.id} value={parent.id}>
+                              {parent.kode_parent} - {parent.nama_parent}
+                            </option>
+                          ))}
+                        </select>
+                        {loadingParentGroups && (
+                          <p className="mt-1 text-sm text-gray-500">Loading parent groups...</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -240,6 +286,16 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                       data={[
                         { label: 'Group Name', value: groupCustomer?.nama_group },
                         { label: 'Group Code', value: groupCustomer?.kode_group, copyable: true },
+                        {
+                          label: 'Parent Group',
+                          component: groupCustomer?.parentGroupCustomer ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {groupCustomer.parentGroupCustomer.kode_parent} - {groupCustomer.parentGroupCustomer.nama_parent}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">No Parent Group</span>
+                          ),
+                        },
                         {
                           label: 'Status',
                           component: (

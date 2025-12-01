@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import BulkUploadGroupCustomer from '@/components/groupCustomers/BulkUploadGroupCustomer';
+import ParentGroupCustomerForm from '@/components/groupCustomers/ParentGroupCustomerForm';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
@@ -11,6 +12,12 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
       onGroupCustomerAdded(result);
       onClose();
     }
+  };
+
+  const handleParentGroupSubmit = (result) => {
+    // Just close the modal after successful parent group creation
+    // Parent group doesn't need to be added to the group customer list
+    onClose();
   };
 
   if (!show) {
@@ -28,7 +35,7 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
       >
         <div className='flex justify-between items-center mb-6'>
           <h3 className='text-lg font-medium text-gray-900'>
-            Add Group Customer
+            {activeTab === 'parent' ? 'Add Parent Group Customer' : 'Add Group Customer'}
           </h3>
           <button
             onClick={onClose}
@@ -60,6 +67,16 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
           >
             Bulk Upload
           </button>
+          <button
+            onClick={() => setActiveTab('parent')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'parent'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Parent Group
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -72,6 +89,13 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
 
         {activeTab === 'bulk' && (
           <BulkUploadGroupCustomer onClose={onClose} />
+        )}
+
+        {activeTab === 'parent' && (
+          <ParentGroupCustomerForm
+            onSubmit={handleParentGroupSubmit}
+            onCancel={onClose}
+          />
         )}
       </div>
     </div>

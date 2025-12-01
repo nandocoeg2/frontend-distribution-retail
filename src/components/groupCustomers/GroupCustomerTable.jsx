@@ -8,11 +8,12 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
       <div className='overflow-x-auto'>
         <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <colgroup>
-            <col style={{ width: '180px' }} />
-            <col style={{ width: '120px' }} />
-            <col style={{ width: '250px' }} />
-            <col style={{ width: '150px' }} />
+            <col style={{ width: '160px' }} />
             <col style={{ width: '100px' }} />
+            <col style={{ width: '150px' }} />
+            <col style={{ width: '180px' }} />
+            <col style={{ width: '130px' }} />
+            <col style={{ width: '90px' }} />
             <col style={{ width: '60px' }} />
           </colgroup>
           <thead className='bg-gray-50'>
@@ -22,6 +23,9 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
               </th>
               <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Group Code
+              </th>
+              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                Parent Group
               </th>
               <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Address
@@ -40,7 +44,7 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
           <tbody className='bg-white divide-y divide-gray-100'>
             {groupCustomers.length === 0 ? (
               <tr>
-                <td colSpan="6" className='px-2 py-1 text-center text-gray-500 text-xs'>
+                <td colSpan="7" className='px-2 py-1 text-center text-gray-500 text-xs'>
                   {searchQuery ? 'No group customers found matching your search.' : 'No group customers available.'}
                 </td>
               </tr>
@@ -61,11 +65,20 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
                   <td className='px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900'>
                     {gc.kode_group}
                   </td>
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-600 truncate' title={gc.parentGroupCustomer?.nama_parent}>
+                    {gc.parentGroupCustomer ? (
+                      <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+                        {gc.parentGroupCustomer.kode_parent}
+                      </span>
+                    ) : (
+                      <span className='text-gray-400'>-</span>
+                    )}
+                  </td>
                   <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={gc.alamat}>
-                    {gc.alamat}
+                    {gc.alamat || '-'}
                   </td>
                   <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
-                    {gc.npwp}
+                    {gc.npwp || '-'}
                   </td>
                   <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-600'>
                     {new Date(gc.createdAt).toLocaleDateString()}

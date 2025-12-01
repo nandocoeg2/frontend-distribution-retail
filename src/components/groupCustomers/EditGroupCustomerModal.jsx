@@ -11,6 +11,7 @@ const EditGroupCustomerModal = ({ show, onClose, groupCustomer, onGroupCustomerU
     nama_group: '',
     alamat: '',
     npwp: '',
+    parentGroupCustomerId: '',
   });
 
   useEffect(() => {
@@ -20,6 +21,7 @@ const EditGroupCustomerModal = ({ show, onClose, groupCustomer, onGroupCustomerU
         nama_group: groupCustomer.nama_group,
         alamat: groupCustomer.alamat || '',
         npwp: groupCustomer.npwp || '',
+        parentGroupCustomerId: groupCustomer.parentGroupCustomerId || groupCustomer.parentGroupCustomer?.id || '',
       });
     }
   }, [groupCustomer]);

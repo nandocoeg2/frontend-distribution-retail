@@ -5,3 +5,4 @@ export { default as GroupCustomerTable } from './GroupCustomerTable';
 export { default as EditGroupCustomerModal } from './EditGroupCustomerModal';
 export { default as ViewGroupCustomerModal } from './ViewGroupCustomerModal';
 export { default as GroupCustomerDetailCard } from './GroupCustomerDetailCard';
+export { default as ParentGroupCustomerForm } from './ParentGroupCustomerForm';

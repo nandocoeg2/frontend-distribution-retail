@@ -8,7 +8,9 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
     errors,
     handleInputChange,
     handleSubmit,
-    resetForm
+    resetForm,
+    parentGroupOptions,
+    loadingParentGroups
   } = useGroupCustomerForm(initialData);
 
   const handleFormSubmit = async (e) => {
@@ -63,6 +65,35 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
         />
         {errors.nama_group && (
           <p className="mt-1 text-sm text-red-600">{errors.nama_group}</p>
+        )}
+      </div>
+
+      {/* Parent Group Customer */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Parent Group Customer
+        </label>
+        <select
+          name="parentGroupCustomerId"
+          value={formData.parentGroupCustomerId || ''}
+          onChange={handleInputChange}
+          disabled={loading || loadingParentGroups}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
+            errors.parentGroupCustomerId ? 'border-red-500' : 'border-gray-300'
+          }`}
+        >
+          <option value="">-- Pilih Parent Group (Opsional) --</option>
+          {parentGroupOptions.map((parent) => (
+            <option key={parent.id} value={parent.id}>
+              {parent.kode_parent} - {parent.nama_parent}
+            </option>
+          ))}
+        </select>
+        {loadingParentGroups && (
+          <p className="mt-1 text-sm text-gray-500">Loading parent groups...</p>
+        )}
+        {errors.parentGroupCustomerId && (
+          <p className="mt-1 text-sm text-red-600">{errors.parentGroupCustomerId}</p>
         )}
       </div>
 
