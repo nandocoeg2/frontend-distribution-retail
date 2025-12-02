@@ -31,9 +31,10 @@ const Autocomplete = ({
   const wrapperRef = useRef(null);
   const searchTimeoutRef = useRef(null);
 
+  // Only update inputValue when value changes, not when options change
   useEffect(() => {
     if (!value || value === '') {
-      setInputValue('');
+      // Don't clear inputValue here - let user keep typing
       return;
     }
 
@@ -42,7 +43,17 @@ const Autocomplete = ({
     if (selectedOption) {
       setInputValue(selectedOption[displayKey] || '');
     }
-  }, [value, options, displayKey, valueKey]);
+  }, [value, displayKey, valueKey]);
+  
+  // Sync display when options arrive and we have a selected value
+  useEffect(() => {
+    if (value && options.length > 0) {
+      const selectedOption = options.find(option => String(option[valueKey]) === String(value));
+      if (selectedOption) {
+        setInputValue(selectedOption[displayKey] || '');
+      }
+    }
+  }, [options, value, displayKey, valueKey]);
 
   useEffect(() => {
     setFilteredOptions(options);

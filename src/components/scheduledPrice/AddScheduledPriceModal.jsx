@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
 import { searchItems } from '../../services/itemService';
+import customerService from '../../services/customerService';
 import Autocomplete from '../common/Autocomplete';
 import BulkUploadScheduledPrice from './BulkUploadScheduledPrice';
 
@@ -12,6 +13,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     itemPriceId: '',
     itemId: '',
+    customerId: '',
     effectiveDate: '',
     harga: '',
     pot1: '',
@@ -26,6 +28,9 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   const [itemOptions, setItemOptions] = useState([]);
   const [searchingItem, setSearchingItem] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [customerOptions, setCustomerOptions] = useState([]);
+  const [searchingCustomer, setSearchingCustomer] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   // Auto-calculate harga1 (after pot1)
   useEffect(() => {
@@ -52,29 +57,30 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   }, [formData.harga1, formData.pot2]);
 
   const handleSearchItem = async (query) => {
-    if (query.length >= 2) {
-      setSearchingItem(true);
-      try {
-        const response = await searchItems(query, 1, 10);
-        // Handle nested data structure: response.data.data
-        const items = response.data?.data || response.data || [];
-        
-        // Transform to include display format
-        const formattedItems = items.map(item => ({
-          ...item,
-          displayName: `${item.plu} - ${item.nama_barang}`,
-          currentPrice: item.itemPrice?.harga
-        }));
-        
-        setItemOptions(formattedItems);
-      } catch (error) {
-        console.error('Search error:', error);
-        setItemOptions([]);
-      } finally {
-        setSearchingItem(false);
-      }
-    } else {
+    if (!query || query.length < 1) {
       setItemOptions([]);
+      return;
+    }
+    
+    setSearchingItem(true);
+    try {
+      const response = await searchItems(query, 1, 10);
+      // Handle nested data structure: response.data.data
+      const items = response.data?.data || response.data || [];
+      
+      // Transform to include display format
+      const formattedItems = items.map(item => ({
+        ...item,
+        displayName: `${item.plu} - ${item.nama_barang}`,
+        currentPrice: item.itemPrice?.harga
+      }));
+      
+      setItemOptions(formattedItems);
+    } catch (error) {
+      console.error('Search error:', error);
+      setItemOptions([]);
+    } finally {
+      setSearchingItem(false);
     }
   };
 
@@ -107,6 +113,41 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
     }
   };
 
+  const handleSearchCustomer = async (query) => {
+    if (!query || query.length < 1) {
+      setCustomerOptions([]);
+      return;
+    }
+    
+    setSearchingCustomer(true);
+    try {
+      const response = await customerService.search(query, 1, 10);
+      const customers = response.data?.data || response.data || [];
+      const formattedCustomers = customers.map(c => ({
+        ...c,
+        displayName: `${c.kodeCustomer} - ${c.namaCustomer}`
+      }));
+      setCustomerOptions(formattedCustomers);
+    } catch (error) {
+      console.error('Customer search error:', error);
+      setCustomerOptions([]);
+    } finally {
+      setSearchingCustomer(false);
+    }
+  };
+
+  const handleCustomerChange = (e) => {
+    const customerId = e.target.value;
+    setFormData(prev => ({ ...prev, customerId }));
+    
+    if (customerId) {
+      const customer = customerOptions.find(c => c.id === customerId);
+      setSelectedCustomer(customer || null);
+    } else {
+      setSelectedCustomer(null);
+    }
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -128,6 +169,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
       // Prepare data for submission
       const submitData = {
         itemPriceId: formData.itemPriceId,
+        customerId: formData.customerId || null,
         effectiveDate: new Date(formData.effectiveDate).toISOString(),
         harga: parseFloat(formData.harga),
         pot1: formData.pot1 ? parseFloat(formData.pot1) : null,
@@ -216,6 +258,33 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
               {selectedItem && selectedItem.itemPrice && (
                 <p className="text-sm text-gray-600 mt-1">
                   Current Price: Rp {selectedItem.itemPrice.harga?.toLocaleString('id-ID')}
+                </p>
+              )}
+            </div>
+
+            {/* Customer (Optional) */}
+            <div>
+              <Autocomplete
+                label="Customer (Opsional)"
+                placeholder="Kosongkan jika berlaku untuk semua customer..."
+                value={formData.customerId}
+                onChange={handleCustomerChange}
+                options={customerOptions}
+                displayKey="displayName"
+                valueKey="id"
+                onSearch={handleSearchCustomer}
+                loading={searchingCustomer}
+                required={false}
+                name="customerId"
+              />
+              {selectedCustomer && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Harga ini hanya berlaku untuk: {selectedCustomer.namaCustomer}
+                </p>
+              )}
+              {!formData.customerId && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Jika tidak dipilih, harga berlaku untuk semua customer
                 </p>
               )}
             </div>

@@ -42,13 +42,17 @@ const ScheduledPriceTable = ({
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 text-xs table-fixed">
           <colgroup>
-            <col style={{ width: '180px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '100px' }} />
-            <col style={{ width: '90px' }} />
-            <col style={{ width: '80px' }} />
+            <col style={{ width: '140px' }} />
+            <col style={{ width: '70px' }} />
+            <col style={{ width: '130px' }} />
+            <col style={{ width: '85px' }} />
+            <col style={{ width: '85px' }} />
+            <col style={{ width: '55px' }} />
+            <col style={{ width: '55px' }} />
+            <col style={{ width: '45px' }} />
+            <col style={{ width: '85px' }} />
+            <col style={{ width: '75px' }} />
+            <col style={{ width: '70px' }} />
           </colgroup>
           <thead className="bg-gray-50">
             <tr>
@@ -59,10 +63,22 @@ const ScheduledPriceTable = ({
                 PLU
               </th>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Current Price
+                Customer
               </th>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                New Price
+                Current
+              </th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                New
+              </th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Pot A
+              </th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Pot B
+              </th>
+              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                PPN
               </th>
               <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Effective
@@ -78,13 +94,13 @@ const ScheduledPriceTable = ({
           <tbody className="bg-white divide-y divide-gray-100">
             {loading ? (
               <tr>
-                <td colSpan="7" className="px-2 py-1 text-center">
+                <td colSpan="11" className="px-2 py-1 text-center">
                   <div className="w-6 h-6 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
                 </td>
               </tr>
             ) : !schedules || schedules.length === 0 ? (
               <tr>
-                <td colSpan="7" className="px-2 py-1 text-center text-gray-500 text-xs">
+                <td colSpan="11" className="px-2 py-1 text-center text-gray-500 text-xs">
                   No schedules found
                 </td>
               </tr>
@@ -97,11 +113,23 @@ const ScheduledPriceTable = ({
                   <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">
                     {schedule.itemPrice?.item?.plu || '-'}
                   </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600 truncate" title={schedule.customer?.namaCustomer || 'Semua'}>
+                    {schedule.customer ? schedule.customer.namaCustomer : <span className="text-gray-400 italic">Semua</span>}
+                  </td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900">
                     {formatCurrency(schedule.itemPrice?.harga)}
                   </td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">
                     {formatCurrency(schedule.harga)}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600">
+                    {schedule.pot1 != null ? `${schedule.pot1}%` : '-'}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600">
+                    {schedule.pot2 != null ? `${schedule.pot2}%` : '-'}
+                  </td>
+                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600">
+                    {schedule.ppn != null ? `${schedule.ppn}%` : '-'}
                   </td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600">
                     {formatDateShort(schedule.effectiveDate)}
