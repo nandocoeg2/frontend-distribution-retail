@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline';
 import useStockMovementsPage from '../hooks/useStockMovementsPage';
@@ -9,6 +10,7 @@ import StockMovementTable from '../components/stockMovements/StockMovementTable.
 import { Spinner } from '../components/ui/Loading.jsx';
 import { useConfirmationDialog } from '../components/ui';
 import CreateStockInModal from '../components/stockMovements/CreateStockInModal.jsx';
+import CreateStockOutModal from '../components/stockMovements/CreateStockOutModal.jsx';
 import CreateReturnModal from '../components/stockMovements/CreateReturnModal.jsx';
 import { getItems } from '../services/itemService';
 import supplierService from '../services/supplierService';
@@ -28,11 +30,13 @@ const StockMovements = () => {
     handleLimitChange,
     fetchMovements,
     createStockInMovement,
+    createStockOutMovement,
     createReturnMovement,
     classifyReturnMovement,
   } = useStockMovementsPage();
 
   const [showStockInModal, setShowStockInModal] = useState(false);
+  const [showStockOutModal, setShowStockOutModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [itemOptions, setItemOptions] = useState([]);
   const [supplierOptions, setSupplierOptions] = useState([]);
@@ -210,6 +214,14 @@ const StockMovements = () => {
               </button>
               <button
                 type='button'
+                onClick={() => setShowStockOutModal(true)}
+                className='inline-flex items-center justify-center rounded-md border border-amber-600 bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors'
+              >
+                <ArrowUpTrayIcon className='mr-2 h-5 w-5' aria-hidden='true' />
+                Catat Stock Out
+              </button>
+              <button
+                type='button'
                 onClick={() => setShowStockInModal(true)}
                 className='inline-flex items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors'
               >
@@ -260,6 +272,14 @@ const StockMovements = () => {
         onSubmit={createStockInMovement}
         itemOptions={itemOptions}
         suppliers={supplierOptions}
+        optionsLoading={optionsLoading}
+      />
+
+      <CreateStockOutModal
+        show={showStockOutModal}
+        onClose={() => setShowStockOutModal(false)}
+        onSubmit={createStockOutMovement}
+        itemOptions={itemOptions}
         optionsLoading={optionsLoading}
       />
 

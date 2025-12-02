@@ -132,6 +132,24 @@ export const createStockIn = async (payload) => {
   return response.json();
 };
 
+export const createStockOut = async (payload) => {
+  const response = await fetch(`${API_BASE_URL}/stock-out`, {
+    method: 'POST',
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const message = await parseErrorMessage(
+      response,
+      'Failed to create stock-out movement'
+    );
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
 export const createReturn = async (payload) => {
   const response = await fetch(`${API_BASE_URL}/return`, {
     method: 'POST',

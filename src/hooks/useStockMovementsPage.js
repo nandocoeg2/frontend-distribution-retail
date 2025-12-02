@@ -3,6 +3,7 @@ import usePaginatedSearch from './usePaginatedSearch';
 import {
   getStockMovements,
   createStockIn,
+  createStockOut,
   createReturn,
   classifyReturn,
 } from '../services/stockMovementService';
@@ -80,6 +81,18 @@ const parseStockMovementsResponse = (response) => {
       movement?.supplier_name ||
       null;
 
+    const companyName =
+      movement?.company?.nama_perusahaan ||
+      movement?.companyName ||
+      movement?.company_name ||
+      null;
+
+    const customerName =
+      movement?.customer?.namaCustomer ||
+      movement?.customerName ||
+      movement?.customer_name ||
+      null;
+
     return {
       ...movement,
       type: toUpper(movement.type, 'UNKNOWN'),
@@ -92,6 +105,8 @@ const parseStockMovementsResponse = (response) => {
         '-',
       notes: movement.notes || movement.description || '',
       supplierName,
+      companyName,
+      customerName,
       createdAt: movement.createdAt || movement.created_at || null,
       updatedAt: movement.updatedAt || movement.updated_at || null,
       totalItems: movementItems.length,
@@ -265,6 +280,26 @@ const useStockMovementsPage = () => {
     [refreshAfterMutation, setError]
   );
 
+  const createStockOutMovement = useCallback(
+    async (payload) => {
+      setError(null);
+      try {
+        const result = await createStockOut(payload);
+        toastService.success('Stock out berhasil dicatat');
+        await refreshAfterMutation();
+        return result?.data || result;
+      } catch (err) {
+        const message =
+          resolveStockMovementError(err) ||
+          'Failed to create stock-out movement';
+        setError(message);
+        toastService.error(message);
+        throw err;
+      }
+    },
+    [refreshAfterMutation, setError]
+  );
+
   const createReturnMovement = useCallback(
     async (payload) => {
       setError(null);
@@ -351,6 +386,7 @@ const useStockMovementsPage = () => {
     resolveLimit,
     handleAuthError,
     createStockInMovement,
+    createStockOutMovement,
     createReturnMovement,
     classifyReturnMovement,
   };

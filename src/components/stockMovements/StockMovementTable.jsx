@@ -77,12 +77,28 @@ const StockMovementTable = ({
         }
       }
 
+      // Determine party info based on movement type
+      let partyInfo = '-';
+      const movementType = movement.type || 'UNKNOWN';
+      
+      if (movementType === 'STOCK_IN') {
+        const companyName = movement.companyName || movement.company?.nama_perusahaan || '-';
+        const supplierName = movement.supplierName || movement.supplier?.name || '-';
+        partyInfo = `${companyName} ← ${supplierName}`;
+      } else if (movementType === 'STOCK_OUT') {
+        const companyName = movement.companyName || movement.company?.nama_perusahaan || '-';
+        const customerName = movement.customerName || movement.customer?.namaCustomer || '-';
+        partyInfo = `${companyName} → ${customerName}`;
+      } else if (movementType === 'RETURN') {
+        partyInfo = movement.notes || 'Return';
+      }
+
       return {
         id: movement.id,
         movementNumber: movement.movementNumber || '-',
-        type: movement.type || 'UNKNOWN',
+        type: movementType,
         status: movement.status || 'UNKNOWN',
-        supplierName: movement.supplierName || '-',
+        partyInfo,
         productDisplay,
         totalItems,
         totalQuantity:
@@ -135,7 +151,7 @@ const StockMovementTable = ({
                 scope='col'
                 className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Supplier
+                Party Info
               </th>
               <th
                 scope='col'
@@ -220,8 +236,8 @@ const StockMovementTable = ({
                       />
                     </td>
                     <td className='px-2 py-1 text-xs text-gray-500'>
-                      <div className='max-w-xs truncate' title={movement.supplierName || '-'}>
-                        {movement.supplierName || '-'}
+                      <div className='max-w-[200px] truncate' title={movement.partyInfo || '-'}>
+                        {movement.partyInfo || '-'}
                       </div>
                     </td>
                     <td className='px-2 py-1 text-xs text-gray-900'>
