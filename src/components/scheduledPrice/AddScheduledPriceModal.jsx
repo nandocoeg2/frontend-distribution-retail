@@ -3,9 +3,11 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
 import { searchItems } from '../../services/itemService';
 import Autocomplete from '../common/Autocomplete';
+import BulkUploadScheduledPrice from './BulkUploadScheduledPrice';
 
 const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   const { createSchedule, loading, validateScheduleData } = useScheduledPriceOperations();
+  const [activeTab, setActiveTab] = useState('single');
   
   const [formData, setFormData] = useState({
     itemPriceId: '',
@@ -160,7 +162,38 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
           </button>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 border-b border-gray-200 px-6">
+          <button
+            onClick={() => setActiveTab('single')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'single'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Tambah Satu
+          </button>
+          <button
+            onClick={() => setActiveTab('bulk')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'bulk'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Bulk Upload
+          </button>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Bulk Upload Tab */}
+          {activeTab === 'bulk' && (
+            <BulkUploadScheduledPrice onClose={onClose} onSuccess={onSuccess} />
+          )}
+
+          {/* Single Add Tab */}
+          {activeTab === 'single' && (
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Item Search with Autocomplete */}
             <div>
@@ -331,6 +364,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>
