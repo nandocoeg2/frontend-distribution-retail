@@ -69,13 +69,17 @@ const scheduledPriceService = {
     return get(`/item-price-schedules/item-price/${itemPriceId}`);
   },
 
-  // Get effective price for a specific date and item
-  getEffectivePrice: (itemId, date) => {
+  // Get effective price for a specific date, item, and optional customer
+  getEffectivePrice: (itemId, date, customerId = null) => {
     const dateStr = date instanceof Date ? date.toISOString() : date;
-    return get('/item-price-schedules/effective-price', {
+    const params = {
       itemId,
       date: dateStr
-    });
+    };
+    if (customerId) {
+      params.customerId = customerId;
+    }
+    return get('/item-price-schedules/effective-price', params);
   },
 
   // ==================== BULK UPLOAD METHODS ====================

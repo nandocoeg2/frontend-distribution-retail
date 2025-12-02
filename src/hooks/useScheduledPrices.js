@@ -37,13 +37,13 @@ export const useScheduledPricesByItemPrice = (itemPriceId) => {
   });
 };
 
-export const useEffectivePrice = (itemId, date, enabled = true) => {
+export const useEffectivePrice = (itemId, date, customerId = null, enabled = true) => {
   return useQuery({
-    queryKey: ['effective-price', itemId, date],
+    queryKey: ['effective-price', itemId, date, customerId],
     queryFn: async () => {
       if (!itemId || !date) return null;
       
-      const response = await scheduledPriceService.getEffectivePrice(itemId, date);
+      const response = await scheduledPriceService.getEffectivePrice(itemId, date, customerId);
       return response.data;
     },
     enabled: enabled && !!itemId && !!date,

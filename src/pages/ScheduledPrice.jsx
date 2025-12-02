@@ -25,7 +25,7 @@ const ScheduledPrice = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
 
-  const { deleteSchedule } = useScheduledPriceOperations();
+  const { deleteSchedule, getSchedule, loading: operationLoading } = useScheduledPriceOperations();
 
   const queryParams = {
     page,
@@ -44,14 +44,32 @@ const ScheduledPrice = () => {
     setPage(newPage);
   };
 
-  const handleEdit = (schedule) => {
-    setSelectedSchedule(schedule);
-    setShowEditModal(true);
+  const handleEdit = async (schedule) => {
+    try {
+      // Fetch full details for editing
+      const fullSchedule = await getSchedule(schedule.id);
+      setSelectedSchedule(fullSchedule);
+      setShowEditModal(true);
+    } catch (err) {
+      console.error('Failed to fetch schedule details:', err);
+      // Fallback to existing data if fetch fails
+      setSelectedSchedule(schedule);
+      setShowEditModal(true);
+    }
   };
 
-  const handleView = (schedule) => {
-    setSelectedSchedule(schedule);
-    setShowViewModal(true);
+  const handleView = async (schedule) => {
+    try {
+      // Fetch full details including customer, itemPrice, item relations
+      const fullSchedule = await getSchedule(schedule.id);
+      setSelectedSchedule(fullSchedule);
+      setShowViewModal(true);
+    } catch (err) {
+      console.error('Failed to fetch schedule details:', err);
+      // Fallback to existing data if fetch fails
+      setSelectedSchedule(schedule);
+      setShowViewModal(true);
+    }
   };
 
   const handleCancel = (schedule) => {

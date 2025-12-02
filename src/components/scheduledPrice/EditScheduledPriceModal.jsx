@@ -111,6 +111,30 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
             </div>
           )}
 
+          {/* Read-only Info: Item & Customer */}
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Item</label>
+                <p className="text-gray-900 font-medium">
+                  {schedule.itemPrice?.item?.nama_barang || '-'}
+                </p>
+                <p className="text-xs text-gray-500">PLU: {schedule.itemPrice?.item?.plu || '-'}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Berlaku Untuk</label>
+                {schedule.customer ? (
+                  <div>
+                    <p className="text-gray-900 font-medium">{schedule.customer.namaCustomer}</p>
+                    <p className="text-xs text-gray-500">Kode: {schedule.customer.kodeCustomer}</p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">Semua Customer</p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Effective Date */}
             <div>

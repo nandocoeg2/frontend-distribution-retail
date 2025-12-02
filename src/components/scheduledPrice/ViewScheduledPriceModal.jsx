@@ -77,6 +77,30 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
               </div>
             </div>
 
+            {/* Customer Information */}
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-3">Berlaku Untuk</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Customer
+                </label>
+                {schedule.customer ? (
+                  <div>
+                    <p className="text-gray-900 font-medium">
+                      {schedule.customer.namaCustomer}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Kode: {schedule.customer.kodeCustomer}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">
+                    Semua Customer (Harga Base)
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Price Information */}
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-3">Price Information</h3>

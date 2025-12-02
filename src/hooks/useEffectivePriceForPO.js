@@ -4,17 +4,19 @@ import toastService from '../services/toastService';
 import { formatDate } from '../utils/formatUtils';
 
 /**
- * Custom hook to fetch and apply effective price for PO based on item and date
+ * Custom hook to fetch and apply effective price for PO based on item, date, and customer
  * @param {string} itemId - The item ID
  * @param {Date|string} poDate - The PO date
+ * @param {string|null} customerId - The customer ID for customer-specific pricing
  * @param {Function} onPriceLoad - Callback function to update form with price data
  * @param {boolean} enabled - Whether the hook should fetch data
  * @returns {Object} - { effectivePrice, isLoading, isScheduledPrice }
  */
-export const useEffectivePriceForPO = (itemId, poDate, onPriceLoad, enabled = true) => {
+export const useEffectivePriceForPO = (itemId, poDate, customerId, onPriceLoad, enabled = true) => {
   const { data: effectivePrice, isLoading } = useEffectivePrice(
     itemId,
     poDate,
+    customerId,
     enabled && !!itemId && !!poDate
   );
 
