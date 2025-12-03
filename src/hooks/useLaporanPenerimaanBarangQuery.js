@@ -28,6 +28,12 @@ export const useLaporanPenerimaanBarangQuery = ({
       if (hasFilters) {
         const searchCriteria = { ...filters };
         
+        // Handle special status_code value for showing all including completed
+        if (searchCriteria.status_code === '__ALL__') {
+          delete searchCriteria.status_code;
+          searchCriteria.includeCompleted = true;
+        }
+        
         // Add global filter as 'q' parameter
         if (globalFilter) {
           searchCriteria.q = globalFilter;

@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
-import { formatDate } from '../../utils/formatUtils';
+import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
@@ -407,7 +407,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
-      columnHelper.accessor('purchaseOrder.invoice.no_invoice', {
+      columnHelper.accessor((row) => row.purchaseOrder?.invoice?.no_invoice ?? null, {
         id: 'invoice',
         header: ({ column }) => (
           <div className="space-y-1">
@@ -460,7 +460,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
               className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             >
-              <option value="">Semua</option>
+              <option value="">Aktif</option>
+              <option value="__ALL__">Semua (Termasuk Completed)</option>
               {lpbStatuses.map((status) => (
                 <option key={status.status_code} value={status.status_code}>
                   {status.status_name}
@@ -477,6 +478,54 @@ const LaporanPenerimaanBarangTableServerSide = ({
             dot
           />
         ),
+      }),
+      columnHelper.accessor((row) => row.detailInvoice?.grand_total ?? null, {
+        id: 'grandtotal_lpb',
+        header: () => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Grandtotal LPB</div>
+          </div>
+        ),
+        cell: (info) => {
+          const value = info.getValue();
+          return <span className="font-medium">{value != null ? formatCurrency(value) : '-'}</span>;
+        },
+        enableColumnFilter: false,
+      }),
+      columnHelper.accessor((row) => row.purchaseOrder?.invoice?.grand_total ?? null, {
+        id: 'grandtotal_invoice',
+        header: () => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Grandtotal Invoice</div>
+          </div>
+        ),
+        cell: (info) => {
+          const value = info.getValue();
+          return <span className="font-medium">{value != null ? formatCurrency(value) : '-'}</span>;
+        },
+        enableColumnFilter: false,
+      }),
+      columnHelper.display({
+        id: 'selisih',
+        header: () => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Selisih</div>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const grandtotalLpb = parseFloat(row.original?.detailInvoice?.grand_total) || 0;
+          const grandtotalInvoice = parseFloat(row.original?.purchaseOrder?.invoice?.grand_total) || 0;
+          const selisih = grandtotalLpb - grandtotalInvoice;
+          const isNegative = selisih < 0;
+          const isPositive = selisih > 0;
+          return (
+            <span className={`font-medium ${isNegative ? 'text-red-600' : isPositive ? 'text-green-600' : 'text-gray-500'}`}>
+              {formatCurrency(selisih)}
+            </span>
+          );
+        },
+        enableSorting: false,
+        enableColumnFilter: false,
       }),
       columnHelper.display({
         id: 'actions',
