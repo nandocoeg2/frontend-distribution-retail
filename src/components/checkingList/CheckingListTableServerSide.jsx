@@ -321,25 +321,6 @@ const CheckingListTableServerSide = ({
         ),
         cell: (info) => formatDateTime(info.getValue()),
       }),
-      columnHelper.accessor('no_checklist_surat_jalan', {
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">No Checklist</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => info.getValue() || '-',
-      }),
       columnHelper.accessor('suratJalan', {
         id: 'surat_jalan',
         header: ({ column }) => (
@@ -458,27 +439,6 @@ const CheckingListTableServerSide = ({
           </div>
         ),
         cell: (info) => info.getValue() || '-',
-      }),
-      columnHelper.accessor('status', {
-        header: 'Status Checklist',
-        cell: (info) => {
-          const status = info.getValue();
-          const statusText = resolveStatusText(status);
-
-          if (!statusText) {
-            return <span className="text-sm text-gray-400">-</span>;
-          }
-
-          return (
-            <StatusBadge
-              status={statusText}
-              variant={resolveStatusVariant(status)}
-              size="sm"
-              dot
-            />
-          );
-        },
-        enableColumnFilter: false,
       }),
       columnHelper.display({
         id: 'actions',
