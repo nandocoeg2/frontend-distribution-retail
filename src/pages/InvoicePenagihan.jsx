@@ -5,8 +5,6 @@ import InvoicePenagihanTableServerSide from '@/components/invoicePenagihan/Invoi
 import AddInvoicePenagihanModal from '@/components/invoicePenagihan/AddInvoicePenagihanModal';
 import InvoicePenagihanDetailCard from '@/components/invoicePenagihan/InvoicePenagihanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import invoicePenagihanService from '@/services/invoicePenagihanService';
-import toastService from '@/services/toastService';
 
 const InvoicePenagihanPage = () => {
   const queryClient = useQueryClient();
@@ -34,16 +32,6 @@ const InvoicePenagihanPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [viewDetailLoading, setViewDetailLoading] = useState(false);
-  const [generateTtfConfirmation, setGenerateTtfConfirmation] = useState({
-    show: false,
-    invoice: null,
-  });
-  const [generatingTtfInvoiceId, setGeneratingTtfInvoiceId] = useState(null);
-
-  const generateTtfDialogInvoice = generateTtfConfirmation.invoice;
-  const generateTtfDialogLoading =
-    Boolean(generateTtfDialogInvoice) &&
-    generatingTtfInvoiceId === generateTtfDialogInvoice.id;
 
   const refreshData = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
@@ -51,98 +39,6 @@ const InvoicePenagihanPage = () => {
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
-
-  const openGenerateTtfDialog = useCallback((invoice) => {
-    if (
-      !invoice ||
-      invoice?.tandaTerimaFakturId ||
-      invoice?.tandaTerimaFaktur?.id
-    ) {
-      return;
-    }
-    setGenerateTtfConfirmation({
-      show: true,
-      invoice,
-    });
-  }, []);
-
-  const closeGenerateTtfDialog = useCallback(() => {
-    setGenerateTtfConfirmation({
-      show: false,
-      invoice: null,
-    });
-  }, []);
-
-  const handleGenerateTtfConfirm = useCallback(async () => {
-    const targetInvoice = generateTtfDialogInvoice;
-    const invoiceId = targetInvoice?.id;
-
-    if (!invoiceId) {
-      closeGenerateTtfDialog();
-      return;
-    }
-
-    setGeneratingTtfInvoiceId(invoiceId);
-    try {
-      const response =
-        await invoicePenagihanService.generateTandaTerimaFaktur(invoiceId);
-      const payload = response ?? {};
-      if (payload?.success === false) {
-        throw new Error(
-          payload?.error?.message ||
-            'Gagal membuat tanda terima faktur dari invoice.'
-        );
-      }
-
-      const ttfData = payload?.data ?? payload;
-      toastService.success(
-        ttfData?.code_supplier
-          ? `Tanda terima faktur ${ttfData.code_supplier} berhasil dibuat.`
-          : 'Tanda terima faktur berhasil dibuat.'
-      );
-
-      closeGenerateTtfDialog();
-
-      setViewingInvoice((prev) => {
-        if (prev?.id !== invoiceId) {
-          return prev;
-        }
-        return {
-          ...prev,
-          tandaTerimaFakturId:
-            ttfData?.id ||
-            ttfData?.tandaTerimaFakturId ||
-            prev?.tandaTerimaFakturId,
-          tandaTerimaFaktur: ttfData || prev?.tandaTerimaFaktur,
-        };
-      });
-
-      await refreshData();
-    } catch (err) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) {
-        handleAuthError();
-      } else {
-        const message =
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Gagal membuat tanda terima faktur dari invoice penagihan.';
-        toastService.error(message);
-      }
-      console.error(
-        'Failed to generate tanda terima faktur from invoice penagihan:',
-        err
-      );
-    } finally {
-      setGeneratingTtfInvoiceId((current) =>
-        current === invoiceId ? null : current
-      );
-    }
-  }, [
-    closeGenerateTtfDialog,
-    generateTtfDialogInvoice,
-    handleAuthError,
-    refreshData,
-  ]);
 
 
   const handleViewDetail = useCallback(
@@ -272,8 +168,6 @@ const InvoicePenagihanPage = () => {
 
           <InvoicePenagihanTableServerSide
             onDelete={showDeleteConfirmation}
-            onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
-            generatingTandaTerimaInvoiceId={generatingTtfInvoiceId}
             deleteLoading={deleteDialogLoading}
             initialPage={1}
             initialLimit={10}
@@ -298,28 +192,6 @@ const InvoicePenagihanPage = () => {
           isLoading={viewDetailLoading}
         />
       )}
-
-
-      <ConfirmationDialog
-        show={generateTtfConfirmation.show}
-        onClose={closeGenerateTtfDialog}
-        onConfirm={handleGenerateTtfConfirm}
-        title='Generate Tanda Terima Faktur'
-        message={
-          generateTtfDialogInvoice
-            ? `Apakah Anda yakin ingin membuat tanda terima faktur untuk invoice ${
-                generateTtfDialogInvoice.no_invoice_penagihan ||
-                generateTtfDialogInvoice.id ||
-                ''
-              }?`
-            : 'Apakah Anda yakin ingin membuat tanda terima faktur untuk invoice ini?'
-        }
-        confirmText='Ya, buat tanda terima'
-        cancelText='Batal'
-        type='warning'
-        loading={generateTtfDialogLoading}
-      />
-
 
       <ConfirmationDialog
         show={showDeleteDialog}

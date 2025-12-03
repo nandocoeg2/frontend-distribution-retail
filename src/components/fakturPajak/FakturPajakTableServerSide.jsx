@@ -66,6 +66,8 @@ const formatRangeSummary = ({ pagination }) => {
 const FakturPajakTableServerSide = ({
   onView,
   onDelete,
+  onGenerateTandaTerimaFaktur,
+  generatingTandaTerimaFakturPajakId,
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
@@ -336,6 +338,43 @@ const FakturPajakTableServerSide = ({
         ),
       }),
       columnHelper.display({
+        id: 'tandaTerimaFaktur',
+        header: 'Tanda Terima Faktur',
+        cell: ({ row }) => {
+          const fakturPajak = row.original;
+          const isGenerating = generatingTandaTerimaFakturPajakId === fakturPajak.id;
+          const hasTTF = Boolean(fakturPajak?.tandaTerimaFakturId || fakturPajak?.tandaTerimaFaktur?.id);
+
+          return (
+            <div className="flex flex-col items-center justify-center space-y-1">
+              <div className="flex items-center space-x-2">
+                {isGenerating && (
+                  <span className="w-4 h-4 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
+                )}
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
+                  checked={hasTTF}
+                  onChange={(event) => {
+                    if (event.target.checked && onGenerateTandaTerimaFaktur) {
+                      onGenerateTandaTerimaFaktur(fakturPajak);
+                    }
+                  }}
+                  disabled={hasTTF || isGenerating}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              {fakturPajak?.tandaTerimaFaktur?.code_supplier && (
+                <span className="text-xs text-gray-500">
+                  {fakturPajak.tandaTerimaFaktur.code_supplier}
+                </span>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+      }),
+      columnHelper.display({
         id: 'actions',
         header: () => <div className="text-right font-medium">Aksi</div>,
         cell: ({ row }) => {
@@ -365,6 +404,8 @@ const FakturPajakTableServerSide = ({
       fakturPajaks,
       onView,
       onDelete,
+      onGenerateTandaTerimaFaktur,
+      generatingTandaTerimaFakturPajakId,
       deleteLoading,
       setPage,
       selectedFakturPajakId,

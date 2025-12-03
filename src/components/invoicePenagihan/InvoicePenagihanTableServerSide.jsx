@@ -43,8 +43,6 @@ const InvoicePenagihanTableServerSide = ({
   onView,
   onEdit,
   onDelete,
-  onGenerateTandaTerimaFaktur,
-  generatingTandaTerimaInvoiceId,
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
@@ -344,42 +342,6 @@ const InvoicePenagihanTableServerSide = ({
         enableSorting: false,
       }),
       columnHelper.display({
-        id: 'tandaTerimaFaktur',
-        header: 'Tanda Terima Faktur',
-        cell: ({ row }) => {
-          const invoice = row.original;
-          const isGenerating = generatingTandaTerimaInvoiceId === invoice.id;
-          const hasTTF = Boolean(invoice?.tandaTerimaFakturId || invoice?.tandaTerimaFaktur?.id);
-
-          return (
-            <div className="flex flex-col items-center justify-center space-y-1">
-              <div className="flex items-center space-x-2">
-                {isGenerating && (
-                  <span className="w-4 h-4 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
-                )}
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
-                  checked={hasTTF}
-                  onChange={(event) => {
-                    if (event.target.checked && onGenerateTandaTerimaFaktur) {
-                      onGenerateTandaTerimaFaktur(invoice);
-                    }
-                  }}
-                  disabled={hasTTF || isGenerating}
-                />
-              </div>
-              {invoice?.tandaTerimaFaktur?.code_supplier && (
-                <span className="text-xs text-gray-500">
-                  {invoice.tandaTerimaFaktur.code_supplier}
-                </span>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
-      columnHelper.display({
         id: 'actions',
         header: 'Aksi',
         cell: ({ row }) => {
@@ -422,8 +384,6 @@ const InvoicePenagihanTableServerSide = ({
       onView,
       onEdit,
       onDelete,
-      onGenerateTandaTerimaFaktur,
-      generatingTandaTerimaInvoiceId,
       deleteLoading,
       setPage,
     ]
@@ -435,6 +395,15 @@ const InvoicePenagihanTableServerSide = ({
   });
 
   const loading = isLoading || isFetching;
+
+  // Calculate accumulated grand total
+  const totalGrandTotal = useMemo(() => {
+    if (!invoices || invoices.length === 0) return 0;
+    return invoices.reduce((sum, invoice) => {
+      const grandTotal = parseFloat(invoice.grand_total) || 0;
+      return sum + grandTotal;
+    }, 0);
+  }, [invoices]);
 
   return (
     <div className="space-y-4">
@@ -479,6 +448,24 @@ const InvoicePenagihanTableServerSide = ({
         }}
         cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
+        footerRowClassName="bg-gray-50 sticky bottom-0"
+        footerContent={
+          invoices && invoices.length > 0 ? (
+            <tr>
+              <td className="px-2 py-1.5 text-xs text-gray-500">{invoices.length} invoice</td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5 text-xs font-semibold text-gray-900">
+                {formatCurrency(totalGrandTotal)}
+              </td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
+              <td className="px-2 py-1.5"></td>
+            </tr>
+          ) : null
+        }
       />
 
       {!loading && !error && (

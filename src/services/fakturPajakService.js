@@ -236,6 +236,38 @@ class FakturPajakService {
       throw error;
     }
   }
+
+  /**
+   * Generate Tanda Terima Faktur from Faktur Pajak
+   * Creates a new Tanda Terima Faktur linked to the specified Faktur Pajak
+   * 
+   * API Documentation:
+   * - Endpoint: POST /api/v1/faktur-pajak/:id/generate-tanda-terima-faktur
+   * - Response: { success: true, data: { id, code_supplier, ... } }
+   * 
+   * @param {string} id - Faktur Pajak ID
+   * @param {Object} overrides - Optional override data
+   * @param {string} overrides.tanggal - Optional date override
+   * @param {string} overrides.groupCustomerId - Optional group customer ID
+   * @param {string} overrides.companyId - Optional company ID
+   * @param {string} overrides.code_supplier - Optional code supplier
+   * @param {number} overrides.grand_total - Optional grand total
+   * @param {string} overrides.termOfPaymentId - Optional term of payment ID
+   * @param {string} overrides.statusId - Optional status ID
+   * @returns {Promise} Created Tanda Terima Faktur data
+   */
+  async generateTandaTerimaFaktur(id, overrides = {}) {
+    try {
+      const response = await this.api.post(
+        `/${id}/generate-tanda-terima-faktur`,
+        overrides
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error generating tanda terima faktur:', error);
+      throw error;
+    }
+  }
 }
 
 export default new FakturPajakService();

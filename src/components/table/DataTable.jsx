@@ -45,6 +45,9 @@ const DataTable = ({
   renderLoading = defaultLoading,
   renderError = defaultError,
   onRowClick,
+  footerContent,
+  footerRowClassName = 'bg-gray-50',
+  footerCellClassName = 'px-2 py-1.5 text-xs',
 }) => {
   if (!table) {
     return null;
@@ -159,6 +162,11 @@ const DataTable = ({
             })
           )}
         </tbody>
+        {footerContent && (
+          <tfoot className={footerRowClassName}>
+            {footerContent}
+          </tfoot>
+        )}
       </table>
     </div>
   );
