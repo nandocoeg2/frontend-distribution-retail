@@ -165,6 +165,26 @@ class SuratJalanService {
       throw error;
     }
   }
+
+  async unprocessSuratJalan(ids) {
+    try {
+      const response = await this.api.post('/surat-jalan/unprocess', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error unprocessing surat jalan:', error);
+      throw error;
+    }
+  }
+
+  async cancelSuratJalan(id) {
+    try {
+      const response = await this.api.post(`/surat-jalan/${id}/cancel`);
+      return response.data;
+    } catch (error) {
+      console.error('Error canceling surat jalan:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SuratJalanService();

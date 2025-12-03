@@ -17,7 +17,9 @@ const SuratJalan = () => {
   const [selectedSuratJalanForDetail, setSelectedSuratJalanForDetail] = useState(null);
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isUnprocessing, setIsUnprocessing] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const {
@@ -135,12 +137,15 @@ const SuratJalan = () => {
   }, []);
 
   const handleProcessSelected = useCallback(() => {
-    if (selectedSuratJalan.length === 0) {
-      toastService.error('Pilih minimal satu surat jalan untuk diproses');
+    // Filter only unprocessed items
+    const unprocessedItems = selectedSuratJalan.filter(item => !item?.checklistSuratJalanId);
+    
+    if (unprocessedItems.length === 0) {
+      toastService.error('Pilih minimal satu surat jalan yang belum diproses');
       return;
     }
 
-    const selectedSummary = selectedSuratJalan
+    const selectedSummary = unprocessedItems
       .map((item) => {
         if (!item) return null;
         return {
@@ -157,7 +162,7 @@ const SuratJalan = () => {
 
     showDeleteDialog({
       title: 'Proses Surat Jalan',
-      message: `Anda akan memproses ${selectedSuratJalan.length} surat jalan:\n\n${summaryList}\n\nTanggal checklist akan diisi dengan tanggal sekarang. Lanjutkan?`,
+      message: `Anda akan memproses ${unprocessedItems.length} surat jalan:\n\n${summaryList}\n\nTanggal checklist akan diisi dengan tanggal sekarang. Lanjutkan?`,
       confirmText: 'Proses',
       cancelText: 'Batal',
       type: 'info',
@@ -165,7 +170,7 @@ const SuratJalan = () => {
         setDeleteDialogLoading(true);
         setIsProcessing(true);
         try {
-          const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+          const selectedIds = unprocessedItems.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
           const requestBody = {
             ids: selectedIds,
             checklist: {
@@ -187,7 +192,7 @@ const SuratJalan = () => {
 
           const successMessage =
             response?.data?.message ||
-            `Surat jalan berhasil diproses (${selectedSuratJalan.length})`;
+            `Surat jalan berhasil diproses (${unprocessedItems.length})`;
           toastService.success(successMessage);
 
           setSelectedSuratJalan([]);
@@ -212,6 +217,130 @@ const SuratJalan = () => {
       },
     });
   }, [selectedSuratJalan, showDeleteDialog, hideDeleteDialog, setDeleteDialogLoading, handleAuthError, queryClient]);
+
+  const handleUnprocessSelected = useCallback(() => {
+    // Filter only processed items
+    const processedItems = selectedSuratJalan.filter(item => item?.checklistSuratJalanId);
+    
+    if (processedItems.length === 0) {
+      toastService.error('Pilih minimal satu surat jalan yang sudah diproses');
+      return;
+    }
+
+    const selectedSummary = processedItems
+      .map((item) => {
+        if (!item) return null;
+        return {
+          id: item.id,
+          display: item.no_surat_jalan || '(No. Surat Jalan tidak tersedia)',
+          subtitle: item.deliver_to || item.deliverTo || undefined,
+        };
+      })
+      .filter((item) => item !== null);
+
+    const summaryList = selectedSummary
+      .map((item) => `• ${item.display}${item.subtitle ? ` - ${item.subtitle}` : ''}`)
+      .join('\n');
+
+    showDeleteDialog({
+      title: 'Unprocess Surat Jalan',
+      message: `Anda akan menghapus ${processedItems.length} surat jalan dari checklist:\n\n${summaryList}\n\nStok akan dikembalikan. Lanjutkan?`,
+      confirmText: 'Unprocess',
+      cancelText: 'Batal',
+      type: 'warning',
+      onConfirm: async () => {
+        setDeleteDialogLoading(true);
+        setIsUnprocessing(true);
+        try {
+          const selectedIds = processedItems.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+
+          const response = await suratJalanService.unprocessSuratJalan(selectedIds);
+
+          if (response?.success === false) {
+            const errorMessage =
+              response?.message ||
+              response?.error?.message ||
+              'Gagal unprocess surat jalan';
+            toastService.error(errorMessage);
+            return;
+          }
+
+          const successMessage =
+            response?.data?.message ||
+            `${processedItems.length} surat jalan berhasil di-unprocess`;
+          toastService.success(successMessage);
+
+          setSelectedSuratJalan([]);
+          hideDeleteDialog();
+
+          // Invalidate queries to refresh data
+          await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
+          await queryClient.invalidateQueries({ queryKey: ['checklist-surat-jalan'] });
+        } catch (err) {
+          if (err?.response?.status === 401 || err?.response?.status === 403) {
+            handleAuthError();
+            return;
+          }
+          const message =
+            err?.response?.data?.error?.message ||
+            err?.message ||
+            'Gagal unprocess surat jalan';
+          toastService.error(message);
+        } finally {
+          setDeleteDialogLoading(false);
+          setIsUnprocessing(false);
+        }
+      },
+    });
+  }, [selectedSuratJalan, showDeleteDialog, hideDeleteDialog, setDeleteDialogLoading, handleAuthError, queryClient]);
+
+  const handleCancel = useCallback((id, noSuratJalan) => {
+    showDeleteDialog({
+      title: 'Cancel Surat Jalan',
+      message: `Apakah Anda yakin ingin membatalkan surat jalan "${noSuratJalan}"?\n\nPO, Invoice Pengiriman, dan Packing yang terkait juga akan dibatalkan.\nStok akan dikembalikan jika sudah diproses.`,
+      confirmText: 'Cancel',
+      cancelText: 'Batal',
+      type: 'danger',
+      onConfirm: async () => {
+        setDeleteDialogLoading(true);
+        setCancelLoading(true);
+        try {
+          const response = await suratJalanService.cancelSuratJalan(id);
+
+          if (response?.success === false) {
+            const errorMessage =
+              response?.message ||
+              response?.error?.message ||
+              'Gagal membatalkan surat jalan';
+            toastService.error(errorMessage);
+            return;
+          }
+
+          toastService.success(response?.data?.message || 'Surat jalan berhasil dibatalkan');
+          hideDeleteDialog();
+
+          // Invalidate queries to refresh data
+          await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
+          await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+          await queryClient.invalidateQueries({ queryKey: ['invoice-pengiriman'] });
+          await queryClient.invalidateQueries({ queryKey: ['packing'] });
+        } catch (err) {
+          if (err?.response?.status === 401 || err?.response?.status === 403) {
+            handleAuthError();
+            return;
+          }
+          const message =
+            err?.response?.data?.error?.message ||
+            err?.message ||
+            'Gagal membatalkan surat jalan';
+          toastService.error(message);
+        } finally {
+          setDeleteDialogLoading(false);
+          setCancelLoading(false);
+        }
+      },
+    });
+  }, [showDeleteDialog, hideDeleteDialog, setDeleteDialogLoading, handleAuthError, queryClient]);
 
 
 
@@ -243,12 +372,16 @@ const SuratJalan = () => {
 
           <SuratJalanTableServerSide
             onDelete={handleDelete}
+            onCancel={handleCancel}
             deleteLoading={deleteLoading}
+            cancelLoading={cancelLoading}
             selectedSuratJalan={selectedSuratJalan}
             onSelectSuratJalan={handleSelectSuratJalan}
             onSelectAllSuratJalan={handleSelectAllSuratJalan}
             onProcessSelected={handleProcessSelected}
+            onUnprocessSelected={handleUnprocessSelected}
             isProcessing={isProcessing}
+            isUnprocessing={isUnprocessing}
             hasSelectedSuratJalan={selectedSuratJalan.length > 0}
             onRowClick={handleViewDetail}
             selectedSuratJalanId={selectedSuratJalanForDetail?.id}

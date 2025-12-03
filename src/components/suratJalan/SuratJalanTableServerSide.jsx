@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { useQueryClient } from '@tanstack/react-query';
+import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
+import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
@@ -37,23 +39,98 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
+const isCancelAllowed = (suratJalan) => {
+  if (!suratJalan?.status) {
+    return true; // Allow cancel if no status
+  }
+
+  const normalize = (value) => {
+    if (!value) return '';
+    return value.toString().trim().toLowerCase().replace(/_/g, ' ');
+  };
+
+  const normalizedCode = normalize(suratJalan.status.status_code);
+  // Cancel NOT allowed for already cancelled or delivered status
+  return !normalizedCode.includes('cancelled') && !normalizedCode.includes('delivered');
+};
+
 const SuratJalanTableServerSide = ({
   onView,
 
   onDelete,
+  onCancel,
   deleteLoading = false,
+  cancelLoading = false,
   selectedSuratJalan = [],
   onSelectSuratJalan,
   onSelectAllSuratJalan,
   onProcessSelected,
+  onUnprocessSelected,
   isProcessing = false,
+  isUnprocessing = false,
   hasSelectedSuratJalan = false,
   initialPage = 1,
   initialLimit = 10,
   onRowClick,
   selectedSuratJalanId,
 }) => {
+  const queryClient = useQueryClient();
   const [isPrinting, setIsPrinting] = useState(false);
+  const [unprocessDialog, setUnprocessDialog] = useState({
+    show: false,
+    item: null,
+    loading: false,
+  });
+
+  // Handle checkbox click for processed items - show confirmation dialog
+  const handleCheckboxChange = useCallback((item) => {
+    const isProcessed = Boolean(item?.checklistSuratJalanId);
+
+    if (isProcessed) {
+      // User is trying to uncheck a processed item - show confirmation to unprocess
+      setUnprocessDialog({
+        show: true,
+        item: item,
+        loading: false,
+      });
+    } else {
+      // Normal selection/deselection for unprocessed items
+      onSelectSuratJalan && onSelectSuratJalan(item);
+    }
+  }, [onSelectSuratJalan]);
+
+  // Handle unprocess confirmation
+  const handleUnprocessConfirm = useCallback(async () => {
+    if (!unprocessDialog.item) return;
+
+    setUnprocessDialog(prev => ({ ...prev, loading: true }));
+    try {
+      const response = await suratJalanService.unprocessSuratJalan([unprocessDialog.item.id]);
+
+      if (response?.success === false) {
+        toastService.error(response?.message || 'Gagal unprocess surat jalan');
+        return;
+      }
+
+      toastService.success(response?.data?.message || 'Surat jalan berhasil di-unprocess');
+      
+      // Close dialog
+      setUnprocessDialog({ show: false, item: null, loading: false });
+
+      // Refresh data
+      await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
+      await queryClient.invalidateQueries({ queryKey: ['checklist-surat-jalan'] });
+    } catch (err) {
+      const message = err?.response?.data?.error?.message || err?.message || 'Gagal unprocess surat jalan';
+      toastService.error(message);
+    } finally {
+      setUnprocessDialog(prev => ({ ...prev, loading: false }));
+    }
+  }, [unprocessDialog.item, queryClient]);
+
+  const handleUnprocessCancel = useCallback(() => {
+    setUnprocessDialog({ show: false, item: null, loading: false });
+  }, []);
 
   const handleBulkPrint = async () => {
     try {
@@ -156,7 +233,8 @@ const SuratJalanTableServerSide = ({
         id: 'select',
         header: () => {
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
-          const selectableItems = suratJalan.filter(item => !item?.checklistSuratJalanId);
+          // All items are now selectable (including processed ones for unprocess)
+          const selectableItems = suratJalan.filter(item => item?.id);
           const selectableIds = selectableItems.map(item => item?.id).filter(Boolean);
           const isAllSelected =
             selectableItems.length > 0 && selectableIds.every(id => selectedIds.includes(id));
@@ -178,16 +256,21 @@ const SuratJalanTableServerSide = ({
         },
         cell: ({ row }) => {
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
-          const isDisabled = Boolean(row.original.checklistSuratJalanId);
-          const isChecked = isDisabled || selectedIds.includes(row.original.id);
+          const isProcessed = Boolean(row.original.checklistSuratJalanId);
+          const isInSelection = selectedIds.includes(row.original.id);
+          // Processed items are checked by default, unprocessed items check based on selection
+          const isChecked = isProcessed || isInSelection;
           return (
             <input
               type="checkbox"
               checked={isChecked}
-              onChange={() => onSelectSuratJalan && onSelectSuratJalan(row.original)}
-              disabled={isDisabled}
-              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isDisabled ? 'Surat jalan sudah diproses checklist' : ''}
+              onChange={() => handleCheckboxChange(row.original)}
+              className={`h-3.5 w-3.5 focus:ring-blue-500 border-gray-300 rounded cursor-pointer ${
+                isProcessed ? 'text-orange-600' : 'text-blue-600'
+              }`}
+              title={isProcessed 
+                ? 'Klik untuk unprocess (hapus dari checklist)' 
+                : 'Pilih surat jalan'}
             />
           );
         },
@@ -339,10 +422,24 @@ const SuratJalanTableServerSide = ({
         header: 'Action',
         cell: ({ row }) => {
           const suratJalanItem = row.original;
+          const cancelAllowed = isCancelAllowed(suratJalanItem);
 
           return (
-            <div className="flex space-x-2">
-
+            <div className="flex space-x-1">
+              {cancelAllowed && onCancel && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancel(suratJalanItem.id, suratJalanItem.no_surat_jalan);
+                  }}
+                  disabled={cancelLoading}
+                  className="text-orange-600 hover:text-orange-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Cancel (Batalkan SJ, PO, Invoice, Packing)"
+                >
+                  <XCircleIcon className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => {
@@ -366,9 +463,11 @@ const SuratJalanTableServerSide = ({
       selectedSuratJalan,
       onSelectSuratJalan,
       onSelectAllSuratJalan,
-
+      handleCheckboxChange,
       onDelete,
+      onCancel,
       deleteLoading,
+      cancelLoading,
       setPage,
     ]
   );
@@ -387,9 +486,18 @@ const SuratJalanTableServerSide = ({
           {hasSelectedSuratJalan ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-blue-700">{selectedSuratJalan.length} dipilih</span>
-              <button onClick={onProcessSelected} disabled={isProcessing} className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-                <TruckIcon className="h-3 w-3 mr-1" />{isProcessing ? '...' : 'Proses'}
-              </button>
+              {/* Show Proses button only for unprocessed items */}
+              {selectedSuratJalan.some(item => !item?.checklistSuratJalanId) && (
+                <button onClick={onProcessSelected} disabled={isProcessing} className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                  <TruckIcon className="h-3 w-3 mr-1" />{isProcessing ? '...' : 'Proses'}
+                </button>
+              )}
+              {/* Show Unprocess button only for processed items */}
+              {selectedSuratJalan.some(item => item?.checklistSuratJalanId) && onUnprocessSelected && (
+                <button onClick={onUnprocessSelected} disabled={isUnprocessing} className="inline-flex items-center px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50">
+                  <XCircleIcon className="h-3 w-3 mr-1" />{isUnprocessing ? '...' : 'Unprocess'}
+                </button>
+              )}
               <button onClick={handleBulkPrint} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
                 <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print'}
               </button>
@@ -432,6 +540,19 @@ const SuratJalanTableServerSide = ({
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}
+
+      {/* Unprocess Confirmation Dialog */}
+      <ConfirmationDialog
+        show={unprocessDialog.show}
+        onClose={handleUnprocessCancel}
+        onConfirm={handleUnprocessConfirm}
+        title="Unprocess Surat Jalan"
+        message={`Apakah Anda yakin ingin menghapus surat jalan "${unprocessDialog.item?.no_surat_jalan || ''}" dari checklist?\n\nStok akan dikembalikan.`}
+        confirmText="Unprocess"
+        cancelText="Batal"
+        type="warning"
+        loading={unprocessDialog.loading}
+      />
     </div>
   );
 };
