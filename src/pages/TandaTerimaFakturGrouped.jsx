@@ -88,10 +88,6 @@ const TandaTerimaFakturGroupedPage = () => {
               <h3 className='text-lg font-medium text-gray-900'>
                 Tanda Terima Faktur - Ringkasan per Group Customer
               </h3>
-              <p className='text-sm text-gray-500'>
-                Lihat ringkasan TTF yang dikelompokkan berdasarkan group
-                customer dan term of payment.
-              </p>
             </div>
           </div>
 

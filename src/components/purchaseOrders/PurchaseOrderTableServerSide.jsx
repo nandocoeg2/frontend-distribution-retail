@@ -5,6 +5,8 @@ import { StatusBadge } from '../ui/Badge';
 import { formatDate, resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
 import { termOfPaymentService } from '../../services/termOfPaymentService';
+import customerService from '../../services/customerService';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 
@@ -113,13 +115,38 @@ const PurchaseOrderTableServerSide = ({
       }
 
       if (mappedFilters.customer) {
-        mappedFilters.customer_name = mappedFilters.customer;
+        // Handle array of customer IDs for multi-select
+        if (Array.isArray(mappedFilters.customer) && mappedFilters.customer.length > 0) {
+          mappedFilters.customerIds = mappedFilters.customer;
+        }
         delete mappedFilters.customer;
       }
 
       if (mappedFilters.top) {
         mappedFilters.termin_bayar = mappedFilters.top;
         delete mappedFilters.top;
+      }
+
+      // Handle date range filters for tanggal_masuk_po
+      if (mappedFilters.tanggal_masuk_po && typeof mappedFilters.tanggal_masuk_po === 'object') {
+        if (mappedFilters.tanggal_masuk_po.from) {
+          mappedFilters.tanggal_masuk_po_from = mappedFilters.tanggal_masuk_po.from;
+        }
+        if (mappedFilters.tanggal_masuk_po.to) {
+          mappedFilters.tanggal_masuk_po_to = mappedFilters.tanggal_masuk_po.to;
+        }
+        delete mappedFilters.tanggal_masuk_po;
+      }
+
+      // Handle date range filters for delivery_date
+      if (mappedFilters.delivery_date && typeof mappedFilters.delivery_date === 'object') {
+        if (mappedFilters.delivery_date.from) {
+          mappedFilters.delivery_date_from = mappedFilters.delivery_date.from;
+        }
+        if (mappedFilters.delivery_date.to) {
+          mappedFilters.delivery_date_to = mappedFilters.delivery_date.to;
+        }
+        delete mappedFilters.delivery_date;
       }
 
       return {
@@ -131,6 +158,7 @@ const PurchaseOrderTableServerSide = ({
   );
 
   const [termOfPayments, setTermOfPayments] = useState([]);
+  const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
     const fetchTermOfPayments = async () => {
@@ -144,6 +172,20 @@ const PurchaseOrderTableServerSide = ({
       }
     };
     fetchTermOfPayments();
+  }, []);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers(1, 100);
+        const data = response?.data?.data || response?.data || [];
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
   }, []);
 
   const {
@@ -225,43 +267,84 @@ const PurchaseOrderTableServerSide = ({
       }),
       columnHelper.accessor('customer.namaCustomer', {
         id: 'customer',
-        size: 100,
+        size: 160,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
+            <AutocompleteCheckboxLimitTag
+              options={customers}
+              value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder="..."
-              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
+              placeholder="All"
+              displayKey="namaCustomer"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
             />
           </div>
         ),
         cell: (info) => <span className="text-xs truncate">{info.row.original.customer?.namaCustomer || '-'}</span>,
       }),
       columnHelper.accessor('tanggal_masuk_po', {
-        size: 90,
-        header: ({ column }) => (
-          <div className="space-y-0.5">
-            <div className="font-medium text-xs">Tgl Masuk</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        ),
+        size: 110,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tgl Masuk</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor('delivery_date', {
-        size: 70,
-        header: () => <div className="font-medium text-xs">Delivery</div>,
+        size: 110,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Delivery</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
-        enableColumnFilter: false,
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top',
@@ -374,6 +457,7 @@ const PurchaseOrderTableServerSide = ({
       cancelLoading,
       setPage,
       termOfPayments,
+      customers,
     ]
   );
 

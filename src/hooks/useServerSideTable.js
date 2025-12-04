@@ -22,10 +22,16 @@ const isDefined = (value) => {
   if (value === undefined || value === null || value === '') {
     return false;
   }
-  // Handle range filter object (e.g., {start: 'xxx', end: 'yyy'})
-  if (typeof value === 'object' && !Array.isArray(value)) {
+  // Handle array values (e.g., multi-select filters)
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  // Handle range filter object (e.g., {start: 'xxx', end: 'yyy'} or {from: 'xxx', to: 'yyy'})
+  if (typeof value === 'object') {
     return (value.start !== undefined && value.start !== null && value.start !== '') ||
-           (value.end !== undefined && value.end !== null && value.end !== '');
+           (value.end !== undefined && value.end !== null && value.end !== '') ||
+           (value.from !== undefined && value.from !== null && value.from !== '') ||
+           (value.to !== undefined && value.to !== null && value.to !== '');
   }
   return true;
 };

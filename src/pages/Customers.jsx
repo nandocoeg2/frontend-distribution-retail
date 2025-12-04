@@ -69,7 +69,6 @@ const Customers = () => {
           <div className="flex justify-between items-center mb-3">
             <div>
               <h1 className="text-xl font-bold text-gray-800">Customers</h1>
-              <p className="text-xs text-gray-600">Manage your customer data</p>
             </div>
             <div className="flex gap-2">
               <button
