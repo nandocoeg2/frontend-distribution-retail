@@ -6,6 +6,7 @@ import {
   createStockOut,
   createReturn,
   classifyReturn,
+  updateNotes,
 } from '../services/stockMovementService';
 import toastService from '../services/toastService';
 
@@ -13,6 +14,7 @@ const INITIAL_FILTERS = {
   search: '',
   status: 'all',
   type: 'all',
+  itemId: '',
   dateFilterType: '',
   startDate: '',
   endDate: '',
@@ -164,10 +166,8 @@ const sanitizeFilters = (filters = {}) => {
     filters.status && filters.status !== 'all' ? filters.status : undefined;
   const type =
     filters.type && filters.type !== 'all' ? filters.type : undefined;
-  const dateFilterType =
-    filters.dateFilterType && filters.dateFilterType.trim() !== ''
-      ? filters.dateFilterType
-      : undefined;
+  const itemId =
+    filters.itemId && filters.itemId.trim() !== '' ? filters.itemId : undefined;
 
   // Convert datetime-local format to ISO 8601
   const convertToISO = (dateStr) => {
@@ -187,13 +187,25 @@ const sanitizeFilters = (filters = {}) => {
   const startDate = convertToISO(filters.startDate);
   const endDate = convertToISO(filters.endDate);
 
+  // Only include dateFilterType if it's not 'custom' OR if both dates are provided
+  let dateFilterType =
+    filters.dateFilterType && filters.dateFilterType.trim() !== ''
+      ? filters.dateFilterType
+      : undefined;
+
+  // If custom is selected but dates are not both filled, don't send dateFilterType
+  if (dateFilterType === 'custom' && (!startDate || !endDate)) {
+    dateFilterType = undefined;
+  }
+
   return {
     search: trimmedSearch || undefined,
     status,
     type,
+    itemId,
     dateFilterType,
-    startDate,
-    endDate,
+    startDate: dateFilterType === 'custom' ? startDate : undefined,
+    endDate: dateFilterType === 'custom' ? endDate : undefined,
   };
 };
 
@@ -344,6 +356,25 @@ const useStockMovementsPage = () => {
     [refreshAfterMutation, setError]
   );
 
+  const updateMovementNotes = useCallback(
+    async (movementId, notes) => {
+      setError(null);
+      try {
+        const result = await updateNotes(movementId, notes);
+        toastService.success('Notes berhasil diperbarui');
+        await refreshAfterMutation();
+        return result?.data || result;
+      } catch (err) {
+        const message =
+          resolveStockMovementError(err) || 'Failed to update notes';
+        setError(message);
+        toastService.error(message);
+        throw err;
+      }
+    },
+    [refreshAfterMutation, setError]
+  );
+
   const handleFiltersChange = useCallback(
     (changes) => {
       setFilters((prev) => {
@@ -389,6 +420,7 @@ const useStockMovementsPage = () => {
     createStockOutMovement,
     createReturnMovement,
     classifyReturnMovement,
+    updateMovementNotes,
   };
 };
 

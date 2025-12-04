@@ -33,6 +33,7 @@ const StockMovements = () => {
     createStockOutMovement,
     createReturnMovement,
     classifyReturnMovement,
+    updateMovementNotes,
   } = useStockMovementsPage();
 
   const [showStockInModal, setShowStockInModal] = useState(false);
@@ -43,6 +44,9 @@ const StockMovements = () => {
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [classifyLoadingId, setClassifyLoadingId] = useState(null);
   const [pendingClassification, setPendingClassification] = useState(null);
+  const [editingMovement, setEditingMovement] = useState(null);
+  const [editNotesValue, setEditNotesValue] = useState('');
+  const [editNotesLoading, setEditNotesLoading] = useState(false);
 
   const {
     showDialog,
@@ -181,6 +185,30 @@ const StockMovements = () => {
     }
   }, [classifyReturnMovement, hideDialog, pendingClassification, setDialogLoading]);
 
+  const handleEditNotes = useCallback((movement) => {
+    setEditingMovement(movement);
+    setEditNotesValue(movement.notes || '');
+  }, []);
+
+  const handleCloseEditNotes = useCallback(() => {
+    setEditingMovement(null);
+    setEditNotesValue('');
+  }, []);
+
+  const handleSaveNotes = useCallback(async () => {
+    if (!editingMovement?.id) return;
+    
+    setEditNotesLoading(true);
+    try {
+      await updateMovementNotes(editingMovement.id, editNotesValue);
+      handleCloseEditNotes();
+    } catch (err) {
+      // Error handling already managed in hook/toast
+    } finally {
+      setEditNotesLoading(false);
+    }
+  }, [editingMovement, editNotesValue, updateMovementNotes, handleCloseEditNotes]);
+
   if (loading && !movements?.length && !searchLoading) {
     return (
       <div className='flex h-64 items-center justify-center'>
@@ -190,69 +218,64 @@ const StockMovements = () => {
   }
 
   return (
-    <div className='p-6'>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
-            <div>
-              <h1 className='text-2xl font-bold text-gray-900'>
-                Stock Movements
-              </h1>
-              <p className='mt-1 text-sm text-gray-600'>
-                Pantau seluruh aktivitas perpindahan stok, mulai dari stock-in
-                supplier hingga retur pelanggan.
-              </p>
-            </div>
-            <div className='flex flex-col gap-2 sm:flex-row'>
+    <div className='p-4'>
+      <div className='rounded-lg bg-white p-4 shadow'>
+        <div className='space-y-3'>
+          {/* Header */}
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <h1 className='text-lg font-semibold text-gray-900'>Stock Movements</h1>
+            <div className='flex gap-2'>
               <button
                 type='button'
                 onClick={() => setShowReturnModal(true)}
-                className='inline-flex items-center justify-center rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-100 transition-colors'
+                className='inline-flex items-center rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 transition-colors'
               >
-                <ArrowUturnLeftIcon className='mr-2 h-5 w-5' aria-hidden='true' />
-                Catat Return
+                <ArrowUturnLeftIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
+                Return
               </button>
               <button
                 type='button'
                 onClick={() => setShowStockOutModal(true)}
-                className='inline-flex items-center justify-center rounded-md border border-amber-600 bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 transition-colors'
+                className='inline-flex items-center rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-colors'
               >
-                <ArrowUpTrayIcon className='mr-2 h-5 w-5' aria-hidden='true' />
-                Catat Stock Out
+                <ArrowUpTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
+                Stock Out
               </button>
               <button
                 type='button'
                 onClick={() => setShowStockInModal(true)}
-                className='inline-flex items-center justify-center rounded-md border border-indigo-600 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors'
+                className='inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors'
               >
-                <ArrowDownTrayIcon className='mr-2 h-5 w-5' aria-hidden='true' />
-                Catat Stock In
+                <ArrowDownTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
+                Stock In
               </button>
             </div>
           </div>
 
-          <div className='mb-6'>
-            <StockMovementFilters
-              filters={filters}
-              onChange={handleFiltersChange}
-              onReset={handleResetFilters}
-              isLoading={loading}
-            />
-          </div>
+          {/* Filters */}
+          <StockMovementFilters
+            filters={filters}
+            onChange={handleFiltersChange}
+            onReset={handleResetFilters}
+            isLoading={loading}
+            itemOptions={itemOptions}
+          />
 
+          {/* Error */}
           {error && (
-            <div className='mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800'>
-              <p className='font-medium'>Gagal memuat data: {error}</p>
+            <div className='flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800'>
+              <span>Gagal memuat data: {error}</span>
               <button
                 type='button'
                 onClick={handleRetry}
-                className='mt-3 inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1'
+                className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'
               >
                 Coba lagi
               </button>
             </div>
           )}
 
+          {/* Table */}
           <StockMovementTable
             movements={movements}
             pagination={pagination}
@@ -262,6 +285,7 @@ const StockMovements = () => {
             searchLoading={searchLoading}
             onClassify={handleClassifyRequest}
             classifyLoadingId={classifyLoadingId}
+            onEditNotes={handleEditNotes}
           />
         </div>
       </div>
@@ -292,6 +316,49 @@ const StockMovements = () => {
       />
 
       <ConfirmationDialog onConfirm={handleConfirmClassify} />
+
+      {/* Edit Notes Modal */}
+      {editingMovement && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+          <div className='w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
+            <h3 className='mb-4 text-lg font-semibold text-gray-900'>
+              Edit Notes
+            </h3>
+            <p className='mb-2 text-sm text-gray-500'>
+              Movement: {editingMovement.movementNumber || editingMovement.id}
+            </p>
+            <textarea
+              value={editNotesValue}
+              onChange={(e) => setEditNotesValue(e.target.value)}
+              className='w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500'
+              rows={4}
+              placeholder='Masukkan catatan...'
+              maxLength={255}
+            />
+            <p className='mt-1 text-xs text-gray-400'>
+              {editNotesValue.length}/255 karakter
+            </p>
+            <div className='mt-4 flex justify-end gap-3'>
+              <button
+                type='button'
+                onClick={handleCloseEditNotes}
+                disabled={editNotesLoading}
+                className='rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+              >
+                Batal
+              </button>
+              <button
+                type='button'
+                onClick={handleSaveNotes}
+                disabled={editNotesLoading}
+                className='rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50'
+              >
+                {editNotesLoading ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

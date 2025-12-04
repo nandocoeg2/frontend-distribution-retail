@@ -50,6 +50,7 @@ const StockMovementTable = ({
   searchLoading = false,
   onClassify,
   classifyLoadingId = null,
+  onEditNotes,
 }) => {
   const hasMovements = Array.isArray(movements) && movements.length > 0;
 
@@ -60,37 +61,55 @@ const StockMovementTable = ({
 
     return movements.map((movement) => {
       const items = Array.isArray(movement.items) ? movement.items : [];
-      const totalItems = typeof movement.totalItems === 'number'
-        ? movement.totalItems
-        : items.length;
       
-      // Extract product names
-      let productDisplay = '-';
-      if (items.length > 0) {
-        const firstProduct = items[0]?.inventory?.nama_barang || 
-                            items[0]?.inventory?.name || 
-                            items[0]?.productName || '-';
-        if (items.length === 1) {
-          productDisplay = firstProduct;
-        } else {
-          productDisplay = `${firstProduct} (+${items.length - 1} more)`;
+      // Get unique product names from items
+      const uniqueProducts = new Map();
+      items.forEach((item) => {
+        const itemId = item?.itemId || item?.item?.id;
+        const productName = item?.item?.nama_barang || 
+                          item?.inventory?.nama_barang || 
+                          item?.inventory?.name || 
+                          item?.productName || '-';
+        if (itemId && !uniqueProducts.has(itemId)) {
+          uniqueProducts.set(itemId, productName);
         }
+      });
+      
+      // Items = jumlah karton (unique items count)
+      const cartonCount = uniqueProducts.size;
+      
+      // Qty = total PCS (sum of all quantities)
+      const totalQuantity = items.reduce(
+        (sum, item) => sum + Number(item?.quantity || 0),
+        0
+      );
+      
+      // Get all unique product names as array
+      const productNames = Array.from(uniqueProducts.values());
+      if (productNames.length === 0) {
+        productNames.push('-');
       }
 
       // Determine party info based on movement type
-      let partyInfo = '-';
+      const partyInfoLines = [];
       const movementType = movement.type || 'UNKNOWN';
       
       if (movementType === 'STOCK_IN') {
         const companyName = movement.companyName || movement.company?.nama_perusahaan || '-';
         const supplierName = movement.supplierName || movement.supplier?.name || '-';
-        partyInfo = `${companyName} ← ${supplierName}`;
+        partyInfoLines.push(companyName);
+        partyInfoLines.push(`← ${supplierName}`);
       } else if (movementType === 'STOCK_OUT') {
         const companyName = movement.companyName || movement.company?.nama_perusahaan || '-';
         const customerName = movement.customerName || movement.customer?.namaCustomer || '-';
-        partyInfo = `${companyName} → ${customerName}`;
+        partyInfoLines.push(companyName);
+        partyInfoLines.push(`→ ${customerName}`);
       } else if (movementType === 'RETURN') {
-        partyInfo = movement.notes || 'Return';
+        partyInfoLines.push(movement.notes || 'Return');
+      }
+      
+      if (partyInfoLines.length === 0) {
+        partyInfoLines.push('-');
       }
 
       return {
@@ -98,16 +117,10 @@ const StockMovementTable = ({
         movementNumber: movement.movementNumber || '-',
         type: movementType,
         status: movement.status || 'UNKNOWN',
-        partyInfo,
-        productDisplay,
-        totalItems,
-        totalQuantity:
-          typeof movement.totalQuantity === 'number'
-            ? movement.totalQuantity
-            : items.reduce(
-                (sum, item) => sum + Number(item?.quantity || 0),
-                0
-              ),
+        partyInfoLines, // array of party info for new line display
+        productNames, // array of product names for new line display
+        totalItems: cartonCount, // jumlah karton (unique items)
+        totalQuantity, // total PCS
         createdAt: movement.createdAt || movement.updatedAt || null,
         notes: movement.notes || '',
         source: movement,
@@ -151,7 +164,7 @@ const StockMovementTable = ({
                 scope='col'
                 className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Party Info
+                Info
               </th>
               <th
                 scope='col'
@@ -162,12 +175,14 @@ const StockMovementTable = ({
               <th
                 scope='col'
                 className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                title='Jumlah jenis barang (karton)'
               >
                 Items
               </th>
               <th
                 scope='col'
                 className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                title='Total kuantitas (PCS)'
               >
                 Qty
               </th>
@@ -175,7 +190,7 @@ const StockMovementTable = ({
                 scope='col'
                 className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Created
+                Date
               </th>
               <th
                 scope='col'
@@ -183,21 +198,19 @@ const StockMovementTable = ({
               >
                 Notes
               </th>
-              {onClassify && (
-                <th
-                  scope='col'
-                  className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
-                >
-                  Actions
-                </th>
-              )}
+              <th
+                scope='col'
+                className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+              >
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className='divide-y divide-gray-100 bg-white'>
             {renderedMovements.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className='px-2 py-4 text-center text-xs text-gray-500'
                 >
                   {searchLoading
@@ -236,20 +249,28 @@ const StockMovementTable = ({
                       />
                     </td>
                     <td className='px-2 py-1 text-xs text-gray-500'>
-                      <div className='max-w-[200px] truncate' title={movement.partyInfo || '-'}>
-                        {movement.partyInfo || '-'}
+                      <div className='max-w-[200px]'>
+                        {movement.partyInfoLines.map((line, idx) => (
+                          <div key={idx} className='truncate' title={line}>
+                            {line}
+                          </div>
+                        ))}
                       </div>
                     </td>
                     <td className='px-2 py-1 text-xs text-gray-900'>
-                      <div className='max-w-xs truncate' title={movement.productDisplay}>
-                        {movement.productDisplay}
+                      <div className='max-w-[250px]'>
+                        {movement.productNames.map((name, idx) => (
+                          <div key={idx} className='truncate' title={name}>
+                            {name}
+                          </div>
+                        ))}
                       </div>
                     </td>
                     <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
-                      {movement.totalItems}
+                      {movement.totalItems.toLocaleString('id-ID')}
                     </td>
                     <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
-                      {movement.totalQuantity}
+                      {movement.totalQuantity.toLocaleString('id-ID')}
                     </td>
                     <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500'>
                       {formatDateTime(movement.createdAt)}
@@ -257,10 +278,19 @@ const StockMovementTable = ({
                     <td className='px-2 py-1 text-xs text-gray-500'>
                       {movement.notes || '-'}
                     </td>
-                    {onClassify && (
-                      <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
-                        {classificationEnabled ? (
-                          <div className='flex justify-end space-x-2'>
+                    <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
+                      <div className='flex justify-end space-x-2'>
+                        {onEditNotes && (
+                          <button
+                            type='button'
+                            onClick={() => onEditNotes(movement.source)}
+                            className='inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100'
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {classificationEnabled && (
+                          <>
                             <button
                               type='button'
                               onClick={() =>
@@ -281,16 +311,10 @@ const StockMovementTable = ({
                             >
                               {isClassifying ? 'Memproses...' : 'Reject'}
                             </button>
-                          </div>
-                        ) : (
-                          <span className='text-xs text-gray-400'>
-                            {movement.type === 'RETURN'
-                              ? 'Sudah diproses'
-                              : 'Tidak ada aksi'}
-                          </span>
+                          </>
                         )}
-                      </td>
-                    )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })

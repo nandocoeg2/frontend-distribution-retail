@@ -84,6 +84,7 @@ export const getStockMovements = async ({
   search,
   status,
   type,
+  itemId,
   dateFilterType,
   startDate,
   endDate,
@@ -94,6 +95,7 @@ export const getStockMovements = async ({
     search,
     status,
     type,
+    itemId,
     dateFilterType,
     startDate,
     endDate,
@@ -189,3 +191,20 @@ export const classifyReturn = async (movementId, action) => {
   return response.json();
 };
 
+export const updateNotes = async (movementId, notes) => {
+  const response = await fetch(`${API_BASE_URL}/${movementId}/notes`, {
+    method: 'PATCH',
+    headers: buildHeaders(),
+    body: JSON.stringify({ notes }),
+  });
+
+  if (!response.ok) {
+    const message = await parseErrorMessage(
+      response,
+      'Failed to update notes'
+    );
+    throw new Error(message);
+  }
+
+  return response.json();
+};
