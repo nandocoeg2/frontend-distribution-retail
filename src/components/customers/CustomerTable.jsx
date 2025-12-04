@@ -28,7 +28,7 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
     hideDialog();
   };
   return (
-    <div className='space-y-4'>
+    <div className='space-y-2'>
       <div className='overflow-x-auto'>
         <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <colgroup>
@@ -42,25 +42,25 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
           </colgroup>
           <thead className='bg-gray-50'>
             <tr>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Customer Name
               </th>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Code
               </th>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Group
               </th>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Region
               </th>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Alamat
               </th>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Phone
               </th>
-              <th className='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+              <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                 Actions
               </th>
             </tr>
@@ -92,8 +92,8 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
                   <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.groupCustomer?.nama_group || 'N/A'}>
                     {customer.groupCustomer?.nama_group || 'N/A'}
                   </td>
-                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.region?.nama_region || 'N/A'}>
-                    {customer.region?.nama_region || 'N/A'}
+                  <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.region || 'N/A'}>
+                    {customer.region || 'N/A'}
                   </td>
                   <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.alamatPengiriman || '-'}>
                     {customer.alamatPengiriman || '-'}

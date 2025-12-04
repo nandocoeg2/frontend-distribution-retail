@@ -21,6 +21,7 @@ const Customers = () => {
     searchLoading,
     handleSearchChange,
     handlePageChange,
+    handleLimitChange,
     deleteCustomer,
     fetchCustomers,
     handleAuthError
@@ -62,37 +63,37 @@ const Customers = () => {
 
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
+    <div className="p-3 bg-gray-50 min-h-screen">
+      <div className="max-w-full mx-auto">
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <div className="flex justify-between items-center mb-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Customers</h1>
-              <p className="text-sm text-gray-600">Manage your customer data</p>
+              <h1 className="text-xl font-bold text-gray-800">Customers</h1>
+              <p className="text-xs text-gray-600">Manage your customer data</p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-3 py-1.5 text-sm bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exportLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1.5"></div>
                     Exporting...
                   </>
                 ) : (
                   <>
-                    <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                    <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
                     Export Excel
                   </>
                 )}
               </button>
               <button
                 onClick={handleAddCustomer}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
+                <PlusIcon className="h-4 w-4 mr-1.5" />
                 Add Customer
               </button>
             </div>
@@ -112,6 +113,7 @@ const Customers = () => {
                 customers={customers}
                 pagination={pagination}
                 onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
                 onDelete={deleteCustomer}
                 onViewDetail={handleViewDetail}
                 selectedCustomerId={selectedCustomerForDetail?.id}
@@ -124,7 +126,7 @@ const Customers = () => {
 
       {/* Customer Detail Card */}
       {selectedCustomerForDetail && (
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-full mx-auto px-3 mt-3">
           <CustomerDetailCardEditable
             customer={selectedCustomerForDetail}
             onClose={handleCloseDetail}
