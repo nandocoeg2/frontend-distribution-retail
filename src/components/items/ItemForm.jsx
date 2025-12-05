@@ -3,8 +3,11 @@ import FormField from '../common/FormField';
 import FormSection from '../common/FormSection';
 import { MultiSelect } from '../ui';
 import { getMixableItems } from '../../services/itemService';
+import { getCompanies } from '../../services/companyService';
+import authService from '../../services/authService';
 
 const DEFAULT_FORM_STATE = {
+  companyId: '',
   plu: '',
   nama_barang: '',
   eanBarcode: '',
@@ -139,8 +142,35 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
   const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
   const [mixableItems, setMixableItems] = useState([]);
   const [loadingMixableItems, setLoadingMixableItems] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
 
   const memoizedInitialData = useMemo(() => initialData, [initialData]);
+
+  // Get default company from logged-in user
+  const defaultCompanyId = useMemo(() => {
+    const company = authService.getCompanyData();
+    return company?.id || '';
+  }, []);
+
+  // Fetch companies for dropdown
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      setLoadingCompanies(true);
+      try {
+        const response = await getCompanies(1, 100); // Get up to 100 companies
+        const data = response?.data?.data || response?.data || [];
+        setCompanies(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch companies:', error);
+        setCompanies([]);
+      } finally {
+        setLoadingCompanies(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   // Load mixable items when allow_mixed_carton is true
   useEffect(() => {
@@ -169,7 +199,8 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
 
   useEffect(() => {
     if (!memoizedInitialData || Object.keys(memoizedInitialData).length === 0) {
-      setFormData({ ...DEFAULT_FORM_STATE });
+      // For new items, set default company
+      setFormData({ ...DEFAULT_FORM_STATE, companyId: defaultCompanyId });
       return;
     }
 
@@ -179,6 +210,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
     ) || [];
 
     setFormData({
+      companyId: memoizedInitialData.companyId || defaultCompanyId,
       plu: memoizedInitialData.plu || '',
       nama_barang: memoizedInitialData.nama_barang || '',
       eanBarcode: memoizedInitialData.eanBarcode || '',
@@ -205,7 +237,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
       harga2: getPriceValue(memoizedInitialData, 'harga2'),
       ppn: getPriceValue(memoizedInitialData, 'ppn')
     });
-  }, [memoizedInitialData]);
+  }, [memoizedInitialData, defaultCompanyId]);
 
   const handleChange = ({ target }) => {
     const { name, value, type, checked } = target;
@@ -230,6 +262,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
   const handleSubmit = (event) => {
     event.preventDefault();
     const dataToSubmit = {
+      companyId: formData.companyId,
       plu: formData.plu?.trim(),
       nama_barang: formData.nama_barang?.trim(),
       allow_mixed_carton: Boolean(formData.allow_mixed_carton)
@@ -302,6 +335,30 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
         title="Informasi Dasar"
         description="Lengkapi identitas utama item. PLU tidak dapat diubah setelah data dibuat."
       >
+        <div className="mb-4">
+          <label htmlFor="companyId" className="block text-sm font-medium text-gray-700 mb-1">
+            Company <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="companyId"
+            name="companyId"
+            value={formData.companyId}
+            onChange={handleChange}
+            required
+            disabled={loading || loadingCompanies}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">{loadingCompanies ? 'Loading companies...' : 'Pilih Company'}</option>
+            {companies.map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.kode_company} - {company.nama_perusahaan}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Item akan terdaftar di company yang dipilih.
+          </p>
+        </div>
         <FormField
           label="PLU (Price Look-Up)"
           name="plu"

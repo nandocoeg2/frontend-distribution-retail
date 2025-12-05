@@ -1,5 +1,11 @@
 import authService from './authService';
 
+// Helper to get current company ID from auth service
+const getCompanyId = () => {
+  const company = authService.getCompanyData();
+  return company?.id || null;
+};
+
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/items`;
 
 const extractErrorMessage = (errorData, fallbackMessage) => {
@@ -60,6 +66,12 @@ export const getItems = async (page = 1, limit = 10, filters = {}) => {
   const params = new URLSearchParams();
   params.append('page', page);
   params.append('limit', limit);
+
+  // Always include companyId to filter items by current company
+  const companyId = getCompanyId();
+  if (companyId) {
+    params.append('companyId', companyId);
+  }
 
   // Add filters only if they exist and have values
   Object.entries(filters).forEach(([key, value]) => {
@@ -150,7 +162,18 @@ export const getItemById = async (id) => {
 };
 
 export const searchItems = async (query, page = 1, limit = 10) => {
-  const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}&page=${page}&limit=${limit}`, {
+  const params = new URLSearchParams();
+  params.append('q', query);
+  params.append('page', page);
+  params.append('limit', limit);
+
+  // Always include companyId to filter items by current company
+  const companyId = getCompanyId();
+  if (companyId) {
+    params.append('companyId', companyId);
+  }
+
+  const response = await fetch(`${API_URL}/search?${params}`, {
     headers: getHeaders()
   });
   if (!response.ok) {
@@ -161,10 +184,21 @@ export const searchItems = async (query, page = 1, limit = 10) => {
 };
 
 export const createItem = async (itemData) => {
+  // Always include companyId when creating items
+  const companyId = getCompanyId();
+  const dataWithCompany = {
+    ...itemData,
+    companyId: itemData.companyId || companyId,
+  };
+
+  if (!dataWithCompany.companyId) {
+    throw new Error('Company ID is required to create an item');
+  }
+
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify(itemData)
+    body: JSON.stringify(dataWithCompany)
   });
   if (!response.ok) {
     const errorMessage = await parseErrorMessage(response, 'Failed to create item');
@@ -248,10 +282,16 @@ export const downloadBulkTemplate = async () => {
 
 export const uploadBulkItem = async (file) => {
   const token = authService.getToken();
+  const companyId = getCompanyId();
+
+  if (!companyId) {
+    throw new Error('Company ID is required for bulk item upload');
+  }
+
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_URL}/bulk/upload`, {
+  const response = await fetch(`${API_URL}/bulk/upload?companyId=${encodeURIComponent(companyId)}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -303,8 +343,18 @@ export const getAllBulkFiles = async (status = null) => {
  */
 export const exportExcel = async (searchQuery = '') => {
   const token = authService.getToken();
-  const url = searchQuery
-    ? `${API_URL}/export-excel?q=${encodeURIComponent(searchQuery)}`
+  const companyId = getCompanyId();
+  
+  const params = new URLSearchParams();
+  if (searchQuery) {
+    params.append('q', searchQuery);
+  }
+  if (companyId) {
+    params.append('companyId', companyId);
+  }
+
+  const url = params.toString()
+    ? `${API_URL}/export-excel?${params}`
     : `${API_URL}/export-excel`;
 
   const response = await fetch(url, {
