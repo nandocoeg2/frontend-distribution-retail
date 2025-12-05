@@ -11,6 +11,35 @@ const api = axios.create({
     'Accept': 'application/json',
   },
   withCredentials: true,
+  // Custom params serializer to handle arrays without bracket notation
+  paramsSerializer: {
+    serialize: (params) => {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') {
+          return;
+        }
+        if (Array.isArray(value)) {
+          // Serialize arrays as repeated params: key=val1&key=val2
+          value.forEach((v) => {
+            if (v !== undefined && v !== null && v !== '') {
+              searchParams.append(key, v);
+            }
+          });
+        } else if (typeof value === 'object') {
+          // Serialize objects as JSON or flattened keys
+          Object.entries(value).forEach(([subKey, subValue]) => {
+            if (subValue !== undefined && subValue !== null && subValue !== '') {
+              searchParams.append(`${key}_${subKey}`, subValue);
+            }
+          });
+        } else {
+          searchParams.append(key, value);
+        }
+      });
+      return searchParams.toString();
+    },
+  },
 });
 
 api.interceptors.request.use((config) => {

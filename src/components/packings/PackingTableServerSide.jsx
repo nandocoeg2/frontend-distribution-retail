@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   PencilIcon,
@@ -14,6 +14,8 @@ import { DataTable, DataTablePagination } from '../table';
 import { exportPackingSticker, exportPackingTandaTerima } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
+import customerService from '../../services/customerService';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const columnHelper = createColumnHelper();
 
@@ -98,6 +100,78 @@ const PackingTableServerSide = ({
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingTandaTerima, setIsPrintingTandaTerima] = useState(false);
+  const [customers, setCustomers] = useState([]);
+
+  // Status options for multi-select filter
+  const statusOptions = useMemo(() => [
+    { id: 'PENDING PACKING', name: 'Pending' },
+    { id: 'PROCESSING PACKING', name: 'Processing' },
+    { id: 'COMPLETED PACKING', name: 'Completed' },
+    { id: 'FAILED PACKING', name: 'Failed' },
+  ], []);
+
+  // Fetch customers for multi-select filter
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers(1, 100);
+        const data = response?.data?.data || response?.data || [];
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  // Map filters to backend query params
+  const getQueryParams = useCallback(({ filters, ...rest }) => {
+    const mappedFilters = { ...filters };
+
+    // Handle array of customer IDs for multi-select
+    if (mappedFilters.customer_name) {
+      if (Array.isArray(mappedFilters.customer_name) && mappedFilters.customer_name.length > 0) {
+        mappedFilters.customerIds = mappedFilters.customer_name;
+      }
+      delete mappedFilters.customer_name;
+    }
+
+    // Handle array of status codes for multi-select
+    if (mappedFilters.status) {
+      if (Array.isArray(mappedFilters.status) && mappedFilters.status.length > 0) {
+        mappedFilters.status_codes = mappedFilters.status;
+      }
+      delete mappedFilters.status;
+    }
+
+    // Handle date range filters for tanggal_packing
+    if (mappedFilters.tanggal_packing && typeof mappedFilters.tanggal_packing === 'object') {
+      if (mappedFilters.tanggal_packing.from) {
+        mappedFilters.tanggal_packing_from = mappedFilters.tanggal_packing.from;
+      }
+      if (mappedFilters.tanggal_packing.to) {
+        mappedFilters.tanggal_packing_to = mappedFilters.tanggal_packing.to;
+      }
+      delete mappedFilters.tanggal_packing;
+    }
+
+    // Handle date range filters for tanggal_expired
+    if (mappedFilters.tanggal_expired && typeof mappedFilters.tanggal_expired === 'object') {
+      if (mappedFilters.tanggal_expired.from) {
+        mappedFilters.tanggal_expired_from = mappedFilters.tanggal_expired.from;
+      }
+      if (mappedFilters.tanggal_expired.to) {
+        mappedFilters.tanggal_expired_to = mappedFilters.tanggal_expired.to;
+      }
+      delete mappedFilters.tanggal_expired;
+    }
+
+    return {
+      ...rest,
+      filters: mappedFilters,
+    };
+  }, []);
 
   const handleBulkPrintSticker = async () => {
     if (!selectedPackings || selectedPackings.length === 0) {
@@ -271,6 +345,7 @@ const PackingTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    getQueryParams,
   });
 
   const columns = useMemo(
@@ -331,62 +406,81 @@ const PackingTableServerSide = ({
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'customer_name',
         header: ({ column }) => (
-          <div className='space-y-1'>
+          <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-xs'>Customer</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
+            <AutocompleteCheckboxLimitTag
+              options={customers}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder='Semua'
+              displayKey='namaCustomer'
+              valueKey='id'
+              limitTags={1}
+              size='small'
+              fetchOnClose
             />
           </div>
         ),
-        cell: (info) => info.getValue() || 'N/A',
+        cell: (info) => <span className='text-xs truncate'>{info.getValue() || 'N/A'}</span>,
       }),
       columnHelper.accessor('tanggal_packing', {
-        header: ({ column }) => (
-          <div className='space-y-1'>
-            <div className='font-medium text-xs'>Tgl Packing</div>
-            <input
-              type='date'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className='space-y-0.5'>
+              <div className='font-medium text-xs'>Tgl Packing</div>
+              <div className='flex flex-col gap-0.5'>
+                <input
+                  type='date'
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+                  onClick={(e) => e.stopPropagation()}
+                  title='Dari tanggal'
+                />
+                <input
+                  type='date'
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+                  onClick={(e) => e.stopPropagation()}
+                  title='Sampai tanggal'
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : '-'}</span>,
       }),
       columnHelper.accessor('purchaseOrder.delivery_date', {
         id: 'tanggal_expired',
-        header: ({ column }) => (
-          <div className='space-y-1'>
-            <div className='font-medium text-xs'>Tgl Expired</div>
-            <input
-              type='date'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) =>
-          info.getValue()
-            ? new Date(info.getValue()).toLocaleDateString()
-            : 'N/A',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className='space-y-0.5'>
+              <div className='font-medium text-xs'>Tgl Expired</div>
+              <div className='flex flex-col gap-0.5'>
+                <input
+                  type='date'
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+                  onClick={(e) => e.stopPropagation()}
+                  title='Dari tanggal'
+                />
+                <input
+                  type='date'
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+                  onClick={(e) => e.stopPropagation()}
+                  title='Sampai tanggal'
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : 'N/A'}</span>,
       }),
       columnHelper.display({
         id: 'is_printed',
@@ -439,33 +533,34 @@ const PackingTableServerSide = ({
       columnHelper.accessor('status.status_name', {
         id: 'status',
         header: ({ column }) => (
-          <div className='space-y-1'>
+          <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-xs'>Status</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            >
-              <option value=''>Semua</option>
-              <option value='PENDING PACKING'>Pending</option>
-              <option value='PROCESSING PACKING'>Processing</option>
-              <option value='COMPLETED PACKING'>Completed</option>
-              <option value='FAILED PACKING'>Failed</option>
-            </select>
+            <AutocompleteCheckboxLimitTag
+              options={statusOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder='Semua'
+              displayKey='name'
+              valueKey='id'
+              limitTags={1}
+              size='small'
+              fetchOnClose
+            />
           </div>
         ),
-        cell: (info) => (
-          <StatusBadge
-            status={info.getValue() || 'Unknown'}
-            variant={resolveStatusVariant(info.getValue())}
-            size='sm'
-            dot
-          />
-        ),
+        cell: (info) => {
+          const s = info.getValue();
+          return s ? (
+            <StatusBadge
+              status={s}
+              variant={resolveStatusVariant(s)}
+              size='sm'
+              dot
+            />
+          ) : (
+            <span className='text-xs text-gray-500'>-</span>
+          );
+        },
       }),
       columnHelper.accessor('packingBoxes', {
         id: 'total_boxes',
@@ -544,6 +639,8 @@ const PackingTableServerSide = ({
       onDelete,
       deleteLoading,
       setPage,
+      customers,
+      statusOptions,
     ]
   );
 
@@ -589,6 +686,7 @@ const PackingTableServerSide = ({
         loadingMessage='Memuat...'
         emptyMessage='Tidak ada data'
         emptyFilteredMessage='Tidak ada data sesuai filter'
+        wrapperClassName='overflow-x-auto overflow-y-visible min-h-[300px]'
         tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
         headerRowClassName='bg-gray-50'
         headerCellClassName='px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider'
