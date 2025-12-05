@@ -3,6 +3,31 @@ import authService from './authService';
 
 const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1/invoice-pengiriman`;
 
+// Custom params serializer that repeats keys for arrays (no [] notation)
+const serializeParams = (params) => {
+  const parts = [];
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === '') continue;
+    if (Array.isArray(value)) {
+      value.forEach((v) => {
+        if (v !== undefined && v !== null && v !== '') {
+          parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+        }
+      });
+    } else if (typeof value === 'object') {
+      // Handle nested objects (e.g., date ranges)
+      for (const [subKey, subValue] of Object.entries(value)) {
+        if (subValue !== undefined && subValue !== null && subValue !== '') {
+          parts.push(`${encodeURIComponent(subKey)}=${encodeURIComponent(subValue)}`);
+        }
+      }
+    } else {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    }
+  }
+  return parts.join('&');
+};
+
 class InvoicePengirimanService {
   constructor() {
     this.api = axios.create({
@@ -11,7 +36,8 @@ class InvoicePengirimanService {
         accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      withCredentials: true
+      withCredentials: true,
+      paramsSerializer: serializeParams
     });
 
     this.api.interceptors.request.use((config) => {
