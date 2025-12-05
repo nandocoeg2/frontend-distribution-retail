@@ -26,12 +26,14 @@ const isDefined = (value) => {
   if (Array.isArray(value)) {
     return value.length > 0;
   }
-  // Handle range filter object (e.g., {start: 'xxx', end: 'yyy'} or {from: 'xxx', to: 'yyy'})
+  // Handle range filter object (e.g., {start: 'xxx', end: 'yyy'} or {from: 'xxx', to: 'yyy'} or {min: 'xxx', max: 'yyy'})
   if (typeof value === 'object') {
     return (value.start !== undefined && value.start !== null && value.start !== '') ||
            (value.end !== undefined && value.end !== null && value.end !== '') ||
            (value.from !== undefined && value.from !== null && value.from !== '') ||
-           (value.to !== undefined && value.to !== null && value.to !== '');
+           (value.to !== undefined && value.to !== null && value.to !== '') ||
+           (value.min !== undefined && value.min !== null && value.min !== '') ||
+           (value.max !== undefined && value.max !== null && value.max !== '');
   }
   return true;
 };

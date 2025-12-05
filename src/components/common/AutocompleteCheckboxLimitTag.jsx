@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 
 const AutocompleteCheckboxLimitTag = ({
   options = [],
@@ -26,7 +27,9 @@ const AutocompleteCheckboxLimitTag = ({
   const [internalValues, setInternalValues] = useState([]); // Track selections internally
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
+  const dropdownRef = useRef(null); // Ref for portal dropdown
   const hasOpenedRef = useRef(false); // Track if dropdown was opened
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   // Ensure value is always an array
   const externalValues = useMemo(() => {
@@ -65,7 +68,10 @@ const AutocompleteCheckboxLimitTag = ({
   // Handle click outside - trigger onChange on close if fetchOnClose
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+      const isInsideWrapper = wrapperRef.current && wrapperRef.current.contains(event.target);
+      const isInsideDropdown = dropdownRef.current && dropdownRef.current.contains(event.target);
+      
+      if (!isInsideWrapper && !isInsideDropdown) {
         if (showOptions && fetchOnClose && hasOpenedRef.current) {
           // Trigger onChange when closing dropdown
           const valuesChanged = JSON.stringify(internalValues) !== JSON.stringify(externalValues);
@@ -134,6 +140,15 @@ const AutocompleteCheckboxLimitTag = ({
     setFilteredOptions(options);
     setShowOptions(true);
     hasOpenedRef.current = true;
+    // Calculate dropdown position
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
   };
 
   const handleClearAll = (e) => {
@@ -239,11 +254,19 @@ const AutocompleteCheckboxLimitTag = ({
         </svg>
       </div>
 
-      {/* Dropdown options */}
-      {showOptions && (
+      {/* Dropdown options - rendered via portal to avoid overflow clipping */}
+      {showOptions && createPortal(
         <ul
-          className={`absolute z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-lg 
-            max-h-60 overflow-y-auto ${isSmall ? 'min-w-[100px]' : 'min-w-[150px] w-full'} ${optionsClassName}`}
+          ref={dropdownRef}
+          style={{
+            position: 'absolute',
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: isSmall ? 'auto' : dropdownPosition.width,
+            minWidth: isSmall ? 100 : 150,
+          }}
+          className={`z-[9999] bg-white border border-gray-300 rounded-md shadow-lg 
+            max-h-60 overflow-y-auto ${optionsClassName}`}
         >
           {loading ? (
             <li className={`flex items-center text-gray-500 ${isSmall ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'}`}>
@@ -281,7 +304,8 @@ const AutocompleteCheckboxLimitTag = ({
               No results found
             </li>
           )}
-        </ul>
+        </ul>,
+        document.body
       )}
     </div>
   );

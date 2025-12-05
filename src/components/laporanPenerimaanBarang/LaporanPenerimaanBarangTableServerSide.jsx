@@ -20,8 +20,48 @@ import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerima
 import laporanPenerimaanBarangService from '../../services/laporanPenerimaanBarangService';
 import toastService from '../../services/toastService';
 import statusService from '../../services/statusService';
+import customerService from '../../services/customerService';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const columnHelper = createColumnHelper();
+
+// Grandtotal filter component with local state for onBlur behavior
+const GrandTotalFilter = ({ column, label, setPage }) => {
+  const filterValue = column.getFilterValue() || { min: '', max: '' };
+  const [localMin, setLocalMin] = useState(filterValue.min ?? '');
+  const [localMax, setLocalMax] = useState(filterValue.max ?? '');
+
+  useEffect(() => { setLocalMin(filterValue.min ?? ''); }, [filterValue.min]);
+  useEffect(() => { setLocalMax(filterValue.max ?? ''); }, [filterValue.max]);
+
+  return (
+    <div className="space-y-0.5">
+      <div className="font-medium text-xs">{label}</div>
+      <div className="flex flex-col gap-0.5">
+        <input
+          type="number"
+          value={localMin}
+          onChange={(e) => setLocalMin(e.target.value)}
+          onBlur={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.target.blur(); } }}
+          placeholder="Min"
+          className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <input
+          type="number"
+          value={localMax}
+          onChange={(e) => setLocalMax(e.target.value)}
+          onBlur={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.target.blur(); } }}
+          placeholder="Max"
+          className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    </div>
+  );
+};
 
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
@@ -80,6 +120,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   const [showUnassignConfirmation, setShowUnassignConfirmation] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [lpbStatuses, setLpbStatuses] = useState([]);
+  const [customers, setCustomers] = useState([]);
 
   // Fetch statuses from API
   useEffect(() => {
@@ -94,6 +135,21 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }
     };
     fetchStatuses();
+  }, []);
+
+  // Fetch customers for autocomplete filter
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers(1, 100);
+        const data = response?.data?.data || response?.data || [];
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
   }, []);
 
   const { isAssigning, isUnassigning, assignPurchaseOrder, unassignPurchaseOrder } =
@@ -388,24 +444,24 @@ const LaporanPenerimaanBarangTableServerSide = ({
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
       columnHelper.accessor('customer.namaCustomer', {
-        id: 'customer',
+        id: 'customerIds',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+            <AutocompleteCheckboxLimitTag
+              options={customers}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="namaCustomer"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
             />
           </div>
         ),
-        cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
+        cell: (info) => <span className="font-medium truncate">{info.getValue() || '-'}</span>,
       }),
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.no_invoice ?? null, {
         id: 'invoice',
@@ -429,45 +485,53 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }),
       columnHelper.accessor('tanggal_po', {
         id: 'tanggal_po',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Tanggal</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
-        cell: (info) => formatDate(info.getValue()),
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor('status.status_name', {
-        id: 'status_code',
+        id: 'status_codes',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <option value="">Aktif</option>
-              <option value="__ALL__">Semua (Termasuk Completed)</option>
-              {lpbStatuses.map((status) => (
-                <option key={status.status_code} value={status.status_code}>
-                  {status.status_name}
-                </option>
-              ))}
-            </select>
+            <AutocompleteCheckboxLimitTag
+              options={lpbStatuses.map((status) => ({
+                id: status.status_code,
+                name: status.status_name,
+              }))}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="Aktif"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -481,29 +545,23 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.detailInvoice?.grand_total ?? null, {
         id: 'grandtotal_lpb',
-        header: () => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Grandtotal LPB</div>
-          </div>
+        header: ({ column }) => (
+          <GrandTotalFilter column={column} label="Grandtotal LPB" setPage={setPage} />
         ),
         cell: (info) => {
           const value = info.getValue();
           return <span className="font-medium">{value != null ? formatCurrency(value) : '-'}</span>;
         },
-        enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.grand_total ?? null, {
         id: 'grandtotal_invoice',
-        header: () => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Grandtotal Invoice</div>
-          </div>
+        header: ({ column }) => (
+          <GrandTotalFilter column={column} label="Grandtotal Invoice" setPage={setPage} />
         ),
         cell: (info) => {
           const value = info.getValue();
           return <span className="font-medium">{value != null ? formatCurrency(value) : '-'}</span>;
         },
-        enableColumnFilter: false,
       }),
       columnHelper.display({
         id: 'selisih',
@@ -600,6 +658,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
       handleOpenAssignModal,
       handleUnassignClick,
       lpbStatuses,
+      customers,
     ]
   );
 
@@ -631,29 +690,32 @@ const LaporanPenerimaanBarangTableServerSide = ({
         </div>
       )}
 
-      <DataTable
-        table={table}
-        isLoading={isLoading}
-        error={error}
-        hasActiveFilters={hasActiveFilters}
-        loadingMessage="Memuat..."
-        emptyMessage="Tidak ada data"
-        emptyFilteredMessage="Tidak ada data sesuai filter"
-        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
-        headerRowClassName="bg-gray-50"
-        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
-        bodyClassName="bg-white divide-y divide-gray-100"
-        rowClassName="hover:bg-gray-50 cursor-pointer h-7"
-        onRowClick={(rowData) => rowData && onView && onView(rowData)}
-        getRowClassName={({ row }) => {
-          const reportId = resolveReportId(row.original);
-          if (reportId === selectedReportId) return 'bg-blue-50 border-l-2 border-blue-500';
-          if (reportId && selectedReports.includes(reportId)) return 'bg-green-50';
-          return undefined;
-        }}
-        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
-        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
-      />
+      <div className="min-h-[350px] overflow-visible">
+        <DataTable
+          table={table}
+          isLoading={isLoading}
+          error={error}
+          hasActiveFilters={hasActiveFilters}
+          loadingMessage="Memuat..."
+          emptyMessage="Tidak ada data"
+          emptyFilteredMessage="Tidak ada data sesuai filter"
+          tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed overflow-visible"
+          headerRowClassName="bg-gray-50"
+          headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider overflow-visible"
+          bodyClassName="bg-white divide-y divide-gray-100"
+          rowClassName="hover:bg-gray-50 cursor-pointer h-7"
+          onRowClick={(rowData) => rowData && onView && onView(rowData)}
+          getRowClassName={({ row }) => {
+            const reportId = resolveReportId(row.original);
+            if (reportId === selectedReportId) return 'bg-blue-50 border-l-2 border-blue-500';
+            if (reportId && selectedReports.includes(reportId)) return 'bg-green-50';
+            return undefined;
+          }}
+          cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+          emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
+          wrapperClassName="overflow-x-auto overflow-y-visible"
+        />
+      </div>
 
       {!isLoading && !error && (
         <DataTablePagination
