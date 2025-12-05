@@ -211,8 +211,8 @@ const AutocompleteCheckboxLimitTag = ({
           onFocus={handleFocus}
           placeholder={selectedOptions.length === 0 ? placeholder : ''}
           disabled={disabled}
-          className={`flex-1 min-w-[60px] outline-none bg-transparent
-            ${isSmall ? 'text-xs py-0' : 'text-sm py-0.5'}`}
+          className={`flex-1 outline-none bg-transparent
+            ${isSmall ? 'text-xs py-0 min-w-[20px]' : 'text-sm py-0.5 min-w-[60px]'}`}
         />
 
         {/* Clear button */}
@@ -242,8 +242,8 @@ const AutocompleteCheckboxLimitTag = ({
       {/* Dropdown options */}
       {showOptions && (
         <ul
-          className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg 
-            max-h-60 overflow-y-auto ${optionsClassName}`}
+          className={`absolute z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-lg 
+            max-h-60 overflow-y-auto ${isSmall ? 'min-w-[100px]' : 'min-w-[150px] w-full'} ${optionsClassName}`}
         >
           {loading ? (
             <li className={`flex items-center text-gray-500 ${isSmall ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'}`}>

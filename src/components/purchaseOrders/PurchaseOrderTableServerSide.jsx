@@ -109,11 +109,6 @@ const PurchaseOrderTableServerSide = ({
     () => ({ filters, ...rest }) => {
       const mappedFilters = { ...filters };
 
-      if (mappedFilters.status) {
-        mappedFilters.status_code = mappedFilters.status;
-        delete mappedFilters.status;
-      }
-
       if (mappedFilters.customer) {
         // Handle array of customer IDs for multi-select
         if (Array.isArray(mappedFilters.customer) && mappedFilters.customer.length > 0) {
@@ -123,8 +118,19 @@ const PurchaseOrderTableServerSide = ({
       }
 
       if (mappedFilters.top) {
-        mappedFilters.termin_bayar = mappedFilters.top;
+        // Handle array of TOP IDs for multi-select
+        if (Array.isArray(mappedFilters.top) && mappedFilters.top.length > 0) {
+          mappedFilters.termin_bayar_ids = mappedFilters.top;
+        }
         delete mappedFilters.top;
+      }
+
+      if (mappedFilters.status) {
+        // Handle array of status codes for multi-select
+        if (Array.isArray(mappedFilters.status) && mappedFilters.status.length > 0) {
+          mappedFilters.status_codes = mappedFilters.status;
+        }
+        delete mappedFilters.status;
       }
 
       // Handle date range filters for tanggal_masuk_po
@@ -159,6 +165,16 @@ const PurchaseOrderTableServerSide = ({
 
   const [termOfPayments, setTermOfPayments] = useState([]);
   const [customers, setCustomers] = useState([]);
+
+  // Status options for multi-select filter
+  const statusOptions = useMemo(() => [
+    { id: 'PENDING PURCHASE ORDER', name: 'Pending' },
+    { id: 'PROCESSING PURCHASE ORDER', name: 'Processing' },
+    { id: 'PROCESSED PURCHASE ORDER', name: 'Processed' },
+    { id: 'COMPLETED PURCHASE ORDER', name: 'Complete' },
+    { id: 'FAILED PURCHASE ORDER', name: 'Failed' },
+    { id: 'CANCELED PURCHASE ORDER', name: 'Canceled' },
+  ], []);
 
   useEffect(() => {
     const fetchTermOfPayments = async () => {
@@ -348,24 +364,26 @@ const PurchaseOrderTableServerSide = ({
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top',
-        size: 50,
+        size: 55,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">TOP</div>
-            <select
-              value={column.getFilterValue() ?? ''}
+            <AutocompleteCheckboxLimitTag
+              options={termOfPayments}
+              value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value="">All</option>
-              {termOfPayments.map((t) => <option key={t.id} value={t.id}>{t.kode_top}</option>)}
-            </select>
+              placeholder="All"
+              displayKey="kode_top"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '120px' }}
+            />
           </div>
         ),
         cell: (info) => <span className="text-xs">{info.row.original.termOfPayment?.kode_top || '-'}</span>,
         enableColumnFilter: true,
-        filterFn: (row, columnId, filterValue) => !filterValue || row.original.termin_bayar === filterValue,
       }),
       columnHelper.accessor('po_type', {
         size: 60,
@@ -392,24 +410,22 @@ const PurchaseOrderTableServerSide = ({
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
-        size: 90,
+        size: 85,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
-            <select
-              value={column.getFilterValue() ?? ''}
+            <AutocompleteCheckboxLimitTag
+              options={statusOptions}
+              value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value="">All</option>
-              <option value="PENDING PURCHASE ORDER">Pending</option>
-              <option value="PROCESSING PURCHASE ORDER">Process</option>
-              <option value="PROCESSED PURCHASE ORDER">Done</option>
-              <option value="COMPLETED PURCHASE ORDER">Complete</option>
-              <option value="FAILED PURCHASE ORDER">Failed</option>
-              <option value="CANCELED PURCHASE ORDER">Cancel</option>
-            </select>
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '120px' }}
+            />
           </div>
         ),
         cell: (info) => {
@@ -458,6 +474,7 @@ const PurchaseOrderTableServerSide = ({
       setPage,
       termOfPayments,
       customers,
+      statusOptions,
     ]
   );
 
@@ -505,7 +522,7 @@ const PurchaseOrderTableServerSide = ({
         loadingMessage="Memuat data..."
         emptyMessage="Tidak ada data."
         emptyFilteredMessage="Tidak ada data sesuai filter."
-        wrapperClassName="overflow-x-auto"
+        wrapperClassName="overflow-x-auto overflow-y-visible min-h-[300px]"
         tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
