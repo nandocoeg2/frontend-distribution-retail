@@ -37,6 +37,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
     financial: false,
     customer: false,
     related: false,
+    evidence: true,
     activity: false,
   });
 
@@ -97,8 +98,8 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
 
   // Options for disabled autocomplete fields
   // invoicePenagihan from API is an array, get the first item or use direct ID
-  const invoicePenagihanData = Array.isArray(detail?.invoicePenagihan) 
-    ? detail.invoicePenagihan[0] 
+  const invoicePenagihanData = Array.isArray(detail?.invoicePenagihan)
+    ? detail.invoicePenagihan[0]
     : detail?.invoicePenagihan;
   const invoicePenagihanOptions = invoicePenagihanData ? [
     {
@@ -133,10 +134,10 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
   useEffect(() => {
     if (fakturPajak) {
       // Handle invoicePenagihan which can be an array from API
-      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan) 
-        ? fakturPajak.invoicePenagihan[0] 
+      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan)
+        ? fakturPajak.invoicePenagihan[0]
         : fakturPajak.invoicePenagihan;
-      
+
       setFormData({
         no_pajak: fakturPajak.no_pajak || '',
         invoicePenagihanId: fakturPajak.invoicePenagihanId || invoicePenagihanItem?.id || '',
@@ -167,10 +168,10 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
     // Reset to original values
     if (fakturPajak) {
       // Handle invoicePenagihan which can be an array from API
-      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan) 
-        ? fakturPajak.invoicePenagihan[0] 
+      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan)
+        ? fakturPajak.invoicePenagihan[0]
         : fakturPajak.invoicePenagihan;
-      
+
       setFormData({
         no_pajak: fakturPajak.no_pajak || '',
         invoicePenagihanId: fakturPajak.invoicePenagihanId || invoicePenagihanItem?.id || '',
@@ -238,7 +239,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
 
   const handleInputChange = useCallback((field) => (event) => {
     const value = event?.target ? event.target.value : event;
-    
+
     if (field === 'dasar_pengenaan_pajak') {
       isDppTouchedRef.current = true;
       setIsDppTouched(true);
@@ -286,7 +287,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
       if (result?.success) {
         const filename = result?.data?.filename || file.name;
         toastService.success(`Berhasil upload e-Faktur evidence: ${filename}`);
-        
+
         // Refresh data if onUpdate callback exists
         if (onUpdate) {
           onUpdate();
@@ -552,6 +553,21 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
                 <div className="text-xs font-medium text-gray-700 mt-2">LPB:</div>
                 <div className="text-xs text-gray-600">{detail?.laporanPenerimaanBarang?.no_lpb || '-'}</div>
               </div>
+            </AccordionItem>
+
+            <AccordionItem title="Bukti DJP" isExpanded={expandedSections.evidence} onToggle={() => toggleSection('evidence')} bgColor="bg-indigo-50" compact>
+              {detail?.fakturPajakDjpImage ? (
+                <div className="flex justify-center p-2 bg-gray-100 rounded border border-gray-200">
+                  <img
+                    src={detail.fakturPajakDjpImage}
+                    alt="Faktur Pajak Evidence"
+                    className="max-w-full h-auto rounded shadow-sm"
+                    style={{ maxHeight: '400px' }}
+                  />
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 py-2 italic text-center">Belum ada bukti e-Faktur yang diupload.</div>
+              )}
             </AccordionItem>
 
             <AccordionItem title="Riwayat" isExpanded={expandedSections.activity} onToggle={() => toggleSection('activity')} bgColor="bg-gray-50" compact>
