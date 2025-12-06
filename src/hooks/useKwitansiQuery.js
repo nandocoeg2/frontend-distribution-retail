@@ -32,11 +32,37 @@ export const useKwitansiQuery = ({
         params.sortOrder = sort.desc ? 'desc' : 'asc';
       }
 
-      // Add column filters
+      // Add column filters - handle special cases
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
-          params[key] = value;
+        if (value === undefined || value === null || value === '') return;
+
+        // Handle date range (tanggal filter with from/to)
+        if (key === 'tanggal' && typeof value === 'object' && (value.from || value.to)) {
+          if (value.from) params.tanggal_start = value.from;
+          if (value.to) params.tanggal_end = value.to;
+          return;
         }
+
+        // Handle grand_total range (min/max)
+        if (key === 'grand_total' && typeof value === 'object' && (value.min || value.max)) {
+          if (value.min) params.grand_total_min = value.min;
+          if (value.max) params.grand_total_max = value.max;
+          return;
+        }
+
+        // Handle multi-select arrays (status_code, customer_name)
+        if (key === 'status_code' && Array.isArray(value) && value.length > 0) {
+          params.status_codes = value;
+          return;
+        }
+
+        if (key === 'customer_name' && Array.isArray(value) && value.length > 0) {
+          params.customer_names = value;
+          return;
+        }
+
+        // Default: pass as is
+        params[key] = value;
       });
 
       // Add global filter
@@ -82,6 +108,7 @@ export const useKwitansiQuery = ({
     cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
   });
 };
+
 
 /**
  * Custom hook for fetching kwitansi by status (for tabs)

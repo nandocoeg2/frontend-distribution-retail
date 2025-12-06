@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   TrashIcon,
@@ -11,6 +11,8 @@ import kwitansiService from '../../services/kwitansiService';
 import toastService from '../../services/toastService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import customerService from '../../services/customerService';
 
 const columnHelper = createColumnHelper();
 
@@ -40,6 +42,15 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
+const STATUS_OPTIONS = [
+  { id: 'PENDING KWITANSI', name: 'Pending' },
+  { id: 'PROCESSING KWITANSI', name: 'Processing' },
+  { id: 'PAID KWITANSI', name: 'Paid' },
+  { id: 'OVERDUE KWITANSI', name: 'Overdue' },
+  { id: 'COMPLETED KWITANSI', name: 'Completed' },
+  { id: 'CANCELLED KWITANSI', name: 'Cancelled' },
+];
+
 const resolveKwitansiId = (kwitansi) => {
   if (!kwitansi) {
     return null;
@@ -60,6 +71,35 @@ const KwitansiTableServerSide = ({
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingPaket, setIsPrintingPaket] = useState(false);
+  const [customers, setCustomers] = useState([]);
+
+  // Fetch customers for multi-select filter
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers(1, 100);
+        // Handle response format: { success: true, data: { data: [...] } }
+        // After axios interceptor unwraps: { data: { data: [...] } } or { data: [...] }
+        let data = [];
+        if (response?.data?.data && Array.isArray(response.data.data)) {
+          data = response.data.data;
+        } else if (response?.data?.customers) {
+          data = response.data.customers;
+        } else if (response?.customers) {
+          data = response.customers;
+        } else if (Array.isArray(response?.data)) {
+          data = response.data;
+        } else if (Array.isArray(response)) {
+          data = response;
+        }
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
+  }, []);
 
   const globalFilterConfig = useMemo(
     () => ({
@@ -93,7 +133,7 @@ const KwitansiTableServerSide = ({
     const currentPageKwitansiIds = kwitansis
       .map((kwitansi) => resolveKwitansiId(kwitansi))
       .filter(Boolean);
-    
+
     const allCurrentPageSelected = currentPageKwitansiIds.every((id) =>
       selectedKwitansis.includes(id)
     );
@@ -131,13 +171,13 @@ const KwitansiTableServerSide = ({
 
       for (let i = 0; i < selectedKwitansis.length; i++) {
         const kwitansiId = selectedKwitansis[i];
-        
+
         try {
           const kwitansi = kwitansis.find(k => resolveKwitansiId(k) === kwitansiId);
           const companyId = kwitansi?.invoicePenagihan?.purchaseOrder?.customer?.companyId || 1;
-          
+
           const html = await kwitansiService.exportKwitansi(kwitansiId, companyId);
-          
+
           // Open in new window for printing
           const printWindow = window.open('', '_blank');
           if (printWindow) {
@@ -190,13 +230,13 @@ const KwitansiTableServerSide = ({
 
       for (let i = 0; i < selectedKwitansis.length; i++) {
         const kwitansiId = selectedKwitansis[i];
-        
+
         try {
           const kwitansi = kwitansis.find(k => resolveKwitansiId(k) === kwitansiId);
           const companyId = kwitansi?.invoicePenagihan?.purchaseOrder?.customer?.companyId || 1;
-          
+
           const html = await kwitansiService.exportKwitansiPaket(kwitansiId, companyId);
-          
+
           // Open in new window for printing
           const printWindow = window.open('', '_blank');
           if (printWindow) {
@@ -241,12 +281,12 @@ const KwitansiTableServerSide = ({
           const currentPageKwitansiIds = kwitansis
             .map((kwitansi) => resolveKwitansiId(kwitansi))
             .filter(Boolean);
-          
+
           const isAllSelected =
             kwitansis.length > 0 &&
             currentPageKwitansiIds.length > 0 &&
             currentPageKwitansiIds.every((id) => selectedKwitansis.includes(id));
-          
+
           const isIndeterminate =
             currentPageKwitansiIds.some((id) => selectedKwitansis.includes(id)) &&
             !isAllSelected;
@@ -311,6 +351,7 @@ const KwitansiTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor('no_kwitansi', {
         header: ({ column }) => (
@@ -339,61 +380,95 @@ const KwitansiTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor('tanggal', {
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Tanggal</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+        id: 'tanggal',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => (
+          <div className="text-xs text-gray-900">
+            {formatDate(info.getValue())}
           </div>
         ),
-        cell: (info) => formatDate(info.getValue()),
+        enableSorting: true,
+        enableColumnFilter: false,
       }),
       columnHelper.accessor('grand_total', {
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Total</div>
-            <input
-              type="number"
-              min="0"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+        id: 'grand_total',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { min: '', max: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Total</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="number"
+                  value={filterValue.min ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+                  placeholder="Min"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+                  placeholder="Max"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => (
+          <div className="text-xs text-gray-900">
+            {formatCurrency(info.getValue())}
           </div>
         ),
-        cell: (info) => formatCurrency(info.getValue()),
         enableSorting: true,
+        enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer, {
         id: 'customer_name',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter customer..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+            <AutocompleteCheckboxLimitTag
+              options={customers}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="namaCustomer"
+              valueKey="namaCustomer"
+              limitTags={1}
+              size="small"
+              fetchOnClose
             />
           </div>
         ),
@@ -408,29 +483,25 @@ const KwitansiTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
-      columnHelper.accessor('status.status_name', {
+      columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
         id: 'status_code',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <option value="">Semua</option>
-              <option value="PENDING KWITANSI">Pending</option>
-              <option value="PROCESSING KWITANSI">Processing</option>
-              <option value="PAID KWITANSI">Paid</option>
-              <option value="OVERDUE KWITANSI">Overdue</option>
-              <option value="COMPLETED KWITANSI">Completed</option>
-              <option value="CANCELLED KWITANSI">Cancelled</option>
-            </select>
+            <AutocompleteCheckboxLimitTag
+              options={STATUS_OPTIONS}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '100px' }}
+            />
           </div>
         ),
         cell: (info) => (
@@ -441,6 +512,7 @@ const KwitansiTableServerSide = ({
             dot
           />
         ),
+        enableSorting: true,
       }),
       columnHelper.display({
         id: 'actions',
@@ -475,6 +547,7 @@ const KwitansiTableServerSide = ({
       onDelete,
       deleteLoading,
       setPage,
+      customers,
     ]
   );
 
@@ -539,15 +612,15 @@ const KwitansiTableServerSide = ({
         rowClassName="hover:bg-gray-50 cursor-pointer h-8"
         getRowClassName={({ row }) => {
           const kwitansiId = resolveKwitansiId(row.original);
-          
+
           if (kwitansiId === selectedKwitansiId) {
             return 'bg-blue-50 border-l-4 border-blue-500';
           }
-          
+
           if (kwitansiId && selectedKwitansis.includes(kwitansiId)) {
             return 'bg-blue-50';
           }
-          
+
           return undefined;
         }}
         onRowClick={(rowData, event) => {
