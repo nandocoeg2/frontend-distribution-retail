@@ -58,8 +58,19 @@ export const useFakturPajakQuery = ({
 
       // Add column filters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
-          params[key] = value;
+        if (value !== undefined && value !== null && value !== '') {
+          // Handle array values (multi-select filters)
+          if (Array.isArray(value) && value.length > 0) {
+            params[key] = value;
+          }
+          // Handle object values (range filters) - these should already be mapped by getQueryParams
+          else if (typeof value === 'object' && !Array.isArray(value)) {
+            // Skip objects as they should be flattened by getQueryParams
+          }
+          // Handle primitive values
+          else if (!Array.isArray(value)) {
+            params[key] = value;
+          }
         }
       });
 

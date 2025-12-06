@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   TrashIcon,
@@ -8,8 +8,19 @@ import { useFakturPajakQuery } from '../../hooks/useFakturPajakQuery';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import customerService from '../../services/customerService';
+import { termOfPaymentService } from '../../services/termOfPaymentService';
 
 const columnHelper = createColumnHelper();
+
+const STATUS_OPTIONS = [
+  { id: 'PENDING FAKTUR PAJAK', name: 'Pending' },
+  { id: 'PROCESSING FAKTUR PAJAK', name: 'Processing' },
+  { id: 'ISSUED FAKTUR PAJAK', name: 'Issued' },
+  { id: 'CANCELLED FAKTUR PAJAK', name: 'Cancelled' },
+  { id: 'COMPLETED FAKTUR PAJAK', name: 'Completed' },
+];
 
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
@@ -73,6 +84,87 @@ const FakturPajakTableServerSide = ({
   initialLimit = 10,
   selectedFakturPajakId = null,
 }) => {
+  const [customers, setCustomers] = useState([]);
+  const [termOfPayments, setTermOfPayments] = useState([]);
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        // Fetch customers
+        const customerResponse = await customerService.getAllCustomers(1, 100);
+        const customerData = customerResponse?.data?.data || customerResponse?.data || [];
+        setCustomers(Array.isArray(customerData) ? customerData : []);
+
+        // Fetch term of payments
+        const topResponse = await termOfPaymentService.getAllTermOfPayments(1, 100);
+        const topData = topResponse?.data?.data || topResponse?.data || [];
+        setTermOfPayments(Array.isArray(topData) ? topData : []);
+      } catch (error) {
+        console.error('Failed to fetch dropdown data:', error);
+      }
+    };
+    fetchDropdownData();
+  }, []);
+
+  const getQueryParams = useMemo(
+    () => ({ filters, ...rest }) => {
+      const mappedFilters = { ...filters };
+
+      // Handle date range
+      if (mappedFilters.tanggal_invoice) {
+        if (mappedFilters.tanggal_invoice.from) mappedFilters.tanggal_start = mappedFilters.tanggal_invoice.from;
+        if (mappedFilters.tanggal_invoice.to) mappedFilters.tanggal_end = mappedFilters.tanggal_invoice.to;
+        delete mappedFilters.tanggal_invoice;
+      }
+
+      // Handle DPP range
+      if (mappedFilters.dasar_pengenaan_pajak) {
+        if (mappedFilters.dasar_pengenaan_pajak.min) mappedFilters.dasar_pengenaan_pajak_min = mappedFilters.dasar_pengenaan_pajak.min;
+        if (mappedFilters.dasar_pengenaan_pajak.max) mappedFilters.dasar_pengenaan_pajak_max = mappedFilters.dasar_pengenaan_pajak.max;
+        delete mappedFilters.dasar_pengenaan_pajak;
+      }
+
+      // Handle PPN Rupiah range
+      if (mappedFilters.ppnRupiah) {
+        if (mappedFilters.ppnRupiah.min) mappedFilters.ppnRupiah_min = mappedFilters.ppnRupiah.min;
+        if (mappedFilters.ppnRupiah.max) mappedFilters.ppnRupiah_max = mappedFilters.ppnRupiah.max;
+        delete mappedFilters.ppnRupiah;
+      }
+
+      // Handle status codes array
+      if (mappedFilters.status_codes) {
+        if (Array.isArray(mappedFilters.status_codes) && mappedFilters.status_codes.length > 0) {
+          // keep as status_codes
+        } else {
+          delete mappedFilters.status_codes;
+        }
+      }
+
+      // Handle customer names array
+      if (mappedFilters.customer_names) {
+        if (Array.isArray(mappedFilters.customer_names) && mappedFilters.customer_names.length > 0) {
+          // keep
+        } else {
+          delete mappedFilters.customer_names;
+        }
+      }
+
+      // Handle TOP codes array
+      if (mappedFilters.top_codes) {
+        if (Array.isArray(mappedFilters.top_codes) && mappedFilters.top_codes.length > 0) {
+          // keep
+        } else {
+          delete mappedFilters.top_codes;
+        }
+      }
+
+      return {
+        ...rest,
+        filters: mappedFilters,
+      };
+    },
+    []
+  );
 
   const {
     data: fakturPajaks,
@@ -90,6 +182,7 @@ const FakturPajakTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
+    getQueryParams,
   });
 
   const columns = useMemo(
@@ -113,7 +206,6 @@ const FakturPajakTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const item = info.row.original;
           return (
             <div>
               <div className="text-xs font-medium text-gray-900">
@@ -122,6 +214,7 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'no_invoice_penagihan',
@@ -156,24 +249,36 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'tanggal_invoice',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Tgl Invoice</div>
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tgl Invoice</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => {
           const invoices = info.getValue();
           if (!invoices || invoices.length === 0) {
@@ -189,6 +294,7 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor((row) => row.laporanPenerimaanBarang?.no_lpb, {
         id: 'no_lpb',
@@ -221,22 +327,23 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor((row) => row.customer?.namaCustomer, {
-        id: 'customer',
+        id: 'customer_names',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5 max-w-[150px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter customer..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+            <AutocompleteCheckboxLimitTag
+              options={customers}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="namaCustomer"
+              valueKey="namaCustomer"
+              limitTags={1}
+              size="small"
+              fetchOnClose
             />
           </div>
         ),
@@ -253,22 +360,71 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
+        enableSorting: true,
       }),
       columnHelper.accessor('dasar_pengenaan_pajak', {
         id: 'dasar_pengenaan_pajak',
-        header: 'Dasar Pengenaan Pajak',
-        enableSorting: true,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { min: '', max: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Dasar Pengenaan Pajak</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="number"
+                  value={filterValue.min ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+                  placeholder="Min"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+                  placeholder="Max"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => (
           <div className="text-sm text-gray-900 text-right">
             {formatCurrency(info.getValue())}
           </div>
         ),
-        enableColumnFilter: false,
+        enableSorting: true,
       }),
       columnHelper.accessor('ppnRupiah', {
         id: 'ppnRupiah',
-        header: 'PPN Rupiah',
-        enableSorting: true,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { min: '', max: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">PPN Rupiah</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="number"
+                  value={filterValue.min ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+                  placeholder="Min"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+                  placeholder="Max"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -284,12 +440,26 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
-        enableColumnFilter: false,
+        enableSorting: true,
       }),
       columnHelper.accessor((row) => row.termOfPayment?.kode_top, {
-        id: 'top',
-        header: 'TOP',
-        enableSorting: false,
+        id: 'top_codes',
+        header: ({ column }) => (
+          <div className="space-y-0.5 max-w-[100px]" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">TOP</div>
+            <AutocompleteCheckboxLimitTag
+              options={termOfPayments}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="kode_top"
+              valueKey="kode_top"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
         cell: (info) => {
           const item = info.row.original;
           return (
@@ -303,29 +473,25 @@ const FakturPajakTableServerSide = ({
             </div>
           );
         },
-        enableColumnFilter: false,
+        enableSorting: true,
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
-        id: 'status',
+        id: 'status_codes',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <option value="">Semua</option>
-              <option value="PENDING FAKTUR PAJAK">Pending</option>
-              <option value="PROCESSING FAKTUR PAJAK">Processing</option>
-              <option value="ISSUED FAKTUR PAJAK">Issued</option>
-              <option value="CANCELLED FAKTUR PAJAK">Cancelled</option>
-              <option value="COMPLETED FAKTUR PAJAK">Completed</option>
-            </select>
+            <AutocompleteCheckboxLimitTag
+              options={STATUS_OPTIONS}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '100px' }}
+            />
           </div>
         ),
         cell: (info) => (
@@ -336,6 +502,7 @@ const FakturPajakTableServerSide = ({
             dot
           />
         ),
+        enableSorting: true,
       }),
       columnHelper.display({
         id: 'tandaTerimaFaktur',
@@ -409,6 +576,8 @@ const FakturPajakTableServerSide = ({
       deleteLoading,
       setPage,
       selectedFakturPajakId,
+      customers,
+      termOfPayments,
     ]
   );
 
