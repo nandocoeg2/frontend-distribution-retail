@@ -75,8 +75,8 @@ const parseInvoicePenagihanResponse = (response) => {
     results: Array.isArray(rawData)
       ? rawData
       : Array.isArray(rawData?.data)
-      ? rawData.data
-      : [],
+        ? rawData.data
+        : [],
     pagination: {
       currentPage,
       page: currentPage,
@@ -332,6 +332,42 @@ const useInvoicePenagihan = () => {
     'Hapus Invoice Penagihan',
   );
 
+  const cancelInvoicePenagihanFn = useCallback(
+    async (id) => {
+      try {
+        const result = await invoicePenagihanService.cancelInvoicePenagihan(id);
+        if (result?.success === false) {
+          throw new Error(
+            result?.error?.message || 'Failed to cancel invoice penagihan',
+          );
+        }
+        toastService.success('Invoice penagihan berhasil dibatalkan. Kwitansi dan referensi faktur pajak telah dihapus.');
+
+        const itemsPerPage = resolveLimit();
+        const currentPage = pagination.currentPage || pagination.page || 1;
+        await performSearch(activeFiltersRef.current, currentPage, itemsPerPage);
+      } catch (err) {
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          authHandler();
+          return;
+        }
+        const message =
+          err?.response?.data?.error?.message ||
+          err?.message ||
+          'Failed to cancel invoice penagihan';
+        setError(message);
+        toastService.error(message);
+      }
+    },
+    [authHandler, pagination, performSearch, resolveLimit, setError],
+  );
+
+  const cancelInvoicePenagihanConfirmation = useDeleteConfirmation(
+    cancelInvoicePenagihanFn,
+    'Apakah Anda yakin ingin membatalkan invoice penagihan ini?\n\nTindakan ini akan:\n• Mengubah status menjadi CANCELLED\n• Menghapus Kwitansi terkait\n• Menghapus referensi Faktur Pajak',
+    'Batalkan Invoice Penagihan',
+  );
+
   useEffect(() => {
     fetchInvoicePenagihan(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchInvoicePenagihan]);
@@ -355,9 +391,11 @@ const useInvoicePenagihan = () => {
     createInvoice: createInvoicePenagihan,
     updateInvoice: updateInvoicePenagihan,
     deleteInvoiceConfirmation: deleteInvoicePenagihanConfirmation,
+    cancelInvoiceConfirmation: cancelInvoicePenagihanConfirmation,
     fetchInvoicePenagihan,
     handleAuthError: authHandler,
   };
 };
 
 export default useInvoicePenagihan;
+

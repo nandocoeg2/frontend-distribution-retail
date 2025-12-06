@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useInvoicePenagihanQuery } from '../../hooks/useInvoicePenagihanQuery';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
@@ -50,11 +50,35 @@ const STATUS_OPTIONS = [
   { id: 'CANCELLED INVOICE PENAGIHAN', name: 'Cancelled' },
 ];
 
+// Helper function to check if cancel is allowed
+const isCancelAllowed = (invoice) => {
+  if (!invoice?.status) {
+    return false;
+  }
+
+  const normalize = (value) => {
+    if (!value) {
+      return '';
+    }
+    return value.toString().trim().toLowerCase().replace(/_/g, ' ');
+  };
+
+  const normalizedCode = normalize(invoice.status.status_code);
+  const normalizedName = normalize(invoice.status.status_name);
+
+  // Cancel NOT allowed for already cancelled or completed invoices
+  const disallowedStatuses = ['cancelled invoice penagihan', 'completed invoice penagihan', 'paid invoice penagihan'];
+
+  return !disallowedStatuses.some(s => normalizedCode.includes(s) || normalizedName.includes(s));
+};
+
 const InvoicePenagihanTableServerSide = ({
   onView,
   onEdit,
   onDelete,
+  onCancel,
   deleteLoading = false,
+  cancelLoading = false,
   initialPage = 1,
   initialLimit = 10,
   selectedInvoiceId,
@@ -95,20 +119,20 @@ const InvoicePenagihanTableServerSide = ({
 
       // Handle status codes array
       if (mappedFilters.status_codes) {
-         if (Array.isArray(mappedFilters.status_codes) && mappedFilters.status_codes.length > 0) {
-             // keep as status_codes
-         } else {
-             delete mappedFilters.status_codes;
-         }
+        if (Array.isArray(mappedFilters.status_codes) && mappedFilters.status_codes.length > 0) {
+          // keep as status_codes
+        } else {
+          delete mappedFilters.status_codes;
+        }
       }
 
       // Handle group customers array
       if (mappedFilters.group_customers) {
-          if (Array.isArray(mappedFilters.group_customers) && mappedFilters.group_customers.length > 0) {
-              // keep
-          } else {
-              delete mappedFilters.group_customers;
-          }
+        if (Array.isArray(mappedFilters.group_customers) && mappedFilters.group_customers.length > 0) {
+          // keep
+        } else {
+          delete mappedFilters.group_customers;
+        }
       }
 
       return {
@@ -286,30 +310,30 @@ const InvoicePenagihanTableServerSide = ({
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
         header: ({ column }) => {
-            const filterValue = column.getFilterValue() || { min: '', max: '' };
-            return (
-              <div className="space-y-0.5">
-                <div className="font-medium text-xs">Total</div>
-                <div className="flex flex-col gap-0.5">
-                  <input
-                    type="number"
-                    value={filterValue.min ?? ''}
-                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                    placeholder="Min"
-                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <input
-                    type="number"
-                    value={filterValue.max ?? ''}
-                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                    placeholder="Max"
-                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
+          const filterValue = column.getFilterValue() || { min: '', max: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Total</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="number"
+                  value={filterValue.min ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+                  placeholder="Min"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+                  placeholder="Max"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
               </div>
-            );
+            </div>
+          );
         },
         cell: (info) => (
           <div className="text-xs text-gray-900">
@@ -428,8 +452,9 @@ const InvoicePenagihanTableServerSide = ({
         header: 'Aksi',
         cell: ({ row }) => {
           const invoice = row.original;
+          const cancelAllowed = isCancelAllowed(invoice);
           return (
-            <div className="flex items-center justify-end space-x-2">
+            <div className="flex items-center justify-end space-x-1">
               {onEdit && (
                 <button
                   onClick={(e) => {
@@ -440,6 +465,20 @@ const InvoicePenagihanTableServerSide = ({
                   title="Edit"
                 >
                   <PencilIcon className="h-4 w-4" />
+                </button>
+              )}
+              {cancelAllowed && onCancel && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancel(invoice.id, invoice.no_invoice_penagihan);
+                  }}
+                  disabled={cancelLoading}
+                  className="p-1 text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                  title="Batalkan"
+                >
+                  <XCircleIcon className="h-4 w-4" />
                 </button>
               )}
               {onDelete && (
@@ -466,7 +505,9 @@ const InvoicePenagihanTableServerSide = ({
       onView,
       onEdit,
       onDelete,
+      onCancel,
       deleteLoading,
+      cancelLoading,
       setPage,
       groupCustomers,
     ]

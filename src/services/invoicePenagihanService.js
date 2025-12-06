@@ -106,6 +106,16 @@ class InvoicePenagihanService {
       throw error;
     }
   }
+
+  async cancelInvoicePenagihan(id) {
+    try {
+      const response = await this.api.post(`/${id}/cancel`);
+      return response.data;
+    } catch (error) {
+      console.error('Error cancelling invoice penagihan:', error);
+      throw error;
+    }
+  }
 }
 
 export default new InvoicePenagihanService();

@@ -14,6 +14,7 @@ const InvoicePenagihanPage = () => {
   const {
     setInvoicePenagihan,
     deleteInvoiceConfirmation,
+    cancelInvoiceConfirmation,
     createInvoice,
     updateInvoice,
     handleAuthError,
@@ -28,6 +29,16 @@ const InvoicePenagihanPage = () => {
     message: deleteDialogMessage,
     loading: deleteDialogLoading,
   } = deleteInvoiceConfirmation;
+
+  const {
+    showConfirm: showCancelDialog,
+    hideDeleteConfirmation: hideCancelConfirmation,
+    confirmDelete: confirmCancel,
+    showDeleteConfirmation: showCancelConfirmation,
+    title: cancelDialogTitle,
+    message: cancelDialogMessage,
+    loading: cancelDialogLoading,
+  } = cancelInvoiceConfirmation;
 
   const viewDetailRequestRef = useRef(null);
 
@@ -158,6 +169,15 @@ const InvoicePenagihanPage = () => {
     await refreshData();
   }, [confirmDelete, refreshData]);
 
+  const handleCancelConfirm = useCallback(async () => {
+    await confirmCancel();
+    await refreshData();
+    // Close detail card if viewing cancelled invoice
+    if (viewingInvoice) {
+      setViewingInvoice(null);
+    }
+  }, [confirmCancel, refreshData, viewingInvoice]);
+
   return (
     <div className='p-3 space-y-3'>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
@@ -170,7 +190,9 @@ const InvoicePenagihanPage = () => {
 
           <InvoicePenagihanTableServerSide
             onDelete={showDeleteConfirmation}
+            onCancel={showCancelConfirmation}
             deleteLoading={deleteDialogLoading}
+            cancelLoading={cancelDialogLoading}
             initialPage={1}
             initialLimit={10}
             selectedInvoiceId={viewingInvoice?.id}
@@ -195,6 +217,7 @@ const InvoicePenagihanPage = () => {
         />
       )}
 
+      {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         show={showDeleteDialog}
         onClose={hideDeleteConfirmation}
@@ -206,8 +229,22 @@ const InvoicePenagihanPage = () => {
         cancelText='Batal'
         loading={deleteDialogLoading}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showCancelDialog}
+        onClose={hideCancelConfirmation}
+        onConfirm={handleCancelConfirm}
+        title={cancelDialogTitle}
+        message={cancelDialogMessage}
+        type='warning'
+        confirmText='Ya, Batalkan'
+        cancelText='Tidak'
+        loading={cancelDialogLoading}
+      />
     </div>
   );
 };
 
 export default InvoicePenagihanPage;
+
