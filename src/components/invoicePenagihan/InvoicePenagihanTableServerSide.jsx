@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
@@ -6,6 +6,8 @@ import { useInvoicePenagihanQuery } from '../../hooks/useInvoicePenagihanQuery';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import groupCustomerService from '../../services/groupCustomerService';
 
 const columnHelper = createColumnHelper();
 
@@ -39,6 +41,15 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
+const STATUS_OPTIONS = [
+  { id: 'PENDING INVOICE PENAGIHAN', name: 'Pending' },
+  { id: 'PROCESSING INVOICE PENAGIHAN', name: 'Processing' },
+  { id: 'PAID INVOICE PENAGIHAN', name: 'Paid' },
+  { id: 'OVERDUE INVOICE PENAGIHAN', name: 'Overdue' },
+  { id: 'COMPLETED INVOICE PENAGIHAN', name: 'Completed' },
+  { id: 'CANCELLED INVOICE PENAGIHAN', name: 'Cancelled' },
+];
+
 const InvoicePenagihanTableServerSide = ({
   onView,
   onEdit,
@@ -49,6 +60,64 @@ const InvoicePenagihanTableServerSide = ({
   selectedInvoiceId,
   onRowClick,
 }) => {
+  const [groupCustomers, setGroupCustomers] = useState([]);
+
+  useEffect(() => {
+    const fetchGroupCustomers = async () => {
+      try {
+        const response = await groupCustomerService.getAllGroupCustomers(1, 100);
+        const data = response?.data?.data || response?.data || [];
+        setGroupCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch group customers:', error);
+      }
+    };
+    fetchGroupCustomers();
+  }, []);
+
+  const getQueryParams = useMemo(
+    () => ({ filters, ...rest }) => {
+      const mappedFilters = { ...filters };
+
+      // Handle date range
+      if (mappedFilters.tanggal) {
+        if (mappedFilters.tanggal.from) mappedFilters.tanggal_start = mappedFilters.tanggal.from;
+        if (mappedFilters.tanggal.to) mappedFilters.tanggal_end = mappedFilters.tanggal.to;
+        delete mappedFilters.tanggal;
+      }
+
+      // Handle grand total range
+      if (mappedFilters.grand_total) {
+        if (mappedFilters.grand_total.min) mappedFilters.grand_total_min = mappedFilters.grand_total.min;
+        if (mappedFilters.grand_total.max) mappedFilters.grand_total_max = mappedFilters.grand_total.max;
+        delete mappedFilters.grand_total;
+      }
+
+      // Handle status codes array
+      if (mappedFilters.status_codes) {
+         if (Array.isArray(mappedFilters.status_codes) && mappedFilters.status_codes.length > 0) {
+             // keep as status_codes
+         } else {
+             delete mappedFilters.status_codes;
+         }
+      }
+
+      // Handle group customers array
+      if (mappedFilters.group_customers) {
+          if (Array.isArray(mappedFilters.group_customers) && mappedFilters.group_customers.length > 0) {
+              // keep
+          } else {
+              delete mappedFilters.group_customers;
+          }
+      }
+
+      return {
+        ...rest,
+        filters: mappedFilters,
+      };
+    },
+    []
+  );
 
   const {
     data: invoices,
@@ -66,6 +135,7 @@ const InvoicePenagihanTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
+    getQueryParams,
   });
 
   const columns = useMemo(
@@ -131,23 +201,32 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Tanggal</div>
-            {/* date picker */}
-            <input
-              type="date"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => (
           <div className="text-xs text-gray-900">
             {formatDate(info.getValue())}
@@ -157,20 +236,20 @@ const InvoicePenagihanTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.accessor('purchaseOrder.customer.groupCustomer.nama_group', {
-        id: 'group_customer',
+        id: 'group_customers',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Group</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+            <AutocompleteCheckboxLimitTag
+              options={groupCustomers}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="nama_group"
+              valueKey="nama_group"
+              limitTags={1}
+              size="small"
+              fetchOnClose
             />
           </div>
         ),
@@ -206,24 +285,32 @@ const InvoicePenagihanTableServerSide = ({
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Total</div>
-            {/* amount filter, cannot be negative */}
-            <input
-              type="number"
-              min="0"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        ),
+        header: ({ column }) => {
+            const filterValue = column.getFilterValue() || { min: '', max: '' };
+            return (
+              <div className="space-y-0.5">
+                <div className="font-medium text-xs">Total</div>
+                <div className="flex flex-col gap-0.5">
+                  <input
+                    type="number"
+                    value={filterValue.min ?? ''}
+                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+                    placeholder="Min"
+                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <input
+                    type="number"
+                    value={filterValue.max ?? ''}
+                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+                    placeholder="Max"
+                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+            );
+        },
         cell: (info) => (
           <div className="text-xs text-gray-900">
             {formatCurrency(info.getValue())}
@@ -233,27 +320,22 @@ const InvoicePenagihanTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
-        id: 'status_code',
+        id: 'status_codes',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <option value="">Semua</option>
-              <option value="PENDING INVOICE PENAGIHAN">Pending</option>
-              <option value="PROCESSING INVOICE PENAGIHAN">Processing</option>
-              <option value="PAID INVOICE PENAGIHAN">Paid</option>
-              <option value="OVERDUE INVOICE PENAGIHAN">Overdue</option>
-              <option value="COMPLETED INVOICE PENAGIHAN">Completed</option>
-              <option value="CANCELLED INVOICE PENAGIHAN">Cancelled</option>
-            </select>
+            <AutocompleteCheckboxLimitTag
+              options={STATUS_OPTIONS}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '100px' }}
+            />
           </div>
         ),
         cell: (info) => (
@@ -386,6 +468,7 @@ const InvoicePenagihanTableServerSide = ({
       onDelete,
       deleteLoading,
       setPage,
+      groupCustomers,
     ]
   );
 
