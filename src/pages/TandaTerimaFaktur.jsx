@@ -1,396 +1,162 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useTandaTerimaFakturPage from '@/hooks/useTandaTerimaFakturPage';
 import {
   TandaTerimaFakturTableServerSide,
   TandaTerimaFakturModal,
-  TandaTerimaFakturDetailModal,
-  TandaTerimaFakturDocumentsModal,
+  TandaTerimaFakturDetailCard,
+  PrintTandaTerimaFakturByGroupModal,
   UploadTTF2Modal,
 } from '@/components/tandaTerimaFaktur';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import { TabContainer, Tab } from '@/components/ui/Tabs';
-import toastService from '@/services/toastService';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
-
-const TAB_STATUS_CONFIG = {
-  all: { label: 'All', statusCode: null },
-  pending: {
-    label: 'Pending',
-    statusCode: 'PENDING TANDA TERIMA FAKTUR',
-  },
-  processing: {
-    label: 'Processing',
-    statusCode: 'PROCESSING TANDA TERIMA FAKTUR',
-  },
-  delivered: {
-    label: 'Delivered',
-    statusCode: 'DELIVERED TANDA TERIMA FAKTUR',
-  },
-  received: {
-    label: 'Received',
-    statusCode: 'RECEIVED TANDA TERIMA FAKTUR',
-  },
-  cancelled: {
-    label: 'Cancelled',
-    statusCode: 'CANCELLED TANDA TERIMA FAKTUR',
-  },
-  completed: {
-    label: 'Completed',
-    statusCode: 'COMPLETED TANDA TERIMA FAKTUR',
-  },
-};
-
-const TAB_ORDER = [
-  'all',
-  'pending',
-  'processing',
-  'delivered',
-  'received',
-  'cancelled',
-  'completed',
-];
-
-const INITIAL_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
+import { PrinterIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 const TandaTerimaFakturPage = () => {
   const queryClient = useQueryClient();
-  
+
   const {
     createTandaTerimaFaktur,
     updateTandaTerimaFaktur,
     deleteTandaTerimaFaktur: triggerDeleteTandaTerimaFaktur,
     deleteTandaTerimaFakturConfirmation,
     fetchTandaTerimaFakturById,
-    assignDocuments: assignDocumentsToTandaTerimaFaktur,
-    unassignDocuments: unassignDocumentsFromTandaTerimaFaktur,
   } = useTandaTerimaFakturPage();
 
-  const [selectedTtf, setSelectedTtf] = useState(null);
+  const [selectedTTFForDetail, setSelectedTTFForDetail] = useState(null);
+  const [selectedTTFForEdit, setSelectedTTFForEdit] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  const [assignModalTarget, setAssignModalTarget] = useState(null);
-  const [unassignModalTarget, setUnassignModalTarget] = useState(null);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [isUnassignModalOpen, setIsUnassignModalOpen] = useState(false);
-  const [assignRequestLoading, setAssignRequestLoading] = useState(false);
-  const [unassignRequestLoading, setUnassignRequestLoading] = useState(false);
-  const [isUploadTTF2ModalOpen, setIsUploadTTF2ModalOpen] = useState(false);
 
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-  }, []);
+  const handleDeleteConfirm = useCallback(async () => {
+    await deleteTandaTerimaFakturConfirmation.confirmDelete();
+    await queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
+  }, [deleteTandaTerimaFakturConfirmation, queryClient]);
 
-  const openCreateModal = () => {
-    setSelectedTtf(null);
-    setIsCreateModalOpen(true);
-  };
+  const openCreateModal = () => setIsCreateModalOpen(true);
+  const closeCreateModal = () => setIsCreateModalOpen(false);
 
-  const closeCreateModal = () => {
-    setIsCreateModalOpen(false);
-  };
+  const openPrintModal = () => setIsPrintModalOpen(true);
+  const closePrintModal = () => setIsPrintModalOpen(false);
 
-  const openUploadTTF2Modal = () => {
-    setIsUploadTTF2ModalOpen(true);
-  };
+  const openUploadModal = () => setIsUploadModalOpen(true);
+  const closeUploadModal = () => setIsUploadModalOpen(false);
 
-  const closeUploadTTF2Modal = () => {
-    setIsUploadTTF2ModalOpen(false);
-  };
-
-  const handleUploadTTF2Success = useCallback(() => {
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
-  }, [queryClient]);
-
-  const openEditModal = (ttf) => {
-    setSelectedTtf(ttf);
-    setIsEditModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedTtf(null);
-  };
-
-  const openDetailModal = useCallback(
+  const handleViewDetail = useCallback(
     async (ttf) => {
-      if (!ttf?.id) {
-        return;
+      if (!ttf?.id) return;
+      // If already selected, just fetch details but don't toggle off.
+      // Or toggle? Usually clicking row selects it. If same row clicked, maybe deselect?
+      // For now, assume selection always selects.
+      if (selectedTTFForDetail?.id === ttf.id) {
+        // ensure detail is up to date or just return
       }
-      setIsDetailModalOpen(true);
+
       setDetailLoading(true);
       try {
         const detail = await fetchTandaTerimaFakturById(ttf.id);
-        setSelectedTtf(detail || ttf);
+        setSelectedTTFForDetail(detail || ttf);
       } catch (err) {
-        setSelectedTtf(ttf);
+        console.warn('Failed to fetch TTF details:', err.message);
+        setSelectedTTFForDetail(ttf);
       } finally {
         setDetailLoading(false);
       }
     },
-    [fetchTandaTerimaFakturById]
+    [fetchTandaTerimaFakturById, selectedTTFForDetail]
   );
 
-  const closeDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedTtf(null);
+  const handleCloseDetail = () => {
+    setSelectedTTFForDetail(null);
     setDetailLoading(false);
   };
 
-  const resolveTandaTerimaFakturDetail = useCallback(
+  const handleEdit = useCallback(
     async (ttf) => {
-      if (!ttf?.id) {
-        return ttf || null;
-      }
-
+      if (!ttf?.id) return;
       try {
         const detail = await fetchTandaTerimaFakturById(ttf.id);
-        return detail || ttf;
-      } catch (error) {
-        console.error('Failed to fetch tanda terima faktur detail:', error);
-        return ttf;
+        setSelectedTTFForEdit(detail || ttf);
+      } catch (err) {
+        console.warn('Failed to fetch TTF for edit:', err.message);
+        setSelectedTTFForEdit(ttf);
       }
     },
     [fetchTandaTerimaFakturById]
   );
 
-  const openAssignDocumentsModal = useCallback(
-    (ttf) => {
-      if (!ttf) {
-        return;
-      }
-
-      setAssignModalTarget(ttf);
-      setIsAssignModalOpen(true);
-
-      (async () => {
-        try {
-          const detail = await resolveTandaTerimaFakturDetail(ttf);
-          setAssignModalTarget(detail);
-        } catch (error) {
-          console.error('Failed to prepare assign dokumen modal:', error);
-        }
-      })();
-    },
-    [resolveTandaTerimaFakturDetail]
-  );
-
-  const openUnassignDocumentsModal = useCallback(
-    (ttf) => {
-      if (!ttf) {
-        return;
-      }
-
-      setUnassignModalTarget(ttf);
-      setIsUnassignModalOpen(true);
-
-      (async () => {
-        try {
-          const detail = await resolveTandaTerimaFakturDetail(ttf);
-          setUnassignModalTarget(detail);
-        } catch (error) {
-          console.error('Failed to prepare unassign dokumen modal:', error);
-        }
-      })();
-    },
-    [resolveTandaTerimaFakturDetail]
-  );
-
-  const closeAssignModal = useCallback(() => {
-    setIsAssignModalOpen(false);
-    setAssignModalTarget(null);
-  }, []);
-
-  const closeUnassignModal = useCallback(() => {
-    setIsUnassignModalOpen(false);
-    setUnassignModalTarget(null);
-  }, []);
-
-  const handleAssignDocumentsSubmit = useCallback(
-    async ({ fakturPajakIds, laporanIds }) => {
-      if (!assignModalTarget?.id) {
-        toastService.error('Data tanda terima faktur tidak ditemukan.');
-        return;
-      }
-
-      setAssignRequestLoading(true);
-      try {
-        await assignDocumentsToTandaTerimaFaktur(assignModalTarget.id, {
-          fakturPajakIds,
-          laporanIds,
-        });
-        closeAssignModal();
-      } catch (error) {
-        console.error('Gagal meng-assign dokumen tanda terima faktur:', error);
-      } finally {
-        setAssignRequestLoading(false);
-      }
-    },
-    [assignModalTarget, assignDocumentsToTandaTerimaFaktur, closeAssignModal]
-  );
-
-  const handleUnassignDocumentsSubmit = useCallback(
-    async ({ fakturPajakIds, laporanIds }) => {
-      if (!unassignModalTarget?.id) {
-        toastService.error('Data tanda terima faktur tidak ditemukan.');
-        return;
-      }
-
-      setUnassignRequestLoading(true);
-      try {
-        await unassignDocumentsFromTandaTerimaFaktur(unassignModalTarget.id, {
-          fakturPajakIds,
-          laporanIds,
-        });
-        closeUnassignModal();
-      } catch (error) {
-        console.error('Gagal meng-unassign dokumen tanda terima faktur:', error);
-      } finally {
-        setUnassignRequestLoading(false);
-      }
-    },
-    [
-      unassignModalTarget,
-      unassignDocumentsFromTandaTerimaFaktur,
-      closeUnassignModal,
-    ]
-  );
-
-  const handleModalSuccess = useCallback(() => {
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
-    closeCreateModal();
-    closeEditModal();
-  }, [closeCreateModal, closeEditModal, queryClient]);
+  const closeEditModal = () => setSelectedTTFForEdit(null);
 
   const handleCreateSubmit = async (payload) => {
     const result = await createTandaTerimaFaktur(payload);
     if (result) {
-      handleModalSuccess();
+      await queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
+      setIsCreateModalOpen(false);
     }
   };
 
-  const handleUpdateSubmit = async (payload) => {
-    if (!selectedTtf?.id) {
-      return;
-    }
-    const result = await updateTandaTerimaFaktur(selectedTtf.id, payload);
+  const handleEditSubmit = async (payload) => {
+    if (!selectedTTFForEdit?.id) return;
+    const result = await updateTandaTerimaFaktur(selectedTTFForEdit.id, payload);
     if (result) {
-      handleModalSuccess();
+      await queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
+      setSelectedTTFForEdit(null);
     }
   };
 
-  const handleDelete = (id) => {
-    if (!id) {
-      return;
-    }
-    triggerDeleteTandaTerimaFaktur(id);
+  const handleDelete = (ttf) => {
+    if (!ttf?.id) return;
+    triggerDeleteTandaTerimaFaktur(ttf.id);
   };
-
-  const handleDeleteConfirm = useCallback(async () => {
-    await deleteTandaTerimaFakturConfirmation.confirmDelete();
-    // Invalidate queries to refresh data
-    await queryClient.invalidateQueries({ queryKey: ['tandaTerimaFaktur'] });
-  }, [deleteTandaTerimaFakturConfirmation, queryClient]);
-
-  const assignActionDisabled =
-    assignRequestLoading ||
-    unassignRequestLoading ||
-    isAssignModalOpen ||
-    isUnassignModalOpen;
-  const unassignActionDisabled =
-    unassignRequestLoading ||
-    assignRequestLoading ||
-    isAssignModalOpen ||
-    isUnassignModalOpen;
-
-  const statusTabs = useMemo(
-    () =>
-      TAB_ORDER.map((tabId) => ({
-        id: tabId,
-        label: TAB_STATUS_CONFIG[tabId]?.label || tabId,
-      })),
-    []
-  );
-
-  const deleteConfirmationProps = deleteTandaTerimaFakturConfirmation;
 
   return (
-    <div className='p-6'>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
-            <div className='space-y-1'>
-              <h3 className='text-lg font-medium text-gray-900'>
-                Tanda Terima Faktur
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Catat dan kelola serah terima dokumen faktur antara supplier
-                dan customer.
-              </p>
-            </div>
-            <div className='flex items-center justify-end gap-3'>
+    <div className='p-3 space-y-3'>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-3 py-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>Tanda Terima Faktur</h3>
+            <div className='flex space-x-2'>
               <button
-                onClick={openUploadTTF2Modal}
-                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-green-600 rounded-md shadow-sm hover:bg-green-700'
+                onClick={openPrintModal}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'
               >
-                <HeroIcon name='arrow-up-tray' className='w-5 h-5 mr-2' />
+                <PrinterIcon className='w-3.5 h-3.5 mr-1' />
+                Print TTF 1
+              </button>
+              <button
+                onClick={openUploadModal}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700'
+              >
+                <ArrowUpTrayIcon className='w-3.5 h-3.5 mr-1' />
                 Upload TTF 2
               </button>
-              <button
-                onClick={openCreateModal}
-                className='inline-flex items-center px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded-md shadow-sm hover:bg-blue-700'
-              >
-                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-                Tambah TTF
-              </button>
             </div>
-          </div>
-
-          <div className='mb-4 overflow-x-auto'>
-            <TabContainer
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              variant='underline'
-            >
-              {statusTabs.map((tab) => (
-                <Tab
-                  key={tab.id}
-                  id={tab.id}
-                  label={tab.label}
-                />
-              ))}
-            </TabContainer>
           </div>
 
           <TandaTerimaFakturTableServerSide
-            onView={openDetailModal}
-            onEdit={openEditModal}
+            onView={handleViewDetail}
+            onEdit={handleEdit}
             onDelete={handleDelete}
-            onAssignDocuments={openAssignDocumentsModal}
-            onUnassignDocuments={openUnassignDocumentsModal}
-            deleteLoading={deleteConfirmationProps.loading}
-            assignLoading={assignActionDisabled}
-            unassignLoading={unassignActionDisabled}
+            deleteLoading={deleteTandaTerimaFakturConfirmation.loading}
             initialPage={1}
             initialLimit={10}
-            activeTab={activeTab}
+            selectedTTFId={selectedTTFForDetail?.id}
           />
         </div>
       </div>
 
+      {/* Detail Card - Replaces Modal */}
+      {selectedTTFForDetail && (
+        <TandaTerimaFakturDetailCard
+          tandaTerimaFaktur={selectedTTFForDetail}
+          onClose={handleCloseDetail}
+          onEdit={handleEdit}
+          loading={detailLoading}
+        />
+      )}
+
+      {/* Create Modal */}
       <TandaTerimaFakturModal
         isOpen={isCreateModalOpen}
         onClose={closeCreateModal}
@@ -398,55 +164,39 @@ const TandaTerimaFakturPage = () => {
         isEdit={false}
       />
 
+      {/* Edit Modal */}
       <TandaTerimaFakturModal
-        isOpen={isEditModalOpen}
+        isOpen={Boolean(selectedTTFForEdit)}
         onClose={closeEditModal}
-        onSubmit={handleUpdateSubmit}
-        initialValues={selectedTtf}
-        isEdit
+        onSubmit={handleEditSubmit}
+        initialValues={selectedTTFForEdit}
+        isEdit={true}
       />
 
-      <TandaTerimaFakturDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={closeDetailModal}
-        tandaTerimaFaktur={selectedTtf}
-        isLoading={detailLoading}
+
+      {/* Print Modal */}
+      <PrintTandaTerimaFakturByGroupModal
+        isOpen={isPrintModalOpen}
+        onClose={closePrintModal}
       />
 
-      <TandaTerimaFakturDocumentsModal
-        isOpen={isAssignModalOpen}
-        onClose={closeAssignModal}
-        onSubmit={handleAssignDocumentsSubmit}
-        tandaTerimaFaktur={assignModalTarget}
-        mode='assign'
-        loading={assignRequestLoading}
-      />
-
-      <TandaTerimaFakturDocumentsModal
-        isOpen={isUnassignModalOpen}
-        onClose={closeUnassignModal}
-        onSubmit={handleUnassignDocumentsSubmit}
-        tandaTerimaFaktur={unassignModalTarget}
-        mode='unassign'
-        loading={unassignRequestLoading}
-      />
-
+      {/* Upload TTF2 Modal */}
       <UploadTTF2Modal
-        isOpen={isUploadTTF2ModalOpen}
-        onClose={closeUploadTTF2Modal}
-        onSuccess={handleUploadTTF2Success}
+        isOpen={isUploadModalOpen}
+        onClose={closeUploadModal}
       />
 
+      {/* Delete Confirmation */}
       <ConfirmationDialog
-        show={deleteConfirmationProps.showConfirm}
-        onClose={deleteConfirmationProps.hideDeleteConfirmation}
+        show={deleteTandaTerimaFakturConfirmation.showConfirm}
+        onClose={deleteTandaTerimaFakturConfirmation.hideDeleteConfirmation}
         onConfirm={handleDeleteConfirm}
-        title={deleteConfirmationProps.title}
-        message={deleteConfirmationProps.message}
+        title={deleteTandaTerimaFakturConfirmation.title}
+        message={deleteTandaTerimaFakturConfirmation.message}
         type='danger'
         confirmText='Hapus'
         cancelText='Batal'
-        loading={deleteConfirmationProps.loading}
+        loading={deleteTandaTerimaFakturConfirmation.loading}
       />
     </div>
   );

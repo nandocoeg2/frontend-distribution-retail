@@ -198,7 +198,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path='/invoice/ttf'
+        path='/invoice/ttf-grouped'
         element={
           <ProtectedRoute>
             <TandaTerimaFakturGrouped />
@@ -206,7 +206,7 @@ const AppRoutes = () => {
         }
       />
       <Route
-        path='/invoice/ttf-grouped'
+        path='/invoice/ttf'
         element={
           <ProtectedRoute>
             <TandaTerimaFaktur />

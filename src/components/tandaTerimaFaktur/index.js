@@ -3,6 +3,7 @@ export { default as TandaTerimaFakturTable } from './TandaTerimaFakturTable';
 export { default as TandaTerimaFakturTableServerSide } from './TandaTerimaFakturTableServerSide';
 export { default as TandaTerimaFakturModal } from './TandaTerimaFakturModal';
 export { default as TandaTerimaFakturDetailModal } from './TandaTerimaFakturDetailModal';
+export { default as TandaTerimaFakturDetailCard } from './TandaTerimaFakturDetailCard';
 export { default as TandaTerimaFakturDocumentsModal } from './TandaTerimaFakturDocumentsModal';
 export { default as TandaTerimaFakturGroupedTable } from './TandaTerimaFakturGroupedTable';
 export { default as TandaTerimaFakturGroupedDetailModal } from './TandaTerimaFakturGroupedDetailModal';

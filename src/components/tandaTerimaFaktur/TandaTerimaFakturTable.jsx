@@ -1,11 +1,7 @@
 import React from 'react';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
-import {
-  formatCurrency,
-  formatDate,
-  formatDateTime,
-} from '@/utils/formatUtils';
+import { formatCurrency, formatDate } from '@/utils/formatUtils';
 
 const TandaTerimaFakturTable = ({
   tandaTerimaFakturs,
@@ -22,8 +18,7 @@ const TandaTerimaFakturTable = ({
   const data = Array.isArray(tandaTerimaFakturs) ? tandaTerimaFakturs : [];
   const isEmpty = data.length === 0;
   const actionDisabled = Boolean(loading);
-  const trimmedQuery =
-    typeof searchQuery === 'string' ? searchQuery.trim() : '';
+  const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
   const showEmptyState = isEmpty && !loading;
   const emptyMessage =
     hasActiveFilters || trimmedQuery
@@ -35,34 +30,22 @@ const TandaTerimaFakturTable = ({
       <table className='min-w-full divide-y divide-gray-200'>
         <thead className='bg-gray-50'>
           <tr>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+            <th className='px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               Tanggal
             </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+            <th className='px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
               TOP
             </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Nama Group Customer
+            <th className='px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Group Customer
             </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Kode Group Customer
+            <th className='px-3 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+              Company
             </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Nama Company
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Kode Supplier
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
+            <th className='px-3 py-2 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Grand Total
             </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Created
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase'>
-              Updated
-            </th>
-            <th className='px-6 py-3 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
+            <th className='px-3 py-2 text-xs font-medium tracking-wider text-right text-gray-500 uppercase'>
               Aksi
             </th>
           </tr>
@@ -70,22 +53,17 @@ const TandaTerimaFakturTable = ({
         <tbody className='bg-white divide-y divide-gray-200'>
           {showEmptyState ? (
             <tr>
-              <td
-                colSpan={10}
-                className='px-6 py-6 text-center text-sm text-gray-500'
-              >
+              <td colSpan={6} className='px-3 py-4 text-center text-sm text-gray-500'>
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             data.map((item) => (
               <tr key={item.id} className='hover:bg-gray-50'>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {formatDate(item.tanggal)}
-                  </div>
+                <td className='px-3 py-2 whitespace-nowrap'>
+                  <div className='text-sm text-gray-900'>{formatDate(item.tanggal)}</div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
+                <td className='px-3 py-2 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {item?.termOfPayment?.kode_top || '-'}
                   </div>
@@ -95,73 +73,37 @@ const TandaTerimaFakturTable = ({
                     </div>
                   )}
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
+                <td className='px-3 py-2 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {item?.groupCustomer?.nama_group ||
                       item?.groupCustomer?.namaGroup ||
-                      item?.customer?.groupCustomer?.nama_group ||
-                      item?.customer?.groupCustomer?.namaGroup ||
                       '-'}
                   </div>
-                  {item?.customer?.namaCustomer && (
-                    <div className='text-xs text-gray-500'>
-                      Customer: {item.customer.namaCustomer}
-                    </div>
-                  )}
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
+                  <div className='text-xs text-gray-500'>
                     {item?.groupCustomer?.kode_group ||
                       item?.groupCustomer?.kodeGroup ||
-                      item?.customer?.groupCustomer?.kode_group ||
-                      item?.customer?.groupCustomer?.kodeGroup ||
                       '-'}
                   </div>
-                  {item?.customer?.kodeCustomer && (
-                    <div className='text-xs text-gray-500'>
-                      Customer: {item.customer.kodeCustomer}
-                    </div>
-                  )}
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
+                <td className='px-3 py-2 whitespace-nowrap'>
                   <div className='text-sm text-gray-900'>
                     {item?.company?.nama_perusahaan || '-'}
                   </div>
-                  {item?.company?.kode_company && (
-                    <div className='text-xs text-gray-500'>
-                      {item.company.kode_company}
-                    </div>
-                  )}
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm font-medium text-gray-900'>
-                    {item.code_supplier || '-'}
-                  </div>
                   <div className='text-xs text-gray-500'>
-                    ID: {item.id || '-'}
+                    {item?.company?.kode_company || item?.code_supplier || '-'}
                   </div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
+                <td className='px-3 py-2 whitespace-nowrap text-right'>
+                  <div className='text-sm font-medium text-gray-900'>
                     {formatCurrency(item.grand_total)}
                   </div>
                 </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {formatDateTime(item.createdAt)}
-                  </div>
-                </td>
-                <td className='px-6 py-4 whitespace-nowrap'>
-                  <div className='text-sm text-gray-900'>
-                    {formatDateTime(item.updatedAt)}
-                  </div>
-                </td>
-                <td className='px-6 py-4 text-sm font-medium text-right whitespace-nowrap'>
-                  <div className='flex justify-end space-x-2'>
+                <td className='px-3 py-2 text-sm font-medium text-right whitespace-nowrap'>
+                  <div className='flex justify-end space-x-1'>
                     <button
                       onClick={() => onView?.(item)}
                       className='p-1 text-indigo-600 hover:text-indigo-900 disabled:text-indigo-300'
-                      title='Lihat detail tanda terima faktur'
+                      title='Lihat detail'
                       disabled={actionDisabled}
                     >
                       <EyeIcon className='w-4 h-4' />
@@ -169,15 +111,15 @@ const TandaTerimaFakturTable = ({
                     <button
                       onClick={() => onEdit?.(item)}
                       className='p-1 text-indigo-600 hover:text-indigo-900 disabled:text-indigo-300'
-                      title='Ubah tanda terima faktur'
+                      title='Edit'
                       disabled={actionDisabled}
                     >
                       <PencilIcon className='w-4 h-4' />
                     </button>
                     <button
-                      onClick={() => onDelete?.(item.id)}
+                      onClick={() => onDelete?.(item)}
                       className='p-1 text-red-600 hover:text-red-900 disabled:text-red-300'
-                      title='Hapus tanda terima faktur'
+                      title='Hapus'
                       disabled={actionDisabled}
                     >
                       <TrashIcon className='w-4 h-4' />
@@ -189,13 +131,10 @@ const TandaTerimaFakturTable = ({
           )}
           {loading && (
             <tr>
-              <td
-                colSpan={10}
-                className='px-6 py-6 text-center text-sm text-gray-500'
-              >
+              <td colSpan={6} className='px-3 py-4 text-center text-sm text-gray-500'>
                 <div className='flex items-center justify-center space-x-2'>
                   <div className='w-4 h-4 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-                  <span>Memuat data tanda terima faktur...</span>
+                  <span>Memuat data...</span>
                 </div>
               </td>
             </tr>
