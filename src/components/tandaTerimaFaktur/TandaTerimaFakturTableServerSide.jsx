@@ -341,9 +341,6 @@ const TandaTerimaFakturTableServerSide = ({
           return (
             <div>
               <div className="text-xs font-medium text-gray-900">{info.getValue() || '-'}</div>
-              {row?.termOfPayment?.batas_hari != null && (
-                <div className="text-[10px] text-gray-500">{row.termOfPayment.batas_hari} hari</div>
-              )}
             </div>
           );
         },
