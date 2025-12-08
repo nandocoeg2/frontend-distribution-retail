@@ -25,11 +25,12 @@ const INITIAL_PAGINATION = {
 
 const LaporanPenerimaanBarang = () => {
   const queryClient = useQueryClient();
-  
+
   const {
     createReport,
     createReportFromFile,
     uploadBulkReports,
+    uploadBulkReportsTextExtraction,
     fetchBulkStatus,
     fetchBulkFiles,
     updateReport,
@@ -266,6 +267,7 @@ const LaporanPenerimaanBarang = () => {
         isOpen={isBulkModalOpen}
         onClose={closeBulkModal}
         onBulkUpload={uploadBulkReports}
+        onBulkUploadTextExtraction={uploadBulkReportsTextExtraction}
         onFetchStatus={fetchBulkStatus}
         onFetchBulkFiles={fetchBulkFiles}
       />

@@ -313,6 +313,72 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  /**
+   * Upload bulk LPB files using Text Extraction (alternative to AI conversion)
+   * @param {Object} params - Upload parameters
+   * @param {File[]|FileList} params.files - Files to upload
+   * @returns {Promise<Object>} Upload result
+   */
+  async uploadBulkReportsTextExtraction({ files } = {}) {
+    try {
+      const fileList = Array.isArray(files)
+        ? files
+        : files && typeof files.length === 'number'
+          ? Array.from(files)
+          : [];
+
+      if (!fileList.length) {
+        throw new Error('Files are required');
+      }
+
+      const formData = new FormData();
+      fileList.forEach((file) => {
+        if (file) {
+          formData.append('files', file);
+        }
+      });
+
+      const response = await this.api.post(
+        '/laporan-penerimaan-barang/bulk-text-extraction',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Error uploading LPB bulk files with text extraction:',
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Retry a failed LPB file using Text Extraction
+   * @param {string} fileId - ID of the file to retry
+   * @returns {Promise<Object>} Retry result
+   */
+  async retryFileTextExtraction(fileId) {
+    try {
+      if (!fileId) {
+        throw new Error('File ID is required');
+      }
+
+      const response = await this.api.post(
+        '/laporan-penerimaan-barang/retry-file-text-extraction/' + fileId
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error retrying LPB file with text extraction:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();

@@ -282,13 +282,13 @@ const useLaporanPenerimaanBarangPage = () => {
       if (result?.success === false) {
         throw new Error(
           result?.message ||
-            result?.error?.message ||
-            'Failed to upload bulk laporan penerimaan barang files'
+          result?.error?.message ||
+          'Failed to upload bulk laporan penerimaan barang files'
         );
       }
       toastService.success(
         result?.message ||
-          'Bulk upload laporan penerimaan barang berhasil dikirim ke background.'
+        'Bulk upload laporan penerimaan barang berhasil dikirim ke background.'
       );
       return result?.data || result;
     } catch (err) {
@@ -317,8 +317,8 @@ const useLaporanPenerimaanBarangPage = () => {
       if (result?.success === false) {
         throw new Error(
           result?.message ||
-            result?.error?.message ||
-            'Failed to fetch laporan penerimaan barang bulk status'
+          result?.error?.message ||
+          'Failed to fetch laporan penerimaan barang bulk status'
         );
       }
       return result?.data || result;
@@ -343,8 +343,8 @@ const useLaporanPenerimaanBarangPage = () => {
       if (result?.success === false) {
         throw new Error(
           result?.message ||
-            result?.error?.message ||
-            'Failed to fetch laporan penerimaan barang bulk files'
+          result?.error?.message ||
+          'Failed to fetch laporan penerimaan barang bulk files'
         );
       }
       return result?.data || result;
@@ -358,6 +358,41 @@ const useLaporanPenerimaanBarangPage = () => {
         err?.response?.data?.error?.message ||
         err?.message ||
         'Failed to fetch laporan penerimaan barang bulk files';
+      toastService.error(message);
+      throw err;
+    }
+  }, [authHandler]);
+
+  /**
+   * Upload bulk LPB files using Text Extraction (alternative to AI conversion)
+   */
+  const uploadBulkReportsTextExtraction = useCallback(async ({ files } = {}) => {
+    try {
+      const result = await laporanPenerimaanBarangService.uploadBulkReportsTextExtraction({
+        files,
+      });
+      if (result?.success === false) {
+        throw new Error(
+          result?.message ||
+          result?.error?.message ||
+          'Failed to upload bulk LPB files with text extraction'
+        );
+      }
+      toastService.success(
+        result?.message ||
+        'Bulk upload LPB dengan Text Extraction berhasil.'
+      );
+      return result?.data || result;
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        authHandler();
+        return undefined;
+      }
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to upload bulk LPB files with text extraction';
       toastService.error(message);
       throw err;
     }
@@ -495,6 +530,7 @@ const useLaporanPenerimaanBarangPage = () => {
     handleAuthError: authHandler,
     createReportFromFile,
     uploadBulkReports,
+    uploadBulkReportsTextExtraction,
     fetchBulkStatus,
     fetchBulkFiles,
     completeReports,

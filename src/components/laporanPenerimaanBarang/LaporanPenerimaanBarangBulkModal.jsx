@@ -27,6 +27,7 @@ const LaporanPenerimaanBarangBulkModal = ({
   isOpen,
   onClose,
   onBulkUpload,
+  onBulkUploadTextExtraction,
   onFetchStatus,
   onFetchBulkFiles,
 }) => {
@@ -38,6 +39,7 @@ const LaporanPenerimaanBarangBulkModal = ({
   const [uploadError, setUploadError] = useState('');
   const [uploadResults, setUploadResults] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [processingMethod, setProcessingMethod] = useState('ai'); // 'ai' or 'text-extraction'
 
   const [statusBulkId, setStatusBulkId] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
@@ -61,6 +63,7 @@ const LaporanPenerimaanBarangBulkModal = ({
     setUploadError('');
     setUploadResults([]);
     setUploadProgress({});
+    setProcessingMethod('ai');
 
     setStatusBulkId('');
     setStatusLoading(false);
@@ -132,8 +135,17 @@ const LaporanPenerimaanBarangBulkModal = ({
   };
 
   const handleBulkUpload = async () => {
-    if (typeof onBulkUpload !== 'function') {
-      setUploadError('Fitur upload bulk belum tersedia.');
+    // Determine which upload function to use based on processing method
+    const uploadFn = processingMethod === 'text-extraction'
+      ? onBulkUploadTextExtraction
+      : onBulkUpload;
+
+    if (typeof uploadFn !== 'function') {
+      setUploadError(
+        processingMethod === 'text-extraction'
+          ? 'Fitur upload bulk dengan Text Extraction belum tersedia.'
+          : 'Fitur upload bulk belum tersedia.'
+      );
       return;
     }
 
@@ -149,22 +161,23 @@ const LaporanPenerimaanBarangBulkModal = ({
     try {
       for (let i = 0; i < filesArray.length; i++) {
         const file = filesArray[i];
-        
+
         // Update progress
         setUploadProgress(prev => ({
           ...prev,
-          [i]: { status: 'uploading', fileName: file.name }
+          [i]: { status: 'uploading', fileName: file.name, method: processingMethod }
         }));
 
         try {
-          const result = await onBulkUpload({
+          const result = await uploadFn({
             files: [file],
           });
-          
+
           results.push({
             fileName: file.name,
             success: true,
-            data: result
+            data: result,
+            method: processingMethod
           });
 
           const bulkIdCandidates = [
@@ -180,23 +193,24 @@ const LaporanPenerimaanBarangBulkModal = ({
 
           setUploadProgress(prev => ({
             ...prev,
-            [i]: { status: 'success', fileName: file.name, result }
+            [i]: { status: 'success', fileName: file.name, result, method: processingMethod }
           }));
         } catch (error) {
           const message =
             (error && error.response && error.response.data && error.response.data.message) ||
             (error && error.message) ||
             'Gagal mengunggah file.';
-          
+
           results.push({
             fileName: file.name,
             success: false,
-            error: message
+            error: message,
+            method: processingMethod
           });
 
           setUploadProgress(prev => ({
             ...prev,
-            [i]: { status: 'error', fileName: file.name, error: message }
+            [i]: { status: 'error', fileName: file.name, error: message, method: processingMethod }
           }));
         }
       }
@@ -382,7 +396,58 @@ const LaporanPenerimaanBarangBulkModal = ({
                 <div className='bg-white rounded-lg border border-gray-200 p-3'>
                   <h4 className='text-sm font-semibold text-gray-900'>Upload File Laporan</h4>
                   <p className='mt-0.5 text-xs text-gray-600'>PDF, EDI <span className='font-medium'>(pilih banyak file sekaligus)</span></p>
-                  
+
+                  {/* Processing Method Selector */}
+                  <div className='mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200'>
+                    <p className='text-sm font-medium text-gray-700 mb-2'>Metode Pemrosesan:</p>
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+                      <label
+                        className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${processingMethod === 'ai'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                      >
+                        <input
+                          type='radio'
+                          name='processingMethod'
+                          value='ai'
+                          checked={processingMethod === 'ai'}
+                          onChange={(e) => setProcessingMethod(e.target.value)}
+                          disabled={uploading}
+                          className='mt-1'
+                        />
+                        <div className='flex-1'>
+                          <span className='text-sm font-semibold text-gray-900'>AI Conversion</span>
+                          <p className='text-xs text-gray-500 mt-0.5'>
+                            Menggunakan Google Gemini AI untuk mengekstrak data. Lebih fleksibel untuk format dokumen yang bervariasi.
+                          </p>
+                        </div>
+                      </label>
+                      <label
+                        className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${processingMethod === 'text-extraction'
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                      >
+                        <input
+                          type='radio'
+                          name='processingMethod'
+                          value='text-extraction'
+                          checked={processingMethod === 'text-extraction'}
+                          onChange={(e) => setProcessingMethod(e.target.value)}
+                          disabled={uploading}
+                          className='mt-1'
+                        />
+                        <div className='flex-1'>
+                          <span className='text-sm font-semibold text-gray-900'>Text Extraction</span>
+                          <p className='text-xs text-gray-500 mt-0.5'>
+                            Ekstraksi teks langsung dari PDF. Lebih cepat dan tidak memerlukan API AI, cocok untuk format LPB standar.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
                   <div className='mt-3 space-y-2.5'>
                     <input
                       key={fileInputKey}
@@ -393,16 +458,19 @@ const LaporanPenerimaanBarangBulkModal = ({
                       disabled={uploading}
                       className='block w-full text-sm text-gray-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-200 disabled:opacity-50'
                     />
-                    
+
                     {uploadError && (
                       <p className='text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2'>{uploadError}</p>
                     )}
-                    
+
                     <button
                       type='button'
                       onClick={handleBulkUpload}
                       disabled={uploading || filesArray.length === 0}
-                      className='w-full inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed'
+                      className={`w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium text-white shadow disabled:cursor-not-allowed ${processingMethod === 'text-extraction'
+                          ? 'bg-green-600 hover:bg-green-700 disabled:bg-green-300'
+                          : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300'
+                        }`}
                     >
                       {uploading ? (
                         <>
@@ -410,12 +478,14 @@ const LaporanPenerimaanBarangBulkModal = ({
                           <span>Mengunggah...</span>
                         </>
                       ) : (
-                        'Upload Bulk'
+                        processingMethod === 'text-extraction'
+                          ? '🔍 Upload dengan Text Extraction'
+                          : '🤖 Upload dengan AI Conversion'
                       )}
                     </button>
                   </div>
                 </div>
-                
+
                 {filesArray.length > 0 && (
                   <div className='bg-white rounded-lg border border-gray-200 p-3'>
                     <p className='text-sm font-semibold text-gray-900 mb-2'>
@@ -424,7 +494,7 @@ const LaporanPenerimaanBarangBulkModal = ({
                     <div className='space-y-1'>{filesList}</div>
                   </div>
                 )}
-                  
+
                 {/* Upload Progress */}
                 {uploading && Object.keys(uploadProgress).length > 0 && (
                   <div className='bg-white rounded-lg border border-gray-200 p-3'>
@@ -454,12 +524,12 @@ const LaporanPenerimaanBarangBulkModal = ({
                     </div>
                   </div>
                 )}
-                  
+
                 {/* Upload Results */}
                 {uploadResults.length > 0 && (
                   <div className='bg-white rounded-lg border border-gray-200 p-3'>
                     <h3 className='text-sm font-semibold mb-2 text-gray-900'>Hasil Upload</h3>
-                    
+
                     {/* Summary */}
                     <div className='mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-lg'>
                       <p className='text-sm font-medium text-blue-900 mb-2'>
@@ -475,25 +545,23 @@ const LaporanPenerimaanBarangBulkModal = ({
                     {/* Per File Results */}
                     <div className='space-y-2'>
                       {uploadResults.map((result, idx) => (
-                        <div key={idx} className={`p-3 rounded-lg border ${
-                          result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                        }`}>
+                        <div key={idx} className={`p-3 rounded-lg border ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                          }`}>
                           <div className='flex items-center justify-between mb-2'>
                             <p className='text-sm font-medium truncate flex-1'>{result.fileName}</p>
-                            <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                              result.success ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
-                            }`}>
+                            <span className={`text-xs font-semibold px-2 py-1 rounded ${result.success ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                              }`}>
                               {result.success ? '✓ Berhasil' : '✗ Gagal'}
                             </span>
                           </div>
-                          
+
                           {result.success && result.data && (
                             <div className='text-xs text-gray-700 space-y-1'>
                               <p>• Bulk ID: {result.data.bulkId || result.data.batchId || result.data.data?.bulkId || result.data.data?.batchId || '-'}</p>
                               <p>• Status: {result.data.status || result.data.data?.status || 'Processing'}</p>
                             </div>
                           )}
-                          
+
                           {!result.success && (
                             <p className='text-xs text-red-700'>Error: {result.error}</p>
                           )}
