@@ -25,24 +25,15 @@ const TandaTerimaFakturDetailCard = ({
 }) => {
     const detail = useMemo(() => tandaTerimaFaktur || {}, [tandaTerimaFaktur]);
 
-    const totalLaporan = Array.isArray(detail.laporanPenerimaanBarang)
-        ? detail.laporanPenerimaanBarang.length
-        : 0;
-    const totalInvoice = Array.isArray(detail.invoicePenagihan)
-        ? detail.invoicePenagihan.length
-        : 0;
-    const totalFakturPajak = Array.isArray(detail.invoicePenagihan)
-        ? detail.invoicePenagihan.reduce((count, invoice) => {
-            const faktur = invoice?.fakturPajak || invoice?.faktur_pajak;
-            return faktur?.id ? count + 1 : count;
-        }, 0)
-        : 0;
+    // All relations are now one-to-one (single object, not array)
+    const hasLaporan = !!detail.laporanPenerimaanBarang;
+    const hasInvoice = !!detail.invoicePenagihan;
+    // fakturPajak is one-to-one on TTF (can also check via invoicePenagihan.fakturPajak)
+    const hasFaktur = !!detail.fakturPajak || !!detail.invoicePenagihan?.fakturPajak;
 
     const groupCustomer =
         detail?.groupCustomer || detail?.customer?.groupCustomer || null;
     const customer = detail?.customer || null;
-    const hasLaporan = totalLaporan > 0;
-    const hasInvoice = totalInvoice > 0;
 
     if (!tandaTerimaFaktur && !loading) return null;
 
@@ -124,58 +115,76 @@ const TandaTerimaFakturDetailCard = ({
                         {/* Right Column */}
                         <div className="space-y-6">
                             <section>
-                                <SectionHeader title={`Dokumen Terkait (${totalLaporan + totalInvoice + totalFakturPajak})`} />
+                                <SectionHeader title={`Dokumen Terkait (${(hasLaporan ? 1 : 0) + (hasInvoice ? 1 : 0) + (hasFaktur ? 1 : 0)})`} />
                                 <div className="space-y-4">
-                                    {/* Laporan Penerimaan Barang */}
+                                    {/* Laporan Penerimaan Barang - now one-to-one (single object) */}
                                     {hasLaporan && (
                                         <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
                                             <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200 text-xs font-semibold text-gray-700">
-                                                Laporan Penerimaan Barang ({totalLaporan})
+                                                Laporan Penerimaan Barang
                                             </div>
-                                            <div className="divide-y divide-gray-100">
-                                                {detail.laporanPenerimaanBarang.map((laporan, idx) => (
-                                                    <div key={idx} className="p-2 text-xs hover:bg-gray-50">
-                                                        <div className="flex justify-between">
-                                                            <span className="text-gray-600">No:</span>
-                                                            <span className="font-medium text-gray-900">{laporan.id}</span>
-                                                        </div>
-                                                        {laporan.createdAt && (
-                                                            <div className="text-gray-500 text-[10px] text-right mt-0.5">
-                                                                {formatDate(laporan.createdAt)}
-                                                            </div>
-                                                        )}
+                                            <div className="p-2 text-xs hover:bg-gray-50">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">No LPB:</span>
+                                                    <span className="font-medium text-gray-900">
+                                                        {detail.laporanPenerimaanBarang?.no_lpb || detail.laporanPenerimaanBarang?.id || '-'}
+                                                    </span>
+                                                </div>
+                                                {detail.laporanPenerimaanBarang?.createdAt && (
+                                                    <div className="text-gray-500 text-[10px] text-right mt-0.5">
+                                                        {formatDate(detail.laporanPenerimaanBarang.createdAt)}
                                                     </div>
-                                                ))}
+                                                )}
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* Invoice Penagihan */}
+                                    {/* Invoice Penagihan - now one-to-one (single object) */}
                                     {hasInvoice && (
                                         <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
                                             <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200 text-xs font-semibold text-gray-700">
-                                                Invoice Penagihan ({totalInvoice})
+                                                Invoice Penagihan
                                             </div>
-                                            <div className="divide-y divide-gray-100">
-                                                {detail.invoicePenagihan.map((invoice, idx) => (
-                                                    <div key={idx} className="p-2 text-xs hover:bg-gray-50">
-                                                        <div className="flex justify-between mb-1">
-                                                            <span className="text-gray-600">No Invoice:</span>
-                                                            <span className="font-medium text-gray-900">{invoice.no_invoice_penagihan || invoice.noInvoicePenagihan || '-'}</span>
+                                            <div className="p-2 text-xs hover:bg-gray-50">
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-gray-600">No Invoice:</span>
+                                                    <span className="font-medium text-gray-900">
+                                                        {detail.invoicePenagihan?.no_invoice_penagihan || detail.invoicePenagihan?.noInvoicePenagihan || '-'}
+                                                    </span>
+                                                </div>
+                                                {/* Linked Faktur Pajak via Invoice */}
+                                                {(detail.invoicePenagihan?.fakturPajak || detail.invoicePenagihan?.faktur_pajak) && (
+                                                    <div className="ml-2 pl-2 border-l-2 border-green-200">
+                                                        <div className="flex justify-between text-[11px]">
+                                                            <span className="text-gray-500">Faktur Pajak:</span>
+                                                            <span className="font-medium text-green-700">
+                                                                {detail.invoicePenagihan?.fakturPajak?.no_pajak || detail.invoicePenagihan?.faktur_pajak?.noPajak || '-'}
+                                                            </span>
                                                         </div>
-                                                        {/* Linked Faktur Pajak */}
-                                                        {(invoice.fakturPajak || invoice.faktur_pajak) && (
-                                                            <div className="ml-2 pl-2 border-l-2 border-green-200">
-                                                                <div className="flex justify-between text-[11px]">
-                                                                    <span className="text-gray-500">Faktur Pajak:</span>
-                                                                    <span className="font-medium text-green-700">
-                                                                        {invoice?.fakturPajak?.no_pajak || invoice?.faktur_pajak?.noPajak || '-'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                     </div>
-                                                ))}
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Faktur Pajak - direct one-to-one relation on TTF */}
+                                    {detail.fakturPajak && (
+                                        <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+                                            <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200 text-xs font-semibold text-gray-700">
+                                                Faktur Pajak (TTF)
+                                            </div>
+                                            <div className="p-2 text-xs hover:bg-gray-50">
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-gray-600">No Pajak:</span>
+                                                    <span className="font-medium text-green-700">
+                                                        {detail.fakturPajak?.no_pajak || '-'}
+                                                    </span>
+                                                </div>
+                                                {detail.fakturPajak?.tanggal_invoice && (
+                                                    <div className="text-gray-500 text-[10px] text-right mt-0.5">
+                                                        {formatDate(detail.fakturPajak.tanggal_invoice)}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}

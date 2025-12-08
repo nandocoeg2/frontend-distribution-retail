@@ -252,8 +252,7 @@ const TandaTerimaFakturTableServerSide = ({
         }
       ),
       columnHelper.accessor((row) => {
-        const invoices = row.invoicePenagihan || [];
-        return invoices.map(i => i.no_invoice_penagihan).join(', ');
+        return row.invoicePenagihan?.no_invoice_penagihan || '';
       }, {
         id: 'invoice_no',
         header: ({ column }) => (
@@ -261,13 +260,7 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="font-semibold text-xs">Invoice No</div>
             <input
               type="text"
-              value={column.getFilterValue() ?? ''} // Should be array if multi-select but simple text input implies contains search or comma separated? Wait, schema supports array 'invoice_nos'.
-              // Using simple text input for 'invoice_no' filter (single string search) or create a tag input?
-              // Existing 'kode_top' filter was Autocomplete.
-              // For Invoice No, usually specific search. Let's use simple input for now and map to 'invoice_no' filter (string).
-              // BUT schema supports 'invoice_nos' (array).
-              // User said "filternya berjalan lancar". Autocomplete for invoice numbers might be too heavy if many invoices.
-              // Let's stick to text input filtering 'invoice_no' (string contains).
+              value={column.getFilterValue() ?? ''}
               onChange={(event) => {
                 column.setFilterValue(event.target.value);
                 setPage(1);
@@ -278,25 +271,17 @@ const TandaTerimaFakturTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const invoices = info.row.original.invoicePenagihan || [];
+          const invoiceNo = info.getValue();
           return (
-            <div className="flex flex-col gap-0.5 max-h-[60px] overflow-y-auto">
-              {invoices.map(inv => (
-                <span key={inv.id} className="text-xs text-gray-700 whitespace-nowrap">{inv.no_invoice_penagihan}</span>
-              ))}
-              {invoices.length === 0 && <span className="text-xs text-gray-400">-</span>}
+            <div className="text-xs text-gray-700 whitespace-nowrap">
+              {invoiceNo || <span className="text-gray-400">-</span>}
             </div>
           );
         },
-        enableSorting: false, // Sorting by mult-value column is tricky. Backend doesn't support 'invoice_no' sort directly?
+        enableSorting: false,
       }),
       columnHelper.accessor((row) => {
-        // distinct PO numbers
-        const pos = new Set();
-        (row.invoicePenagihan || []).forEach(inv => {
-          if (inv.purchaseOrder?.po_number) pos.add(inv.purchaseOrder.po_number);
-        });
-        return Array.from(pos).join(', ');
+        return row.invoicePenagihan?.purchaseOrder?.po_number || '';
       }, {
         id: 'po_number',
         header: ({ column }) => (
@@ -315,29 +300,22 @@ const TandaTerimaFakturTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const pos = new Set();
-          (info.row.original.invoicePenagihan || []).forEach(inv => {
-            if (inv.purchaseOrder?.po_number) pos.add(inv.purchaseOrder.po_number);
-          });
-          const poList = Array.from(pos);
+          const poNo = info.getValue();
           return (
-            <div className="flex flex-col gap-0.5 max-h-[60px] overflow-y-auto">
-              {poList.map(po => (
-                <span key={po} className="text-xs text-gray-700 whitespace-nowrap">{po}</span>
-              ))}
-              {poList.length === 0 && <span className="text-xs text-gray-400">-</span>}
+            <div className="text-xs text-gray-700 whitespace-nowrap">
+              {poNo || <span className="text-gray-400">-</span>}
             </div>
           );
         },
         enableSorting: false,
       }),
       columnHelper.accessor((row) => {
-        return (row.invoicePenagihan || []).reduce((sum, inv) => sum + (Number(inv.grand_total) || 0), 0);
+        return Number(row.invoicePenagihan?.grand_total) || 0;
       }, {
         id: 'grand_total_invoice', // Virtual column
         header: 'Grand Total Invoice',
         cell: (info) => <div className="text-xs font-medium text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
-        enableSorting: false, // Sorting by calculated total of included relation might be hard unless backend supports it.
+        enableSorting: false,
         size: 110,
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
@@ -448,17 +426,11 @@ const TandaTerimaFakturTableServerSide = ({
         header: 'Dokumen',
         cell: ({ row }) => {
           const item = row.original;
-          const laporanCount = Array.isArray(item?.laporanPenerimaanBarang)
-            ? item.laporanPenerimaanBarang.length
-            : 0;
-          const invoiceCount = Array.isArray(item?.invoicePenagihan)
-            ? item.invoicePenagihan.length
-            : 0;
-          const fakturCount = Array.isArray(item?.fakturPajak)
-            ? item.fakturPajak.length
-            : 0;
-          const hasAssignedDocuments =
-            laporanCount > 0 || invoiceCount > 0 || fakturCount > 0;
+          // All relations are now one-to-one (single object, not array)
+          const hasLaporan = !!item?.laporanPenerimaanBarang;
+          const hasInvoice = !!item?.invoicePenagihan;
+          const hasFaktur = !!item?.fakturPajak;
+          const hasAssignedDocuments = hasLaporan || hasInvoice || hasFaktur;
           const disableAssign = assignLoading || typeof onAssignDocuments !== 'function';
           const disableUnassign =
             unassignLoading ||
@@ -468,9 +440,9 @@ const TandaTerimaFakturTableServerSide = ({
           return (
             <div className="flex items-center justify-between gap-2">
               <div className="text-[10px] leading-tight text-gray-500 flex flex-col gap-0.5">
-                <span title="Laporan Penerimaan Barang">L: {laporanCount}</span>
-                <span title="Invoice Penagihan">I: {invoiceCount}</span>
-                <span title="Faktur Pajak">F: {fakturCount}</span>
+                <span title="Laporan Penerimaan Barang">L: {hasLaporan ? '✓' : '-'}</span>
+                <span title="Invoice Penagihan">I: {hasInvoice ? '✓' : '-'}</span>
+                <span title="Faktur Pajak">F: {hasFaktur ? '✓' : '-'}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <button
