@@ -141,6 +141,29 @@ const TandaTerimaFakturTableServerSide = ({
         delete mappedFilters.status;
       }
 
+      // Handle Invoice No
+      if (mappedFilters.invoice_no) {
+        if (Array.isArray(mappedFilters.invoice_no) && mappedFilters.invoice_no.length > 0) {
+          mappedFilters.invoice_nos = mappedFilters.invoice_no;
+        }
+        delete mappedFilters.invoice_no;
+      }
+
+      // Handle PO No
+      if (mappedFilters.po_number) {
+        if (Array.isArray(mappedFilters.po_number) && mappedFilters.po_number.length > 0) {
+          mappedFilters.po_numbers = mappedFilters.po_number;
+        }
+        delete mappedFilters.po_number;
+      }
+
+      // Handle Grand Total Range
+      if (mappedFilters.grand_total) {
+        if (mappedFilters.grand_total.min) mappedFilters.grand_total_min = mappedFilters.grand_total.min;
+        if (mappedFilters.grand_total.max) mappedFilters.grand_total_max = mappedFilters.grand_total.max;
+        delete mappedFilters.grand_total;
+      }
+
       return {
         ...rest,
         filters: mappedFilters,
@@ -198,13 +221,127 @@ const TandaTerimaFakturTableServerSide = ({
         cell: (info) => <div className="font-medium text-xs">{formatDate(info.getValue())}</div>,
         size: 90,
       }),
+      columnHelper.accessor(
+        (row) =>
+          row?.groupCustomer?.nama_group ??
+          row?.groupCustomer?.namaGroup ??
+          row?.company?.nama_perusahaan ??
+          '-',
+        {
+          id: 'group_customer_name',
+          header: ({ column }) => (
+            <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+              <div className="font-semibold text-xs">Customer</div>
+              <AutocompleteCheckboxLimitTag
+                options={groupCustomers}
+                value={column.getFilterValue() ?? []}
+                onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+                placeholder="All"
+                displayKey="nama_group"
+                valueKey="nama_group"
+                limitTags={1}
+                size="small"
+                fetchOnClose
+              />
+            </div>
+          ),
+          cell: (info) => {
+            const val = info.getValue();
+            return <div className="text-xs font-medium text-gray-900 truncate max-w-[150px]" title={val}>{val}</div>
+          },
+        }
+      ),
+      columnHelper.accessor((row) => {
+        const invoices = row.invoicePenagihan || [];
+        return invoices.map(i => i.no_invoice_penagihan).join(', ');
+      }, {
+        id: 'invoice_no',
+        header: ({ column }) => (
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+            <div className="font-semibold text-xs">Invoice No</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''} // Should be array if multi-select but simple text input implies contains search or comma separated? Wait, schema supports array 'invoice_nos'.
+              // Using simple text input for 'invoice_no' filter (single string search) or create a tag input?
+              // Existing 'kode_top' filter was Autocomplete.
+              // For Invoice No, usually specific search. Let's use simple input for now and map to 'invoice_no' filter (string).
+              // BUT schema supports 'invoice_nos' (array).
+              // User said "filternya berjalan lancar". Autocomplete for invoice numbers might be too heavy if many invoices.
+              // Let's stick to text input filtering 'invoice_no' (string contains).
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search..."
+              className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        ),
+        cell: (info) => {
+          const invoices = info.row.original.invoicePenagihan || [];
+          return (
+            <div className="flex flex-col gap-0.5 max-h-[60px] overflow-y-auto">
+              {invoices.map(inv => (
+                <span key={inv.id} className="text-xs text-gray-700 whitespace-nowrap">{inv.no_invoice_penagihan}</span>
+              ))}
+              {invoices.length === 0 && <span className="text-xs text-gray-400">-</span>}
+            </div>
+          );
+        },
+        enableSorting: false, // Sorting by mult-value column is tricky. Backend doesn't support 'invoice_no' sort directly?
+      }),
+      columnHelper.accessor((row) => {
+        // distinct PO numbers
+        const pos = new Set();
+        (row.invoicePenagihan || []).forEach(inv => {
+          if (inv.purchaseOrder?.po_number) pos.add(inv.purchaseOrder.po_number);
+        });
+        return Array.from(pos).join(', ');
+      }, {
+        id: 'po_number',
+        header: ({ column }) => (
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+            <div className="font-semibold text-xs">PO No</div>
+            <input
+              type="text"
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search..."
+              className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        ),
+        cell: (info) => {
+          const pos = new Set();
+          (info.row.original.invoicePenagihan || []).forEach(inv => {
+            if (inv.purchaseOrder?.po_number) pos.add(inv.purchaseOrder.po_number);
+          });
+          const poList = Array.from(pos);
+          return (
+            <div className="flex flex-col gap-0.5 max-h-[60px] overflow-y-auto">
+              {poList.map(po => (
+                <span key={po} className="text-xs text-gray-700 whitespace-nowrap">{po}</span>
+              ))}
+              {poList.length === 0 && <span className="text-xs text-gray-400">-</span>}
+            </div>
+          );
+        },
+        enableSorting: false,
+      }),
+      columnHelper.accessor((row) => {
+        return (row.invoicePenagihan || []).reduce((sum, inv) => sum + (Number(inv.grand_total) || 0), 0);
+      }, {
+        id: 'grand_total_invoice', // Virtual column
+        header: 'Grand Total Invoice',
+        cell: (info) => <div className="text-xs font-medium text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
+        enableSorting: false, // Sorting by calculated total of included relation might be hard unless backend supports it.
+        size: 110,
+      }),
       columnHelper.accessor('termOfPayment.kode_top', {
-        id: 'top_codes', // Use 'top_codes' for filter, need to check if sort uses this ID. If so, backend needs to handle 'top_codes' for sort? No, usually sort parameter is separate. 
-        // Wait, 'useServerSideTable' normally uses the column ID for sorting. 
-        // Backend expects 'kode_top' for sort. 
-        // But for filter we want 'top_codes' array. 
-        // Solution: Map 'top_codes' to 'kode_top' in getQueryParams if it's for sorting, OR use 'kode_top' as ID and handle array in filter.
-        // Let's use 'kode_top' as ID to satisfy Sorting, and map 'kode_top' filter value to 'top_codes' in getQueryParams.
+        id: 'top_codes',
         header: ({ column }) => (
           <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
             <div className="font-semibold text-xs">TOP</div>
@@ -234,85 +371,43 @@ const TandaTerimaFakturTableServerSide = ({
         },
         size: 80,
       }),
-      columnHelper.accessor(
-        (row) =>
-          row?.groupCustomer?.nama_group ??
-          row?.groupCustomer?.namaGroup ??
-          row?.customer?.groupCustomer?.nama_group ??
-          row?.customer?.groupCustomer?.namaGroup ??
-          '',
-        {
-          id: 'group_customer_name', // Correct ID for sorting
-          header: ({ column }) => (
-            <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-              <div className="font-semibold text-xs">Group Customer</div>
-              <AutocompleteCheckboxLimitTag
-                options={groupCustomers}
-                value={column.getFilterValue() ?? []}
-                onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                placeholder="All"
-                displayKey="nama_group"
-                valueKey="nama_group"
-                limitTags={1}
-                size="small"
-                fetchOnClose
-              />
-            </div>
-          ),
-          cell: (info) => {
-            const row = info.row.original;
-            const code = row?.groupCustomer?.kode_group ??
-              row?.groupCustomer?.kodeGroup ??
-              row?.customer?.groupCustomer?.kode_group ??
-              row?.customer?.groupCustomer?.kodeGroup ??
-              '';
-            return (
-              <div>
-                <div className="text-xs font-medium text-gray-900">{info.getValue() || '-'}</div>
-                {code && <div className="text-[10px] text-gray-500">{code}</div>}
-              </div>
-            );
-          },
-        }
-      ),
-      columnHelper.accessor('company.nama_perusahaan', {
-        id: 'company_name',
-        header: ({ column }) => (
-          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-            <div className="font-semibold text-xs">Company</div>
-            <AutocompleteCheckboxLimitTag
-              options={companies}
-              value={column.getFilterValue() ?? []}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder="All"
-              displayKey="nama_perusahaan"
-              valueKey="nama_perusahaan"
-              limitTags={1}
-              size="small"
-              fetchOnClose
-            />
-          </div>
-        ),
-        cell: (info) => {
-          const row = info.row.original;
-          const code = row?.company?.kode_company;
-          return (
-            <div>
-              <div className="text-xs font-medium text-gray-900 truncate max-w-[150px]" title={info.getValue()}>
-                {info.getValue() || '-'}
-              </div>
-              {code && <div className="text-[10px] text-gray-500">{code}</div>}
-            </div>
-          );
-        },
-      }),
+
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: 'Total',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { min: '', max: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-semibold text-xs text-right">Total TTF</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="number"
+                  value={filterValue.min ?? ''}
+                  onChange={(e) => {
+                    column.setFilterValue({ ...filterValue, min: e.target.value });
+                    setPage(1);
+                  }}
+                  placeholder="Min"
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ''}
+                  onChange={(e) => {
+                    column.setFilterValue({ ...filterValue, max: e.target.value });
+                    setPage(1);
+                  }}
+                  placeholder="Max"
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
+                />
+              </div>
+            </div>
+          )
+        },
         enableSorting: true,
         cell: (info) => <div className="text-xs font-semibold text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
-        enableColumnFilter: false,
-        size: 120,
+        enableColumnFilter: true,
+        size: 110,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status', // For sorting, backend expects 'statusId' or similar? Or maybe it doesn't support sorting by status name. 
