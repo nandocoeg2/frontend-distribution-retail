@@ -198,8 +198,8 @@ const TandaTerimaFakturTableServerSide = ({
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
-            <div className="space-y-1">
-              <div className="font-semibold text-xs">Tanggal</div>
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tanggal</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="date"
@@ -230,8 +230,8 @@ const TandaTerimaFakturTableServerSide = ({
         {
           id: 'group_customer_name',
           header: ({ column }) => (
-            <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-              <div className="font-semibold text-xs">Customer</div>
+            <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+              <div className="font-medium text-xs">Customer</div>
               <AutocompleteCheckboxLimitTag
                 options={groupCustomers}
                 value={column.getFilterValue() ?? []}
@@ -247,7 +247,7 @@ const TandaTerimaFakturTableServerSide = ({
           ),
           cell: (info) => {
             const val = info.getValue();
-            return <div className="text-xs font-medium text-gray-900 truncate max-w-[150px]" title={val}>{val}</div>
+            return <span className="text-xs font-medium text-gray-900">{val}</span>
           },
         }
       ),
@@ -256,8 +256,8 @@ const TandaTerimaFakturTableServerSide = ({
       }, {
         id: 'invoice_no',
         header: ({ column }) => (
-          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-            <div className="font-semibold text-xs">Invoice No</div>
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Invoice No</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -285,8 +285,8 @@ const TandaTerimaFakturTableServerSide = ({
       }, {
         id: 'po_number',
         header: ({ column }) => (
-          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-            <div className="font-semibold text-xs">PO No</div>
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">PO No</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -321,8 +321,8 @@ const TandaTerimaFakturTableServerSide = ({
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top_codes',
         header: ({ column }) => (
-          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-            <div className="font-semibold text-xs">TOP</div>
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">TOP</div>
             <AutocompleteCheckboxLimitTag
               options={termOfPayments}
               value={column.getFilterValue() ?? []}
@@ -333,6 +333,7 @@ const TandaTerimaFakturTableServerSide = ({
               limitTags={1}
               size="small"
               fetchOnClose
+              sx={{ minWidth: '50px', maxWidth: '70px' }}
             />
           </div>
         ),
@@ -344,7 +345,7 @@ const TandaTerimaFakturTableServerSide = ({
             </div>
           );
         },
-        size: 80,
+        size: 55,
       }),
 
       columnHelper.accessor('grand_total', {
@@ -352,8 +353,8 @@ const TandaTerimaFakturTableServerSide = ({
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { min: '', max: '' };
           return (
-            <div className="space-y-1">
-              <div className="font-semibold text-xs text-right">Total TTF</div>
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs text-right">Total TTF</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="number"
@@ -391,8 +392,8 @@ const TandaTerimaFakturTableServerSide = ({
         // I will disable sorting for status for now or assume it is not supported to avoid errors, 
         // OR I should check if I can map it. For now, disable sorting for Status to be safe.
         header: ({ column }) => (
-          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
-            <div className="font-semibold text-xs">Status</div>
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
               options={statuses}
               value={column.getFilterValue() ?? []}
@@ -403,7 +404,7 @@ const TandaTerimaFakturTableServerSide = ({
               limitTags={1}
               size="small"
               fetchOnClose
-              sx={{ minWidth: '100px' }}
+              sx={{ minWidth: '60px', maxWidth: '80px' }}
             />
           </div>
         ),
@@ -416,11 +417,12 @@ const TandaTerimaFakturTableServerSide = ({
           />
         ),
         enableSorting: true,
-        size: 110,
+        size: 85,
       }),
       columnHelper.display({
-        id: 'documents',
-        header: 'Dokumen',
+        id: 'actions',
+        header: () => <div className="font-medium text-xs">Act</div>,
+        size: 90,
         cell: ({ row }) => {
           const item = row.original;
           // All relations are now one-to-one (single object, not array)
@@ -435,68 +437,46 @@ const TandaTerimaFakturTableServerSide = ({
             !hasAssignedDocuments;
 
           return (
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-[10px] leading-tight text-gray-500 flex flex-col gap-0.5">
-                <span title="Laporan Penerimaan Barang">L: {hasLaporan ? '✓' : '-'}</span>
-                <span title="Invoice Penagihan">I: {hasInvoice ? '✓' : '-'}</span>
-                <span title="Faktur Pajak">F: {hasFaktur ? '✓' : '-'}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onAssignDocuments?.(item); }}
-                  className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed p-0.5"
-                  title="Assign dokumen"
-                  disabled={disableAssign}
-                >
-                  <LinkIcon className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); onUnassignDocuments?.(item); }}
-                  className="text-orange-600 hover:text-orange-800 disabled:opacity-50 disabled:cursor-not-allowed p-0.5"
-                  title="Unassign dokumen"
-                  disabled={disableUnassign}
-                >
-                  <LinkSlashIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        },
-        enableSorting: false,
-        size: 90,
-      }),
-      columnHelper.display({
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => {
-          const item = row.original;
-
-          return (
-            <div className="flex justify-end gap-1">
+            <div className="flex gap-0.5">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onAssignDocuments?.(item); }}
+                className="p-0.5 text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Assign dokumen"
+                disabled={disableAssign}
+              >
+                <LinkIcon className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onUnassignDocuments?.(item); }}
+                className="p-0.5 text-orange-600 hover:text-orange-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Unassign dokumen"
+                disabled={disableUnassign}
+              >
+                <LinkSlashIcon className="h-3.5 w-3.5" />
+              </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                className="text-green-600 hover:text-green-900 p-1"
+                className="p-0.5 text-green-600 hover:text-green-900"
                 title="Ubah"
               >
-                <PencilIcon className="h-4 w-4" />
+                <PencilIcon className="h-3.5 w-3.5" />
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                 disabled={deleteLoading}
-                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed p-1"
+                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Hapus"
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="h-3.5 w-3.5" />
               </button>
             </div>
           );
         },
         enableSorting: false,
-        size: 80,
       }),
     ],
     [
@@ -526,14 +506,14 @@ const TandaTerimaFakturTableServerSide = ({
 
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {hasActiveFilters && (
         <div className="flex justify-end">
           <button
             onClick={resetFilters}
-            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
           >
-            Reset Semua Filter
+            Reset Filter
           </button>
         </div>
       )}
@@ -546,24 +526,24 @@ const TandaTerimaFakturTableServerSide = ({
         loadingMessage="Memuat data..."
         emptyMessage="Tidak ada data tanda terima faktur."
         emptyFilteredMessage="Tidak ada data yang sesuai."
-        wrapperClassName="overflow-x-auto border border-gray-200 rounded-lg shadow-sm"
-        tableClassName="min-w-full divide-y divide-gray-200 text-xs"
+        wrapperClassName="overflow-x-auto overflow-y-visible min-h-[300px]"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        headerCellClassName="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 bg-gray-50 z-10"
-        bodyClassName="bg-white divide-y divide-gray-200"
-        rowClassName="hover:bg-gray-50 transition-colors cursor-pointer"
+        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 h-7"
         getRowClassName={({ row }) => {
           if (!row || !row.original) return undefined;
           if (row.original.id === selectedTTFId) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
+            return 'bg-blue-50 border-l-2 border-blue-500';
           }
           return undefined;
         }}
         onRowClick={(rowData) => {
           if (onView) onView(rowData);
         }}
-        cellClassName="px-3 py-2 whitespace-nowrap"
-        emptyCellClassName="px-6 py-8 text-center text-gray-500"
+        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
       />
 
       {!loading && !error && (

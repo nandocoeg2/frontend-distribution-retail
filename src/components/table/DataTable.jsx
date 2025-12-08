@@ -86,7 +86,11 @@ const DataTable = ({
                     : flexRender(header.column.columnDef.header, header.getContext());
 
                 return (
-                  <th key={header.id} className={headerCellClassName}>
+                  <th
+                    key={header.id}
+                    className={headerCellClassName}
+                    style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                  >
                     {header.isPlaceholder ? null : (
                       <div className="space-y-2">
                         {canSort ? (
@@ -152,7 +156,11 @@ const DataTable = ({
                       .join(' ');
 
                     return (
-                      <td key={cell.id} className={computedCellClass}>
+                      <td
+                        key={cell.id}
+                        className={computedCellClass}
+                        style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     );

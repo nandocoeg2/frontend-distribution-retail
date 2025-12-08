@@ -20,6 +20,7 @@ const AutocompleteCheckboxLimitTag = ({
   tagClassName = '',
   size = 'default', // 'default' | 'small'
   fetchOnClose = false, // If true, only trigger onChange when dropdown closes
+  sx = {}, // Style prop for width control
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredOptions, setFilteredOptions] = useState([]);
@@ -70,7 +71,7 @@ const AutocompleteCheckboxLimitTag = ({
     const handleClickOutside = (event) => {
       const isInsideWrapper = wrapperRef.current && wrapperRef.current.contains(event.target);
       const isInsideDropdown = dropdownRef.current && dropdownRef.current.contains(event.target);
-      
+
       if (!isInsideWrapper && !isInsideDropdown) {
         if (showOptions && fetchOnClose && hasOpenedRef.current) {
           // Trigger onChange when closing dropdown
@@ -171,13 +172,13 @@ const AutocompleteCheckboxLimitTag = ({
   const hiddenCount = selectedOptions.length - limitTags;
 
   return (
-    <div className={`relative ${className}`} ref={wrapperRef}>
+    <div className={`relative ${className}`} ref={wrapperRef} style={sx}>
       {label && (
         <label className={`block font-medium text-gray-700 mb-1 ${isSmall ? 'text-xs' : 'text-sm'}`}>
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
-      
+
       {/* Input container with tags */}
       <div
         className={`flex flex-wrap items-center gap-1 border border-gray-300 rounded-md bg-white cursor-text
