@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  ArchiveBoxIcon, 
-  EyeIcon, 
-  CubeIcon, 
-  ScaleIcon, 
+import {
+  ArchiveBoxIcon,
+  EyeIcon,
+  CubeIcon,
+  ScaleIcon,
   ClockIcon,
   XMarkIcon,
   PencilIcon,
-  CheckIcon
+  CheckIcon,
+  BanknotesIcon
 } from '@heroicons/react/24/outline';
 import {
   AccordionItem,
@@ -31,7 +32,7 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
     loading: detailLoading,
     error
   } = useItemDetail(itemId);
-  
+
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditMode, setIsEditMode] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
@@ -136,11 +137,11 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
   const dimensiKarton = resolvedItem?.dimensiKarton || null;
   const cartonDimensionValues = dimensiKarton
     ? {
-        berat: dimensiKarton?.berat,
-        panjang: dimensiKarton?.panjang,
-        lebar: dimensiKarton?.lebar,
-        tinggi: dimensiKarton?.tinggi
-      }
+      berat: dimensiKarton?.berat,
+      panjang: dimensiKarton?.panjang,
+      lebar: dimensiKarton?.lebar,
+      tinggi: dimensiKarton?.tinggi
+    }
     : {};
 
   const dimensionExists = Object.values(dimensionValues).some(
@@ -163,37 +164,37 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
   const hasItemPrice = itemPrice && Object.values(itemPrice).some(value => value !== null && value !== undefined);
   const pricingRows = hasItemPrice
     ? [
-        {
-          label: 'Harga Dasar',
-          value: itemPrice?.harga !== undefined && itemPrice?.harga !== null ? formatCurrency(itemPrice.harga) : 'Tidak ada data harga'
-        },
-        {
-          label: 'Potongan 1 (%)',
-          value: formatNumberWithSuffix(itemPrice?.pot1, '%')
-        },
-        {
-          label: 'Harga Setelah Potongan 1',
-          value: itemPrice?.harga1 !== undefined && itemPrice?.harga1 !== null ? formatCurrency(itemPrice.harga1) : '—'
-        },
-        {
-          label: 'Potongan 2 (%)',
-          value: formatNumberWithSuffix(itemPrice?.pot2, '%')
-        },
-        {
-          label: 'Harga Setelah Potongan 2',
-          value: itemPrice?.harga2 !== undefined && itemPrice?.harga2 !== null ? formatCurrency(itemPrice.harga2) : '—'
-        },
-        {
-          label: 'PPN (%)',
-          value: formatNumberWithSuffix(itemPrice?.ppn, '%')
-        }
-      ]
+      {
+        label: 'Harga Dasar',
+        value: itemPrice?.harga !== undefined && itemPrice?.harga !== null ? formatCurrency(itemPrice.harga) : 'Tidak ada data harga'
+      },
+      {
+        label: 'PPN (%)',
+        value: formatNumberWithSuffix(itemPrice?.ppn, '%')
+      },
+      {
+        label: 'Potongan A (%)',
+        value: formatNumberWithSuffix(itemPrice?.pot1, '%')
+      },
+      {
+        label: 'Harga Setelah Potongan A',
+        value: itemPrice?.harga1 !== undefined && itemPrice?.harga1 !== null ? formatCurrency(itemPrice.harga1) : '—'
+      },
+      {
+        label: 'Potongan B (%)',
+        value: formatNumberWithSuffix(itemPrice?.pot2, '%')
+      },
+      {
+        label: 'Harga Setelah Potongan B',
+        value: itemPrice?.harga2 !== undefined && itemPrice?.harga2 !== null ? formatCurrency(itemPrice.harga2) : '—'
+      }
+    ]
     : [
-        {
-          label: 'Harga',
-          value: 'Tidak ada data harga'
-        }
-      ];
+      {
+        label: 'Harga',
+        value: 'Tidak ada data harga'
+      }
+    ];
 
   const loading = parentLoading || detailLoading;
 
@@ -346,6 +347,11 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
               icon={<CubeIcon className="h-4 w-4" />}
             />
             <Tab
+              id="pricing"
+              label="Pricing"
+              icon={<BanknotesIcon className="h-4 w-4" />}
+            />
+            <Tab
               id="dimensions"
               label="Dimensi"
               icon={<ScaleIcon className="h-4 w-4" />}
@@ -379,16 +385,6 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
                       { label: 'Allow Mixed Carton', value: resolvedItem?.allow_mixed_carton ? 'Ya' : 'Tidak' }
                     ]}
                   />
-                </AccordionItem>
-
-                {/* Pricing Information */}
-                <AccordionItem
-                  title="Pricing Information"
-                  isExpanded={expandedSections.pricingInfo}
-                  onToggle={() => setExpandedSections(prev => ({ ...prev, pricingInfo: !prev.pricingInfo }))}
-                  bgColor="bg-gradient-to-r from-green-50 to-green-100"
-                >
-                  <InfoTable data={pricingRows} />
                 </AccordionItem>
 
                 {/* System Information */}
@@ -441,6 +437,51 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
                     </div>
                     <div className="text-right">
                       <StatusBadge status={stockStatus.status} variant={stockStatus.variant} size='lg' dot />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabPanel>
+
+            {/* Pricing Tab */}
+            <TabPanel tabId="pricing">
+              <div className="space-y-6">
+                {/* Pricing Information Card */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <div className="p-2 bg-green-100 rounded-lg mr-3">
+                      <BanknotesIcon className="h-5 w-5 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">Pricing Information</h3>
+                  </div>
+                  <InfoTable data={pricingRows} />
+                </div>
+
+                {/* Pricing Summary Card */}
+                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-lg font-semibold text-green-900">Ringkasan Harga</h4>
+                      <p className="text-green-700 mt-1">
+                        Harga Dasar: {itemPrice?.harga !== undefined && itemPrice?.harga !== null ? formatCurrency(itemPrice.harga) : '—'}
+                      </p>
+                      {itemPrice?.ppn > 0 && (
+                        <p className="text-green-600 text-sm mt-1">
+                          PPN: {itemPrice.ppn}%
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-green-600">Harga Akhir (setelah potongan)</p>
+                      <p className="text-2xl font-bold text-green-900">
+                        {itemPrice?.harga2 !== undefined && itemPrice?.harga2 !== null && itemPrice?.harga2 > 0
+                          ? formatCurrency(itemPrice.harga2)
+                          : itemPrice?.harga1 !== undefined && itemPrice?.harga1 !== null && itemPrice?.harga1 > 0
+                            ? formatCurrency(itemPrice.harga1)
+                            : itemPrice?.harga !== undefined && itemPrice?.harga !== null
+                              ? formatCurrency(itemPrice.harga)
+                              : '—'}
+                      </p>
                     </div>
                   </div>
                 </div>

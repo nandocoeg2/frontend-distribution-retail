@@ -197,6 +197,23 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
     loadMixableItems();
   }, [formData.allow_mixed_carton, memoizedInitialData?.id]);
 
+  // Helper function to calculate prices after discounts
+  const calculatePricesAfterDiscount = (harga, pot1, pot2) => {
+    const hargaNum = parseFloat(harga) || 0;
+    const pot1Num = parseFloat(pot1) || 0;
+    const pot2Num = parseFloat(pot2) || 0;
+
+    // Harga1 = Harga Dasar - (Harga Dasar * pot1/100)
+    const harga1 = hargaNum - (hargaNum * pot1Num / 100);
+    // Harga2 = Harga1 - (Harga1 * pot2/100)
+    const harga2 = harga1 - (harga1 * pot2Num / 100);
+
+    return {
+      harga1: harga1.toFixed(2),
+      harga2: harga2.toFixed(2)
+    };
+  };
+
   useEffect(() => {
     if (!memoizedInitialData || Object.keys(memoizedInitialData).length === 0) {
       // For new items, set default company
@@ -208,6 +225,14 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
     const mixedWithItemIds = memoizedInitialData.mixedWithItems?.map(
       rel => rel.mixedWithItemId
     ) || [];
+
+    // Get price values
+    const harga = getPriceValue(memoizedInitialData, 'harga');
+    const pot1 = getPriceValue(memoizedInitialData, 'pot1');
+    const pot2 = getPriceValue(memoizedInitialData, 'pot2');
+
+    // Auto-calculate harga1 and harga2 based on harga and potongan
+    const calculated = calculatePricesAfterDiscount(harga, pot1, pot2);
 
     setFormData({
       companyId: memoizedInitialData.companyId || defaultCompanyId,
@@ -230,22 +255,38 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
       stok_quantity: getStockValue(memoizedInitialData, 'stok_quantity'),
       min_stok: getStockValue(memoizedInitialData, 'min_stok'),
       qty_per_carton: getStockValue(memoizedInitialData, 'qty_per_carton'),
-      harga: getPriceValue(memoizedInitialData, 'harga'),
-      pot1: getPriceValue(memoizedInitialData, 'pot1'),
-      harga1: getPriceValue(memoizedInitialData, 'harga1'),
-      pot2: getPriceValue(memoizedInitialData, 'pot2'),
-      harga2: getPriceValue(memoizedInitialData, 'harga2'),
+      harga: harga,
+      pot1: pot1,
+      harga1: calculated.harga1,  // Auto-calculated
+      pot2: pot2,
+      harga2: calculated.harga2,  // Auto-calculated
       ppn: getPriceValue(memoizedInitialData, 'ppn')
     });
   }, [memoizedInitialData, defaultCompanyId]);
 
   const handleChange = ({ target }) => {
     const { name, value, type, checked } = target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
+
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+
+      // Auto-calculate harga1 and harga2 when harga, pot1, or pot2 changes
+      if (name === 'harga' || name === 'pot1' || name === 'pot2') {
+        const harga = name === 'harga' ? value : prev.harga;
+        const pot1 = name === 'pot1' ? value : prev.pot1;
+        const pot2 = name === 'pot2' ? value : prev.pot2;
+
+        const calculated = calculatePricesAfterDiscount(harga, pot1, pot2);
+        newData.harga1 = calculated.harga1;
+        newData.harga2 = calculated.harga2;
+      }
+
+      return newData;
+    });
+
     // Clear mixedWithItemIds when allow_mixed_carton is disabled
     if (name === 'allow_mixed_carton' && !checked) {
       setFormData(prev => ({ ...prev, mixedWithItemIds: [] }));
@@ -409,7 +450,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
             </p>
           </div>
         </div>
-        
+
         {/* Mixed Carton Relationships */}
         {formData.allow_mixed_carton && (
           <div className="mt-4">
@@ -426,7 +467,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
               disabled={loading}
               helperText="Pilih item mana saja yang boleh dicampur dalam satu karton dengan item ini. Hanya item dengan 'Allow Mixed Carton' yang ditampilkan."
             />
-            
+
             {/* Display current relationships if editing */}
             {memoizedInitialData?.mixedWithItems && memoizedInitialData.mixedWithItems.length > 0 && (
               <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
@@ -578,53 +619,14 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
 
       <FormSection
         title="Harga"
-        description="Konfigurasi itemPrice. Biarkan nilai 0 jika tidak digunakan."
+        description="Konfigurasi itemPrice. Harga Setelah Potongan dihitung otomatis."
       >
+        {/* Row 1: Harga Dasar | PPN */}
         <FormField
           label="Harga Dasar"
           name="harga"
           type="number"
           value={formData.harga}
-          onChange={handleChange}
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-        />
-        <FormField
-          label="Potongan 1 (%)"
-          name="pot1"
-          type="number"
-          value={formData.pot1}
-          onChange={handleChange}
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-        />
-        <FormField
-          label="Harga Setelah Potongan 1"
-          name="harga1"
-          type="number"
-          value={formData.harga1}
-          onChange={handleChange}
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-        />
-        <FormField
-          label="Potongan 2 (%)"
-          name="pot2"
-          type="number"
-          value={formData.pot2}
-          onChange={handleChange}
-          min={0}
-          step="0.01"
-          inputMode="decimal"
-        />
-        <FormField
-          label="Harga Setelah Potongan 2"
-          name="harga2"
-          type="number"
-          value={formData.harga2}
           onChange={handleChange}
           min={0}
           step="0.01"
@@ -639,6 +641,46 @@ const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error 
           min={0}
           step="0.01"
           inputMode="decimal"
+        />
+
+        {/* Row 2: Potongan A | Harga Setelah Potongan A */}
+        <FormField
+          label="Potongan A (%)"
+          name="pot1"
+          type="number"
+          value={formData.pot1}
+          onChange={handleChange}
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Harga Setelah Potongan A"
+          name="harga1"
+          type="number"
+          value={formData.harga1}
+          disabled={true}
+          helperText="Dihitung otomatis: Harga Dasar - (Harga Dasar × Potongan A%)"
+        />
+
+        {/* Row 3: Potongan B | Harga Setelah Potongan B */}
+        <FormField
+          label="Potongan B (%)"
+          name="pot2"
+          type="number"
+          value={formData.pot2}
+          onChange={handleChange}
+          min={0}
+          step="0.01"
+          inputMode="decimal"
+        />
+        <FormField
+          label="Harga Setelah Potongan B"
+          name="harga2"
+          type="number"
+          value={formData.harga2}
+          disabled={true}
+          helperText="Dihitung otomatis: Harga Setelah Potongan A - (Harga Setelah Potongan A × Potongan B%)"
         />
       </FormSection>
 
