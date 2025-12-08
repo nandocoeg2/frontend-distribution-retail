@@ -222,11 +222,7 @@ const TandaTerimaFakturTableServerSide = ({
         size: 90,
       }),
       columnHelper.accessor(
-        (row) =>
-          row?.groupCustomer?.nama_group ??
-          row?.groupCustomer?.namaGroup ??
-          row?.company?.nama_perusahaan ??
-          '-',
+        (row) => row?.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer ?? '-',
         {
           id: 'group_customer_name',
           header: ({ column }) => (
@@ -246,8 +242,15 @@ const TandaTerimaFakturTableServerSide = ({
             </div>
           ),
           cell: (info) => {
-            const val = info.getValue();
-            return <span className="text-xs font-medium text-gray-900">{val}</span>
+            const row = info.row.original;
+            const customerName = row?.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer || '-';
+            const groupName = row?.groupCustomer?.nama_group || row?.groupCustomer?.namaGroup || '';
+            return (
+              <div className="leading-tight">
+                <div className="text-xs font-medium text-gray-900">{customerName}</div>
+                {groupName && <div className="text-[10px] text-gray-500">{groupName}</div>}
+              </div>
+            );
           },
         }
       ),
