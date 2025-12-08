@@ -20,6 +20,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     kode_company: '',
+    kode_company_surat: '',
     nama_perusahaan: '',
     alamat: '',
     no_rekening: '',
@@ -31,6 +32,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     email: '',
     direktur_utama: '',
     npwp: '',
+    id_tku: '',
     logo: null
   });
   const [saving, setSaving] = useState(false);
@@ -39,6 +41,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     if (company) {
       setFormData({
         kode_company: company.kode_company || '',
+        kode_company_surat: company.kode_company_surat || '',
         nama_perusahaan: company.nama_perusahaan || '',
         alamat: company.alamat || '',
         no_rekening: company.no_rekening || '',
@@ -50,6 +53,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
+        id_tku: company.id_tku || '',
         logo: company.logo || null
       });
     }
@@ -65,6 +69,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     if (company) {
       setFormData({
         kode_company: company.kode_company || '',
+        kode_company_surat: company.kode_company_surat || '',
         nama_perusahaan: company.nama_perusahaan || '',
         alamat: company.alamat || '',
         no_rekening: company.no_rekening || '',
@@ -76,6 +81,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
+        id_tku: company.id_tku || '',
         logo: company.logo || null
       });
     }
@@ -83,9 +89,9 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -191,10 +197,10 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
       {isEditMode ? (
         /* EDIT MODE */
         <div className="bg-gray-50 rounded-lg p-6">
-          <CompanyForm 
-            formData={formData} 
-            handleInputChange={handleInputChange} 
-            handleSubmit={(e) => { e.preventDefault(); handleSave(); }} 
+          <CompanyForm
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={(e) => { e.preventDefault(); handleSave(); }}
             closeModal={handleCancelEdit}
             isEdit={true}
             logo={formData.logo}
@@ -234,6 +240,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
               data={[
                 { label: 'Company Name', value: company?.nama_perusahaan },
                 { label: 'Company Code', value: company?.kode_company, copyable: true },
+                { label: 'Kode Company Surat', value: company?.kode_company_surat || '—' },
                 { label: 'Main Director', value: company?.direktur_utama || '—' },
                 {
                   label: 'Address',
@@ -288,6 +295,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
             <InfoTable
               data={[
                 { label: 'NPWP', value: company?.npwp || '—', copyable: !!company?.npwp },
+                { label: 'ID TKU', value: company?.id_tku || '—', copyable: !!company?.id_tku },
               ]}
             />
           </div>

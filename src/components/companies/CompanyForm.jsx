@@ -1,11 +1,11 @@
 import React from 'react';
 import ImageUpload from '@/components/common/ImageUpload';
 
-const CompanyForm = ({ 
-  formData, 
-  handleInputChange, 
-  handleSubmit, 
-  closeModal, 
+const CompanyForm = ({
+  formData,
+  handleInputChange,
+  handleSubmit,
+  closeModal,
   isEdit = false,
   logo,
   onLogoChange,
@@ -15,7 +15,7 @@ const CompanyForm = ({
     <form onSubmit={handleSubmit}>
       {/* Logo Upload Section */}
       <div className="mb-6">
-        <ImageUpload 
+        <ImageUpload
           logo={logo}
           onLogoChange={onLogoChange}
           onLogoRemove={onLogoRemove}
@@ -34,6 +34,20 @@ const CompanyForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., COMP001"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Kode Company Surat</label>
+          <input
+            type="text"
+            name="kode_company_surat"
+            value={formData.kode_company_surat || ''}
+            onChange={handleInputChange}
+            maxLength={5}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., ABC (max 5 chars)"
+          />
+          <p className="text-xs text-gray-500 mt-1">Kode singkat untuk surat jalan (maksimal 5 karakter)</p>
         </div>
 
         <div>
@@ -167,6 +181,19 @@ const CompanyForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., 01.234.567.8-901.000"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">ID TKU</label>
+          <input
+            type="text"
+            name="id_tku"
+            value={formData.id_tku || ''}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., TKU12345"
+          />
+          <p className="text-xs text-gray-500 mt-1">ID Tempat Kegiatan Usaha</p>
         </div>
       </div>
 
