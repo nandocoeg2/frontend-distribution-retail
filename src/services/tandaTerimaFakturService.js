@@ -256,14 +256,14 @@ class TandaTerimaFakturService {
     }
   }
 
-  async bulkUpload(groupCustomerId, file) {
+  async bulkUpload(groupCustomerId, file, processingMethod = 'ai') {
     try {
       const formData = new FormData();
       formData.append('file', file);
 
       const token = authService.getToken();
       const response = await fetch(
-        `${API_BASE_URL}/bulk-upload/${groupCustomerId}`,
+        `${API_BASE_URL}/bulk-upload/${groupCustomerId}?processingMethod=${processingMethod}`,
         {
           method: 'POST',
           headers: {

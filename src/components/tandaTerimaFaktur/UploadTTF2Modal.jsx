@@ -5,12 +5,13 @@ import groupCustomerService from '@/services/groupCustomerService';
 import tandaTerimaFakturService from '@/services/tandaTerimaFakturService';
 import toastService from '@/services/toastService';
 
-const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () => {} }) => {
+const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () => { } }) => {
   const [groupCustomerId, setGroupCustomerId] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [processingMethod, setProcessingMethod] = useState('ai');
 
   // Autocomplete options state
   const [groupCustomerOptions, setGroupCustomerOptions] = useState([]);
@@ -84,7 +85,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
     try {
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
-        
+
         // Update progress
         setUploadProgress(prev => ({
           ...prev,
@@ -92,8 +93,8 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
         }));
 
         try {
-          const result = await tandaTerimaFakturService.bulkUpload(groupCustomerId, file);
-          
+          const result = await tandaTerimaFakturService.bulkUpload(groupCustomerId, file, processingMethod);
+
           results.push({
             fileName: file.name,
             success: true,
@@ -103,7 +104,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
           const validation = result.data?.validation;
           const updatedCount = validation?.updatedCount || 0;
           const invalidCount = validation?.invalidFakturPajak?.length || 0;
-          
+
           totalSuccess += updatedCount;
           totalFailed += invalidCount;
 
@@ -157,6 +158,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
     setUploadResults([]);
     setUploadProgress({});
     setIsUploading(false);
+    setProcessingMethod('ai');
     onClose();
   };
 
@@ -166,6 +168,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
     setUploadResults([]);
     setUploadProgress({});
     setIsUploading(false);
+    setProcessingMethod('ai');
   };
 
   if (!isOpen) {
@@ -213,6 +216,42 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
               showId={true}
               disabled={isUploading}
             />
+
+            {/* Processing Method Selection */}
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Metode Processing <span className='text-red-500'>*</span>
+              </label>
+              <div className='flex space-x-6'>
+                <label className='inline-flex items-center cursor-pointer'>
+                  <input
+                    type='radio'
+                    name='processingMethod'
+                    value='ai'
+                    checked={processingMethod === 'ai'}
+                    onChange={(e) => setProcessingMethod(e.target.value)}
+                    disabled={isUploading}
+                    className='form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500'
+                  />
+                  <span className='ml-2 text-sm text-gray-700'>AI (Gemini)</span>
+                </label>
+                <label className='inline-flex items-center cursor-pointer'>
+                  <input
+                    type='radio'
+                    name='processingMethod'
+                    value='text-extraction'
+                    checked={processingMethod === 'text-extraction'}
+                    onChange={(e) => setProcessingMethod(e.target.value)}
+                    disabled={isUploading}
+                    className='form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500'
+                  />
+                  <span className='ml-2 text-sm text-gray-700'>Text Extraction</span>
+                </label>
+              </div>
+              <p className='mt-1 text-xs text-gray-500'>
+                AI menggunakan Gemini untuk ekstraksi data. Text Extraction lebih cepat untuk format standar.
+              </p>
+            </div>
 
             {/* File Upload */}
             <div>
@@ -286,7 +325,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
             {uploadResults.length > 0 && (
               <div className='mt-4 p-4 border rounded-lg bg-gray-50'>
                 <h3 className='text-lg font-semibold mb-3'>Hasil Upload</h3>
-                
+
                 {/* Summary */}
                 <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
                   <p className='text-sm font-medium text-blue-900 mb-2'>
@@ -305,18 +344,16 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
                 {/* Per File Results */}
                 <div className='space-y-4'>
                   {uploadResults.map((result, idx) => (
-                    <div key={idx} className={`p-3 rounded-lg border ${
-                      result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                    }`}>
+                    <div key={idx} className={`p-3 rounded-lg border ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                      }`}>
                       <div className='flex items-center justify-between mb-2'>
                         <p className='text-sm font-medium truncate flex-1'>{result.fileName}</p>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                          result.success ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
-                        }`}>
+                        <span className={`text-xs font-semibold px-2 py-1 rounded ${result.success ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
+                          }`}>
                           {result.success ? '✓ Berhasil' : '✗ Gagal'}
                         </span>
                       </div>
-                      
+
                       {result.success && result.data?.data?.validation && (
                         <div className='text-xs text-gray-700 space-y-1'>
                           <p>• Total Item: {result.data.data.validation.totalItems || 0}</p>
@@ -324,7 +361,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
                           <p>• Faktur Gagal: {result.data.data.validation.invalidFakturPajak?.length || 0}</p>
                         </div>
                       )}
-                      
+
                       {!result.success && (
                         <p className='text-xs text-red-700'>Error: {result.error}</p>
                       )}
@@ -349,7 +386,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
                           </tr>
                         </thead>
                         <tbody className='bg-white divide-y divide-gray-200'>
-                          {uploadResults.map((result, resultIdx) => 
+                          {uploadResults.map((result, resultIdx) =>
                             result.success && result.data?.data?.validation?.validFakturPajak?.map((item, itemIdx) => (
                               <tr key={`${resultIdx}-${itemIdx}`}>
                                 <td className='px-3 py-2 text-xs text-gray-600 truncate max-w-xs'>{result.fileName}</td>
@@ -386,7 +423,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => {}, onSuccess = () =>
                           </tr>
                         </thead>
                         <tbody className='bg-white divide-y divide-gray-200'>
-                          {uploadResults.map((result, resultIdx) => 
+                          {uploadResults.map((result, resultIdx) =>
                             result.success && result.data?.data?.validation?.invalidFakturPajak?.map((item, itemIdx) => (
                               <tr key={`${resultIdx}-${itemIdx}`}>
                                 <td className='px-3 py-2 text-xs text-gray-600 truncate max-w-xs'>{result.fileName}</td>
