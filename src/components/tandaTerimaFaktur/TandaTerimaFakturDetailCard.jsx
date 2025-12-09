@@ -44,9 +44,6 @@ const TandaTerimaFakturDetailCard = ({
                     <h2 className='text-sm font-bold text-gray-900'>
                         Detail Tanda Terima Faktur
                     </h2>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                        {detail.code_supplier || 'No Code'}
-                    </span>
                 </div>
                 <div className='flex items-center gap-2'>
                     {onEdit && (
