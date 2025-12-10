@@ -31,7 +31,7 @@ class FakturPajakService {
    * API Documentation:
    * - Endpoint: GET /api/v1/faktur-pajak
    * - Response: { success: true, data: { data: [...], pagination: {...}, meta: {...} } }
-   * - invoicePenagihan is returned as an array (one-to-many relationship)
+   * - invoicePenagihan is returned as a single object (one-to-one relationship)
    * - Field names: ppnRupiah (not ppn_rp), dasar_pengenaan_pajak
    * 
    * @param {Object} params - Query parameters

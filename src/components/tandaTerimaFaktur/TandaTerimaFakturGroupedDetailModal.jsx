@@ -5,7 +5,7 @@ import HeroIcon from '@/components/atoms/HeroIcon';
 
 const TandaTerimaFakturGroupedDetailModal = ({
   isOpen = false,
-  onClose = () => {},
+  onClose = () => { },
   groupedItem = null,
 }) => {
   if (!isOpen) {
@@ -116,8 +116,8 @@ const TandaTerimaFakturGroupedDetailModal = ({
                       </div>
                     )}
 
-                  {/* Invoice Penagihan Section */}
-                  {ttf.invoicePenagihan && ttf.invoicePenagihan.length > 0 && (
+                  {/* Invoice Penagihan Section - now one-to-one */}
+                  {ttf.invoicePenagihan && (
                     <div className='pb-3 mb-3 border-b border-gray-100'>
                       <p className='mb-2 text-xs font-semibold text-gray-700'>
                         <HeroIcon
@@ -127,12 +127,10 @@ const TandaTerimaFakturGroupedDetailModal = ({
                         Invoice Penagihan
                       </p>
                       <ul className='space-y-1 text-xs text-gray-600'>
-                        {ttf.invoicePenagihan.map((inv, invIdx) => (
-                          <li key={invIdx} className='ml-4'>
-                            • {inv.no_invoice_penagihan} (Rp
-                            {inv.grand_total?.toLocaleString('id-ID') || '0'})
-                          </li>
-                        ))}
+                        <li className='ml-4'>
+                          • {ttf.invoicePenagihan.no_invoice_penagihan} (Rp
+                          {ttf.invoicePenagihan.grand_total?.toLocaleString('id-ID') || '0'})
+                        </li>
                       </ul>
                     </div>
                   )}

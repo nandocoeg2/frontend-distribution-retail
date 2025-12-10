@@ -235,17 +235,14 @@ const FakturPajakTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const invoices = info.getValue();
-          if (!invoices || invoices.length === 0) {
+          // invoicePenagihan is now one-to-one (single object)
+          const invoice = info.getValue();
+          if (!invoice) {
             return <div className="text-xs text-gray-900">-</div>;
           }
           return (
             <div className="text-xs text-gray-900">
-              {invoices.map((invoice, index) => (
-                <div key={invoice.id || index}>
-                  {invoice.no_invoice_penagihan || '-'}
-                </div>
-              ))}
+              {invoice.no_invoice_penagihan || '-'}
             </div>
           );
         },
@@ -280,17 +277,14 @@ const FakturPajakTableServerSide = ({
           );
         },
         cell: (info) => {
-          const invoices = info.getValue();
-          if (!invoices || invoices.length === 0) {
+          // invoicePenagihan is now one-to-one (single object)
+          const invoice = info.getValue();
+          if (!invoice) {
             return <div className="text-xs text-gray-900">-</div>;
           }
           return (
             <div className="text-xs text-gray-900">
-              {invoices.map((invoice, index) => (
-                <div key={invoice.id || index}>
-                  {formatDate(invoice.tanggal)}
-                </div>
-              ))}
+              {formatDate(invoice.tanggal)}
             </div>
           );
         },

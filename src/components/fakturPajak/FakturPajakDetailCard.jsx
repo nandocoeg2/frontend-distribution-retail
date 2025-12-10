@@ -97,10 +97,8 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
         : 'secondary';
 
   // Options for disabled autocomplete fields
-  // invoicePenagihan from API is an array, get the first item or use direct ID
-  const invoicePenagihanData = Array.isArray(detail?.invoicePenagihan)
-    ? detail.invoicePenagihan[0]
-    : detail?.invoicePenagihan;
+  // invoicePenagihan is now one-to-one relation (single object)
+  const invoicePenagihanData = detail?.invoicePenagihan;
   const invoicePenagihanOptions = invoicePenagihanData ? [
     {
       id: invoicePenagihanData.id,
@@ -133,10 +131,8 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
   // Sync formData with fakturPajak
   useEffect(() => {
     if (fakturPajak) {
-      // Handle invoicePenagihan which can be an array from API
-      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan)
-        ? fakturPajak.invoicePenagihan[0]
-        : fakturPajak.invoicePenagihan;
+      // Handle invoicePenagihan which is now one-to-one (single object)
+      const invoicePenagihanItem = fakturPajak.invoicePenagihan;
 
       setFormData({
         no_pajak: fakturPajak.no_pajak || '',
@@ -167,10 +163,8 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
     isPpnTouchedRef.current = false;
     // Reset to original values
     if (fakturPajak) {
-      // Handle invoicePenagihan which can be an array from API
-      const invoicePenagihanItem = Array.isArray(fakturPajak.invoicePenagihan)
-        ? fakturPajak.invoicePenagihan[0]
-        : fakturPajak.invoicePenagihan;
+      // Handle invoicePenagihan which is now one-to-one (single object)
+      const invoicePenagihanItem = fakturPajak.invoicePenagihan;
 
       setFormData({
         no_pajak: fakturPajak.no_pajak || '',
@@ -543,11 +537,10 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
             <AccordionItem title="Data Terkait" isExpanded={expandedSections.related} onToggle={() => toggleSection('related')} bgColor="bg-purple-50" compact>
               <div className="space-y-2">
                 <div className="text-xs font-medium text-gray-700">Invoice Penagihan:</div>
-                {detail?.invoicePenagihan && Array.isArray(detail.invoicePenagihan) && detail.invoicePenagihan.length > 0 ? (
+                {/* invoicePenagihan is now one-to-one (single object) */}
+                {detail?.invoicePenagihan ? (
                   <div className="text-xs text-gray-600">
-                    {detail.invoicePenagihan.map((inv, i) => (
-                      <div key={inv.id || i}>{inv.no_invoice_penagihan || '-'} - {formatCurrency(inv.total_price)}</div>
-                    ))}
+                    <div>{detail.invoicePenagihan.no_invoice_penagihan || '-'} - {formatCurrency(detail.invoicePenagihan.total_price)}</div>
                   </div>
                 ) : <div className="text-xs text-gray-500">-</div>}
                 <div className="text-xs font-medium text-gray-700 mt-2">LPB:</div>

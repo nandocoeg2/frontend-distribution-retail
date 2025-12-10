@@ -57,20 +57,14 @@ const TandaTerimaFakturDetailModal = ({
   const totalLaporan = Array.isArray(detail.laporanPenerimaanBarang)
     ? detail.laporanPenerimaanBarang.length
     : 0;
-  const totalInvoice = Array.isArray(detail.invoicePenagihan)
-    ? detail.invoicePenagihan.length
-    : 0;
-  const totalFakturPajak = Array.isArray(detail.invoicePenagihan)
-    ? detail.invoicePenagihan.reduce((count, invoice) => {
-        const faktur = invoice?.fakturPajak || invoice?.faktur_pajak;
-        return faktur?.id ? count + 1 : count;
-      }, 0)
-    : 0;
+  // invoicePenagihan is now one-to-one relation (single object, not array)
+  const totalInvoice = detail.invoicePenagihan ? 1 : 0;
+  const totalFakturPajak = detail.invoicePenagihan?.fakturPajak || detail.invoicePenagihan?.faktur_pajak ? 1 : 0;
   const groupCustomer =
     detail?.groupCustomer || detail?.customer?.groupCustomer || null;
   const customer = detail?.customer || null;
   const hasLaporan = totalLaporan > 0;
-  const hasInvoice = totalInvoice > 0;
+  const hasInvoice = !!detail.invoicePenagihan;
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4'>
@@ -210,14 +204,14 @@ const TandaTerimaFakturDetailModal = ({
                   />
                   {(detail?.termOfPayment?.description ||
                     detail?.termOfPayment?.keterangan) && (
-                    <InfoRow
-                      label='Deskripsi'
-                      value={
-                        detail?.termOfPayment?.description ||
-                        detail?.termOfPayment?.keterangan
-                      }
-                    />
-                  )}
+                      <InfoRow
+                        label='Deskripsi'
+                        value={
+                          detail?.termOfPayment?.description ||
+                          detail?.termOfPayment?.keterangan
+                        }
+                      />
+                    )}
                 </div>
               </section>
 
@@ -284,34 +278,34 @@ const TandaTerimaFakturDetailModal = ({
                     )}
                     {(customer?.kecamatan?.nama_kecamatan ||
                       customer?.kecamatan?.namaKecamatan) && (
-                      <InfoRow
-                        label='Kecamatan'
-                        value={
-                          customer?.kecamatan?.nama_kecamatan ||
-                          customer?.kecamatan?.namaKecamatan
-                        }
-                      />
-                    )}
+                        <InfoRow
+                          label='Kecamatan'
+                          value={
+                            customer?.kecamatan?.nama_kecamatan ||
+                            customer?.kecamatan?.namaKecamatan
+                          }
+                        />
+                      )}
                     {(customer?.kabupaten?.nama_kabupaten ||
                       customer?.kabupaten?.namaKabupaten) && (
-                      <InfoRow
-                        label='Kabupaten'
-                        value={
-                          customer?.kabupaten?.nama_kabupaten ||
-                          customer?.kabupaten?.namaKabupaten
-                        }
-                      />
-                    )}
+                        <InfoRow
+                          label='Kabupaten'
+                          value={
+                            customer?.kabupaten?.nama_kabupaten ||
+                            customer?.kabupaten?.namaKabupaten
+                          }
+                        />
+                      )}
                     {(customer?.provinsi?.nama_provinsi ||
                       customer?.provinsi?.namaProvinsi) && (
-                      <InfoRow
-                        label='Provinsi'
-                        value={
-                          customer?.provinsi?.nama_provinsi ||
-                          customer?.provinsi?.namaProvinsi
-                        }
-                      />
-                    )}
+                        <InfoRow
+                          label='Provinsi'
+                          value={
+                            customer?.provinsi?.nama_provinsi ||
+                            customer?.provinsi?.namaProvinsi
+                          }
+                        />
+                      )}
                   </div>
                 </section>
               )}
@@ -371,14 +365,14 @@ const TandaTerimaFakturDetailModal = ({
                         />
                         {(laporan.purchaseOrderId ||
                           laporan.purchase_order_id) && (
-                          <InfoRow
-                            label='Purchase Order ID'
-                            value={
-                              laporan.purchaseOrderId ||
-                              laporan.purchase_order_id
-                            }
-                          />
-                        )}
+                            <InfoRow
+                              label='Purchase Order ID'
+                              value={
+                                laporan.purchaseOrderId ||
+                                laporan.purchase_order_id
+                              }
+                            />
+                          )}
                         {laporan.statusId && (
                           <InfoRow
                             label='Status ID'
@@ -415,55 +409,57 @@ const TandaTerimaFakturDetailModal = ({
                     Invoice Penagihan
                   </h3>
                   <div className='space-y-3'>
-                    {detail.invoicePenagihan.map((invoice, index) => {
+                    {/* invoicePenagihan is now one-to-one (single object) */}
+                    {(() => {
+                      const invoice = detail.invoicePenagihan;
                       const faktur =
                         invoice?.fakturPajak || invoice?.faktur_pajak;
                       return (
                         <div
-                          key={invoice.id || `invoice-${index}`}
+                          key={invoice?.id || 'invoice-0'}
                           className='p-3 border border-gray-200 rounded-lg bg-gray-50 space-y-2'
                         >
                           <InfoRow
                             label='ID Invoice'
-                            value={invoice.id || '-'}
+                            value={invoice?.id || '-'}
                           />
                           <InfoRow
                             label='No Invoice Penagihan'
                             value={
-                              invoice.no_invoice_penagihan ||
-                              invoice.noInvoicePenagihan ||
+                              invoice?.no_invoice_penagihan ||
+                              invoice?.noInvoicePenagihan ||
                               '-'
                             }
                           />
-                          {(invoice.purchaseOrderId ||
-                            invoice.purchase_order_id) && (
-                            <InfoRow
-                              label='Purchase Order ID'
-                              value={
-                                invoice.purchaseOrderId ||
-                                invoice.purchase_order_id
-                              }
-                            />
-                          )}
-                          {invoice.statusId && (
+                          {(invoice?.purchaseOrderId ||
+                            invoice?.purchase_order_id) && (
+                              <InfoRow
+                                label='Purchase Order ID'
+                                value={
+                                  invoice?.purchaseOrderId ||
+                                  invoice?.purchase_order_id
+                                }
+                              />
+                            )}
+                          {invoice?.statusId && (
                             <InfoRow
                               label='Status ID'
                               value={invoice.statusId}
                             />
                           )}
-                          {invoice.status_id && !invoice.statusId && (
+                          {invoice?.status_id && !invoice?.statusId && (
                             <InfoRow
                               label='Status ID'
                               value={invoice.status_id}
                             />
                           )}
-                          {invoice.createdAt && (
+                          {invoice?.createdAt && (
                             <InfoRow
                               label='Dibuat Pada'
                               value={formatDateTime(invoice.createdAt)}
                             />
                           )}
-                          {invoice.created_at && !invoice.createdAt && (
+                          {invoice?.created_at && !invoice?.createdAt && (
                             <InfoRow
                               label='Dibuat Pada'
                               value={formatDateTime(invoice.created_at)}
@@ -487,7 +483,7 @@ const TandaTerimaFakturDetailModal = ({
                           )}
                         </div>
                       );
-                    })}
+                    })()}
                   </div>
                 </section>
               )}
