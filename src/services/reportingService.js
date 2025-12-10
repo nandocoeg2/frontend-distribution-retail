@@ -2,7 +2,7 @@ import { get } from './apiService';
 
 const OPERATIONAL_ENDPOINT = '/reporting/operational';
 const FINANCIAL_ENDPOINT = '/reporting/financial';
-const INVENTORY_ENDPOINT = '/reporting/inventory';
+const INVENTORY_ENDPOINT = '/reporting/items';
 
 const buildParams = ({ period, startDate, endDate }) => {
   const params = {};
