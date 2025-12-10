@@ -5,7 +5,6 @@ import {
   LaporanPenerimaanBarangTableServerSide,
   LaporanPenerimaanBarangModal,
   LaporanPenerimaanBarangDetailCard,
-  LaporanPenerimaanBarangBulkModal,
 } from '@/components/laporanPenerimaanBarang';
 import {
   ConfirmationDialog,
@@ -42,7 +41,6 @@ const LaporanPenerimaanBarang = () => {
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedReportForDetail, setSelectedReportForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -142,14 +140,6 @@ const LaporanPenerimaanBarang = () => {
     setSelectedReport(null);
   }, []);
 
-  const openBulkModal = useCallback(() => {
-    setIsBulkModalOpen(true);
-  }, []);
-
-  const closeBulkModal = useCallback(() => {
-    setIsBulkModalOpen(false);
-  }, []);
-
   const openEditModal = useCallback((report) => {
     setSelectedReport(report);
     setIsEditModalOpen(true);
@@ -184,15 +174,6 @@ const LaporanPenerimaanBarang = () => {
     setDetailLoading(false);
   }, []);
 
-  const handleUploadFromFile = useCallback(
-    async ({ file, prompt }) => {
-      const result = await createReportFromFile({ file, prompt });
-      refreshData();
-      return result;
-    },
-    [createReportFromFile, refreshData]
-  );
-
   const handleCreateSubmit = useCallback(async (payload) => {
     await createReport(payload);
     refreshData();
@@ -220,9 +201,6 @@ const LaporanPenerimaanBarang = () => {
           <div className='flex items-center justify-between mb-2'>
             <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
             <div className='flex items-center gap-1'>
-              <button onClick={openBulkModal} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-indigo-500 rounded hover:bg-indigo-600'>
-                <HeroIcon name='arrow-up-tray' className='w-3 h-3 mr-1' />Bulk
-              </button>
               <button onClick={openCreateModal} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'>
                 <HeroIcon name='plus' className='w-3 h-3 mr-1' />Tambah
               </button>
@@ -252,7 +230,9 @@ const LaporanPenerimaanBarang = () => {
         onClose={closeCreateModal}
         onSubmit={handleCreateSubmit}
         isEdit={false}
-        onUploadFromFile={handleUploadFromFile}
+        onBulkUpload={uploadBulkReports}
+        onBulkUploadTextExtraction={uploadBulkReportsTextExtraction}
+        onFinished={refreshData}
       />
 
       <LaporanPenerimaanBarangModal
@@ -261,15 +241,6 @@ const LaporanPenerimaanBarang = () => {
         onSubmit={handleUpdateSubmit}
         initialValues={selectedReport}
         isEdit
-      />
-
-      <LaporanPenerimaanBarangBulkModal
-        isOpen={isBulkModalOpen}
-        onClose={closeBulkModal}
-        onBulkUpload={uploadBulkReports}
-        onBulkUploadTextExtraction={uploadBulkReportsTextExtraction}
-        onFetchStatus={fetchBulkStatus}
-        onFetchBulkFiles={fetchBulkFiles}
       />
 
       <CompleteConfirmationDialog onConfirm={handleConfirmComplete} />

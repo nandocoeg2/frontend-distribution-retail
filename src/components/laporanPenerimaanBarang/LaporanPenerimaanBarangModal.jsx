@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState, useCallback } from 'react';
+﻿import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import FormModal from '../common/FormModal';
 import Autocomplete from '../common/Autocomplete';
 import purchaseOrderService from '@/services/purchaseOrderService';
@@ -8,6 +8,8 @@ import toastService from '@/services/toastService';
 import useTermOfPaymentAutocomplete from '@/hooks/useTermOfPaymentAutocomplete';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
 import { formatDateTime } from '@/utils/formatUtils';
+import HeroIcon from '../atoms/HeroIcon.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const defaultFormValues = {
   purchaseOrderId: '',
@@ -241,16 +243,24 @@ const LaporanPenerimaanBarangModal = ({
   onSubmit,
   initialValues = null,
   isEdit = false,
-  onUploadFromFile = null,
+  onBulkUpload = null,
+  onBulkUploadTextExtraction = null,
+  onFinished = null,
 }) => {
+  const navigate = useNavigate();
+
   const [formValues, setFormValues] = useState(defaultFormValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [activeTab, setActiveTab] = useState('bulk');
+  const [uploadMode, setUploadMode] = useState('files');
+  const [processingMethod, setProcessingMethod] = useState('text-extraction');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [customPrompt, setCustomPrompt] = useState('');
-  const [uploadError, setUploadError] = useState('');
-  const [fileInputKey, setFileInputKey] = useState(0);
-  const [activeTab, setActiveTab] = useState('manual');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Refs for file inputs
+  const bulkFileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
   const [purchaseOrderOptions, setPurchaseOrderOptions] = useState([]);
   const [customerOptions, setCustomerOptions] = useState([]);
@@ -276,10 +286,10 @@ const LaporanPenerimaanBarangModal = ({
     try {
       const response = query
         ? await purchaseOrderService.searchPurchaseOrders(
-            { po_number: query },
-            1,
-            10
-          )
+          { po_number: query },
+          1,
+          10
+        )
         : await purchaseOrderService.getAllPurchaseOrders(1, 10);
 
       const items = extractArray(response)
@@ -347,13 +357,42 @@ const LaporanPenerimaanBarangModal = ({
     fetchStatusOptions,
   ]);
 
-  const resetUploadState = useCallback(() => {
-    setIsUploadingFile(false);
+  const resetForm = useCallback(() => {
+    setFormValues(defaultFormValues);
+    setError(null);
     setSelectedFile(null);
-    setCustomPrompt('');
-    setUploadError('');
-    setFileInputKey((prev) => prev + 1);
+    setLoading(false);
+    setUploadMode('files');
+
+    if (bulkFileInputRef.current) {
+      bulkFileInputRef.current.value = '';
+    }
+    if (folderInputRef.current) {
+      folderInputRef.current.value = '';
+    }
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Default to bulk tab for add mode, manual for edit mode
+      setActiveTab(isEdit ? 'manual' : 'bulk');
+      resetForm();
+    } else {
+      setActiveTab('bulk');
+      setError(null);
+      setSelectedFile(null);
+      setLoading(false);
+    }
+  }, [isOpen, isEdit, resetForm]);
+
+  // Additional effect to ensure state is cleared when tab changes
+  useEffect(() => {
+    if (isOpen) {
+      // Force clear selected file when tab changes
+      setSelectedFile(null);
+      setUploadMode('files');
+    }
+  }, [activeTab, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -369,17 +408,17 @@ const LaporanPenerimaanBarangModal = ({
 
     const customerOption = mapCustomerOption(
       initialValues?.customer ||
-        (initialValues?.customerId ? { id: initialValues.customerId } : null)
+      (initialValues?.customerId ? { id: initialValues.customerId } : null)
     );
     const termOption = mapTermOption(
       initialValues?.termOfPayment ||
-        (initialValues?.termin_bayar
-          ? { id: initialValues.termin_bayar }
-          : null)
+      (initialValues?.termin_bayar
+        ? { id: initialValues.termin_bayar }
+        : null)
     );
     const statusOption = mapStatusOption(
       initialValues?.status ||
-        (initialValues?.statusId ? { id: initialValues.statusId } : null)
+      (initialValues?.statusId ? { id: initialValues.statusId } : null)
     );
 
     if (purchaseOrderOption) {
@@ -401,8 +440,10 @@ const LaporanPenerimaanBarangModal = ({
   }, [addTermOptions, ensureTermOptionById, initialValues, isOpen]);
 
   useEffect(() => {
-    if (isOpen) {
-      setActiveTab('manual');
+    if (isOpen && !isEdit) {
+      setFormValues(defaultFormValues);
+      setIsSubmitting(false);
+    } else if (isOpen && isEdit && initialValues) {
       setFormValues({
         purchaseOrderId: toIdString(
           initialValues?.purchaseOrderId || initialValues?.purchaseOrder?.id
@@ -423,25 +464,8 @@ const LaporanPenerimaanBarangModal = ({
         files: Array.isArray(initialValues?.files) ? initialValues.files : [],
       });
       setIsSubmitting(false);
-      resetUploadState();
-    } else {
-      setFormValues(defaultFormValues);
-      setIsSubmitting(false);
-      resetUploadState();
     }
-  }, [initialValues, isOpen, resetUploadState]);
-
-  const modalTitle = useMemo(() => {
-    return isEdit
-      ? 'Edit Laporan Penerimaan Barang'
-      : 'Tambah Laporan Penerimaan Barang';
-  }, [isEdit]);
-
-  const modalSubtitle = useMemo(() => {
-    return isEdit
-      ? 'Perbarui detail laporan penerimaan barang.'
-      : 'Lengkapi data untuk membuat laporan penerimaan barang baru.';
-  }, [isEdit]);
+  }, [initialValues, isOpen, isEdit]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -451,58 +475,134 @@ const LaporanPenerimaanBarangModal = ({
     }));
   };
 
-  const handleFileInputChange = (event) => {
-    const file =
-      event.target.files && event.target.files[0]
-        ? event.target.files[0]
-        : null;
-    setSelectedFile(file);
-    setUploadError('');
-  };
+  const handleFileChange = (e) => {
+    setError(null);
+    const files = e.target.files;
 
-  const handlePromptChange = (event) => {
-    setCustomPrompt(event.target.value);
-  };
-
-  const handleUploadFromFile = async () => {
-    if (typeof onUploadFromFile !== 'function') {
-      toastService.error('Fitur upload file belum tersedia.');
+    if (!files || files.length === 0) {
+      setSelectedFile(null);
       return;
     }
 
-    if (!selectedFile) {
-      const message = 'Silakan pilih file yang akan diunggah.';
-      setUploadError(message);
-      toastService.error(message);
+    const allowedExtensions = ['.pdf'];
+
+    // Filter files based on allowed extensions
+    const filteredFiles = Array.from(files).filter((file) =>
+      allowedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+    );
+
+    // If in folder mode, automatically filter and allow upload
+    if (uploadMode === 'folder') {
+      if (filteredFiles.length === 0) {
+        setError('Tidak ada file PDF (.pdf) ditemukan dalam folder yang dipilih.');
+        setSelectedFile(null);
+        if (folderInputRef.current) {
+          folderInputRef.current.value = '';
+        }
+        return;
+      }
+      // Create a new FileList-like object with filtered files
+      const dataTransfer = new DataTransfer();
+      filteredFiles.forEach(file => dataTransfer.items.add(file));
+      setSelectedFile(dataTransfer.files);
+    } else {
+      // In files mode, all files must be valid
+      const allAllowed = Array.from(files).every((file) =>
+        allowedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
+      );
+      if (!allAllowed) {
+        setError('Pilih file PDF (.pdf) saja.');
+        setSelectedFile(null);
+        if (bulkFileInputRef.current) {
+          bulkFileInputRef.current.value = '';
+        }
+        return;
+      }
+      setSelectedFile(files);
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!selectedFile || selectedFile.length === 0) {
+      setError('Pilih minimal satu file PDF (.pdf) untuk diunggah.');
       return;
     }
 
-    setIsUploadingFile(true);
-    setUploadError('');
+    setLoading(true);
+    setError(null);
 
     try {
-      await onUploadFromFile({
-        file: selectedFile,
-        prompt: customPrompt.trim() || undefined,
-      });
-      resetUploadState();
-      onClose();
-    } catch (error) {
-      console.error('Failed to upload laporan penerimaan barang file:', error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        'Gagal mengunggah file.';
-      setUploadError(message);
+      // Use selected processing method
+      const uploadFn = processingMethod === 'ai'
+        ? onBulkUpload
+        : onBulkUploadTextExtraction;
+
+      if (typeof uploadFn !== 'function') {
+        setError(
+          processingMethod === 'ai'
+            ? 'Fitur upload bulk dengan AI belum tersedia.'
+            : 'Fitur upload bulk dengan Text Extraction belum tersedia.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      const result = await uploadFn({ files: Array.from(selectedFile) });
+
+      if (result && result.success !== false) {
+        const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
+        const data = result?.data || result;
+        const successFiles = data?.successFiles;
+        const errorFiles = data?.errorFiles;
+
+        // Show appropriate toast based on results
+        if (typeof successFiles === 'number' && typeof errorFiles === 'number') {
+          if (errorFiles === 0) {
+            toastService.success(`${successFiles} file berhasil diproses (${methodLabel})`);
+          } else if (successFiles === 0) {
+            toastService.error(`${errorFiles} file gagal diproses (${methodLabel})`);
+          } else {
+            toastService.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`);
+          }
+        } else {
+          toastService.success(data?.message || `File uploaded successfully using ${methodLabel}!`);
+        }
+
+        setSelectedFile(null);
+        if (bulkFileInputRef.current) {
+          bulkFileInputRef.current.value = '';
+        }
+        if (folderInputRef.current) {
+          folderInputRef.current.value = '';
+        }
+        if (onFinished) onFinished();
+        onClose();
+      } else {
+        throw new Error(result?.error || 'Gagal mengunggah file');
+      }
+    } catch (err) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Gagal mengunggah file bulk';
+      setError(errorMessage);
+      toastService.error(errorMessage);
     } finally {
-      setIsUploadingFile(false);
+      setLoading(false);
     }
   };
 
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-    setUploadError('');
-  }, []);
+  const handleManualSubmit = async (event) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const payload = buildPayload(formValues);
+      await onSubmit(payload);
+      onClose();
+    } catch (error) {
+      console.error('Failed to submit laporan penerimaan barang form:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const renderFileList = (files) => {
     if (!Array.isArray(files) || files.length === 0) {
@@ -543,205 +643,455 @@ const LaporanPenerimaanBarangModal = ({
     );
   };
 
-  const renderFileUploadPanel = () => (
-    <div className='p-4 border border-blue-300 border-dashed rounded-lg bg-blue-50/50'>
-      <h4 className='mb-1 text-sm font-semibold text-gray-900'>
-        Upload File Laporan
-      </h4>
-      <p className='mb-3 text-xs text-gray-600'>
-        Unggah file LPB (PDF atau EDI) untuk membuat laporan secara otomatis.
-        Opsional, berikan prompt khusus untuk proses konversi.
-      </p>
-      <div className='space-y-3'>
-        <input
-          key={fileInputKey}
-          type='file'
-          accept='.pdf,.PDF,.edi,.EDI'
-          onChange={handleFileInputChange}
-          disabled={isUploadingFile || isSubmitting}
-          className='block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200'
-        />
-        <textarea
-          value={customPrompt}
-          onChange={handlePromptChange}
-          rows={2}
-          placeholder='Custom prompt (opsional)'
-          disabled={isUploadingFile || isSubmitting}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-        />
-        {uploadError && <p className='text-sm text-red-600'>{uploadError}</p>}
-        <div className='flex items-center gap-3'>
-          <button
-            type='button'
-            onClick={handleUploadFromFile}
-            disabled={isUploadingFile || isSubmitting}
-            className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300'
+  const renderManualForm = () => (
+    <form onSubmit={handleManualSubmit}>
+      <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+        <div>
+          <Autocomplete
+            label='Purchase Order'
+            name='purchaseOrderId'
+            options={purchaseOrderOptions}
+            value={formValues.purchaseOrderId}
+            onChange={handleChange}
+            placeholder='Cari nomor PO atau customer'
+            displayKey='label'
+            valueKey='id'
+            required
+            loading={purchaseOrderLoading}
+            onSearch={fetchPurchaseOrderOptions}
+            showId
+          />
+        </div>
+
+        <div>
+          <label className='block mb-1 text-sm font-medium text-gray-700'>
+            Tanggal PO
+          </label>
+          <input
+            type='date'
+            name='tanggal_po'
+            value={formValues.tanggal_po}
+            onChange={handleChange}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        </div>
+
+        <div>
+          <Autocomplete
+            label='Customer'
+            name='customerId'
+            options={customerOptions}
+            value={formValues.customerId}
+            onChange={handleChange}
+            placeholder='Cari customer'
+            displayKey='label'
+            valueKey='id'
+            required
+            loading={customerLoading}
+            onSearch={fetchCustomerOptions}
+            showId
+          />
+        </div>
+
+        <div>
+          <label className='block mb-1 text-sm font-medium text-gray-700'>
+            TOP
+          </label>
+          <Autocomplete
+            label=''
+            name='termin_bayar'
+            options={termOptions}
+            value={formValues.termin_bayar}
+            onChange={handleChange}
+            placeholder='Cari Term of Payment'
+            displayKey='label'
+            valueKey='id'
+            loading={termLoading}
+            onSearch={fetchTermOptions}
+            showId
+          />
+        </div>
+
+        <div>
+          <label className='block mb-1 text-sm font-medium text-gray-700'>
+            Status
+          </label>
+          <select
+            name='statusId'
+            value={formValues.statusId}
+            onChange={handleChange}
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            disabled={statusLoading}
           >
-            {isUploadingFile ? 'Mengunggah...' : 'Upload & Konversi'}
+            <option value=''>Pilih status laporan</option>
+            {statusOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className='md:col-span-2'>
+          <label className='block mb-2 text-sm font-medium text-gray-700'>
+            Lampiran File
+          </label>
+          <div className='border border-gray-300 rounded-lg p-4 bg-gray-50'>
+            {renderFileList(formValues.files)}
+          </div>
+        </div>
+      </div>
+
+      <div className='flex justify-end mt-6 space-x-3'>
+        <button
+          type='button'
+          onClick={onClose}
+          className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
+          disabled={isSubmitting}
+        >
+          Batal
+        </button>
+        <button
+          type='submit'
+          className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50'
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah LPB'}
+        </button>
+      </div>
+    </form>
+  );
+
+  const renderBulkUploadTab = () => (
+    <div className='bulk-upload-tab'>
+      {/* History Upload Bulk Button */}
+      <div className='p-4 mb-4 border border-blue-200 rounded-md bg-blue-50'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center'>
+            <svg
+              className='w-4 h-4 text-blue-500 mt-0.5 mr-2'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+              />
+            </svg>
+            <div>
+              <h4 className='text-sm font-medium text-blue-800'>
+                Riwayat Upload Bulk
+              </h4>
+              <p className='text-sm text-blue-700'>
+                Lihat history upload bulk sebelumnya
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/laporan-penerimaan-barang/bulk-history')}
+            className='inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors'
+          >
+            <HeroIcon name='clock' className='w-4 h-4 mr-1' />
+            Lihat History
           </button>
-          {selectedFile && !isUploadingFile && (
-            <span className='text-xs text-gray-600 truncate'>
-              File dipilih: {selectedFile.name}
-            </span>
+        </div>
+      </div>
+
+      <div className='space-y-4'>
+        <div>
+          <label className='block mb-2 text-sm font-medium text-gray-700'>
+            Upload Bulk Laporan Penerimaan Barang (PDF)
+          </label>
+
+          {/* Processing Method Selection */}
+          <div className='mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md'>
+            <label className='block mb-2 text-sm font-medium text-gray-700'>
+              Processing Method
+            </label>
+            <div className='flex items-start space-x-6'>
+              <label className='flex items-start space-x-2 cursor-pointer'>
+                <input
+                  type='radio'
+                  name='processingMethod'
+                  value='text-extraction'
+                  checked={processingMethod === 'text-extraction'}
+                  onChange={(e) => setProcessingMethod(e.target.value)}
+                  className='w-4 h-4 text-blue-600 mt-0.5'
+                />
+                <div>
+                  <span className='text-sm font-medium text-gray-700'>Normal Method</span>
+                </div>
+              </label>
+              <label className='flex items-start space-x-2 cursor-pointer'>
+                <input
+                  type='radio'
+                  name='processingMethod'
+                  value='ai'
+                  checked={processingMethod === 'ai'}
+                  onChange={(e) => setProcessingMethod(e.target.value)}
+                  className='w-4 h-4 text-blue-600 mt-0.5'
+                />
+                <div>
+                  <span className='text-sm font-medium text-gray-700'>AI Method</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Upload Mode Selection */}
+          <div className='flex items-center space-x-6 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-md'>
+            <label className='flex items-center space-x-2 cursor-pointer'>
+              <input
+                type='radio'
+                name='uploadMode'
+                value='files'
+                checked={uploadMode === 'files'}
+                onChange={(e) => {
+                  setUploadMode(e.target.value);
+                  setSelectedFile(null);
+                  if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+                  if (folderInputRef.current) folderInputRef.current.value = '';
+                }}
+                className='w-4 h-4 text-blue-600'
+              />
+              <span className='text-sm text-gray-700'>Upload Files</span>
+            </label>
+            <label className='flex items-center space-x-2 cursor-pointer'>
+              <input
+                type='radio'
+                name='uploadMode'
+                value='folder'
+                checked={uploadMode === 'folder'}
+                onChange={(e) => {
+                  setUploadMode(e.target.value);
+                  setSelectedFile(null);
+                  if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+                  if (folderInputRef.current) folderInputRef.current.value = '';
+                }}
+                className='w-4 h-4 text-blue-600'
+              />
+              <span className='text-sm text-gray-700'>Upload Folder</span>
+            </label>
+          </div>
+
+          {/* File Input */}
+          {uploadMode === 'files' && (
+            <div className='flex items-center space-x-2'>
+              <input
+                ref={bulkFileInputRef}
+                type='file'
+                multiple
+                onChange={handleFileChange}
+                accept='.pdf'
+                className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
+              />
+            </div>
+          )}
+
+          {/* Folder Input */}
+          {uploadMode === 'folder' && (
+            <div className='flex items-center space-x-2'>
+              <input
+                ref={folderInputRef}
+                type='file'
+                webkitdirectory=''
+                directory=''
+                multiple
+                onChange={handleFileChange}
+                className='block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100'
+              />
+            </div>
           )}
         </div>
-      </div>
-    </div>
-  );
 
-  const renderManualForm = () => (
-    <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-      <div>
-        <Autocomplete
-          label='Purchase Order'
-          name='purchaseOrderId'
-          options={purchaseOrderOptions}
-          value={formValues.purchaseOrderId}
-          onChange={handleChange}
-          placeholder='Cari nomor PO atau customer'
-          displayKey='label'
-          valueKey='id'
-          required
-          loading={purchaseOrderLoading}
-          onSearch={fetchPurchaseOrderOptions}
-          showId
-        />
-      </div>
+        {error && (
+          <div className='p-3 mb-4 text-red-700 bg-red-100 border border-red-400 rounded-md'>
+            {error}
+          </div>
+        )}
 
-      <div>
-        <label className='block mb-1 text-sm font-medium text-gray-700'>
-          Tanggal PO
-        </label>
-        <input
-          type='date'
-          name='tanggal_po'
-          value={formValues.tanggal_po}
-          onChange={handleChange}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-        />
-      </div>
+        {/* Selected Files Info */}
+        {selectedFile && selectedFile.length > 0 && (
+          <div className='p-3 border border-gray-200 rounded-md bg-gray-50'>
+            <p className='text-sm font-medium text-gray-700 mb-2'>
+              {selectedFile.length} file dipilih
+            </p>
+            <div className='max-h-32 overflow-y-auto space-y-1'>
+              {Array.from(selectedFile).map((file, index) => (
+                <div key={index} className='flex items-center text-xs text-gray-600'>
+                  <svg
+                    className='flex-shrink-0 w-4 h-4 text-blue-500 mr-2'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                    />
+                  </svg>
+                  <span className='truncate'>{file.name}</span>
+                  <span className='ml-2 text-gray-400'>({formatFileSize(file.size)})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      <div>
-        <Autocomplete
-          label='Customer'
-          name='customerId'
-          options={customerOptions}
-          value={formValues.customerId}
-          onChange={handleChange}
-          placeholder='Cari customer'
-          displayKey='label'
-          valueKey='id'
-          required
-          loading={customerLoading}
-          onSearch={fetchCustomerOptions}
-          showId
-        />
-      </div>
+        <div className='p-3 border border-yellow-200 rounded-md bg-yellow-50'>
+          <div className='flex'>
+            <svg
+              className='w-4 h-4 text-yellow-500 mt-0.5 mr-2 flex-shrink-0'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'
+              />
+            </svg>
+            <div>
+              <h4 className='text-sm font-medium text-yellow-800'>
+                Informasi Upload
+              </h4>
+              <p className='mt-1 text-sm text-yellow-700'>
+                Pilih satu atau beberapa file PDF (.pdf)
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <div>
-        <label className='block mb-1 text-sm font-medium text-gray-700'>
-          TOP
-        </label>
-        <Autocomplete
-          label=''
-          name='termin_bayar'
-          options={termOptions}
-          value={formValues.termin_bayar}
-          onChange={handleChange}
-          placeholder='Cari Term of Payment'
-          displayKey='label'
-          valueKey='id'
-          loading={termLoading}
-          onSearch={fetchTermOptions}
-          showId
-        />
-      </div>
-
-      <div>
-        <label className='block mb-1 text-sm font-medium text-gray-700'>
-          Status
-        </label>
-        <select
-          name='statusId'
-          value={formValues.statusId}
-          onChange={handleChange}
-          className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-          disabled={statusLoading}
-        >
-          <option value=''>Pilih status laporan</option>
-          {statusOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className='md:col-span-2'>
-        <label className='block mb-2 text-sm font-medium text-gray-700'>
-          Lampiran File
-        </label>
-        <div className='border border-gray-300 rounded-lg p-4 bg-gray-50'>
-          {renderFileList(formValues.files)}
+        <div className='flex justify-end mt-6 space-x-3'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300'
+            disabled={loading}
+          >
+            Batal
+          </button>
+          <button
+            type='button'
+            onClick={handleBulkUpload}
+            className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50'
+            disabled={!selectedFile || loading}
+          >
+            {loading ? 'Mengunggah...' : 'Upload File'}
+          </button>
         </div>
       </div>
     </div>
   );
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  if (!isOpen) return null;
 
-    if (!isEdit && activeTab === 'file') {
-      await handleUploadFromFile();
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const payload = buildPayload(formValues);
-      await onSubmit(payload);
-      onClose();
-    } catch (error) {
-      console.error('Failed to submit laporan penerimaan barang form:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const modalTitle = isEdit
+    ? 'Edit Laporan Penerimaan Barang'
+    : 'Tambah Laporan Penerimaan Barang';
 
   return (
-    <FormModal
-      show={isOpen}
-      onClose={onClose}
-      title={modalTitle}
-      subtitle={modalSubtitle}
-      isSubmitting={isSubmitting}
-      isEdit={isEdit}
-      handleSubmit={handleSubmit}
-      entityName='Laporan'
-    >
-      {!isEdit && typeof onUploadFromFile === 'function' ? (
-        <div>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-75'>
+      <div className='bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto'>
+        <div className='flex items-center justify-between mb-4'>
+          <h3 className='text-lg font-medium text-gray-900'>
+            {modalTitle}
+          </h3>
+          <button
+            type='button'
+            onClick={onClose}
+            className='text-gray-400 hover:text-gray-500'
+          >
+            <svg
+              className='w-6 h-6'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M6 18L18 6M6 6l12 12'
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Tab Navigation - Only show tabs for add mode */}
+        {!isEdit && (
           <TabContainer
             activeTab={activeTab}
-            onTabChange={handleTabChange}
+            onTabChange={(tabId) => {
+              setActiveTab(tabId);
+              resetForm();
+            }}
             variant='underline'
-            size='sm'
-            className='mb-4'
+            className='mb-6'
           >
-            <Tab id='manual' label='Input Manual' />
-            <Tab id='file' label='Upload File' />
+            <Tab
+              id='bulk'
+              label='Bulk Upload'
+              icon={
+                <svg
+                  className='w-5 h-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10'
+                  />
+                </svg>
+              }
+            />
+            <Tab
+              id='manual'
+              label='Manual Input'
+              icon={
+                <svg
+                  className='w-5 h-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
+                  />
+                </svg>
+              }
+            />
           </TabContainer>
+        )}
 
-          <TabContent activeTab={activeTab} unmountInactive>
-            <TabPanel tabId='manual'>{renderManualForm()}</TabPanel>
-            <TabPanel tabId='file'>{renderFileUploadPanel()}</TabPanel>
+        {/* Tab Content */}
+        {!isEdit ? (
+          <TabContent activeTab={activeTab}>
+            <TabPanel tabId='bulk'>
+              {renderBulkUploadTab()}
+            </TabPanel>
+            <TabPanel tabId='manual'>
+              {renderManualForm()}
+            </TabPanel>
           </TabContent>
-        </div>
-      ) : (
-        renderManualForm()
-      )}
-    </FormModal>
+        ) : (
+          renderManualForm()
+        )}
+      </div>
+    </div>
   );
 };
 

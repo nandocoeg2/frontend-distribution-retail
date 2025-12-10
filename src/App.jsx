@@ -43,6 +43,7 @@ import Suppliers from './pages/Suppliers.jsx';
 import Items from './pages/Items.jsx';
 import Packings from './pages/Packings.jsx';
 import LaporanPenerimaanBarang from './pages/LaporanPenerimaanBarang.jsx';
+import LPBBulkUploadHistory from './pages/LPBBulkUploadHistory.jsx';
 import InvoicePengiriman from './pages/InvoicePengiriman.jsx';
 import InvoicePenagihan from './pages/InvoicePenagihan.jsx';
 import FakturPajak from './pages/FakturPajak.jsx';
@@ -322,6 +323,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <LaporanPenerimaanBarang />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/laporan-penerimaan-barang/bulk-history'
+        element={
+          <ProtectedRoute>
+            <LPBBulkUploadHistory />
           </ProtectedRoute>
         }
       />

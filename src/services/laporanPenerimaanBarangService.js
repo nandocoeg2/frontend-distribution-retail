@@ -379,6 +379,48 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  /**
+   * Retry a failed LPB file using AI conversion
+   * @param {string} fileId - ID of the file to retry
+   * @returns {Promise<Object>} Retry result
+   */
+  async retryFile(fileId) {
+    try {
+      if (!fileId) {
+        throw new Error('File ID is required');
+      }
+
+      const response = await this.api.post(
+        '/laporan-penerimaan-barang/retry-file-ai/' + fileId
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error retrying LPB file:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get bulk file by ID
+   * @param {string} fileId - ID of the file to fetch
+   * @returns {Promise<Object>} File details
+   */
+  async getFileById(fileId) {
+    try {
+      if (!fileId) {
+        throw new Error('File ID is required');
+      }
+
+      const response = await this.api.get(
+        '/laporan-penerimaan-barang/bulk-file/' + fileId
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching LPB bulk file:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();
