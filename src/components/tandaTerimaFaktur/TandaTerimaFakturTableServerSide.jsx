@@ -243,11 +243,13 @@ const TandaTerimaFakturTableServerSide = ({
           ),
           cell: (info) => {
             const row = info.row.original;
-            const customerName = row?.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer || '-';
-            const groupName = row?.groupCustomer?.nama_group || row?.groupCustomer?.namaGroup || '';
+            const customer = row?.invoicePenagihan?.purchaseOrder?.customer;
+            const customerName = customer?.namaCustomer || '-';
+            const customerCode = customer?.kodeCustomer || '-';
+            const groupName = customer?.groupCustomer?.nama_group || row?.groupCustomer?.nama_group || '';
             return (
               <div className="leading-tight">
-                <div className="text-xs font-medium text-gray-900">{customerName}</div>
+                <div className="text-xs font-medium text-gray-900">{`${customerName} (${customerCode})`}</div>
                 {groupName && <div className="text-[10px] text-gray-500">{groupName}</div>}
               </div>
             );

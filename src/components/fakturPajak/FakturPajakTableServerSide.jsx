@@ -351,7 +351,7 @@ const FakturPajakTableServerSide = ({
           const item = info.row.original;
           return (
             <div>
-              <div className="text-xs text-gray-900">{info.getValue() || '-'}</div>
+              <div className="text-xs text-gray-900">{`${info.getValue()} (${item?.customer?.kodeCustomer || '-'})`}</div>
               {item?.customer?.groupCustomer?.nama_group && (
                 <div className="text-xs text-gray-500">
                   {item.customer.groupCustomer?.nama_group}
@@ -368,7 +368,7 @@ const FakturPajakTableServerSide = ({
           const filterValue = column.getFilterValue() || { min: '', max: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Dasar Pengenaan Pajak</div>
+              <div className="font-medium text-xs">DPP</div>
               <div className="flex flex-col gap-0.5">
                 <input
                   type="number"
@@ -403,7 +403,7 @@ const FakturPajakTableServerSide = ({
           const filterValue = column.getFilterValue() || { min: '', max: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">PPN Rupiah</div>
+              <div className="font-medium text-xs">PPN</div>
               <div className="flex flex-col gap-0.5">
                 <input
                   type="number"
@@ -432,11 +432,6 @@ const FakturPajakTableServerSide = ({
               <div className="text-xs text-gray-900">
                 {formatCurrency(info.getValue())}
               </div>
-              {item.ppn_percentage != null && (
-                <div className="text-xs text-gray-500">
-                  {item.ppn_percentage}% dari DPP
-                </div>
-              )}
             </div>
           );
         },

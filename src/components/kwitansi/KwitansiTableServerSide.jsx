@@ -476,9 +476,11 @@ const KwitansiTableServerSide = ({
           const customer = info.row.original?.invoicePenagihan?.purchaseOrder?.customer;
           return (
             <div>
-              <div className="text-xs text-gray-900">{customer?.namaCustomer || '-'}</div>
-              {customer?.kodeCustomer && (
-                <div className="text-xs text-gray-500">{customer.kodeCustomer}</div>
+              <div className="text-xs text-gray-900">{`${info.getValue()} (${customer?.kodeCustomer || '-'})`}</div>
+              {customer?.groupCustomer?.nama_group && (
+                <div className="text-xs text-gray-500">
+                  {customer.groupCustomer?.nama_group}
+                </div>
               )}
             </div>
           );

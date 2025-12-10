@@ -283,11 +283,11 @@ const InvoicePenagihanTableServerSide = ({
           </div>
         ),
       }),
-      columnHelper.accessor('kepada', {
+      columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'kepada',
         header: ({ column }) => (
           <div className="space-y-1">
-            <div className="font-medium text-xs">Kepada</div>
+            <div className="font-medium text-xs">Customer</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -301,11 +301,20 @@ const InvoicePenagihanTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => (
-          <div className="text-xs text-gray-900">
-            {info.getValue() || '-'}
-          </div>
-        ),
+        cell: (info) => {
+          const customer = info.row.original?.purchaseOrder?.customer;
+          const customerName = customer?.namaCustomer || '-';
+          const customerCode = customer?.kodeCustomer || '-';
+          const groupName = customer?.groupCustomer?.nama_group || '';
+          return (
+            <div>
+              <div className="text-xs text-gray-900">{`${customerName} (${customerCode})`}</div>
+              {groupName && (
+                <div className="text-xs text-gray-500">{groupName}</div>
+              )}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
