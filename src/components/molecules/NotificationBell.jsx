@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import notificationService from '../../services/notificationService.js';
 
 const NotificationBell = () => {
@@ -6,18 +6,69 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sseConnected, setSseConnected] = useState(false);
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
+  // Setup SSE connection for real-time notifications
   useEffect(() => {
-    fetchNotifications();
+    const connectSSE = () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-    // Set up interval to refresh notifications every 30 seconds
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, 30000);
+      // Close existing connection if any
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
 
-    return () => clearInterval(interval);
+      // Note: EventSource doesn't support custom headers, so we'll use a workaround
+      // We'll pass token as query param (backend should support this)
+      const sseUrl = `${process.env.BACKEND_BASE_URL}api/v1/notifications/stream`;
+
+      // Create EventSource with fetch polyfill for auth support
+      const eventSource = new EventSource(sseUrl, { withCredentials: true });
+      eventSourceRef.current = eventSource;
+
+      eventSource.onopen = () => {
+        setSseConnected(true);
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'NEW_NOTIFICATION') {
+            // Add new notification to the list
+            setNotifications((prev) => [data.data, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+          } else if (data.type === 'NEW_ALERTS') {
+            // New alerts were created, refresh the list
+            fetchNotifications();
+          }
+        } catch (error) {
+          console.error('Error parsing SSE message:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error);
+        setSseConnected(false);
+        eventSource.close();
+
+        // Reconnect after 5 seconds
+        setTimeout(connectSSE, 5000);
+      };
+    };
+
+    connectSSE();
+
+    // Cleanup on unmount
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -38,7 +89,7 @@ const NotificationBell = () => {
     };
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -63,11 +114,15 @@ const NotificationBell = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // Fetch notifications only when bell is clicked
   const handleBellClick = async () => {
-    setShowDropdown(!showDropdown);
-    if (!showDropdown) {
+    const newShowState = !showDropdown;
+    setShowDropdown(newShowState);
+
+    // Fetch notifications when opening the dropdown
+    if (newShowState) {
       await fetchNotifications();
     }
   };
@@ -97,75 +152,23 @@ const NotificationBell = () => {
   };
 
   const handleRefreshNotifications = async () => {
+    await fetchNotifications();
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
     try {
-      setLoading(true);
+      await notificationService.deleteNotification(notificationId);
 
-      // Call both alerts endpoint and getAll notifications
-      const [alertsResponse, notificationsResponse] = await Promise.all([
-        fetch(`${process.env.BACKEND_BASE_URL}api/v1/notifications/alerts`),
-        notificationService.getAllNotifications(),
-      ]);
+      // Remove notification from list
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
 
-      let allNotifications = [];
-
-      // Process alerts from API
-      if (alertsResponse.ok) {
-        const alertsData = await alertsResponse.json();
-        const alerts = Array.isArray(alertsData) ? alertsData : [];
-
-        const formattedAlerts = alerts.map((alert) => ({
-          id: alert.id || `alert-${Date.now()}-${Math.random()}`,
-          title: alert.title || 'Alert',
-          message: alert.message || alert.body || 'New notification',
-          type: alert.type || 'ALERT',
-          isRead: alert.isRead || alert.read || false,
-          createdAt:
-            alert.createdAt || alert.timestamp || new Date().toISOString(),
-          inventory: alert.inventory || null,
-        }));
-
-        allNotifications = [...formattedAlerts];
+      // Update unread count if deleted notification was unread
+      const deletedNotification = notifications.find((n) => n.id === notificationId);
+      if (deletedNotification && !deletedNotification.isRead) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
-
-      // Process notifications from service
-      const notificationsData = notificationsResponse?.data || [];
-      const serviceNotifications = Array.isArray(notificationsData)
-        ? notificationsData
-        : [];
-
-      // Merge notifications and remove duplicates based on ID
-      const mergedNotifications = [...allNotifications];
-
-      serviceNotifications.forEach((notification) => {
-        const exists = mergedNotifications.find(
-          (n) =>
-            n.id === notification.id ||
-            (notification.title &&
-              n.title === notification.title &&
-              n.message === notification.message)
-        );
-        if (!exists) {
-          mergedNotifications.push({
-            ...notification,
-            id: notification.id || `notif-${Date.now()}-${Math.random()}`,
-          });
-        }
-      });
-
-      // Sort by createdAt (newest first)
-      mergedNotifications.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-
-      setNotifications(mergedNotifications);
-      const unread = mergedNotifications.filter((n) => !n.isRead).length;
-      setUnreadCount(unread);
     } catch (error) {
-      console.error('Error refreshing notifications:', error);
-      // Fallback to single fetch if combined call fails
-      await fetchNotifications();
-    } finally {
-      setLoading(false);
+      console.error('Error deleting notification:', error);
     }
   };
 
@@ -194,6 +197,22 @@ const NotificationBell = () => {
               <path
                 fillRule='evenodd'
                 d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z'
+                clipRule='evenodd'
+              />
+            </svg>
+          </div>
+        );
+      case 'OUT_OF_STOCK':
+        return (
+          <div className='w-8 h-8 bg-red-100 rounded-full flex items-center justify-center'>
+            <svg
+              className='w-4 h-4 text-red-600'
+              fill='currentColor'
+              viewBox='0 0 20 20'
+            >
+              <path
+                fillRule='evenodd'
+                d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
                 clipRule='evenodd'
               />
             </svg>
@@ -266,13 +285,21 @@ const NotificationBell = () => {
                 Notifications
               </h3>
 
-              <div>
+              <div className='flex items-center gap-2'>
+                {/* SSE status indicator */}
+                <span
+                  className={`text-xs ${sseConnected ? 'text-green-600' : 'text-gray-400'}`}
+                  title={sseConnected ? 'Real-time updates active' : 'Real-time updates inactive'}
+                >
+                  {sseConnected ? '● Live' : '○ Offline'}
+                </span>
                 {/* refresh notification */}
                 <button
                   onClick={handleRefreshNotifications}
                   className='text-sm text-gray-600 hover:text-gray-700 font-medium'
+                  disabled={loading}
                 >
-                  Refresh
+                  {loading ? 'Loading...' : 'Refresh'}
                 </button>
               </div>
               {unreadCount > 0 && (
@@ -332,14 +359,25 @@ const NotificationBell = () => {
                             {notification.message}
                           </p>
                         </div>
-                        {!notification.isRead && (
+                        <div className='flex items-center gap-1 ml-2'>
+                          {!notification.isRead && (
+                            <button
+                              onClick={() => handleMarkAsRead(notification.id)}
+                              className='text-xs text-blue-600 hover:text-blue-700 font-medium'
+                            >
+                              Read
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleMarkAsRead(notification.id)}
-                            className='text-xs text-blue-600 hover:text-blue-700 font-medium ml-2'
+                            onClick={() => handleDeleteNotification(notification.id)}
+                            className='p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors'
+                            title='Delete notification'
                           >
-                            Read
+                            <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                            </svg>
                           </button>
-                        )}
+                        </div>
                       </div>
                       <p className='text-xs text-gray-500 mt-2'>
                         {formatRelativeTime(notification.createdAt)}

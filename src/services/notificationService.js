@@ -75,6 +75,17 @@ const notificationService = {
       throw error;
     }
   },
+
+  // Delete (soft delete) a notification
+  async deleteNotification(notificationId) {
+    try {
+      const response = await api.delete(`/${notificationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  },
 };
 
 export default notificationService;
