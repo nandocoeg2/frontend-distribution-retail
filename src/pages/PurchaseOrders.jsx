@@ -107,7 +107,7 @@ const PurchaseOrders = () => {
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
 
-  const confirmActionRef = useRef(() => {});
+  const confirmActionRef = useRef(() => { });
 
   const openConfirmationDialog = (options, onConfirm) => {
     confirmActionRef.current = onConfirm;
@@ -182,7 +182,7 @@ const PurchaseOrders = () => {
     openConfirmationDialog({
       title: 'Cancel Purchase Order',
       message: `Apakah Anda yakin ingin membatalkan Purchase Order "${poNumber}"?`,
-      confirmText: 'Cancel',
+      confirmText: 'Confirm',
       cancelText: 'Batal',
       type: 'warning',
     }, async () => {
@@ -268,7 +268,7 @@ const PurchaseOrders = () => {
       for (const poId of purchaseOrderIds) {
         const poResponse = await purchaseOrderService.getPurchaseOrderById(poId);
         const poData = poResponse?.data || poResponse;
-        
+
         if (!poData?.purchaseOrderDetails || !Array.isArray(poData.purchaseOrderDetails)) {
           continue;
         }
@@ -284,9 +284,9 @@ const PurchaseOrders = () => {
             // Fetch item master data
             const itemResponse = await getItemById(detail.itemId);
             const itemData = itemResponse?.data || itemResponse;
-            
+
             const poPrice = parseFloat(detail.harga) || 0;
-            
+
             // Dapatkan harga efektif berdasarkan tanggal PO dan schedules
             const effectivePrice = getEffectivePrice(itemData?.itemPrice, poDate);
             const masterPrice = effectivePrice.harga;
@@ -332,9 +332,9 @@ const PurchaseOrders = () => {
         `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
         `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}${sourceLabel}`;
     }).join('\n\n');
-    
+
     const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
-    
+
     return summary + details + more + '\n\nApakah Anda yakin ingin melanjutkan proses?';
   };
 
