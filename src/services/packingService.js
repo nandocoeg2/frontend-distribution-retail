@@ -65,6 +65,68 @@ export const completePackings = (ids) => {
   return post(`${API_URL}/complete`, { ids });
 };
 
+// Export packings to Excel
+export const exportExcel = async (filters = {}) => {
+  try {
+    const token = localStorage.getItem('token');
+
+    // Convert object filters to URLSearchParams
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key] !== undefined && filters[key] !== null) {
+        if (Array.isArray(filters[key])) {
+          filters[key].forEach(value => params.append(key, value));
+        } else {
+          params.append(key, filters[key]);
+        }
+      }
+    });
+
+    const queryString = params.toString();
+    const url = `${process.env.BACKEND_BASE_URL}api/v1${API_URL}/export?${queryString}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to export data');
+    }
+
+    // Get filename from Content-Disposition header or use default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'Packings.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    // Convert response to blob and trigger download
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+
+    return { success: true, filename };
+  } catch (error) {
+    console.error('Error exporting packings:', error);
+    throw error;
+  }
+};
+
 // Export packing sticker to HTML for printing
 export const exportPackingSticker = async (packingId, companyId) => {
   try {
@@ -136,4 +198,5 @@ export default {
   completePackings,
   exportPackingSticker,
   exportPackingTandaTerima,
+  exportExcel,
 };

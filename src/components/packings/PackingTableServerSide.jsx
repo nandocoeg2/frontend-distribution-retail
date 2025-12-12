@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   PencilIcon,
@@ -11,11 +11,12 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
-import { exportPackingSticker, exportPackingTandaTerima } from '../../services/packingService';
+import { exportPackingSticker, exportPackingTandaTerima, exportExcel } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
 const columnHelper = createColumnHelper();
 
@@ -80,7 +81,7 @@ const isProcessingStatus = (packing) => {
   );
 };
 
-const PackingTableServerSide = ({
+const PackingTableServerSide = forwardRef(({
   onViewById,
   onEdit,
   onDelete,
@@ -97,10 +98,12 @@ const PackingTableServerSide = ({
   initialLimit = 10,
   onRowClick,
   selectedPackingId,
-}) => {
+}, ref) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingTandaTerima, setIsPrintingTandaTerima] = useState(false);
   const [customers, setCustomers] = useState([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
   // Status options for multi-select filter
   const statusOptions = useMemo(() => [
@@ -196,7 +199,7 @@ const PackingTableServerSide = ({
       // Loop through selected packings and fetch stickers
       for (let i = 0; i < selectedPackings.length; i++) {
         const packingId = selectedPackings[i];
-        
+
         try {
           // Call backend API to get HTML
           const html = await exportPackingSticker(packingId, companyData.id);
@@ -206,7 +209,7 @@ const PackingTableServerSide = ({
           if (printWindow) {
             printWindow.document.write(html);
             printWindow.document.close();
-            
+
             // Wait for content to load, then trigger print dialog
             printWindow.onload = () => {
               printWindow.focus();
@@ -270,7 +273,7 @@ const PackingTableServerSide = ({
       // Loop through selected packings and fetch tanda terima
       for (let i = 0; i < selectedPackings.length; i++) {
         const packingId = selectedPackings[i];
-        
+
         try {
           // Call backend API to get HTML
           const html = await exportPackingTandaTerima(packingId, companyData.id);
@@ -280,7 +283,7 @@ const PackingTableServerSide = ({
           if (printWindow) {
             printWindow.document.write(html);
             printWindow.document.close();
-            
+
             // Wait for content to load, then trigger print dialog
             printWindow.onload = () => {
               printWindow.focus();
@@ -338,6 +341,8 @@ const PackingTableServerSide = ({
     isLoading,
     error,
     tableOptions,
+    columnFilters,
+    globalFilter,
   } = useServerSideTable({
     queryHook: usePackingsQuery,
     selectData: (response) => response?.packings ?? [],
@@ -347,6 +352,41 @@ const PackingTableServerSide = ({
     globalFilter: globalFilterConfig,
     getQueryParams,
   });
+
+  // Export functionality
+  const handleConfirmExport = async () => {
+    try {
+      setShowExportConfirmation(false);
+      setExportLoading(true);
+
+      const currentFilters = columnFilters.reduce((acc, filter) => {
+        acc[filter.id] = filter.value;
+        return acc;
+      }, {});
+
+      if (globalFilter) {
+        currentFilters.search = globalFilter;
+      }
+
+      // Reuse getQueryParams logic to format filters correctly
+      const { filters: mappedFilters } = getQueryParams({ filters: currentFilters });
+
+      await exportExcel(mappedFilters);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    openExportDialog: () => {
+      setShowExportConfirmation(true);
+    },
+    exportLoading
+  }));
 
   const columns = useMemo(
     () => [
@@ -521,12 +561,12 @@ const PackingTableServerSide = ({
           const isPrinted = info.row.original.is_printed;
           return isPrinted
             ? new Date(info.getValue()).toLocaleDateString('id-ID', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
             : '-';
         },
       }),
@@ -598,11 +638,10 @@ const PackingTableServerSide = ({
                   e.stopPropagation();
                   !processing && onEdit(packing);
                 }}
-                className={`p-1 ${
-                  processing
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-green-600 hover:text-green-900'
-                }`}
+                className={`p-1 ${processing
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-green-600 hover:text-green-900'
+                  }`}
                 title={
                   processing
                     ? 'Packing sedang diproses dan tidak dapat diedit.'
@@ -710,8 +749,21 @@ const PackingTableServerSide = ({
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={handleConfirmExport}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data packing ini ke Excel?"
+        confirmText="Ya, Export"
+        cancelText="Batal"
+        type="info"
+        loading={exportLoading}
+      />
     </div>
   );
-};
+});
+
+PackingTableServerSide.displayName = 'PackingTableServerSide';
 
 export default PackingTableServerSide;

@@ -12,6 +12,8 @@ import {
   useConfirmationDialog,
   ConfirmationDialog as BaseConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
+import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+
 const INITIAL_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
@@ -24,7 +26,8 @@ const INITIAL_PAGINATION = {
 
 const PackingsPage = () => {
   const queryClient = useQueryClient();
-  
+  const tableRef = React.useRef(null);
+
   const {
     packings,
     pagination,
@@ -207,12 +210,25 @@ const PackingsPage = () => {
     setSelectedPackingForDetail(null);
   }, []);
 
+  const handleExportExcel = useCallback(() => {
+    if (tableRef.current) {
+      tableRef.current.openExportDialog();
+    }
+  }, []);
+
   return (
     <div className='p-3 space-y-3'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-3 py-3'>
           <div className='flex items-center justify-between mb-2'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Packing</h3>
+            <button
+              onClick={handleExportExcel}
+              className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+              Export Excel
+            </button>
           </div>
           {error ? (
             <div className='p-2 border border-red-200 rounded bg-red-50'>
@@ -229,6 +245,7 @@ const PackingsPage = () => {
               )}
               <div className='space-y-2'>
                 <PackingTableServerSide
+                  ref={tableRef}
                   onViewById={openViewModal}
                   onEdit={openEditModal}
                   onDelete={deletePacking}
