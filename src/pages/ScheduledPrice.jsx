@@ -94,21 +94,21 @@ const ScheduledPrice = () => {
   const meta = data?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
 
   return (
-    <div className="p-3 bg-gray-50 min-h-screen">
+    <div>
       <div className="max-w-full mx-auto">
-        <div className="bg-white shadow-md rounded-lg p-4">
+        <div className="bg-white shadow-md rounded-lg p-3">
           {/* Header */}
-          <div className="mb-3">
+          <div className="mb-2">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Scheduled Price</h1>
+                <h1 className="text-sm font-semibold text-gray-900">Scheduled Price</h1>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  className="flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
                 >
-                  <PlusIcon className="w-5 h-5 mr-1.5" />
+                  <PlusIcon className="w-4 h-4 mr-1.5" />
                   Add Schedule
                 </button>
               </div>

@@ -85,60 +85,60 @@ const Users = () => {
   }
 
   return (
-    <div className='p-6'>
+    <div className='p-3'>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex justify-between items-center'>
-            <h3 className='text-lg font-medium text-gray-900'>User List</h3>
+        <div className='p-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>User List</h3>
             <button
               onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+              className='inline-flex items-center px-2.5 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs'
             >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
+              <HeroIcon name='plus' className='w-4 h-4 mr-1.5' />
               Add User
             </button>
           </div>
 
-          <UserSearch 
-            searchQuery={searchQuery} 
-            handleSearchChange={handleSearchChange} 
-            searchLoading={searchLoading} 
+          <UserSearch
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+            searchLoading={searchLoading}
           />
 
-          <UserTable 
-            users={users} 
+          <UserTable
+            users={users}
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onEdit={openEditModal} 
-            onDelete={deleteUser} 
+            onEdit={openEditModal}
+            onDelete={deleteUser}
             onView={openViewModal}
             searchQuery={searchQuery}
           />
         </div>
       </div>
 
-      <AddUserModal 
-        show={showAddModal} 
-        onClose={closeAddModal} 
+      <AddUserModal
+        show={showAddModal}
+        onClose={closeAddModal}
         onUserAdded={handleUserAdded}
         handleAuthError={handleAuthError}
       />
 
-      <EditUserModal 
-        show={showEditModal} 
-        onClose={closeEditModal} 
+      <EditUserModal
+        show={showEditModal}
+        onClose={closeEditModal}
         user={editingUser}
         onUserUpdated={handleUserUpdated}
         handleAuthError={handleAuthError}
       />
 
-      <ViewUserModal 
-        show={showViewModal} 
-        onClose={closeViewModal} 
-        user={viewingUser} 
+      <ViewUserModal
+        show={showViewModal}
+        onClose={closeViewModal}
+        user={viewingUser}
       />
-      
+
       {/* Confirmation Dialog */}
       <ConfirmationDialog
         show={deleteUserConfirmation.showConfirm}

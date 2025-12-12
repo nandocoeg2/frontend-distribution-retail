@@ -81,8 +81,8 @@ const StockMovements = () => {
           const itemsArray = Array.isArray(rawItems)
             ? rawItems
             : Array.isArray(rawItems?.data)
-            ? rawItems.data
-            : [];
+              ? rawItems.data
+              : [];
           setItemOptions(itemsArray);
         }
       } else {
@@ -108,8 +108,8 @@ const StockMovements = () => {
           const suppliersArray = Array.isArray(rawSuppliers)
             ? rawSuppliers
             : Array.isArray(rawSuppliers?.data)
-            ? rawSuppliers.data
-            : [];
+              ? rawSuppliers.data
+              : [];
           setSupplierOptions(suppliersArray);
         }
       } else {
@@ -197,7 +197,7 @@ const StockMovements = () => {
 
   const handleSaveNotes = useCallback(async () => {
     if (!editingMovement?.id) return;
-    
+
     setEditNotesLoading(true);
     try {
       await updateMovementNotes(editingMovement.id, editNotesValue);
@@ -218,17 +218,17 @@ const StockMovements = () => {
   }
 
   return (
-    <div className='p-4'>
-      <div className='rounded-lg bg-white p-4 shadow'>
+    <div className='p-3 space-y-3'>
+      <div className='rounded-lg bg-white p-3 shadow'>
         <div className='space-y-3'>
           {/* Header */}
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <h1 className='text-lg font-semibold text-gray-900'>Stock Movements</h1>
+            <h1 className='text-sm font-semibold text-gray-900'>Stock Movements</h1>
             <div className='flex gap-2'>
               <button
                 type='button'
                 onClick={() => setShowReturnModal(true)}
-                className='inline-flex items-center rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 transition-colors'
+                className='inline-flex items-center rounded bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 transition-colors'
               >
                 <ArrowUturnLeftIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
                 Return
@@ -236,7 +236,7 @@ const StockMovements = () => {
               <button
                 type='button'
                 onClick={() => setShowStockOutModal(true)}
-                className='inline-flex items-center rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-colors'
+                className='inline-flex items-center rounded bg-amber-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-colors'
               >
                 <ArrowUpTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
                 Stock Out
@@ -244,7 +244,7 @@ const StockMovements = () => {
               <button
                 type='button'
                 onClick={() => setShowStockInModal(true)}
-                className='inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors'
+                className='inline-flex items-center rounded bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors'
               >
                 <ArrowDownTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
                 Stock In

@@ -63,22 +63,22 @@ const Customers = () => {
 
 
   return (
-    <div className="p-3 bg-gray-50 min-h-screen">
+    <div>
       <div className="max-w-full mx-auto">
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <div className="flex justify-between items-center mb-3">
+        <div className="bg-white shadow-md rounded-lg p-3">
+          <div className="flex justify-between items-center mb-2">
             <div>
-              <h1 className="text-xl font-bold text-gray-800">Customers</h1>
+              <h1 className="text-sm font-semibold text-gray-900">Customers</h1>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                className="inline-flex items-center px-3 py-1.5 text-sm bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exportLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1.5"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
                     Exporting...
                   </>
                 ) : (
@@ -90,7 +90,7 @@ const Customers = () => {
               </button>
               <button
                 onClick={handleAddCustomer}
-                className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <PlusIcon className="h-4 w-4 mr-1.5" />
                 Add Customer

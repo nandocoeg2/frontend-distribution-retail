@@ -82,34 +82,34 @@ const Items = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Items</h1>
-            <div className="flex gap-2">
+    <div>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='p-3'>
+          <div className='flex justify-between items-center mb-2'>
+            <h1 className='text-sm font-semibold text-gray-900'>Items</h1>
+            <div className='flex gap-2'>
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className='inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {exportLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
                     Exporting...
                   </>
                 ) : (
                   <>
-                    <HeroIcon name='arrow-down-tray' className='w-5 h-5 mr-2' />
+                    <HeroIcon name='arrow-down-tray' className='h-4 w-4 mr-1.5' />
                     Export Excel
                   </>
                 )}
               </button>
               <button
                 onClick={openAddModal}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className='inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700'
               >
-                <HeroIcon name='plus' className='w-5 h-5 mr-2' />
+                <HeroIcon name='plus' className='h-4 w-4 mr-1.5' />
                 Add Item
               </button>
             </div>
@@ -147,12 +147,12 @@ const Items = () => {
           }}
         />
       )}
-      
+
       {/* Confirmation Dialog */}
       <ConfirmationDialog
         show={false}
-        onClose={() => {}}
-        onConfirm={() => {}}
+        onClose={() => { }}
+        onConfirm={() => { }}
         title="Konfirmasi"
         message="Apakah Anda yakin?"
         type="warning"

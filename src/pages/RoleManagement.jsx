@@ -96,25 +96,24 @@ const RoleManagement = () => {
 
   return (
     <>
-      <header className='bg-white/80 backdrop-blur-sm shadow-sm p-6'>
+      <header className='bg-white/80 backdrop-blur-sm shadow-sm p-3'>
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-3xl font-bold text-gray-900 flex items-center gap-2'>
-              <HeroIcon name='shield' className='w-8 h-8 text-blue-600' />
+            <h1 className='text-sm font-semibold text-gray-900 flex items-center gap-2'>
+              <HeroIcon name='shield' className='w-5 h-5 text-blue-600' />
               Role Management
             </h1>
-            <p className='text-gray-600'>Manage user roles and permissions</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className='bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors'
+            className='bg-green-600 text-white px-2.5 py-1.5 text-xs rounded hover:bg-green-700 transition-colors'
           >
             Create New Role
           </button>
         </div>
       </header>
 
-      <main className='flex-1 overflow-y-auto p-6'>
+      <main className='flex-1 overflow-y-auto p-3'>
         {roles.length === 0 ? (
           <div className='flex flex-col items-center justify-center h-64 text-center'>
             <HeroIcon name='shield' className='w-16 h-16 text-gray-400 mb-4' />
@@ -130,43 +129,43 @@ const RoleManagement = () => {
         ) : (
           <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'>
             {roles.map((role) => (
-            <div key={role.id} className='bg-white rounded-xl p-6 shadow'>
-              <h3 className='text-lg font-semibold capitalize'>{role.name}</h3>
-              <p className='text-sm text-gray-600'>{role.description}</p>
-              <div className='my-4'>
-                <p className='text-sm font-medium'>Assigned Menus:</p>
-                <div className='h-32 overflow-y-auto text-sm'>
-                  {role.menus && role.menus.length > 0 ? (
-                    <ul className='space-y-1'>
-                      {role.menus.map((item) => (
-                        <li key={(item.menu || item).id} className='text-gray-700'>
-                          • {(item.menu || item).name}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className='text-gray-500 italic'>No menus assigned</p>
-                  )}
+              <div key={role.id} className='bg-white rounded-xl p-4 shadow'>
+                <h3 className='text-lg font-semibold capitalize'>{role.name}</h3>
+                <p className='text-sm text-gray-600'>{role.description}</p>
+                <div className='my-4'>
+                  <p className='text-sm font-medium'>Assigned Menus:</p>
+                  <div className='h-32 overflow-y-auto text-sm'>
+                    {role.menus && role.menus.length > 0 ? (
+                      <ul className='space-y-1'>
+                        {role.menus.map((item) => (
+                          <li key={(item.menu || item).id} className='text-gray-700'>
+                            • {(item.menu || item).name}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className='text-gray-500 italic'>No menus assigned</p>
+                    )}
+                  </div>
+                </div>
+                <div className='flex justify-between items-center'>
+                  <span className='text-sm text-gray-600'>{getAssignedMenuCount(role)} menus</span>
+                  <div className='flex gap-2'>
+                    <button
+                      onClick={() => openMenuModal(role)}
+                      className='bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors'
+                    >
+                      Manage
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRole(role)}
+                      className='bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors'
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className='flex justify-between items-center'>
-                <span className='text-sm text-gray-600'>{getAssignedMenuCount(role)} menus</span>
-                <div className='flex gap-2'>
-                  <button
-                    onClick={() => openMenuModal(role)}
-                    className='bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors'
-                  >
-                    Manage
-                  </button>
-                  <button
-                    onClick={() => handleDeleteRole(role)}
-                    className='bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors'
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
             ))}
           </div>
         )}

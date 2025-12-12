@@ -7,6 +7,7 @@ import MasterParameterDetailCard from '@/components/masterParameters/MasterParam
 import { createMasterParameter, updateMasterParameter } from '@/services/masterParameterService';
 import toastService from '@/services/toastService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 const MasterParameter = () => {
   const {
@@ -75,32 +76,32 @@ const MasterParameter = () => {
   }
 
   return (
-    <div className='p-6'>
+    <div>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-4 py-5 sm:p-6'>
-          <div className='mb-4 flex justify-between items-center'>
-            <h3 className='text-lg font-medium text-gray-900'>Master Parameters</h3>
+        <div className='p-3'>
+          <div className='mb-2 flex justify-between items-center'>
+            <h3 className='text-sm font-semibold text-gray-900'>Master Parameters</h3>
             <button
-              onClick={openAddModal}
-              className='inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700'
+              onClick={() => setShowAddModal(true)}
+              className='inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700'
             >
-              <HeroIcon name='plus' className='w-5 h-5 mr-2' />
-              Add Parameter
+              <PlusIcon className='h-4 w-4 mr-1.5' />
+              Add Master Parameter
             </button>
           </div>
 
-          <MasterParameterSearch 
-            searchQuery={searchQuery} 
-            handleSearchChange={handleSearchChange} 
-            searchLoading={searchLoading} 
+          <MasterParameterSearch
+            searchQuery={searchQuery}
+            handleSearchChange={handleSearchChange}
+            searchLoading={searchLoading}
           />
 
-          <MasterParameterTable 
-            masterParameters={masterParameters} 
+          <MasterParameterTable
+            masterParameters={masterParameters}
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            onDelete={deleteMasterParameter} 
+            onDelete={deleteMasterParameter}
             onViewDetail={handleViewDetail}
             selectedParameterId={selectedParameterForDetail?.id}
             searchQuery={searchQuery}
@@ -109,9 +110,9 @@ const MasterParameter = () => {
         </div>
       </div>
 
-      <AddMasterParameterModal 
-        show={showAddModal} 
-        onClose={closeAddModal} 
+      <AddMasterParameterModal
+        show={showAddModal}
+        onClose={closeAddModal}
         onParameterAdded={handleParameterAdded}
         handleAuthError={handleAuthError}
       />
