@@ -11,6 +11,7 @@ import Pagination from '@/components/common/Pagination';
 import Loading from '@/components/ui/Loading';
 import customerService from '../services/customerService';
 import toastService from '../services/toastService';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
 const Customers = () => {
   const {
@@ -30,13 +31,15 @@ const Customers = () => {
   const { modalState, openModal, closeModal } = useModal();
   const [selectedCustomerForDetail, setSelectedCustomerForDetail] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
   const handleAddCustomer = () => {
     openModal('add');
   };
 
-  const handleExportExcel = async () => {
+  const confirmExportExcel = async () => {
     try {
+      setShowExportConfirmation(false);
       setExportLoading(true);
       await customerService.exportExcel(searchQuery);
       toastService.success('Data berhasil diexport ke Excel');
@@ -46,6 +49,10 @@ const Customers = () => {
     } finally {
       setExportLoading(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
   };
 
   const handleViewDetail = (customer) => {
@@ -143,6 +150,19 @@ const Customers = () => {
           onCustomerAdded={handleCustomerAdded}
         />
       )}
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data ini ke Excel?"
+        type="info"
+        confirmText="Ya, Export"
+        cancelText="Batal"
+        loading={exportLoading}
+      />
     </div>
   );
 };

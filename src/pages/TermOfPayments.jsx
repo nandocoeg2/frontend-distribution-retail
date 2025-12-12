@@ -33,12 +33,14 @@ const TermOfPayments = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedTermOfPaymentForDetail, setSelectedTermOfPaymentForDetail] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
-  const handleExportExcel = async () => {
+  const confirmExportExcel = async () => {
     try {
+      setShowExportConfirmation(false);
       setExportLoading(true);
       await termOfPaymentService.exportExcel(searchQuery);
       toastService.success('Data berhasil diexport ke Excel');
@@ -48,6 +50,10 @@ const TermOfPayments = () => {
     } finally {
       setExportLoading(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
   };
 
   const handleViewDetail = async (termOfPayment) => {
@@ -182,6 +188,19 @@ const TermOfPayments = () => {
         confirmText="Hapus"
         cancelText="Batal"
         loading={deleteTermOfPaymentConfirmation.loading}
+      />
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data ini ke Excel?"
+        type="info"
+        confirmText="Ya, Export"
+        cancelText="Batal"
+        loading={exportLoading}
       />
     </div>
   );

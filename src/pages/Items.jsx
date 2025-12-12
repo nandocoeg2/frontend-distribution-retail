@@ -27,11 +27,13 @@ const Items = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedItemForDetail, setSelectedItemForDetail] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
   const openAddModal = () => setIsAddModalOpen(true);
 
-  const handleExportExcel = async () => {
+  const confirmExportExcel = async () => {
     try {
+      setShowExportConfirmation(false);
       setExportLoading(true);
       await exportExcel(searchQuery);
       toastService.success('Data berhasil diexport ke Excel');
@@ -41,6 +43,10 @@ const Items = () => {
     } finally {
       setExportLoading(false);
     }
+  };
+
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
   };
   const closeAddModal = () => {
     setIsAddModalOpen(false);
@@ -148,17 +154,17 @@ const Items = () => {
         />
       )}
 
-      {/* Confirmation Dialog */}
+      {/* Export Confirmation Dialog */}
       <ConfirmationDialog
-        show={false}
-        onClose={() => { }}
-        onConfirm={() => { }}
-        title="Konfirmasi"
-        message="Apakah Anda yakin?"
-        type="warning"
-        confirmText="Ya"
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data ini ke Excel?"
+        type="info"
+        confirmText="Ya, Export"
         cancelText="Batal"
-        loading={false}
+        loading={exportLoading}
       />
     </div>
   );
