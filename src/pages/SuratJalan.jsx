@@ -1,14 +1,16 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { SuratJalanTableServerSide } from '@/components/suratJalan';
 import {
   ConfirmationDialog as BaseConfirmationDialog,
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import SuratJalanDetailCard from '../components/suratJalan/SuratJalanDetailCard';
 import suratJalanService from '../services/suratJalanService';
 import toastService from '../services/toastService';
 import { useNavigate } from 'react-router-dom';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 const SuratJalan = () => {
   const navigate = useNavigate();
@@ -21,6 +23,9 @@ const SuratJalan = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const tableFiltersRef = useRef({});
 
   const {
     showDialog: showDeleteDialog,
@@ -139,7 +144,7 @@ const SuratJalan = () => {
   const handleProcessSelected = useCallback(() => {
     // Filter only unprocessed items
     const unprocessedItems = selectedSuratJalan.filter(item => !item?.checklistSuratJalanId);
-    
+
     if (unprocessedItems.length === 0) {
       toastService.error('Pilih minimal satu surat jalan yang belum diproses');
       return;
@@ -221,7 +226,7 @@ const SuratJalan = () => {
   const handleUnprocessSelected = useCallback(() => {
     // Filter only processed items
     const processedItems = selectedSuratJalan.filter(item => item?.checklistSuratJalanId);
-    
+
     if (processedItems.length === 0) {
       toastService.error('Pilih minimal satu surat jalan yang sudah diproses');
       return;
@@ -362,12 +367,51 @@ const SuratJalan = () => {
     }
   }, [queryClient, selectedSuratJalanForDetail]);
 
+  const handleFiltersChange = useCallback((filters) => {
+    tableFiltersRef.current = filters;
+  }, []);
+
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
+  };
+
+  const confirmExportExcel = async () => {
+    try {
+      setShowExportConfirmation(false);
+      setExportLoading(true);
+      await suratJalanService.exportExcel(tableFiltersRef.current);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   return (
     <div className='p-3 space-y-3'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-3 py-3'>
           <div className='flex items-center justify-between mb-2'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Surat Jalan</h3>
+            <button
+              onClick={handleExportExcel}
+              disabled={exportLoading}
+              className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {exportLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                  Export Excel
+                </>
+              )}
+            </button>
           </div>
 
           <SuratJalanTableServerSide
@@ -385,6 +429,7 @@ const SuratJalan = () => {
             hasSelectedSuratJalan={selectedSuratJalan.length > 0}
             onRowClick={handleViewDetail}
             selectedSuratJalanId={selectedSuratJalanForDetail?.id}
+            onFiltersChange={handleFiltersChange}
           />
         </div>
       </div>
@@ -394,6 +439,19 @@ const SuratJalan = () => {
       {selectedSuratJalanForDetail && (
         <SuratJalanDetailCard suratJalan={selectedSuratJalanForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleSuratJalanUpdated} />
       )}
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data ini ke Excel?"
+        type="info"
+        confirmText="Ya, Export"
+        cancelText="Batal"
+        loading={exportLoading}
+      />
     </div>
   );
 };

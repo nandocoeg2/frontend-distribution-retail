@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { useQueryClient } from '@tanstack/react-query';
 import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon } from '@heroicons/react/24/outline';
@@ -73,6 +73,7 @@ const SuratJalanTableServerSide = ({
   initialLimit = 10,
   onRowClick,
   selectedSuratJalanId,
+  onFiltersChange,
 }) => {
   const queryClient = useQueryClient();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -113,7 +114,7 @@ const SuratJalanTableServerSide = ({
       }
 
       toastService.success(response?.data?.message || 'Surat jalan berhasil di-unprocess');
-      
+
       // Close dialog
       setUnprocessDialog({ show: false, item: null, loading: false });
 
@@ -265,11 +266,10 @@ const SuratJalanTableServerSide = ({
               type="checkbox"
               checked={isChecked}
               onChange={() => handleCheckboxChange(row.original)}
-              className={`h-3.5 w-3.5 focus:ring-blue-500 border-gray-300 rounded cursor-pointer ${
-                isProcessed ? 'text-orange-600' : 'text-blue-600'
-              }`}
-              title={isProcessed 
-                ? 'Klik untuk unprocess (hapus dari checklist)' 
+              className={`h-3.5 w-3.5 focus:ring-blue-500 border-gray-300 rounded cursor-pointer ${isProcessed ? 'text-orange-600' : 'text-blue-600'
+                }`}
+              title={isProcessed
+                ? 'Klik untuk unprocess (hapus dari checklist)'
                 : 'Pilih surat jalan'}
             />
           );
@@ -476,6 +476,18 @@ const SuratJalanTableServerSide = ({
     ...tableOptions,
     columns,
   });
+
+  // Expose column filters to parent component
+  useEffect(() => {
+    if (onFiltersChange && table) {
+      const columnFilters = table.getState().columnFilters || [];
+      const filters = {};
+      columnFilters.forEach((filter) => {
+        filters[filter.id] = filter.value;
+      });
+      onFiltersChange(filters);
+    }
+  }, [table?.getState().columnFilters, onFiltersChange]);
 
   const loading = isLoading || isFetching;
 

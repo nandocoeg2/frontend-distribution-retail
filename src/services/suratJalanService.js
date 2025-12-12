@@ -185,6 +185,74 @@ class SuratJalanService {
       throw error;
     }
   }
+
+  /**
+   * Export surat jalan to Excel
+   * @param {Object} filters - Optional filters matching table filters
+   */
+  async exportExcel(filters = {}) {
+    try {
+      const token = authService.getToken();
+      const params = new URLSearchParams();
+
+      // Add filters to query params
+      if (filters.no_surat_jalan) params.append('no_surat_jalan', filters.no_surat_jalan);
+      if (filters.po_number) params.append('po_number', filters.po_number);
+      if (filters.no_invoice) params.append('no_invoice', filters.no_invoice);
+      if (filters.deliver_to) params.append('deliver_to', filters.deliver_to);
+      if (filters.status_code) params.append('status_code', filters.status_code);
+      if (filters.is_printed !== undefined && filters.is_printed !== '') {
+        params.append('is_printed', filters.is_printed);
+      }
+
+      const queryString = params.toString();
+      const url = queryString
+        ? `${API_BASE_URL}/surat-jalan/export-excel?${queryString}`
+        : `${API_BASE_URL}/surat-jalan/export-excel`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to export data');
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'Surat_Jalan.xlsx';
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert response to blob and trigger download
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting surat jalan to Excel:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SuratJalanService();
+
