@@ -153,7 +153,7 @@ class SupplierService {
     let filename = 'Supplier_Template.xlsx';
 
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }
@@ -246,7 +246,7 @@ class SupplierService {
     let filename = 'Suppliers.xlsx';
 
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }

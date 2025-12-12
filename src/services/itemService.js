@@ -259,7 +259,7 @@ export const downloadBulkTemplate = async () => {
   let filename = 'Item_Template.xlsx';
 
   if (contentDisposition) {
-    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1];
     }
@@ -344,7 +344,7 @@ export const getAllBulkFiles = async (status = null) => {
 export const exportExcel = async (searchQuery = '') => {
   const token = authService.getToken();
   const companyId = getCompanyId();
-  
+
   const params = new URLSearchParams();
   if (searchQuery) {
     params.append('q', searchQuery);
@@ -374,7 +374,7 @@ export const exportExcel = async (searchQuery = '') => {
   let filename = 'Items.xlsx';
 
   if (contentDisposition) {
-    const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1];
     }

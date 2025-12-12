@@ -97,7 +97,7 @@ const customerService = {
     let filename = 'Customer_Template.xlsx';
 
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }
@@ -202,7 +202,7 @@ const customerService = {
     let filename = 'Customers.xlsx';
 
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }

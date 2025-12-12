@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import {
   PurchaseOrderTableServerSide,
   PurchaseOrderSearch,
@@ -98,6 +99,8 @@ const PurchaseOrders = () => {
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const tableRef = useRef(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -202,6 +205,32 @@ const PurchaseOrders = () => {
       }
     });
   }, [hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, queryClient]);
+
+  const handleExportExcel = async () => {
+    openConfirmationDialog({
+      title: 'Export Excel',
+      message: 'Apakah Anda yakin ingin mengexport data Purchase Order ke Excel sesuai filter yang aktif?',
+      confirmText: 'Export',
+      cancelText: 'Batal',
+      type: 'info'
+    }, async () => {
+      try {
+        setExportLoading(true);
+        hideDialog();
+
+        // Get filters from table
+        const filters = tableRef.current?.getFilters() || {};
+
+        await purchaseOrderService.exportExcel(filters);
+        showSuccess('Data berhasil diexport ke Excel');
+      } catch (err) {
+        console.error('Export failed:', err);
+        showError(err.message || 'Gagal mengexport data');
+      } finally {
+        setExportLoading(false);
+      }
+    });
+  };
 
   // Bulk selection handlers
   const handleSelectionChange = (orderId, checked) => {
@@ -601,17 +630,37 @@ const PurchaseOrders = () => {
         <div className="px-3 py-3">
           <div className="mb-2 flex justify-between items-center">
             <h3 className="text-sm font-semibold text-gray-900">Purchase Orders</h3>
-            <button
-              onClick={() => setAddModalOpen(true)}
-              className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              <HeroIcon name='plus' className='w-4 h-4 mr-1' />
-              Add PO
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {exportLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                    Export Excel
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setAddModalOpen(true)}
+                className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                <HeroIcon name='plus' className='w-4 h-4 mr-1' />
+                Add PO
+              </button>
+            </div>
           </div>
 
           {/* TanStack Table with Server-Side Features */}
           <PurchaseOrderTableServerSide
+            ref={tableRef}
             onViewDetail={handleViewDetail}
             onEdit={handleEditModalOpen}
             onDelete={handleDeleteOrder}

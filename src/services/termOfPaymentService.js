@@ -228,7 +228,7 @@ export const termOfPaymentService = {
     let filename = 'TermOfPayment_Template.xlsx';
 
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }
@@ -321,7 +321,7 @@ export const termOfPaymentService = {
     let filename = 'TermOfPayments.xlsx';
 
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+      const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1];
       }

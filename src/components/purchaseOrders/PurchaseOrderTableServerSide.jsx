@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
@@ -55,7 +55,7 @@ const isCancelAllowed = (order) => {
   return normalizedCode === 'processing purchase order';
 };
 
-const PurchaseOrderTableServerSide = ({
+const PurchaseOrderTableServerSide = forwardRef(({
   onViewDetail,
   onEdit,
   onDelete,
@@ -71,7 +71,7 @@ const PurchaseOrderTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   selectedOrderId = null,
-}) => {
+}, ref) => {
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -83,7 +83,7 @@ const PurchaseOrderTableServerSide = ({
 
   const handleSelectAllInternalToggle = useCallback(() => {
     const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
-    
+
     const allCurrentPageSelected = currentPageOrderIds.every((id) =>
       selectedOrders.includes(id)
     );
@@ -231,12 +231,12 @@ const PurchaseOrderTableServerSide = ({
         size: 40,
         header: () => {
           const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
-          
+
           const isAllSelected =
             orders.length > 0 &&
             currentPageOrderIds.length > 0 &&
             currentPageOrderIds.every((id) => selectedOrders.includes(id));
-          
+
           const isIndeterminate =
             currentPageOrderIds.some((id) => selectedOrders.includes(id)) &&
             !isAllSelected;
@@ -483,6 +483,28 @@ const PurchaseOrderTableServerSide = ({
     columns,
   });
 
+  useImperativeHandle(ref, () => ({
+    getFilters: () => {
+      const state = table.getState();
+      const filters = {};
+
+      // Map column filters
+      state.columnFilters.forEach((filter) => {
+        filters[filter.id] = filter.value;
+      });
+
+      // Add global filter
+      if (state.globalFilter) {
+        filters.search = state.globalFilter;
+      }
+
+      // Convert using getQueryParams logic
+      const { filters: mappedFilters } = getQueryParams({ filters });
+
+      return mappedFilters;
+    }
+  }));
+
   const loading = isLoading || isFetching;
 
   return (
@@ -548,6 +570,8 @@ const PurchaseOrderTableServerSide = ({
       )}
     </div>
   );
-};
+});
+
+PurchaseOrderTableServerSide.displayName = 'PurchaseOrderTableServerSide';
 
 export default PurchaseOrderTableServerSide;
