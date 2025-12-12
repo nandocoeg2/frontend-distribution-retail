@@ -61,29 +61,29 @@ const StockMovementTable = ({
 
     return movements.map((movement) => {
       const items = Array.isArray(movement.items) ? movement.items : [];
-      
+
       // Get unique product names from items
       const uniqueProducts = new Map();
       items.forEach((item) => {
         const itemId = item?.itemId || item?.item?.id;
-        const productName = item?.item?.nama_barang || 
-                          item?.inventory?.nama_barang || 
-                          item?.inventory?.name || 
-                          item?.productName || '-';
+        const productName = item?.item?.nama_barang ||
+          item?.inventory?.nama_barang ||
+          item?.inventory?.name ||
+          item?.productName || '-';
         if (itemId && !uniqueProducts.has(itemId)) {
           uniqueProducts.set(itemId, productName);
         }
       });
-      
+
       // Items = jumlah karton (unique items count)
       const cartonCount = uniqueProducts.size;
-      
+
       // Qty = total PCS (sum of all quantities)
       const totalQuantity = items.reduce(
         (sum, item) => sum + Number(item?.quantity || 0),
         0
       );
-      
+
       // Get all unique product names as array
       const productNames = Array.from(uniqueProducts.values());
       if (productNames.length === 0) {
@@ -93,7 +93,7 @@ const StockMovementTable = ({
       // Determine party info based on movement type
       const partyInfoLines = [];
       const movementType = movement.type || 'UNKNOWN';
-      
+
       if (movementType === 'STOCK_IN') {
         const companyName = movement.companyName || movement.company?.nama_perusahaan || '-';
         const supplierName = movement.supplierName || movement.supplier?.name || '-';
@@ -107,7 +107,7 @@ const StockMovementTable = ({
       } else if (movementType === 'RETURN') {
         partyInfoLines.push(movement.notes || 'Return');
       }
-      
+
       if (partyInfoLines.length === 0) {
         partyInfoLines.push('-');
       }
@@ -190,7 +190,7 @@ const StockMovementTable = ({
                 scope='col'
                 className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Date
+                Tanggal Surat Jalan
               </th>
               <th
                 scope='col'

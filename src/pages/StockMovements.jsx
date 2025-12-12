@@ -223,7 +223,7 @@ const StockMovements = () => {
         <div className='space-y-3'>
           {/* Header */}
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <h1 className='text-sm font-semibold text-gray-900'>Stock Movements</h1>
+            <h1 className='text-sm font-semibold text-gray-900'>Inventory</h1>
             <div className='flex gap-2'>
               <button
                 type='button'
