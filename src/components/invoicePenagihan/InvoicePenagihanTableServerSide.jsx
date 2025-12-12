@@ -259,30 +259,7 @@ const InvoicePenagihanTableServerSide = ({
         enableSorting: true,
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('purchaseOrder.customer.groupCustomer.nama_group', {
-        id: 'group_customers',
-        header: ({ column }) => (
-          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-            <div className="font-medium text-xs">Group</div>
-            <AutocompleteCheckboxLimitTag
-              options={groupCustomers}
-              value={column.getFilterValue() ?? []}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder="All"
-              displayKey="nama_group"
-              valueKey="nama_group"
-              limitTags={1}
-              size="small"
-              fetchOnClose
-            />
-          </div>
-        ),
-        cell: (info) => (
-          <div className="text-xs text-gray-900">
-            {info.getValue() || '-'}
-          </div>
-        ),
-      }),
+
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'kepada',
         header: ({ column }) => (

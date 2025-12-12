@@ -94,127 +94,126 @@ const ScheduledPrice = () => {
   const meta = data?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white shadow-md rounded-lg p-6">
+    <div className="p-3 bg-gray-50 min-h-screen">
+      <div className="max-w-full mx-auto">
+        <div className="bg-white shadow-md rounded-lg p-4">
           {/* Header */}
-          <div className="mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Scheduled Price</h1>
-              <p className="text-gray-600 mt-1">Manage future price changes</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => refetch()}
-                className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                <ArrowPathIcon className="w-5 h-5 mr-2" />
-                Refresh
-              </button>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-              >
-                <PlusIcon className="w-5 h-5 mr-2" />
-                Add Schedule
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <ScheduledPriceFilters
-          filters={filters}
-          onFilterChange={handleFilterChange}
-        />
-
-        {/* Table */}
-        <div className="mt-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600">{error.message || 'Failed to load schedules'}</p>
-            </div>
-          )}
-
-          <ScheduledPriceTable
-            schedules={schedules}
-            loading={isLoading}
-            onEdit={handleEdit}
-            onView={handleView}
-            onCancel={handleCancel}
-            onDelete={handleDelete}
-          />
-
-          {/* Pagination */}
-          {meta.totalPages > 1 && (
-            <div className="mt-4 flex justify-between items-center">
-              <div className="text-sm text-gray-700">
-                Showing {((meta.page - 1) * meta.limit) + 1} to{' '}
-                {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} results
+          <div className="mb-3">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Scheduled Price</h1>
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => refetch()}
+                  className="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Previous
+                  <ArrowPathIcon className="w-5 h-5 mr-1.5" />
+                  Refresh
                 </button>
-                <span className="px-3 py-1 text-sm">
-                  Page {meta.page} of {meta.totalPages}
-                </span>
                 <button
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === meta.totalPages}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                 >
-                  Next
+                  <PlusIcon className="w-5 h-5 mr-1.5" />
+                  Add Schedule
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Filters */}
+          <ScheduledPriceFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+          />
+
+          {/* Table */}
+          <div className="mt-3">
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600">{error.message || 'Failed to load schedules'}</p>
+              </div>
+            )}
+
+            <ScheduledPriceTable
+              schedules={schedules}
+              loading={isLoading}
+              onEdit={handleEdit}
+              onView={handleView}
+              onCancel={handleCancel}
+              onDelete={handleDelete}
+            />
+
+            {/* Pagination */}
+            {meta.totalPages > 1 && (
+              <div className="mt-3 flex justify-between items-center">
+                <div className="text-sm text-gray-700">
+                  Showing {((meta.page - 1) * meta.limit) + 1} to{' '}
+                  {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} results
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                    className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-3 py-1 text-sm">
+                    Page {meta.page} of {meta.totalPages}
+                  </span>
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === meta.totalPages}
+                    className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Modals */}
+          {showAddModal && (
+            <AddScheduledPriceModal
+              onClose={() => setShowAddModal(false)}
+              onSuccess={handleModalSuccess}
+            />
           )}
-        </div>
 
-        {/* Modals */}
-        {showAddModal && (
-          <AddScheduledPriceModal
-            onClose={() => setShowAddModal(false)}
-            onSuccess={handleModalSuccess}
-          />
-        )}
+          {showEditModal && selectedSchedule && (
+            <EditScheduledPriceModal
+              schedule={selectedSchedule}
+              onClose={() => {
+                setShowEditModal(false);
+                setSelectedSchedule(null);
+              }}
+              onSuccess={handleModalSuccess}
+            />
+          )}
 
-        {showEditModal && selectedSchedule && (
-          <EditScheduledPriceModal
-            schedule={selectedSchedule}
-            onClose={() => {
-              setShowEditModal(false);
-              setSelectedSchedule(null);
-            }}
-            onSuccess={handleModalSuccess}
-          />
-        )}
+          {showViewModal && selectedSchedule && (
+            <ViewScheduledPriceModal
+              schedule={selectedSchedule}
+              onClose={() => {
+                setShowViewModal(false);
+                setSelectedSchedule(null);
+              }}
+            />
+          )}
 
-        {showViewModal && selectedSchedule && (
-          <ViewScheduledPriceModal
-            schedule={selectedSchedule}
-            onClose={() => {
-              setShowViewModal(false);
-              setSelectedSchedule(null);
-            }}
-          />
-        )}
-
-        {showCancelModal && selectedSchedule && (
-          <CancelScheduleModal
-            schedule={selectedSchedule}
-            onClose={() => {
-              setShowCancelModal(false);
-              setSelectedSchedule(null);
-            }}
-            onSuccess={handleModalSuccess}
-          />
-        )}
+          {showCancelModal && selectedSchedule && (
+            <CancelScheduleModal
+              schedule={selectedSchedule}
+              onClose={() => {
+                setShowCancelModal(false);
+                setSelectedSchedule(null);
+              }}
+              onSuccess={handleModalSuccess}
+            />
+          )}
         </div>
       </div>
     </div>
