@@ -186,6 +186,64 @@ class SuratJalanService {
     }
   }
 
+  async exportSuratJalanBulk(ids, companyId) {
+    try {
+      const token = authService.getToken();
+      const response = await fetch(
+        `${API_BASE_URL}/surat-jalan/export/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'text/html',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ids, companyId }),
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to export bulk surat jalan');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error exporting bulk surat jalan:', error);
+      throw error;
+    }
+  }
+
+  async exportSuratJalanPaketBulk(ids, companyId) {
+    try {
+      const token = authService.getToken();
+      const response = await fetch(
+        `${API_BASE_URL}/surat-jalan/export-paket/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'text/html',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ids, companyId }),
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to export bulk surat jalan paket');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error exporting bulk surat jalan paket:', error);
+      throw error;
+    }
+  }
+
   /**
    * Export surat jalan to Excel
    * @param {Object} filters - Optional filters matching table filters

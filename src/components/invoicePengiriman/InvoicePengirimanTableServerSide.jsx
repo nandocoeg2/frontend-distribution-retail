@@ -86,54 +86,25 @@ const InvoicePengirimanTableServerSide = ({
     try {
       toastService.info(`Memproses ${selectedInvoices.length} invoice...`);
 
-      let successCount = 0;
-      let failCount = 0;
+      // Call backend API to get bulk HTML
+      const html = await invoicePengirimanService.exportInvoicePengirimanBulk(selectedInvoices);
 
-      // Loop through selected invoices and fetch print HTML
-      for (let i = 0; i < selectedInvoices.length; i++) {
-        const invoiceId = selectedInvoices[i];
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
 
-        try {
-          // Call backend API to get HTML
-          const html = await invoicePengirimanService.exportInvoicePengiriman(invoiceId);
+        // Wait for content to load, then trigger print dialog
+        // Use a small timeout to ensure styles are applied
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+        }, 500);
 
-          // Open HTML in new window for printing
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-
-            // Wait for content to load, then trigger print dialog
-            printWindow.onload = () => {
-              printWindow.focus();
-              // Auto print for first window, manual for others
-              if (i === 0) {
-                printWindow.print();
-              }
-            };
-
-            successCount++;
-          } else {
-            failCount++;
-            console.error(`Failed to open print window for invoice ${invoiceId}`);
-          }
-
-          // Small delay between opening windows to prevent browser blocking
-          if (i < selectedInvoices.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error printing invoice ${invoiceId}:`, error);
-        }
-      }
-
-      if (successCount > 0) {
-        toastService.success(
-          `Berhasil membuka ${successCount} invoice${failCount > 0 ? `. ${failCount} gagal.` : ''}`
-        );
+        toastService.success(`Berhasil memproses ${selectedInvoices.length} invoice.`);
       } else {
-        toastService.error('Gagal membuka invoice');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
     } catch (error) {
       console.error('Error in bulk print:', error);

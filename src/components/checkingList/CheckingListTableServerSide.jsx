@@ -113,7 +113,7 @@ const CheckingListTableServerSide = ({
     const currentPageChecklistIds = checklists
       .map((checklist) => resolveChecklistId(checklist))
       .filter(Boolean);
-    
+
     const allCurrentPageSelected = currentPageChecklistIds.every((id) =>
       selectedChecklists.includes(id)
     );
@@ -134,6 +134,7 @@ const CheckingListTableServerSide = ({
   }, [checklists, selectedChecklists, onSelectChecklist]);
 
   // Handler untuk Export PDF
+  // Handler untuk Export PDF (Bulk)
   const handleExportSelected = async () => {
     if (!selectedChecklists || selectedChecklists.length === 0) {
       toastService.error('Tidak ada checklist yang dipilih');
@@ -150,41 +151,19 @@ const CheckingListTableServerSide = ({
     try {
       toastService.info(`Memproses ${selectedChecklists.length} checklist...`);
 
-      let successCount = 0;
-      let failCount = 0;
+      const html = await checkingListService.exportCheckingListBulk(selectedChecklists, companyData.id);
 
-      for (let i = 0; i < selectedChecklists.length; i++) {
-        const checklistId = selectedChecklists[i];
-        
-        try {
-          const html = await checkingListService.exportCheckingList(checklistId, companyData.id);
-          
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-          }
-
-          successCount++;
-
-          if (i < selectedChecklists.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error exporting checklist ${checklistId}:`, error);
-        }
-      }
-
-      if (successCount > 0) {
-        toastService.success(
-          `Berhasil memproses ${successCount} checklist${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
-        );
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        toastService.success(`Berhasil memproses ${selectedChecklists.length} checklist.`);
       } else {
-        toastService.error('Gagal memproses checklist');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
+
     } catch (error) {
       console.error('Error in bulk export checklist:', error);
       toastService.error(error.message || 'Gagal memproses checklist');
@@ -194,6 +173,7 @@ const CheckingListTableServerSide = ({
   };
 
   // Handler untuk Export PDF Grouped
+  // Handler untuk Export PDF Grouped (Bulk)
   const handleExportGroupedSelected = async () => {
     if (!selectedChecklists || selectedChecklists.length === 0) {
       toastService.error('Tidak ada checklist yang dipilih');
@@ -210,41 +190,19 @@ const CheckingListTableServerSide = ({
     try {
       toastService.info(`Memproses ${selectedChecklists.length} checklist grouped...`);
 
-      let successCount = 0;
-      let failCount = 0;
+      const html = await checkingListService.exportCheckingListGroupedBulk(selectedChecklists, companyData.id);
 
-      for (let i = 0; i < selectedChecklists.length; i++) {
-        const checklistId = selectedChecklists[i];
-        
-        try {
-          const html = await checkingListService.exportCheckingListGrouped(checklistId, companyData.id);
-          
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-          }
-
-          successCount++;
-
-          if (i < selectedChecklists.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error exporting checklist grouped ${checklistId}:`, error);
-        }
-      }
-
-      if (successCount > 0) {
-        toastService.success(
-          `Berhasil memproses ${successCount} checklist grouped${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
-        );
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        toastService.success(`Berhasil memproses ${selectedChecklists.length} checklist grouped.`);
       } else {
-        toastService.error('Gagal memproses checklist grouped');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
+
     } catch (error) {
       console.error('Error in bulk export checklist grouped:', error);
       toastService.error(error.message || 'Gagal memproses checklist grouped');
@@ -261,12 +219,12 @@ const CheckingListTableServerSide = ({
           const currentPageChecklistIds = checklists
             .map((checklist) => resolveChecklistId(checklist))
             .filter(Boolean);
-          
+
           const isAllSelected =
             checklists.length > 0 &&
             currentPageChecklistIds.length > 0 &&
             currentPageChecklistIds.every((id) => selectedChecklists.includes(id));
-          
+
           const isIndeterminate =
             currentPageChecklistIds.some((id) => selectedChecklists.includes(id)) &&
             !isAllSelected;
@@ -562,15 +520,15 @@ const CheckingListTableServerSide = ({
             rowClassName="hover:bg-gray-50 cursor-pointer h-8"
             getRowClassName={({ row }) => {
               const checklistId = resolveChecklistId(row.original);
-              
+
               if (checklistId === selectedChecklistId) {
                 return 'bg-blue-50 border-l-4 border-blue-500';
               }
-              
+
               if (checklistId && selectedChecklists.includes(checklistId)) {
                 return 'bg-blue-50';
               }
-              
+
               return undefined;
             }}
             cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"

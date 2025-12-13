@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { useQueryClient } from '@tanstack/react-query';
-import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
@@ -135,13 +135,11 @@ const SuratJalanTableServerSide = ({
 
   const handleBulkPrint = async () => {
     try {
-      // Validate selected surat jalan
       if (!selectedSuratJalan || selectedSuratJalan.length === 0) {
         toastService.error('Tidak ada surat jalan yang dipilih');
         return;
       }
 
-      // Get company ID from auth
       const companyData = authService.getCompanyData();
       if (!companyData || !companyData.id) {
         toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
@@ -149,52 +147,79 @@ const SuratJalanTableServerSide = ({
       }
 
       setIsPrinting(true);
-      toastService.info(`Memproses ${selectedSuratJalan.length} surat jalan untuk di-print...`);
+      toastService.info(`Generating bulk print for ${selectedSuratJalan.length} items...`);
 
-      // Loop through selected surat jalan and print each one
-      for (let i = 0; i < selectedSuratJalan.length; i++) {
-        const suratJalan = selectedSuratJalan[i];
-        const suratJalanId = typeof suratJalan === 'string' ? suratJalan : suratJalan?.id;
+      const ids = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
 
-        if (!suratJalanId) {
-          console.warn('Skipping surat jalan without ID:', suratJalan);
-          continue;
-        }
+      // Call bulk export endpoint
+      const html = await suratJalanService.exportSuratJalanBulk(ids, companyData.id);
 
-        try {
-          // Call backend API to get HTML
-          const html = await suratJalanService.exportSuratJalan(suratJalanId, companyData.id);
-
-          // Open HTML in new window for printing
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-
-            // Wait for content to load, then trigger print dialog
-            printWindow.onload = () => {
-              printWindow.focus();
-              printWindow.print();
-            };
-          } else {
-            toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-            break;
-          }
-
-          // Small delay between prints to avoid overwhelming the browser
-          if (i < selectedSuratJalan.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          console.error(`Error printing surat jalan ${suratJalanId}:`, error);
-          toastService.error(`Gagal mencetak surat jalan: ${error.message}`);
-        }
+      // Open in new window
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+      } else {
+        toastService.error('Popup window diblokir');
       }
 
-      toastService.success(`${selectedSuratJalan.length} surat jalan berhasil dikirim ke printer`);
+      toastService.success('Bulk print generated successfully');
     } catch (error) {
       console.error('Error bulk printing surat jalan:', error);
       toastService.error(error.message || 'Gagal mencetak surat jalan');
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleBulkPrintPaket = async () => {
+    try {
+      if (!selectedSuratJalan || selectedSuratJalan.length === 0) {
+        toastService.error('Tidak ada surat jalan yang dipilih');
+        return;
+      }
+
+      if (selectedSuratJalan.length > 50) {
+        const confirm = window.confirm(
+          `Anda memilih ${selectedSuratJalan.length} item untuk Print Paket (±${selectedSuratJalan.length * 5} halaman). \nBrowser mungkin akan mengalami lag/hang saat merender preview. \n\nLanjutkan?`
+        );
+        if (!confirm) return;
+      }
+
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      setIsPrinting(true);
+      toastService.info(`Generating bulk paket print for ${selectedSuratJalan.length} items...`);
+
+      const ids = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+
+      // Call bulk export paket endpoint
+      const html = await suratJalanService.exportSuratJalanPaketBulk(ids, companyData.id);
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+      } else {
+        toastService.error('Popup window diblokir');
+      }
+
+      toastService.success('Bulk paket print generated successfully');
+    } catch (error) {
+      console.error('Error bulk printing surat jalan paket:', error);
+      toastService.error(error.message || 'Gagal mencetak paket');
     } finally {
       setIsPrinting(false);
     }
@@ -510,8 +535,11 @@ const SuratJalanTableServerSide = ({
                   <XCircleIcon className="h-3 w-3 mr-1" />{isUnprocessing ? '...' : 'Unprocess'}
                 </button>
               )}
-              <button onClick={handleBulkPrint} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
-                <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print'}
+              <button onClick={handleBulkPrint} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50" title="Print Surat Jalan (Simple)">
+                <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print SJ'}
+              </button>
+              <button onClick={handleBulkPrintPaket} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50" title="Print Paket (Invoice + SJ + PO)">
+                <DocumentDuplicateIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print Paket'}
               </button>
             </div>
           ) : <div />}

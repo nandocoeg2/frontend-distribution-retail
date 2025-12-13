@@ -157,6 +157,36 @@ class KwitansiService {
     }
   }
 
+  async exportKwitansiBulk(ids, companyId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_BASE_URL}/export/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'text/html',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ids, companyId }),
+          credentials: 'include',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to export bulk kwitansi');
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error exporting bulk kwitansi:', error);
+      throw error;
+    }
+  }
+
   /**
    * Export kwitansi to Excel
    * @param {Object} filters - Optional filter parameters from the table

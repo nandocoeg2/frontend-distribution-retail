@@ -166,46 +166,42 @@ const KwitansiTableServerSide = ({
     try {
       toastService.info(`Memproses ${selectedKwitansis.length} kwitansi...`);
 
-      let successCount = 0;
-      let failCount = 0;
-
-      for (let i = 0; i < selectedKwitansis.length; i++) {
-        const kwitansiId = selectedKwitansis[i];
-
+      // Get companyId from the first selected kwitansi
+      const firstKwitansiId = selectedKwitansis[0];
+      const firstKwitansi = kwitansis.find(k => resolveKwitansiId(k) === firstKwitansiId);
+      // Get company ID from localStorage
+      const companyData = localStorage.getItem('company');
+      let companyIdOverride = null;
+      if (companyData) {
         try {
-          const kwitansi = kwitansis.find(k => resolveKwitansiId(k) === kwitansiId);
-          const companyId = kwitansi?.invoicePenagihan?.purchaseOrder?.customer?.companyId || 1;
-
-          const html = await kwitansiService.exportKwitansi(kwitansiId, companyId);
-
-          // Open in new window for printing
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-          }
-
-          successCount++;
-
-          // Small delay between prints
-          if (i < selectedKwitansis.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error printing kwitansi ${kwitansiId}:`, error);
+          const parsedCompany = JSON.parse(companyData);
+          companyIdOverride = parsedCompany.id;
+        } catch (e) {
+          console.error('Failed to parse company data from localStorage', e);
         }
       }
 
-      if (successCount > 0) {
-        toastService.success(
-          `Berhasil memproses ${successCount} kwitansi${failCount > 0 ? `. ${failCount} gagal.` : ''}.`
-        );
+      // Fallback to existing logic if localStorage is empty (though it should be there)
+      const companyId = String(companyIdOverride || firstKwitansi?.invoicePenagihan?.purchaseOrder?.company?.id || 'cm3c5v8g60000356c35478440');
+
+      const html = await kwitansiService.exportKwitansiBulk(selectedKwitansis, companyId);
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        // Wait for resources to load
+        setTimeout(() => {
+          printWindow.focus();
+          printWindow.print();
+        }, 500);
+
+        toastService.success(`Berhasil memproses ${selectedKwitansis.length} kwitansi.`);
       } else {
-        toastService.error('Gagal memproses kwitansi');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
+
     } catch (error) {
       console.error('Error in bulk print kwitansi:', error);
       toastService.error(error.message || 'Gagal memproses kwitansi');
