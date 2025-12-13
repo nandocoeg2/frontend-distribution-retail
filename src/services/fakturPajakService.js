@@ -268,6 +268,95 @@ class FakturPajakService {
       throw error;
     }
   }
+
+  /**
+   * Export Faktur Pajak to Excel
+   * Downloads the exported Excel file with all faktur pajak data
+   * 
+   * API Documentation:
+   * - Endpoint: GET /api/v1/faktur-pajak/export-excel
+   * - Response Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+   * - Returns Excel file as blob for download
+   * 
+   * @param {Object} params - Export parameters (same as filter parameters)
+   * @param {string} params.no_pajak - Filter by faktur pajak number (partial match)
+   * @param {string} params.no_invoice_penagihan - Filter by invoice number (partial match)
+   * @param {string} params.no_lpb - Filter by LPB number (partial match)
+   * @param {string} params.customerId - Filter by customer ID (exact match)
+   * @param {string} params.customer - Filter by customer name (partial match)
+   * @param {string} params.statusId - Filter by status ID (exact match)
+   * @param {Array} params.status_codes - Filter by multiple status codes
+   * @param {Array} params.customer_names - Filter by multiple customer names
+   * @param {Array} params.top_codes - Filter by multiple TOP codes
+   * @param {string} params.tanggal_start - Filter by start date (YYYY-MM-DD)
+   * @param {string} params.tanggal_end - Filter by end date (YYYY-MM-DD)
+   * @param {string} params.search - Global search
+   * @returns {Promise} Downloads Excel file
+   */
+  async exportExcel(params = {}) {
+    try {
+      // Sanitize params - remove null, undefined, empty strings, and empty arrays
+      const sanitizedParams = Object.entries(params || {}).reduce(
+        (acc, [key, value]) => {
+          if (value === null || value === undefined) {
+            return acc;
+          }
+
+          if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed !== '') {
+              acc[key] = trimmed;
+            }
+            return acc;
+          }
+
+          if (Array.isArray(value)) {
+            if (value.length > 0) {
+              acc[key] = value;
+            }
+            return acc;
+          }
+
+          acc[key] = value;
+          return acc;
+        },
+        {}
+      );
+
+      const response = await this.api.get('/export-excel', {
+        params: sanitizedParams,
+        responseType: 'blob',
+      });
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Faktur_Pajak.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create blob and trigger download
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting faktur pajak to Excel:', error);
+      throw error;
+    }
+  }
 }
 
 export default new FakturPajakService();

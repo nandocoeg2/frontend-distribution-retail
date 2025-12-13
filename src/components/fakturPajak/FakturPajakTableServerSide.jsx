@@ -83,6 +83,7 @@ const FakturPajakTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   selectedFakturPajakId = null,
+  onQueryParamsChange,
 }) => {
   const [customers, setCustomers] = useState([]);
   const [termOfPayments, setTermOfPayments] = useState([]);
@@ -176,6 +177,7 @@ const FakturPajakTableServerSide = ({
     isFetching,
     error,
     tableOptions,
+    queryParams,
   } = useServerSideTable({
     queryHook: useFakturPajakQuery,
     selectData: (response) => response?.fakturPajaks ?? [],
@@ -184,6 +186,13 @@ const FakturPajakTableServerSide = ({
     initialLimit,
     getQueryParams,
   });
+
+  // Notify parent when queryParams change for export functionality
+  useEffect(() => {
+    if (onQueryParamsChange && queryParams) {
+      onQueryParamsChange(queryParams);
+    }
+  }, [queryParams, onQueryParamsChange]);
 
   const columns = useMemo(
     () => [

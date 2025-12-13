@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useFakturPajakPage from '@/hooks/useFakturPajakPage';
 import {
@@ -8,13 +8,13 @@ import {
   FakturPajakExportModal,
 } from '@/components/fakturPajak';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import { ArchiveBoxIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import fakturPajakService from '@/services/fakturPajakService';
 import toastService from '@/services/toastService';
 
 const FakturPajakPage = () => {
   const queryClient = useQueryClient();
-  
+
   const {
     createFakturPajak,
     updateFakturPajak,
@@ -33,10 +33,43 @@ const FakturPajakPage = () => {
   });
   const [generatingTtfFakturPajakId, setGeneratingTtfFakturPajakId] = useState(null);
 
+  // Export Excel states
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const currentQueryParams = useRef({});
+
   const generateTtfDialogFakturPajak = generateTtfConfirmation.fakturPajak;
   const generateTtfDialogLoading =
     Boolean(generateTtfDialogFakturPajak) &&
     generatingTtfFakturPajakId === generateTtfDialogFakturPajak.id;
+
+  // Handle query params change from table component
+  const handleQueryParamsChange = useCallback((params) => {
+    currentQueryParams.current = params;
+  }, []);
+
+  // Export Excel confirmation
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
+  };
+
+  const confirmExportExcel = async () => {
+    try {
+      setShowExportConfirmation(false);
+      setExportLoading(true);
+
+      // Get current filters from table
+      const { filters = {} } = currentQueryParams.current || {};
+
+      await fakturPajakService.exportExcel(filters);
+      toastService.success('Data Faktur Pajak berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data Faktur Pajak');
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleDeleteConfirm = useCallback(async () => {
     await deleteFakturPajakConfirmation.confirmDelete();
@@ -82,7 +115,7 @@ const FakturPajakPage = () => {
       if (payload?.success === false) {
         throw new Error(
           payload?.error?.message ||
-            'Gagal membuat tanda terima faktur dari faktur pajak.'
+          'Gagal membuat tanda terima faktur dari faktur pajak.'
         );
       }
 
@@ -206,13 +239,32 @@ const FakturPajakPage = () => {
         <div className='px-3 py-3'>
           <div className='mb-2 flex justify-between items-center'>
             <h3 className='text-sm font-semibold text-gray-900'>Faktur Pajak</h3>
-            <button
-              onClick={openExportModal}
-              className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700'
-            >
-              <ArchiveBoxIcon className='w-3.5 h-3.5 mr-1' />
-              Export e-Faktur
-            </button>
+            <div className='flex gap-2'>
+              <button
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {exportLoading ? (
+                  <>
+                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1'></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownTrayIcon className='w-3.5 h-3.5 mr-1' />
+                    Export Excel
+                  </>
+                )}
+              </button>
+              <button
+                onClick={openExportModal}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700'
+              >
+                <ArchiveBoxIcon className='w-3.5 h-3.5 mr-1' />
+                Export e-Faktur
+              </button>
+            </div>
           </div>
 
           <FakturPajakTableServerSide
@@ -224,6 +276,7 @@ const FakturPajakPage = () => {
             initialPage={1}
             initialLimit={10}
             selectedFakturPajakId={selectedFakturPajakForDetail?.id}
+            onQueryParamsChange={handleQueryParamsChange}
           />
         </div>
       </div>
@@ -270,17 +323,29 @@ const FakturPajakPage = () => {
         title='Generate Tanda Terima Faktur'
         message={
           generateTtfDialogFakturPajak
-            ? `Apakah Anda yakin ingin membuat tanda terima faktur untuk faktur pajak ${
-                generateTtfDialogFakturPajak.no_pajak ||
-                generateTtfDialogFakturPajak.id ||
-                ''
-              }?`
+            ? `Apakah Anda yakin ingin membuat tanda terima faktur untuk faktur pajak ${generateTtfDialogFakturPajak.no_pajak ||
+            generateTtfDialogFakturPajak.id ||
+            ''
+            }?`
             : 'Apakah Anda yakin ingin membuat tanda terima faktur untuk faktur pajak ini?'
         }
         confirmText='Ya, buat tanda terima'
         cancelText='Batal'
         type='warning'
         loading={generateTtfDialogLoading}
+      />
+
+      {/* Export Excel Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title='Konfirmasi Export'
+        message='Apakah Anda yakin ingin mengexport data Faktur Pajak ini ke Excel?'
+        type='info'
+        confirmText='Ya, Export'
+        cancelText='Batal'
+        loading={exportLoading}
       />
     </div>
   );
