@@ -116,6 +116,40 @@ class InvoicePenagihanService {
       throw error;
     }
   }
+
+  async exportExcelInvoicePenagihan(filters = {}) {
+    try {
+      const response = await this.api.get('/export-excel', {
+        params: filters,
+        responseType: 'blob',
+      });
+
+      // Extract filename from Content-Disposition header or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Invoice_Penagihan.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting invoice penagihan to Excel:', error);
+      throw error;
+    }
+  }
 }
 
 export default new InvoicePenagihanService();

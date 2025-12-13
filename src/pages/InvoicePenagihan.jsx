@@ -7,6 +7,7 @@ import InvoicePenagihanDetailCard from '@/components/invoicePenagihan/InvoicePen
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import toastService from '@/services/toastService';
 import invoicePenagihanService from '@/services/invoicePenagihanService';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 const InvoicePenagihanPage = () => {
   const queryClient = useQueryClient();
@@ -41,10 +42,13 @@ const InvoicePenagihanPage = () => {
   } = cancelInvoiceConfirmation;
 
   const viewDetailRequestRef = useRef(null);
+  const tableRef = useRef(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [viewingInvoice, setViewingInvoice] = useState(null);
   const [viewDetailLoading, setViewDetailLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
   const refreshData = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
@@ -53,6 +57,31 @@ const InvoicePenagihanPage = () => {
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
+  };
+
+  const confirmExportExcel = async () => {
+    try {
+      setShowExportConfirmation(false);
+      setExportLoading(true);
+
+      // Get current filters from table
+      const filters = tableRef.current?.getFilters?.() || {};
+
+      await invoicePenagihanService.exportExcelInvoicePenagihan(filters);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+      } else {
+        toastService.error(err.message || 'Gagal mengexport data');
+      }
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleViewDetail = useCallback(
     async (selectedInvoice) => {
@@ -186,9 +215,29 @@ const InvoicePenagihanPage = () => {
             <h3 className='text-sm font-semibold text-gray-900'>
               Invoice Penagihan
             </h3>
+            <div className='flex gap-2'>
+              <button
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className='inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                {exportLoading ? (
+                  <>
+                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownTrayIcon className='h-4 w-4 mr-1.5' />
+                    Export Excel
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
           <InvoicePenagihanTableServerSide
+            ref={tableRef}
             onDelete={showDeleteConfirmation}
             onCancel={showCancelConfirmation}
             deleteLoading={deleteDialogLoading}
@@ -241,6 +290,19 @@ const InvoicePenagihanPage = () => {
         confirmText='Ya, Batalkan'
         cancelText='Tidak'
         loading={cancelDialogLoading}
+      />
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title='Konfirmasi Export'
+        message='Apakah Anda yakin ingin mengexport data ini ke Excel?'
+        type='info'
+        confirmText='Ya, Export'
+        cancelText='Batal'
+        loading={exportLoading}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
@@ -72,7 +72,7 @@ const isCancelAllowed = (invoice) => {
   return !disallowedStatuses.some(s => normalizedCode.includes(s) || normalizedName.includes(s));
 };
 
-const InvoicePenagihanTableServerSide = ({
+const InvoicePenagihanTableServerSide = forwardRef(({
   onView,
   onEdit,
   onDelete,
@@ -83,7 +83,7 @@ const InvoicePenagihanTableServerSide = ({
   initialLimit = 10,
   selectedInvoiceId,
   onRowClick,
-}) => {
+}, ref) => {
   const [groupCustomers, setGroupCustomers] = useState([]);
 
   useEffect(() => {
@@ -161,6 +161,41 @@ const InvoicePenagihanTableServerSide = ({
     initialLimit,
     getQueryParams,
   });
+
+  // Expose getFilters method to parent via ref
+  useImperativeHandle(ref, () => ({
+    getFilters: () => {
+      // Get current column filters from table state
+      const columnFilters = tableOptions?.state?.columnFilters || [];
+      const filters = {};
+
+      columnFilters.forEach(({ id, value }) => {
+        if (value !== undefined && value !== null && value !== '') {
+          // Handle special filter formats
+          if (id === 'no_invoice_penagihan' && typeof value === 'object') {
+            if (value.start) filters.no_invoice_penagihan_start = value.start;
+            if (value.end) filters.no_invoice_penagihan_end = value.end;
+          } else if (id === 'tanggal' && typeof value === 'object') {
+            if (value.from) filters.tanggal_start = value.from;
+            if (value.to) filters.tanggal_end = value.to;
+          } else if (id === 'grand_total' && typeof value === 'object') {
+            if (value.min) filters.grand_total_min = value.min;
+            if (value.max) filters.grand_total_max = value.max;
+          } else if (id === 'status_codes' && Array.isArray(value) && value.length > 0) {
+            filters.status_codes = value;
+          } else if (id === 'group_customers' && Array.isArray(value) && value.length > 0) {
+            filters.group_customers = value;
+          } else if (id === 'kepada') {
+            filters.kepada = value;
+          } else {
+            filters[id] = value;
+          }
+        }
+      });
+
+      return filters;
+    },
+  }), [tableOptions?.state?.columnFilters]);
 
   const columns = useMemo(
     () => [
@@ -592,6 +627,6 @@ const InvoicePenagihanTableServerSide = ({
       )}
     </div>
   );
-};
+});
 
 export default InvoicePenagihanTableServerSide;
