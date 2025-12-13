@@ -11,7 +11,7 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
-import { exportPackingSticker, exportPackingTandaTerima, exportExcel } from '../../services/packingService';
+import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportExcel } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
@@ -191,60 +191,31 @@ const PackingTableServerSide = forwardRef(({
         return;
       }
 
-      toastService.info(`Memproses ${selectedPackings.length} sticker...`);
+      toastService.info(`Memproses ${selectedPackings.length} stiker...`);
 
-      let successCount = 0;
-      let failCount = 0;
+      // Call backend API to get Bulk HTML
+      const html = await exportPackingStickerBulk(selectedPackings, companyData.id);
 
-      // Loop through selected packings and fetch stickers
-      for (let i = 0; i < selectedPackings.length; i++) {
-        const packingId = selectedPackings[i];
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
 
-        try {
-          // Call backend API to get HTML
-          const html = await exportPackingSticker(packingId, companyData.id);
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
 
-          // Open HTML in new window for printing
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-
-            // Wait for content to load, then trigger print dialog
-            printWindow.onload = () => {
-              printWindow.focus();
-              // Auto print for first window, manual for others
-              if (i === 0) {
-                printWindow.print();
-              }
-            };
-
-            successCount++;
-          } else {
-            failCount++;
-            console.error(`Failed to open print window for packing ${packingId}`);
-          }
-
-          // Small delay between opening windows to prevent browser blocking
-          if (i < selectedPackings.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error printing sticker for packing ${packingId}:`, error);
-        }
-      }
-
-      if (successCount > 0) {
-        toastService.success(
-          `Berhasil membuka ${successCount} sticker${failCount > 0 ? `. ${failCount} gagal.` : ''}`
-        );
+        toastService.success(`Berhasil membuka stiker untuk ${selectedPackings.length} packing`);
       } else {
-        toastService.error('Gagal membuka sticker');
+        console.error('Failed to open print window');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
     } catch (error) {
-      console.error('Error in bulk print:', error);
-      toastService.error(error.message || 'Gagal mencetak sticker');
+      console.error('Error in bulk print sticker:', error);
+      toastService.error(error.message || 'Gagal mencetak stiker');
     } finally {
       setIsPrinting(false);
     }
@@ -267,54 +238,25 @@ const PackingTableServerSide = forwardRef(({
 
       toastService.info(`Memproses ${selectedPackings.length} tanda terima...`);
 
-      let successCount = 0;
-      let failCount = 0;
+      // Call backend API to get Bulk HTML
+      const html = await exportPackingTandaTerimaBulk(selectedPackings, companyData.id);
 
-      // Loop through selected packings and fetch tanda terima
-      for (let i = 0; i < selectedPackings.length; i++) {
-        const packingId = selectedPackings[i];
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
 
-        try {
-          // Call backend API to get HTML
-          const html = await exportPackingTandaTerima(packingId, companyData.id);
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
 
-          // Open HTML in new window for printing
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-
-            // Wait for content to load, then trigger print dialog
-            printWindow.onload = () => {
-              printWindow.focus();
-              // Auto print for first window, manual for others
-              if (i === 0) {
-                printWindow.print();
-              }
-            };
-
-            successCount++;
-          } else {
-            failCount++;
-            console.error(`Failed to open print window for packing ${packingId}`);
-          }
-
-          // Small delay between opening windows to prevent browser blocking
-          if (i < selectedPackings.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error printing tanda terima for packing ${packingId}:`, error);
-        }
-      }
-
-      if (successCount > 0) {
-        toastService.success(
-          `Berhasil membuka ${successCount} tanda terima${failCount > 0 ? `. ${failCount} gagal.` : ''}`
-        );
+        toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima`);
       } else {
-        toastService.error('Gagal membuka tanda terima');
+        console.error('Failed to open print window');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
     } catch (error) {
       console.error('Error in bulk print tanda terima:', error);

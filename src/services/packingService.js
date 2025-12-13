@@ -156,6 +156,37 @@ export const exportPackingSticker = async (packingId, companyId) => {
   }
 };
 
+// Export bulk packing sticker to HTML for printing
+export const exportPackingStickerBulk = async (ids, companyId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `${process.env.BACKEND_BASE_URL}api/v1${API_URL}/export-sticker/bulk`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ ids, companyId }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to export sticker bulk');
+    }
+
+    const html = await response.text();
+    return html;
+  } catch (error) {
+    console.error('Error exporting bulk packing sticker:', error);
+    throw error;
+  }
+};
+
 // Export packing tanda terima to HTML for printing
 export const exportPackingTandaTerima = async (packingId, companyId) => {
   try {
@@ -185,6 +216,37 @@ export const exportPackingTandaTerima = async (packingId, companyId) => {
   }
 };
 
+// Export bulk packing tanda terima to HTML for printing
+export const exportPackingTandaTerimaBulk = async (ids, companyId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `${process.env.BACKEND_BASE_URL}api/v1${API_URL}/export-tanda-terima/bulk`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({ ids, companyId }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to export tanda terima bulk');
+    }
+
+    const html = await response.text();
+    return html;
+  } catch (error) {
+    console.error('Error exporting bulk packing tanda terima:', error);
+    throw error;
+  }
+};
+
 export default {
   getPackings,
   getPackingById,
@@ -197,6 +259,8 @@ export default {
   processPackings,
   completePackings,
   exportPackingSticker,
+  exportPackingStickerBulk,
   exportPackingTandaTerima,
+  exportPackingTandaTerimaBulk,
   exportExcel,
 };
