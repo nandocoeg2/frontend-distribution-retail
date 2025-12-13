@@ -10,7 +10,6 @@ import authService from '@/services/authService';
 const EXPORT_INITIAL_VALUES = {
   customerId: '',
   groupCustomerId: '',
-  statusId: '',
   tanggal_start: '',
   tanggal_end: '',
 };
@@ -171,7 +170,6 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
     const fields = [
       'customerId',
       'groupCustomerId',
-      'statusId',
       'tanggal_start',
       'tanggal_end',
     ];
@@ -222,13 +220,12 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
           response?.headers?.get?.('content-type') ||
           (format === 'xml' ? 'application/xml' : 'application/json');
 
-        const defaultFilename = `efaktur-djp-${Date.now()}.${
-          format === 'xml' ? 'xml' : 'json'
-        }`;
+        const defaultFilename = `efaktur-djp-${Date.now()}.${format === 'xml' ? 'xml' : 'json'
+          }`;
 
         const filename = resolveFilenameFromHeader(
           response?.headers?.['content-disposition'] ||
-            response?.headers?.get?.('content-disposition'),
+          response?.headers?.get?.('content-disposition'),
           defaultFilename
         );
 
@@ -272,9 +269,6 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
             <h2 className='text-xl font-semibold text-gray-900'>
               Export e-Faktur DJP
             </h2>
-            <p className='text-sm text-gray-500'>
-              Tentukan parameter export sebelum mengunduh berkas XML.
-            </p>
           </div>
           <button
             type='button'
@@ -339,20 +333,7 @@ const FakturPajakExportModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Status Faktur Pajak (Opsional)
-                </label>
-                <input
-                  type='text'
-                  value={formValues.statusId}
-                  onChange={handleFieldChange('statusId')}
-                  placeholder='Masukkan ID status'
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                />
-              </div>
-            </div>
+
 
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
               <div>
