@@ -164,6 +164,53 @@ class InvoicePengirimanService {
       throw error;
     }
   }
+
+  async exportExcel(filters = {}) {
+    try {
+      const token = authService.getToken();
+      const queryString = serializeParams(filters);
+      const url = queryString ? `${API_BASE_URL}/export-excel?${queryString}` : `${API_BASE_URL}/export-excel`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || 'Failed to export data');
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'Invoice_Pengiriman.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert response to blob and trigger download
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting invoice pengiriman to Excel:', error);
+      throw error;
+    }
+  }
 }
 
 export default new InvoicePengirimanService();

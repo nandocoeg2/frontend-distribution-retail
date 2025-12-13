@@ -4,6 +4,7 @@ import {
   TrashIcon,
   PrinterIcon,
   DocumentPlusIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
@@ -53,6 +54,8 @@ const InvoicePengirimanTableServerSide = ({
   initialLimit = 10,
   onViewDetail,
   selectedInvoiceId,
+  onExportExcel,
+  exportLoading = false,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -577,24 +580,48 @@ const InvoicePengirimanTableServerSide = ({
 
   return (
     <div className='space-y-2'>
-      {(hasActiveFilters || hasSelectedInvoices) && (
-        <div className='flex justify-between items-center'>
-          {hasSelectedInvoices ? (
-            <div className='flex items-center gap-2'>
-              <span className='text-xs font-medium text-blue-700'>{selectedInvoices.length} dipilih</span>
-              <button onClick={handleBulkGenerateInvoicePenagihan} disabled={isGenerating} className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'>
-                <DocumentPlusIcon className='h-3 w-3 mr-1' />{isGenerating ? '...' : 'Generate'}
-              </button>
-              <button onClick={handleBulkPrintInvoice} disabled={isPrinting} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
-                <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Print'}
-              </button>
-            </div>
-          ) : <div />}
+      {/* Toolbar - Always show Export Excel, conditionally show selection and filter actions */}
+      <div className='flex justify-between items-center'>
+        {/* Left side: Selection actions */}
+        {hasSelectedInvoices ? (
+          <div className='flex items-center gap-2'>
+            <span className='text-xs font-medium text-blue-700'>{selectedInvoices.length} dipilih</span>
+            <button onClick={handleBulkGenerateInvoicePenagihan} disabled={isGenerating} className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'>
+              <DocumentPlusIcon className='h-3 w-3 mr-1' />{isGenerating ? '...' : 'Generate'}
+            </button>
+            <button onClick={handleBulkPrintInvoice} disabled={isPrinting} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
+              <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Print'}
+            </button>
+          </div>
+        ) : <div />}
+
+        {/* Right side: Export Excel and Reset Filter actions */}
+        <div className='flex items-center gap-2'>
+          {onExportExcel && (
+            <button
+              onClick={() => onExportExcel(tableOptions.state?.columnFilters || [])}
+              disabled={exportLoading}
+              className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'
+            >
+              {exportLoading ? (
+                <>
+                  <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1' />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon className='h-3 w-3 mr-1' />
+                  Export Excel
+                </>
+              )}
+            </button>
+          )}
           {hasActiveFilters && (
             <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
           )}
         </div>
-      )}
+      </div>
+
 
       <DataTable
         table={table}

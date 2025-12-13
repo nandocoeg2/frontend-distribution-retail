@@ -7,6 +7,7 @@ import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoi
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
+import toastService from '@/services/toastService';
 
 const INITIAL_TAB_PAGINATION = {
   currentPage: 1,
@@ -42,6 +43,9 @@ const InvoicePengirimanPage = () => {
   const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const [exportFilters, setExportFilters] = useState({});
 
   const fetchInvoiceDetail = useCallback(
     async (id) => {
@@ -255,6 +259,64 @@ const InvoicePengirimanPage = () => {
 
   const hasSelectedInvoices = selectedInvoices.length > 0;
 
+  // Convert column filters (array format) to backend query params (object format)
+  const convertFiltersToParams = useCallback((columnFilters) => {
+    if (!columnFilters || !Array.isArray(columnFilters) || columnFilters.length === 0) {
+      return {};
+    }
+
+    const params = {};
+    for (const filter of columnFilters) {
+      const { id, value } = filter;
+      if (value === undefined || value === null || value === '') continue;
+
+      // Handle date range filters
+      if (id === 'tanggal' && typeof value === 'object' && (value.from || value.to)) {
+        if (value.from) params.tanggal_start = value.from;
+        if (value.to) params.tanggal_end = value.to;
+      }
+      // Handle print date range filters
+      else if (id === 'print_date' && typeof value === 'object' && (value.from || value.to)) {
+        if (value.from) params.print_date_start = value.from;
+        if (value.to) params.print_date_end = value.to;
+      }
+      // Handle grand total range filters
+      else if (id === 'grand_total' && typeof value === 'object' && (value.min || value.max)) {
+        if (value.min) params.grand_total_min = value.min;
+        if (value.max) params.grand_total_max = value.max;
+      }
+      // Handle array filters (customerIds, status_codes)
+      else if (Array.isArray(value) && value.length > 0) {
+        params[id] = value;
+      }
+      // Handle simple string/boolean values
+      else if (typeof value === 'string' || typeof value === 'boolean') {
+        params[id] = value;
+      }
+    }
+    return params;
+  }, []);
+
+  const handleExportExcel = useCallback((columnFilters) => {
+    const params = convertFiltersToParams(columnFilters);
+    setExportFilters(params);
+    setShowExportConfirmation(true);
+  }, [convertFiltersToParams]);
+
+  const confirmExportExcel = useCallback(async () => {
+    setShowExportConfirmation(false);
+    setExportLoading(true);
+    try {
+      await invoicePengirimanService.exportExcel(exportFilters);
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  }, [exportFilters]);
+
   if (loading) {
     return (
       <div className='flex items-center justify-center h-64'>
@@ -297,6 +359,8 @@ const InvoicePengirimanPage = () => {
             initialLimit={resolvedPagination.itemsPerPage}
             onViewDetail={handleViewDetail}
             selectedInvoiceId={selectedInvoiceForDetail?.id}
+            onExportExcel={handleExportExcel}
+            exportLoading={exportLoading}
           />
         </div>
       </div>
@@ -331,6 +395,18 @@ const InvoicePengirimanPage = () => {
         confirmText='Hapus'
         cancelText='Batal'
         loading={deleteInvoiceConfirmation.loading}
+      />
+
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title='Konfirmasi Export'
+        message='Apakah Anda yakin ingin mengexport data ini ke Excel?'
+        type='info'
+        confirmText='Ya, Export'
+        cancelText='Batal'
+        loading={exportLoading}
       />
     </div>
   );
