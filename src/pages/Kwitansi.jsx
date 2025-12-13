@@ -28,6 +28,11 @@ const KwitansiPage = () => {
   const [exportingPaketId, setExportingPaketId] = useState(null);
   const [selectedKwitansis, setSelectedKwitansis] = useState([]);
 
+  // Excel export states
+  const [exportExcelLoading, setExportExcelLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const [pendingExportFilters, setPendingExportFilters] = useState(null);
+
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
   };
@@ -93,7 +98,7 @@ const KwitansiPage = () => {
         if (printWindow) {
           printWindow.document.write(html);
           printWindow.document.close();
-          
+
           // Wait for content to load, then trigger print dialog
           printWindow.onload = () => {
             printWindow.focus();
@@ -146,7 +151,7 @@ const KwitansiPage = () => {
         if (printWindow) {
           printWindow.document.write(html);
           printWindow.document.close();
-          
+
           // Wait for content to load, then trigger print dialog
           printWindow.onload = () => {
             printWindow.focus();
@@ -178,6 +183,76 @@ const KwitansiPage = () => {
   }, []);
 
   const hasSelectedKwitansis = selectedKwitansis.length > 0;
+
+  // Handle Export Excel - show confirmation dialog
+  const handleExportExcel = useCallback((columnFilters) => {
+    // Convert column filters array to object for backend
+    const filters = {};
+
+    if (Array.isArray(columnFilters)) {
+      columnFilters.forEach(({ id, value }) => {
+        if (value !== undefined && value !== null && value !== '') {
+          // Map column IDs to backend parameter names
+          switch (id) {
+            case 'no_invoice_penagihan':
+              filters.no_invoice_penagihan = value;
+              break;
+            case 'no_kwitansi':
+              filters.no_kwitansi = value;
+              break;
+            case 'tanggal':
+              // Handle date range filter
+              if (typeof value === 'object') {
+                if (value.from) filters.tanggal_start = value.from;
+                if (value.to) filters.tanggal_end = value.to;
+              }
+              break;
+            case 'grand_total':
+              // Handle range filter
+              if (typeof value === 'object') {
+                if (value.min) filters.grand_total_min = value.min;
+                if (value.max) filters.grand_total_max = value.max;
+              }
+              break;
+            case 'customer_name':
+              // Handle multi-select customer names
+              if (Array.isArray(value) && value.length > 0) {
+                filters.customer_names = value;
+              }
+              break;
+            case 'status_code':
+              // Handle multi-select status codes
+              if (Array.isArray(value) && value.length > 0) {
+                filters.status_codes = value;
+              }
+              break;
+            default:
+              break;
+          }
+        }
+      });
+    }
+
+    setPendingExportFilters(filters);
+    setShowExportConfirmation(true);
+  }, []);
+
+  // Confirm Export Excel
+  const confirmExportExcel = useCallback(async () => {
+    try {
+      setShowExportConfirmation(false);
+      setExportExcelLoading(true);
+
+      await kwitansiService.exportExcel(pendingExportFilters || {});
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportExcelLoading(false);
+      setPendingExportFilters(null);
+    }
+  }, [pendingExportFilters]);
 
   const handleModalSuccess = useCallback(async () => {
     // Invalidate queries to refresh data
@@ -225,6 +300,25 @@ const KwitansiPage = () => {
         <div className='px-3 py-3'>
           <div className='mb-2 flex justify-between items-center'>
             <h3 className='text-sm font-semibold text-gray-900'>Kwitansi</h3>
+            <button
+              onClick={() => handleExportExcel([])}
+              disabled={exportExcelLoading}
+              className='inline-flex items-center px-3 py-1.5 text-xs bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed'
+            >
+              {exportExcelLoading ? (
+                <>
+                  <div className='animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5'></div>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 mr-1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  Export Excel
+                </>
+              )}
+            </button>
           </div>
 
           <KwitansiTableServerSide
@@ -268,6 +362,7 @@ const KwitansiPage = () => {
         />
       )}
 
+      {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         show={deleteKwitansiConfirmation.showConfirm}
         onClose={deleteKwitansiConfirmation.hideDeleteConfirmation}
@@ -279,8 +374,22 @@ const KwitansiPage = () => {
         cancelText='Batal'
         loading={deleteKwitansiConfirmation.loading}
       />
+
+      {/* Export Excel Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data ini ke Excel?"
+        type="info"
+        confirmText="Ya, Export"
+        cancelText="Batal"
+        loading={exportExcelLoading}
+      />
     </div>
   );
 };
 
 export default KwitansiPage;
+

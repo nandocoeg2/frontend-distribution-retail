@@ -560,13 +560,14 @@ const KwitansiTableServerSide = ({
 
   return (
     <div className="space-y-4">
+      {/* Toolbar - Reset Filter */}
       {hasActiveFilters && (
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center">
           <button
             onClick={resetFilters}
-            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
           >
-            Reset Semua Filter
+            Reset Filter
           </button>
         </div>
       )}

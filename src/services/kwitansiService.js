@@ -156,6 +156,82 @@ class KwitansiService {
       throw error;
     }
   }
+
+  /**
+   * Export kwitansi to Excel
+   * @param {Object} filters - Optional filter parameters from the table
+   */
+  async exportExcel(filters = {}) {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Build query string from filters
+      const queryParams = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (Array.isArray(value)) {
+            value.forEach((v) => queryParams.append(`${key}[]`, v));
+          } else {
+            queryParams.append(key, value);
+          }
+        }
+      });
+
+      const queryString = queryParams.toString();
+      const url = queryString
+        ? `${API_BASE_URL}/export-excel?${queryString}`
+        : `${API_BASE_URL}/export-excel`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to export data';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error?.message || errorData.message || errorMessage;
+        } catch (e) {
+          // Response is not JSON
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'Kwitansi.xlsx';
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert response to blob and trigger download
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting kwitansi to Excel:', error);
+      throw error;
+    }
+  }
 }
 
 export default new KwitansiService();
+
