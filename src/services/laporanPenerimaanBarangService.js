@@ -421,6 +421,75 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  /**
+   * Export Laporan Penerimaan Barang to Excel
+   * @param {Object} filters - Filter parameters for export
+   * @returns {Promise<Object>} Export result with filename
+   */
+  async exportExcel(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === '') {
+          return;
+        }
+
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            params.append(key, value.join(','));
+          }
+          return;
+        }
+
+        if (typeof value === 'object') {
+          // Handle date range objects like { from: 'date', to: 'date' }
+          if (value.from) params.append(key + '_from', value.from);
+          if (value.to) params.append(key + '_to', value.to);
+          // Handle min/max objects like { min: 1, max: 100 }
+          if (value.min !== undefined && value.min !== '') params.append(key + '_min', value.min);
+          if (value.max !== undefined && value.max !== '') params.append(key + '_max', value.max);
+          return;
+        }
+
+        params.append(key, value);
+      });
+
+      const queryString = params.toString();
+      const url = '/laporan-penerimaan-barang/export-excel' + (queryString ? '?' + queryString : '');
+
+      const response = await this.api.get(url, {
+        responseType: 'blob',
+      });
+
+      // Extract filename from Content-Disposition header
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'Laporan_Penerimaan_Barang.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Trigger file download
+      const downloadUrl = window.URL.createObjectURL(response.data);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting Laporan Penerimaan Barang to Excel:', error);
+      throw error;
+    }
+  }
+
 }
 
 export default new LaporanPenerimaanBarangService();

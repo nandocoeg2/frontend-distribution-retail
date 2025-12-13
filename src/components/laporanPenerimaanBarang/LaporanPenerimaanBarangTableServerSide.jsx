@@ -111,6 +111,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   selectedReportId = null,
+  onFiltersChange,
 }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedLpbForAssign, setSelectedLpbForAssign] = useState(null);
@@ -174,6 +175,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     error,
     tableOptions,
     refetch,
+    filters,
   } = useServerSideTable({
     queryHook: useLaporanPenerimaanBarangQuery,
     selectData: (response) => response?.reports ?? [],
@@ -182,6 +184,13 @@ const LaporanPenerimaanBarangTableServerSide = ({
     initialLimit,
     globalFilter: globalFilterConfig,
   });
+
+  // Notify parent of filter changes for export
+  useEffect(() => {
+    if (typeof onFiltersChange === 'function') {
+      onFiltersChange(filters);
+    }
+  }, [filters, onFiltersChange]);
 
   // Handler untuk membuka modal assign
   const handleOpenAssignModal = (report) => {
@@ -268,24 +277,24 @@ const LaporanPenerimaanBarangTableServerSide = ({
       // Loop through selected reports and download LPB files
       for (let i = 0; i < selectedReports.length; i++) {
         const reportId = selectedReports[i];
-        
+
         try {
           // Get report data to extract no_lpb
           const report = reports.find(r => resolveReportId(r) === reportId);
           const noLpb = report?.no_lpb || reportId;
-          
+
           // Generate current datetime for filename
           const now = new Date();
           const datetime = now.toISOString()
             .replace(/[-:]/g, '')
             .replace('T', '_')
             .split('.')[0];
-          
+
           const result = await laporanPenerimaanBarangService.exportLPB(reportId);
-          
+
           // Create a URL for the blob
           const blobUrl = window.URL.createObjectURL(result.blob);
-          
+
           // Download file directly (works better in Electron)
           const link = document.createElement('a');
           link.href = blobUrl;
@@ -293,7 +302,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
           link.style.display = 'none';
           document.body.appendChild(link);
           link.click();
-          
+
           // Clean up
           setTimeout(() => {
             document.body.removeChild(link);
@@ -331,7 +340,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     const currentPageReportIds = reports
       .map((report) => resolveReportId(report))
       .filter(Boolean);
-    
+
     const allCurrentPageSelected = currentPageReportIds.every((id) =>
       selectedReports.includes(id)
     );
@@ -361,12 +370,12 @@ const LaporanPenerimaanBarangTableServerSide = ({
           const currentPageReportIds = reports
             .map((report) => resolveReportId(report))
             .filter(Boolean);
-          
+
           const isAllSelected =
             reports.length > 0 &&
             currentPageReportIds.length > 0 &&
             currentPageReportIds.every((id) => selectedReports.includes(id));
-          
+
           const isIndeterminate =
             currentPageReportIds.some((id) => selectedReports.includes(id)) &&
             !isAllSelected;

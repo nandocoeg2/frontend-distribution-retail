@@ -11,6 +11,8 @@ import {
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
+import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
+import toastService from '@/services/toastService';
 
 const INITIAL_PAGINATION = {
   currentPage: 1,
@@ -46,12 +48,21 @@ const LaporanPenerimaanBarang = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedReportIds, setSelectedReportIds] = useState([]);
   const [isCompletingReports, setIsCompletingReports] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
 
   const {
     showDialog: showCompleteDialog,
     hideDialog: hideCompleteDialog,
     setLoading: setCompleteDialogLoading,
     ConfirmationDialog: CompleteConfirmationDialog,
+  } = useConfirmationDialog();
+
+  const {
+    showDialog: showExportDialog,
+    hideDialog: hideExportDialog,
+    setLoading: setExportDialogLoading,
+    ConfirmationDialog: ExportConfirmationDialog,
   } = useConfirmationDialog();
 
   const resolveReportId = useCallback((report) => {
@@ -86,6 +97,37 @@ const LaporanPenerimaanBarang = () => {
     // Invalidate queries to refresh data
     queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
   }, [queryClient]);
+
+  const handleFiltersChange = useCallback((filters) => {
+    setActiveFilters(filters);
+  }, []);
+
+  const handleExportClick = useCallback(() => {
+    showExportDialog({
+      title: 'Export Excel',
+      message: 'Apakah Anda yakin ingin mengexport data Laporan Penerimaan Barang ini ke Excel?',
+      confirmText: 'Ya, Export',
+      cancelText: 'Batal',
+      type: 'info',
+    });
+  }, [showExportDialog]);
+
+  const handleConfirmExport = useCallback(async () => {
+    setExportDialogLoading(true);
+    setIsExporting(true);
+
+    try {
+      await laporanPenerimaanBarangService.exportExcel(activeFilters);
+      toastService.success('Berhasil mengexport data ke Excel');
+      hideExportDialog();
+    } catch (error) {
+      console.error('Failed to export Laporan Penerimaan Barang:', error);
+      toastService.error(error.message || 'Gagal mengexport data ke Excel');
+    } finally {
+      setExportDialogLoading(false);
+      setIsExporting(false);
+    }
+  }, [activeFilters, hideExportDialog, setExportDialogLoading]);
 
   const hasSelectedReports = selectedReportIds.length > 0;
 
@@ -201,6 +243,14 @@ const LaporanPenerimaanBarang = () => {
           <div className='flex items-center justify-between mb-2'>
             <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
             <div className='flex items-center gap-1'>
+              <button
+                onClick={handleExportClick}
+                disabled={isExporting}
+                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                <HeroIcon name='document-arrow-down' className='w-3 h-3 mr-1' />
+                {isExporting ? 'Exporting...' : 'Export Excel'}
+              </button>
               <button onClick={openCreateModal} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'>
                 <HeroIcon name='plus' className='w-3 h-3 mr-1' />Tambah
               </button>
@@ -221,6 +271,7 @@ const LaporanPenerimaanBarang = () => {
             initialPage={1}
             initialLimit={10}
             selectedReportId={selectedReportForDetail?.id}
+            onFiltersChange={handleFiltersChange}
           />
         </div>
       </div>
@@ -244,6 +295,8 @@ const LaporanPenerimaanBarang = () => {
       />
 
       <CompleteConfirmationDialog onConfirm={handleConfirmComplete} />
+
+      <ExportConfirmationDialog onConfirm={handleConfirmExport} />
 
       <ConfirmationDialog
         show={deleteReportConfirmation.showConfirm}
