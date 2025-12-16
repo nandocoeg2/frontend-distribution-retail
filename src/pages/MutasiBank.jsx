@@ -249,11 +249,15 @@ const MutasiBank = () => {
         onSubmit={handleSubmitValidation}
         loading={validating}
         mutation={validationTarget?.mutation}
-        initialStatus={
-          validationTarget?.mutation?.validation_status ||
-          validationTarget?.mutation?.validationStatus ||
-          'VALID'
-        }
+        initialStatus={(() => {
+          const currentStatus =
+            validationTarget?.mutation?.validation_status ||
+            validationTarget?.mutation?.validationStatus;
+          // Only allow 'VALID' or 'INVALID', default to 'VALID' for any other status
+          return currentStatus === 'VALID' || currentStatus === 'INVALID'
+            ? currentStatus
+            : 'VALID';
+        })()}
         selectedCount={1}
       />
 

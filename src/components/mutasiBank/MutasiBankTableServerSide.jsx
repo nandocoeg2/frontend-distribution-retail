@@ -349,8 +349,8 @@ const MutasiBankTableServerSide = ({
       columnHelper.accessor(
         (row) =>
           Number(
-            getFirstAvailableValue(row, ['amount', 'nominal','jumlah', 'total_amount']) ||
-              0
+            getFirstAvailableValue(row, ['amount', 'nominal', 'jumlah', 'total_amount']) ||
+            0
           ),
         {
           id: 'amount',
@@ -367,8 +367,8 @@ const MutasiBankTableServerSide = ({
             type === 'CR'
               ? 'bg-green-100 text-green-800'
               : type === 'DB'
-              ? 'bg-amber-100 text-amber-800'
-              : 'bg-gray-100 text-gray-700';
+                ? 'bg-amber-100 text-amber-800'
+                : 'bg-gray-100 text-gray-700';
           return (
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${baseClass}`}>
               {type || '-'}
@@ -391,43 +391,7 @@ const MutasiBankTableServerSide = ({
           );
         },
       }),
-      columnHelper.accessor(
-        (row) =>
-          getFirstAvailableValue(row, ['bank_code', 'bankCode', 'bank']) || '',
-        {
-          id: 'bank_code',
-          header: 'Bank',
-          cell: (info) => info.getValue() || '-',
-        }
-      ),
-      columnHelper.accessor(
-        (row) =>
-          getFirstAvailableValue(row, [
-            'reference_number',
-            'referenceNumber',
-            'nomor_referensi',
-            'nomorReferensi',
-            'reference',
-          ]) || '',
-        {
-          id: 'reference_number',
-          header: 'Referensi',
-          cell: (info) => info.getValue() || '-',
-        }
-      ),
-      columnHelper.accessor(
-        (row) =>
-          getFirstAvailableValue(row, [
-            'batch_number',
-            'batchNumber',
-            'batch',
-          ]) || '',
-        {
-          id: 'batch_number',
-          header: 'Batch',
-          cell: (info) => info.getValue() || '-',
-        }
-      ),
+
       columnHelper.display({
         id: 'matched_document',
         header: 'Dokumen Cocok',
