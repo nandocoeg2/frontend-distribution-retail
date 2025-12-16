@@ -116,8 +116,8 @@ const LaporanPenerimaanBarangDetailModal = ({
         value: report?.customer?.alamat || '-',
       },
       {
-        label: 'Termin Pembayaran',
-        value: report?.termOfPayment?.nama_top || report?.termin_bayar || '-',
+        label: 'TOP',
+        value: report?.termOfPayment?.kode_top || report?.top || '-',
       },
       {
         label: 'Status',
