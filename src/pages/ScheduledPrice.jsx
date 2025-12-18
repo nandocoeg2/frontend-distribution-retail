@@ -7,6 +7,7 @@ import EditScheduledPriceModal from '../components/scheduledPrice/EditScheduledP
 import ViewScheduledPriceModal from '../components/scheduledPrice/ViewScheduledPriceModal';
 import CancelScheduleModal from '../components/scheduledPrice/CancelScheduleModal';
 import useScheduledPriceOperations from '../hooks/useScheduledPriceOperations';
+import authService from '../services/authService';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const ScheduledPrice = () => {
@@ -27,9 +28,14 @@ const ScheduledPrice = () => {
 
   const { deleteSchedule, getSchedule, loading: operationLoading } = useScheduledPriceOperations();
 
+  // Get companyId from auth service to filter schedules
+  const companyData = authService.getCompanyData();
+  const companyId = companyData?.id || null;
+
   const queryParams = {
     page,
     limit,
+    companyId, // Filter by company
     ...filters
   };
 

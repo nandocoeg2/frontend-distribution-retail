@@ -25,6 +25,7 @@ const scheduledPriceService = {
     if (params.itemPriceId) searchParams.set('itemPriceId', params.itemPriceId);
     if (params.effectiveDateFrom) searchParams.set('effectiveDateFrom', params.effectiveDateFrom);
     if (params.effectiveDateTo) searchParams.set('effectiveDateTo', params.effectiveDateTo);
+    if (params.companyId) searchParams.set('companyId', params.companyId);
 
     return get(`/item-price-schedules?${searchParams.toString()}`);
   },
