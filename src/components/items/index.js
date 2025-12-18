@@ -6,3 +6,4 @@ export { default as ItemForm } from './ItemForm';
 export { default as ItemSearch } from './ItemSearch';
 export { default as ItemTable } from './ItemTable';
 export { default as BulkUploadItem } from './BulkUploadItem';
+export { default as ItemNameGroupCustomerManager } from './ItemNameGroupCustomerManager';

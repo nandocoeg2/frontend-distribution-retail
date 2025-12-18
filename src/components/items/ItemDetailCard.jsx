@@ -8,7 +8,8 @@ import {
   XMarkIcon,
   PencilIcon,
   CheckIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 import {
   AccordionItem,
@@ -24,6 +25,7 @@ import useItemDetail from '../../hooks/useItemDetail';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { useItemOperations } from '../../hooks/useItem';
 import ItemForm from './ItemForm';
+import ItemNameGroupCustomerManager from './ItemNameGroupCustomerManager';
 
 const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = false }) => {
   const itemId = item?.id;
@@ -357,6 +359,11 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
               icon={<ScaleIcon className="h-4 w-4" />}
             />
             <Tab
+              id="names"
+              label="Nama per Group"
+              icon={<UserGroupIcon className="h-4 w-4" />}
+            />
+            <Tab
               id="activity"
               label="Activity"
               icon={<ClockIcon className="h-4 w-4" />}
@@ -537,6 +544,14 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
                   </div>
                 ) : null}
               </div>
+            </TabPanel>
+
+            {/* Names per Group Customer Tab */}
+            <TabPanel tabId="names">
+              <ItemNameGroupCustomerManager
+                itemId={resolvedItem?.id}
+                defaultItemName={resolvedItem?.nama_barang}
+              />
             </TabPanel>
 
             {/* Activity Tab */}

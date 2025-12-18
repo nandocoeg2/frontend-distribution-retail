@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArchiveBoxIcon, EyeIcon, CubeIcon, ScaleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxIcon, EyeIcon, CubeIcon, ScaleIcon, ClockIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import {
   AccordionItem,
   InfoCard,
@@ -13,6 +13,7 @@ import {
 import { formatCurrency, formatDateTime } from '../../utils/formatUtils';
 import useItemDetail from '../../hooks/useItemDetail';
 import ActivityTimeline from '../common/ActivityTimeline';
+import ItemNameGroupCustomerManager from './ItemNameGroupCustomerManager';
 
 const ViewItemModal = ({ show, item, onClose }) => {
   const itemId = show ? item?.id : null;
@@ -87,11 +88,11 @@ const ViewItemModal = ({ show, item, onClose }) => {
   const dimensiKarton = resolvedItem?.dimensiKarton || null;
   const cartonDimensionValues = dimensiKarton
     ? {
-        berat: dimensiKarton?.berat,
-        panjang: dimensiKarton?.panjang,
-        lebar: dimensiKarton?.lebar,
-        tinggi: dimensiKarton?.tinggi
-      }
+      berat: dimensiKarton?.berat,
+      panjang: dimensiKarton?.panjang,
+      lebar: dimensiKarton?.lebar,
+      tinggi: dimensiKarton?.tinggi
+    }
     : {};
 
   const dimensionExists = Object.values(dimensionValues).some(
@@ -114,37 +115,37 @@ const ViewItemModal = ({ show, item, onClose }) => {
   const hasItemPrice = itemPrice && Object.values(itemPrice).some(value => value !== null && value !== undefined);
   const pricingRows = hasItemPrice
     ? [
-        {
-          label: 'Harga Dasar',
-          value: itemPrice?.harga !== undefined && itemPrice?.harga !== null ? formatCurrency(itemPrice.harga) : 'Tidak ada data harga'
-        },
-        {
-          label: 'Potongan 1 (%)',
-          value: formatNumberWithSuffix(itemPrice?.pot1, '%')
-        },
-        {
-          label: 'Harga Setelah Potongan 1',
-          value: itemPrice?.harga1 !== undefined && itemPrice?.harga1 !== null ? formatCurrency(itemPrice.harga1) : '—'
-        },
-        {
-          label: 'Potongan 2 (%)',
-          value: formatNumberWithSuffix(itemPrice?.pot2, '%')
-        },
-        {
-          label: 'Harga Setelah Potongan 2',
-          value: itemPrice?.harga2 !== undefined && itemPrice?.harga2 !== null ? formatCurrency(itemPrice.harga2) : '—'
-        },
-        {
-          label: 'PPN (%)',
-          value: formatNumberWithSuffix(itemPrice?.ppn, '%')
-        }
-      ]
+      {
+        label: 'Harga Dasar',
+        value: itemPrice?.harga !== undefined && itemPrice?.harga !== null ? formatCurrency(itemPrice.harga) : 'Tidak ada data harga'
+      },
+      {
+        label: 'Potongan 1 (%)',
+        value: formatNumberWithSuffix(itemPrice?.pot1, '%')
+      },
+      {
+        label: 'Harga Setelah Potongan 1',
+        value: itemPrice?.harga1 !== undefined && itemPrice?.harga1 !== null ? formatCurrency(itemPrice.harga1) : '—'
+      },
+      {
+        label: 'Potongan 2 (%)',
+        value: formatNumberWithSuffix(itemPrice?.pot2, '%')
+      },
+      {
+        label: 'Harga Setelah Potongan 2',
+        value: itemPrice?.harga2 !== undefined && itemPrice?.harga2 !== null ? formatCurrency(itemPrice.harga2) : '—'
+      },
+      {
+        label: 'PPN (%)',
+        value: formatNumberWithSuffix(itemPrice?.ppn, '%')
+      }
+    ]
     : [
-        {
-          label: 'Harga',
-          value: 'Tidak ada data harga'
-        }
-      ];
+      {
+        label: 'Harga',
+        value: 'Tidak ada data harga'
+      }
+    ];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -160,8 +161,8 @@ const ViewItemModal = ({ show, item, onClose }) => {
               <p className="text-sm text-gray-600">{resolvedItem?.nama_barang}</p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,6 +208,11 @@ const ViewItemModal = ({ show, item, onClose }) => {
                   id="dimensions"
                   label="Dimensi"
                   icon={<ScaleIcon className="h-4 w-4" />}
+                />
+                <Tab
+                  id="names"
+                  label="Nama per Group"
+                  icon={<UserGroupIcon className="h-4 w-4" />}
                 />
                 <Tab
                   id="activity"
@@ -355,6 +361,14 @@ const ViewItemModal = ({ show, item, onClose }) => {
                       </div>
                     ) : null}
                   </div>
+                </TabPanel>
+
+                {/* Names per Group Customer Tab */}
+                <TabPanel tabId="names">
+                  <ItemNameGroupCustomerManager
+                    itemId={resolvedItem?.id}
+                    defaultItemName={resolvedItem?.nama_barang}
+                  />
                 </TabPanel>
 
                 {/* Activity Tab */}
