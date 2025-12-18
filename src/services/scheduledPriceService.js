@@ -127,12 +127,17 @@ const scheduledPriceService = {
   },
 
   // Upload bulk scheduled prices
-  uploadBulkSchedules: async (file) => {
+  uploadBulkSchedules: async (file, companyId) => {
     const token = authService.getToken();
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_URL}/bulk/upload`, {
+    // Include companyId as query parameter
+    const url = companyId
+      ? `${API_URL}/bulk/upload?companyId=${companyId}`
+      : `${API_URL}/bulk/upload`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

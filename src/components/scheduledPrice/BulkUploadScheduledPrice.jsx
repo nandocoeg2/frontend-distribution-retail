@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import scheduledPriceService from '../../services/scheduledPriceService';
+import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 
 const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
@@ -7,7 +8,7 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const [pollingInterval, setPollingInterval] = useState(null);
+  const pollingIntervalRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const handleDownloadTemplate = async () => {
@@ -44,11 +45,24 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
       const response = await scheduledPriceService.getBulkUploadStatus(bulkId);
       if (response.success && response.data) {
         const fileData = response.data.files?.[0];
-        const status = fileData?.status?.status_code || response.data.status;
+
+        // Get status string from response.data.status (already a string from API)
+        // Fallback to fileData.status.status_code if available
+        let statusStr = response.data.status;
+        if (!statusStr && fileData?.status) {
+          statusStr = typeof fileData.status === 'object'
+            ? (fileData.status.status_code || fileData.status.name)
+            : fileData.status;
+        }
+
+        // Destructure fileData but exclude status to avoid overwriting
+        const { status: _fileStatus, ...fileDataWithoutStatus } = fileData || {};
+
         setUploadStatus({
           bulkId: response.data.bulkId,
-          status: status,
-          ...fileData,
+          status: statusStr,
+          filename: fileDataWithoutStatus.filename,
+          reason: fileData?.reason || null,
           statistics: {
             totalRows: response.data.totalFiles,
             createdCount: response.data.successFiles,
@@ -57,18 +71,21 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
         });
 
         // Stop polling if completed or failed
-        if (status?.includes('COMPLETED') || status?.includes('FAILED')) {
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
+        const isCompleted = statusStr?.includes?.('COMPLETED');
+        const isFailed = statusStr?.includes?.('FAILED');
+
+        if (isCompleted || isFailed) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
           }
 
-          if (status?.includes('COMPLETED')) {
+          if (isCompleted) {
             toastService.success('Bulk upload berhasil diproses!');
             if (onSuccess) {
               onSuccess();
             }
-          } else {
+          } else if (isFailed) {
             toastService.error('Bulk upload gagal diproses');
           }
         }
@@ -86,7 +103,17 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
 
     try {
       setUploading(true);
-      const response = await scheduledPriceService.uploadBulkSchedules(selectedFile);
+
+      // Get companyId from auth service
+      const companyData = authService.getCompanyData();
+      const companyId = companyData?.id;
+
+      if (!companyId) {
+        toastService.error('Company tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      const response = await scheduledPriceService.uploadBulkSchedules(selectedFile, companyId);
 
       if (response.success && response.data) {
         toastService.success(response.data.message || 'File berhasil diupload dan sedang diproses');
@@ -101,7 +128,7 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
           pollUploadStatus(response.data.bulkId);
         }, 3000); // Poll every 3 seconds
 
-        setPollingInterval(interval);
+        pollingIntervalRef.current = interval;
 
         // Initial poll
         pollUploadStatus(response.data.bulkId);
@@ -119,38 +146,40 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      setPollingInterval(null);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
   };
 
   const getStatusColor = (status) => {
     if (!status) return 'text-gray-600 bg-gray-50';
-    if (status.includes('COMPLETED')) return 'text-green-600 bg-green-50';
-    if (status.includes('FAILED')) return 'text-red-600 bg-red-50';
-    if (status.includes('PROCESSING')) return 'text-blue-600 bg-blue-50';
-    if (status.includes('PENDING')) return 'text-yellow-600 bg-yellow-50';
+    const statusStr = typeof status === 'string' ? status : String(status);
+    if (statusStr.includes('COMPLETED')) return 'text-green-600 bg-green-50';
+    if (statusStr.includes('FAILED')) return 'text-red-600 bg-red-50';
+    if (statusStr.includes('PROCESSING')) return 'text-blue-600 bg-blue-50';
+    if (statusStr.includes('PENDING')) return 'text-yellow-600 bg-yellow-50';
     return 'text-gray-600 bg-gray-50';
   };
 
   const getStatusText = (status) => {
     if (!status) return 'Unknown';
-    if (status.includes('COMPLETED')) return 'Selesai';
-    if (status.includes('FAILED')) return 'Gagal';
-    if (status.includes('PROCESSING')) return 'Sedang Diproses';
-    if (status.includes('PENDING')) return 'Menunggu';
-    return status;
+    const statusStr = typeof status === 'string' ? status : String(status);
+    if (statusStr.includes('COMPLETED')) return 'Selesai';
+    if (statusStr.includes('FAILED')) return 'Gagal';
+    if (statusStr.includes('PROCESSING')) return 'Sedang Diproses';
+    if (statusStr.includes('PENDING')) return 'Menunggu';
+    return statusStr;
   };
 
   // Cleanup interval on unmount
   React.useEffect(() => {
     return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [pollingInterval]);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -201,7 +230,7 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-medium text-green-900">Langkah 2: Upload File</h3>
-            
+
             <div className="mt-3 space-y-3">
               <div className="flex items-center space-x-3">
                 <input
@@ -268,15 +297,9 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
           <h3 className="text-sm font-medium text-gray-900 mb-3">Status Upload</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Bulk ID:</span>
-              <span className="text-sm font-mono text-gray-900">{uploadStatus.bulkId}</span>
+              <span className="text-sm text-gray-600">Filename:</span>
+              <span className="text-sm font-medium text-gray-900">{uploadStatus.filename}</span>
             </div>
-            {uploadStatus.filename && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Filename:</span>
-                <span className="text-sm font-medium text-gray-900">{uploadStatus.filename}</span>
-              </div>
-            )}
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Status:</span>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(uploadStatus.status)}`}>
@@ -298,6 +321,12 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
                   <span className="text-sm font-medium text-red-600">{uploadStatus.statistics.errorCount || 0}</span>
                 </div>
               </>
+            )}
+            {uploadStatus.reason && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                <span className="text-sm font-medium text-red-800">Alasan Gagal:</span>
+                <p className="text-sm text-red-700 mt-1">{uploadStatus.reason}</p>
+              </div>
             )}
           </div>
         </div>
