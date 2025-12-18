@@ -2,12 +2,12 @@ import React, { useState, useRef } from 'react';
 import { downloadBulkTemplate, uploadBulkItem, getBulkUploadStatus } from '../../services/itemService';
 import toastService from '../../services/toastService';
 
-const BulkUploadItem = ({ onClose }) => {
+const BulkUploadItem = ({ onClose, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
-  const [pollingInterval, setPollingInterval] = useState(null);
+  const pollingIntervalRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const handleDownloadTemplate = async () => {
@@ -43,19 +43,44 @@ const BulkUploadItem = ({ onClose }) => {
     try {
       const response = await getBulkUploadStatus(bulkId);
       if (response.success && response.data) {
-        const status = response.data.status;
-        setUploadStatus(response.data);
+        const fileData = response.data.files?.[0];
+
+        // Get status string from response.data.status or fileData.status.status_code
+        let statusStr = response.data.status;
+        if (!statusStr && fileData?.status) {
+          statusStr = typeof fileData.status === 'object'
+            ? (fileData.status.status_code || fileData.status.name)
+            : fileData.status;
+        }
+
+        setUploadStatus({
+          bulkId: response.data.bulkId,
+          status: statusStr,
+          filename: fileData?.filename,
+          reason: fileData?.reason || null,
+          statistics: {
+            totalRows: response.data.totalFiles,
+            createdCount: response.data.successFiles,
+            errorCount: response.data.errorFiles,
+          }
+        });
 
         // Stop polling if completed or failed
-        if (status === 'COMPLETED BULK INVENTORY' || status === 'FAILED BULK INVENTORY') {
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
+        const isCompleted = statusStr?.includes?.('COMPLETED');
+        const isFailed = statusStr?.includes?.('FAILED');
+
+        if (isCompleted || isFailed) {
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
           }
 
-          if (status === 'COMPLETED BULK INVENTORY') {
+          if (isCompleted) {
             toastService.success('Bulk upload berhasil diproses!');
-          } else {
+            if (onSuccess) {
+              onSuccess();
+            }
+          } else if (isFailed) {
             toastService.error('Bulk upload gagal diproses');
           }
         }
@@ -88,7 +113,7 @@ const BulkUploadItem = ({ onClose }) => {
           pollUploadStatus(response.data.bulkId);
         }, 3000); // Poll every 3 seconds
 
-        setPollingInterval(interval);
+        pollingIntervalRef.current = interval;
 
         // Initial poll
         pollUploadStatus(response.data.bulkId);
@@ -106,50 +131,40 @@ const BulkUploadItem = ({ onClose }) => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      setPollingInterval(null);
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'COMPLETED BULK INVENTORY':
-        return 'text-green-600 bg-green-50';
-      case 'FAILED BULK INVENTORY':
-        return 'text-red-600 bg-red-50';
-      case 'PROCESSING BULK INVENTORY':
-        return 'text-blue-600 bg-blue-50';
-      case 'PENDING BULK INVENTORY':
-        return 'text-yellow-600 bg-yellow-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
+    if (!status) return 'text-gray-600 bg-gray-50';
+    const statusStr = typeof status === 'string' ? status : String(status);
+    if (statusStr.includes('COMPLETED')) return 'text-green-600 bg-green-50';
+    if (statusStr.includes('FAILED')) return 'text-red-600 bg-red-50';
+    if (statusStr.includes('PROCESSING')) return 'text-blue-600 bg-blue-50';
+    if (statusStr.includes('PENDING')) return 'text-yellow-600 bg-yellow-50';
+    return 'text-gray-600 bg-gray-50';
   };
 
   const getStatusText = (status) => {
-    switch (status) {
-      case 'COMPLETED BULK INVENTORY':
-        return 'Selesai';
-      case 'FAILED BULK INVENTORY':
-        return 'Gagal';
-      case 'PROCESSING BULK INVENTORY':
-        return 'Sedang Diproses';
-      case 'PENDING BULK INVENTORY':
-        return 'Menunggu';
-      default:
-        return status;
-    }
+    if (!status) return 'Unknown';
+    const statusStr = typeof status === 'string' ? status : String(status);
+    if (statusStr.includes('COMPLETED')) return 'Selesai';
+    if (statusStr.includes('FAILED')) return 'Gagal';
+    if (statusStr.includes('PROCESSING')) return 'Sedang Diproses';
+    if (statusStr.includes('PENDING')) return 'Menunggu';
+    return statusStr;
   };
 
   // Cleanup interval on unmount
   React.useEffect(() => {
     return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [pollingInterval]);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -206,7 +221,7 @@ const BulkUploadItem = ({ onClose }) => {
             <p className="mt-1 text-sm text-green-700">
               Pilih file Excel yang sudah diisi untuk diupload.
             </p>
-            
+
             <div className="mt-3 space-y-3">
               <div className="flex items-center space-x-3">
                 <input
@@ -273,12 +288,8 @@ const BulkUploadItem = ({ onClose }) => {
           <h3 className="text-sm font-medium text-gray-900 mb-3">Status Upload</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Bulk ID:</span>
-              <span className="text-sm font-mono text-gray-900">{uploadStatus.bulkId}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Total Files:</span>
-              <span className="text-sm font-medium text-gray-900">{uploadStatus.totalFiles}</span>
+              <span className="text-sm text-gray-600">Filename:</span>
+              <span className="text-sm font-medium text-gray-900">{uploadStatus.filename}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Status:</span>
@@ -286,21 +297,27 @@ const BulkUploadItem = ({ onClose }) => {
                 {getStatusText(uploadStatus.status)}
               </span>
             </div>
-            {uploadStatus.processedFiles !== undefined && (
+            {uploadStatus.statistics && (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Processed:</span>
-                  <span className="text-sm font-medium text-gray-900">{uploadStatus.processedFiles}</span>
+                  <span className="text-sm text-gray-600">Total Files:</span>
+                  <span className="text-sm font-medium text-gray-900">{uploadStatus.statistics.totalRows || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Success:</span>
-                  <span className="text-sm font-medium text-green-600">{uploadStatus.successFiles}</span>
+                  <span className="text-sm text-gray-600">Berhasil:</span>
+                  <span className="text-sm font-medium text-green-600">{uploadStatus.statistics.createdCount || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Error:</span>
-                  <span className="text-sm font-medium text-red-600">{uploadStatus.errorFiles}</span>
+                  <span className="text-sm text-gray-600">Gagal:</span>
+                  <span className="text-sm font-medium text-red-600">{uploadStatus.statistics.errorCount || 0}</span>
                 </div>
               </>
+            )}
+            {uploadStatus.reason && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                <span className="text-sm font-medium text-red-800">Alasan Gagal:</span>
+                <p className="text-sm text-red-700 mt-1">{uploadStatus.reason}</p>
+              </div>
             )}
           </div>
         </div>
