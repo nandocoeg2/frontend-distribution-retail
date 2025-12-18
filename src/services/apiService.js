@@ -134,4 +134,8 @@ export const del = (url) => {
   return api.delete(url);
 };
 
+export const patch = (url, data = {}) => {
+  return api.patch(url, data);
+};
+
 export default api;

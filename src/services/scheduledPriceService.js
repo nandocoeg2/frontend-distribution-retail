@@ -1,4 +1,4 @@
-import { createApiService, get, post, put, del } from './apiService';
+import { createApiService, get, post, put, del, patch } from './apiService';
 import authService from './authService';
 
 const baseService = createApiService('item-price-schedules');
