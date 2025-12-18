@@ -44,20 +44,22 @@ const BulkUploadCustomer = ({ onClose }) => {
       const response = await customerService.getBulkUploadStatus(bulkId);
       if (response.success && response.data) {
         const fileData = response.data.files?.[0];
-        const status = fileData?.status;
+        // status is an object with {status_code, status_name}, extract status_code
+        const statusCode = fileData?.status?.status_code || fileData?.status;
         setUploadStatus({
           bulkId: response.data.bulkId,
-          ...fileData
+          ...fileData,
+          status: statusCode // Override status with the string status_code
         });
 
         // Stop polling if completed or failed
-        if (status === 'COMPLETED BULK CUSTOMER' || status === 'FAILED BULK CUSTOMER') {
+        if (statusCode === 'COMPLETED BULK CUSTOMER' || statusCode === 'FAILED BULK CUSTOMER') {
           if (pollingInterval) {
             clearInterval(pollingInterval);
             setPollingInterval(null);
           }
 
-          if (status === 'COMPLETED BULK CUSTOMER') {
+          if (statusCode === 'COMPLETED BULK CUSTOMER') {
             toastService.success('Bulk upload berhasil diproses!');
           } else {
             toastService.error('Bulk upload gagal diproses');
@@ -210,7 +212,7 @@ const BulkUploadCustomer = ({ onClose }) => {
             <p className="mt-1 text-sm text-green-700">
               Pilih file Excel yang sudah diisi untuk diupload.
             </p>
-            
+
             <div className="mt-3 space-y-3">
               <div className="flex items-center space-x-3">
                 <input
