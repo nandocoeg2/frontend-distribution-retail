@@ -4,7 +4,7 @@ import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations
 
 const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
   const { updateSchedule, loading, validateScheduleData } = useScheduledPriceOperations();
-  
+
   const [formData, setFormData] = useState({
     effectiveDate: schedule.effectiveDate ? schedule.effectiveDate.split('T')[0] : '',
     harga: schedule.harga || '',
@@ -47,7 +47,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Check if status is still PENDING
     if (schedule.status !== 'PENDING') {
       setErrors({ general: 'Only PENDING schedules can be edited' });
@@ -59,7 +59,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
       ...formData,
       itemPriceId: schedule.itemPriceId
     });
-    
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -145,7 +145,6 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 type="date"
                 value={formData.effectiveDate}
                 onChange={(e) => handleChange('effectiveDate', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               {errors.effectiveDate && (

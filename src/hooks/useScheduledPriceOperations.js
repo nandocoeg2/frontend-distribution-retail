@@ -18,9 +18,9 @@ const useScheduledPriceOperations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await scheduledPriceService.createSchedule(scheduleData);
-      
+
       if (response.success) {
         toastService.success('Schedule created successfully');
         return response.data;
@@ -50,9 +50,9 @@ const useScheduledPriceOperations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await scheduledPriceService.updateSchedule(id, scheduleData);
-      
+
       if (response.success) {
         toastService.success('Schedule updated successfully');
         return response.data;
@@ -82,7 +82,7 @@ const useScheduledPriceOperations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       await scheduledPriceService.deleteSchedule(id);
       toastService.success('Schedule deleted successfully');
       return true;
@@ -103,9 +103,9 @@ const useScheduledPriceOperations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await scheduledPriceService.cancelSchedule(id, reason);
-      
+
       if (response.success) {
         toastService.success('Schedule cancelled successfully');
         return response.data;
@@ -135,9 +135,9 @@ const useScheduledPriceOperations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await scheduledPriceService.getScheduleById(id);
-      
+
       if (response.success) {
         return response.data;
       } else {
@@ -160,9 +160,9 @@ const useScheduledPriceOperations = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await scheduledPriceService.getEffectivePrice(itemId, date);
-      
+
       if (response.success) {
         return response.data;
       } else {
@@ -191,14 +191,6 @@ const useScheduledPriceOperations = () => {
 
     if (!data.effectiveDate) {
       errors.effectiveDate = 'Effective date is required';
-    } else {
-      const effectiveDate = new Date(data.effectiveDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (effectiveDate < today) {
-        errors.effectiveDate = 'Effective date must be in the future';
-      }
     }
 
     if (!data.harga || data.harga <= 0) {
