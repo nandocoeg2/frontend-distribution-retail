@@ -75,6 +75,7 @@ const TermOfPayments = () => {
   const handleTermOfPaymentAdded = async (formData) => {
     try {
       await createTermOfPayment(formData);
+      fetchTermOfPayments(); // Refresh list
       closeAddModal();
     } catch (error) {
       console.error('Error creating term of payment:', error);
@@ -82,13 +83,13 @@ const TermOfPayments = () => {
   };
 
 
-  if (loading) {
-    return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className='flex justify-center items-center h-64'>
+  //       <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -144,16 +145,22 @@ const TermOfPayments = () => {
             searchLoading={searchLoading}
           />
 
-          <TermOfPaymentTable
-            termOfPayments={termOfPayments}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onDelete={deleteTermOfPaymentConfirmation.showDeleteConfirmation}
-            onViewDetail={handleViewDetail}
-            selectedTermOfPaymentId={selectedTermOfPaymentForDetail?.id}
-            searchQuery={searchQuery}
-          />
+          {loading && !searchLoading ? (
+            <div className='flex justify-center items-center h-64'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+            </div>
+          ) : (
+            <TermOfPaymentTable
+              termOfPayments={termOfPayments}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              onDelete={deleteTermOfPaymentConfirmation.showDeleteConfirmation}
+              onViewDetail={handleViewDetail}
+              selectedTermOfPaymentId={selectedTermOfPaymentForDetail?.id}
+              searchQuery={searchQuery}
+            />
+          )}
         </div>
       </div>
 

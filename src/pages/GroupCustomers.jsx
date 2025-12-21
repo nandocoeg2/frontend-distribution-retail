@@ -72,19 +72,19 @@ const GroupCustomers = () => {
     setSelectedGroupCustomerForDetail(null);
   };
 
-  const handleGroupCustomerAdded = (newGroupCustomer) => {
-    setGroupCustomers([newGroupCustomer, ...groupCustomers]);
+  const handleGroupCustomerAdded = () => {
+    fetchEntities();
     closeAddModal();
   };
 
 
-  if (loading) {
-    return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className='flex justify-center items-center h-64'>
+  //       <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -140,16 +140,22 @@ const GroupCustomers = () => {
             searchLoading={searchLoading}
           />
 
-          <GroupCustomerTable
-            groupCustomers={groupCustomers}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation}
-            onViewDetail={handleViewDetail}
-            selectedGroupCustomerId={selectedGroupCustomerForDetail?.id}
-            searchQuery={searchQuery}
-          />
+          {loading && !searchLoading ? (
+            <div className='flex justify-center items-center h-64'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+            </div>
+          ) : (
+            <GroupCustomerTable
+              groupCustomers={groupCustomers}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation}
+              onViewDetail={handleViewDetail}
+              selectedGroupCustomerId={selectedGroupCustomerForDetail?.id}
+              searchQuery={searchQuery}
+            />
+          )}
         </div>
       </div>
 

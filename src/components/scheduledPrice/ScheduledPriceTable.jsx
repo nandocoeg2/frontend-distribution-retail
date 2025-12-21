@@ -1,15 +1,20 @@
 import React from 'react';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
-import { 
-  PencilIcon, 
-  EyeIcon, 
-  XCircleIcon, 
-  TrashIcon 
+import {
+  PencilIcon,
+  EyeIcon,
+  XCircleIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
-const ScheduledPriceTable = ({ 
-  schedules = [], 
+import Pagination from '../common/Pagination';
+
+const ScheduledPriceTable = ({
+  schedules = [],
   loading = false,
+  pagination,
+  onPageChange,
+  onLimitChange,
   onEdit,
   onView,
   onCancel,
@@ -24,7 +29,7 @@ const ScheduledPriceTable = ({
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;
-    
+
     return (
       <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
         {config.label}
@@ -146,7 +151,7 @@ const ScheduledPriceTable = ({
                       >
                         <EyeIcon className="h-4 w-4" />
                       </button>
-                      
+
                       {schedule.status === 'PENDING' && (
                         <>
                           <button
@@ -165,7 +170,7 @@ const ScheduledPriceTable = ({
                           </button>
                         </>
                       )}
-                      
+
                       {(schedule.status === 'PENDING' || schedule.status === 'ACTIVE') && (
                         <button
                           onClick={() => onCancel(schedule)}
@@ -183,6 +188,11 @@ const ScheduledPriceTable = ({
           </tbody>
         </table>
       </div>
+      <Pagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+      />
     </div>
   );
 };

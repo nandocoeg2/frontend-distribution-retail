@@ -89,7 +89,7 @@ const ItemTable = ({
   const handleFilterChange = useCallback((field, value) => {
     const newFilters = { ...filters, [field]: value };
     setFilters(newFilters);
-    
+
     // Notify parent of filter change if callback provided
     if (onFilterChange) {
       onFilterChange(newFilters);
@@ -153,7 +153,7 @@ const ItemTable = ({
   const COLUMN_COUNT = 8;
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-2'>
       {hasActiveFilters && (
         <div className='flex justify-end'>
           <button
@@ -284,14 +284,13 @@ const ItemTable = ({
                 const { berat, formattedSize } = resolveDimension(item);
                 const companyCode = item.company?.kode_company || '-';
                 return (
-                  <tr 
-                    key={item.id} 
+                  <tr
+                    key={item.id}
                     onClick={() => onViewDetail(item)}
-                    className={`cursor-pointer transition-colors h-8 ${
-                      selectedItemId === item.id 
-                        ? 'bg-blue-50 border-l-4 border-blue-500' 
+                    className={`cursor-pointer transition-colors h-8 ${selectedItemId === item.id
+                        ? 'bg-blue-50 border-l-4 border-blue-500'
                         : 'hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <td className='px-1.5 py-1 whitespace-nowrap text-xs text-gray-900 font-medium'>
                       {companyCode}

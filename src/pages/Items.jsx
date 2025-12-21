@@ -65,13 +65,13 @@ const Items = () => {
 
 
 
-  if (loading && !searchLoading) {
-    return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-      </div>
-    );
-  }
+  // if (loading && !searchLoading) {
+  //   return (
+  //     <div className='flex justify-center items-center h-64'>
+  //       <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -125,16 +125,22 @@ const Items = () => {
             handleSearchChange={handleSearchChange}
             searchLoading={searchLoading}
           />
-          <ItemTable
-            items={items}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onDelete={deleteItem}
-            onViewDetail={handleViewDetail}
-            selectedItemId={selectedItemForDetail?.id}
-            loading={loading || searchLoading}
-          />
+          {loading && !searchLoading ? (
+            <div className='flex justify-center items-center h-64'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+            </div>
+          ) : (
+            <ItemTable
+              items={items}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              onDelete={deleteItem}
+              onViewDetail={handleViewDetail}
+              selectedItemId={selectedItemForDetail?.id}
+              loading={loading || searchLoading}
+            />
+          )}
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import Pagination from '../common/Pagination';
 
 const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedGroupCustomerId, searchQuery }) => {
   return (
-    <div className='space-y-4'>
+    <div className='space-y-2'>
       <div className='overflow-x-auto'>
         <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <colgroup>
@@ -50,14 +50,13 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
               </tr>
             ) : (
               groupCustomers.map((gc) => (
-                <tr 
-                  key={gc.id} 
+                <tr
+                  key={gc.id}
                   onClick={() => onViewDetail(gc)}
-                  className={`cursor-pointer transition-colors h-8 ${
-                    selectedGroupCustomerId === gc.id 
-                      ? 'bg-blue-50 border-l-4 border-blue-500' 
+                  className={`cursor-pointer transition-colors h-8 ${selectedGroupCustomerId === gc.id
+                      ? 'bg-blue-50 border-l-4 border-blue-500'
                       : 'hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate' title={gc.nama_group}>
                     {gc.nama_group}

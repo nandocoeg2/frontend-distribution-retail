@@ -12,7 +12,7 @@ import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const ScheduledPrice = () => {
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [filters, setFilters] = useState({
     status: '',
     itemPriceId: '',
@@ -48,6 +48,11 @@ const ScheduledPrice = () => {
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    setPage(1);
   };
 
   const handleEdit = async (schedule) => {
@@ -138,40 +143,21 @@ const ScheduledPrice = () => {
             <ScheduledPriceTable
               schedules={schedules}
               loading={isLoading}
+              pagination={{
+                currentPage: meta.page,
+                totalPages: meta.totalPages,
+                totalItems: meta.total,
+                itemsPerPage: meta.limit
+              }}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
               onEdit={handleEdit}
               onView={handleView}
               onCancel={handleCancel}
               onDelete={handleDelete}
             />
 
-            {/* Pagination */}
-            {meta.totalPages > 1 && (
-              <div className="mt-3 flex justify-between items-center">
-                <div className="text-sm text-gray-700">
-                  Showing {((meta.page - 1) * meta.limit) + 1} to{' '}
-                  {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} results
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePageChange(page - 1)}
-                    disabled={page === 1}
-                    className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span className="px-3 py-1 text-sm">
-                    Page {meta.page} of {meta.totalPages}
-                  </span>
-                  <button
-                    onClick={() => handlePageChange(page + 1)}
-                    disabled={page === meta.totalPages}
-                    className="px-3 py-1 text-sm border rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Pagination moved inside table */}
           </div>
 
           {/* Modals */}

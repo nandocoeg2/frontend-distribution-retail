@@ -61,19 +61,19 @@ const Suppliers = () => {
     setSelectedSupplierForDetail(null);
   };
 
-  const handleSupplierAdded = (newSupplier) => {
-    setSuppliers([...suppliers, newSupplier]);
+  const handleSupplierAdded = () => {
+    fetchSuppliers();
     closeAddModal();
   };
 
 
-  if (loading) {
-    return (
-      <div className='flex justify-center items-center h-64'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className='flex justify-center items-center h-64'>
+  //       <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -129,16 +129,22 @@ const Suppliers = () => {
             searchLoading={searchLoading}
           />
 
-          <SupplierTable
-            suppliers={suppliers}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onDelete={deleteSupplierConfirmation.showDeleteConfirmation}
-            onViewDetail={handleViewDetail}
-            selectedSupplierId={selectedSupplierForDetail?.id}
-            searchQuery={searchQuery}
-          />
+          {loading && !searchLoading ? (
+            <div className='flex justify-center items-center h-64'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+            </div>
+          ) : (
+            <SupplierTable
+              suppliers={suppliers}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              onDelete={deleteSupplierConfirmation.showDeleteConfirmation}
+              onViewDetail={handleViewDetail}
+              selectedSupplierId={selectedSupplierForDetail?.id}
+              searchQuery={searchQuery}
+            />
+          )}
         </div>
       </div>
 

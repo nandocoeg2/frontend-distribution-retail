@@ -6,7 +6,7 @@ import Pagination from '../common/Pagination';
 
 const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedSupplierId, searchQuery }) => {
   return (
-    <div className='space-y-4'>
+    <div className='space-y-2'>
       <div className='overflow-x-auto'>
         <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <colgroup>
@@ -64,14 +64,13 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
               </tr>
             ) : (
               suppliers.map((supplier) => (
-                <tr 
-                  key={supplier.id} 
+                <tr
+                  key={supplier.id}
                   onClick={() => onViewDetail(supplier)}
-                  className={`cursor-pointer transition-colors h-8 ${
-                    selectedSupplierId === supplier.id 
-                      ? 'bg-blue-50 border-l-4 border-blue-500' 
+                  className={`cursor-pointer transition-colors h-8 ${selectedSupplierId === supplier.id
+                      ? 'bg-blue-50 border-l-4 border-blue-500'
                       : 'hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <td className='px-2 py-1 whitespace-nowrap'>
                     {supplier.logo ? (
@@ -130,10 +129,10 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
           </tbody>
         </table>
       </div>
-      <Pagination 
-        pagination={pagination} 
-        onPageChange={onPageChange} 
-        onLimitChange={onLimitChange} 
+      <Pagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
       />
     </div>
   );

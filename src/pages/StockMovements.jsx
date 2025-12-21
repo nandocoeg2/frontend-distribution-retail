@@ -209,13 +209,13 @@ const StockMovements = () => {
     }
   }, [editingMovement, editNotesValue, updateMovementNotes, handleCloseEditNotes]);
 
-  if (loading && !movements?.length && !searchLoading) {
-    return (
-      <div className='flex h-64 items-center justify-center'>
-        <Spinner size='lg' />
-      </div>
-    );
-  }
+  // if (loading && !movements?.length && !searchLoading) {
+  //   return (
+  //     <div className='flex h-64 items-center justify-center'>
+  //       <Spinner size='lg' />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className='p-3 space-y-3'>

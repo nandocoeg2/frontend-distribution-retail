@@ -6,7 +6,7 @@ import Pagination from '../common/Pagination';
 
 const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedTermOfPaymentId, searchQuery }) => {
   return (
-    <div className='space-y-4'>
+    <div className='space-y-2'>
       <div className='overflow-x-auto'>
         <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <colgroup>
@@ -44,14 +44,13 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
               </tr>
             ) : (
               termOfPayments.map((top) => (
-                <tr 
-                  key={top.id} 
+                <tr
+                  key={top.id}
                   onClick={() => onViewDetail(top)}
-                  className={`cursor-pointer transition-colors h-8 ${
-                    selectedTermOfPaymentId === top.id 
-                      ? 'bg-blue-50 border-l-4 border-blue-500' 
+                  className={`cursor-pointer transition-colors h-8 ${selectedTermOfPaymentId === top.id
+                      ? 'bg-blue-50 border-l-4 border-blue-500'
                       : 'hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <td className='px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900'>
                     {top.kode_top}
