@@ -199,7 +199,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal</div>
+              <div className="font-medium text-xs">Billing Date</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="date"
@@ -389,6 +389,59 @@ const TandaTerimaFakturTableServerSide = ({
         cell: (info) => <div className="text-xs font-semibold text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
         enableColumnFilter: true,
         size: 110,
+      }),
+      // Tanggal Jatuh Tempo (calculated: tanggal + batas_hari)
+      columnHelper.accessor((row) => {
+        const tanggal = row.tanggal ? new Date(row.tanggal) : null;
+        const batasHari = row.termOfPayment?.batas_hari || 0;
+        if (!tanggal) return null;
+        const jatuhTempo = new Date(tanggal);
+        jatuhTempo.setDate(jatuhTempo.getDate() + batasHari);
+        return jatuhTempo;
+      }, {
+        id: 'tanggal_jatuh_tempo',
+        header: () => <div className="font-medium text-xs">Jatuh Tempo</div>,
+        cell: (info) => {
+          const value = info.getValue();
+          return <div className="text-xs text-gray-700">{value ? formatDate(value) : '-'}</div>;
+        },
+        enableSorting: true,
+        size: 80,
+      }),
+      // Tanggal TTF 1 (Print date)
+      columnHelper.accessor('tanggal_print_ttf1', {
+        id: 'tanggal_print_ttf1',
+        header: () => <div className="font-medium text-xs">TTF 1</div>,
+        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
+        enableSorting: true,
+        size: 70,
+      }),
+      // Tanggal TTF 2 (Upload/Validation date)
+      columnHelper.accessor('tanggal_upload_ttf2', {
+        id: 'tanggal_upload_ttf2',
+        header: () => <div className="font-medium text-xs">TTF 2</div>,
+        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
+        enableSorting: true,
+        size: 70,
+      }),
+      // Tanggal Bayar (from BankMutation)
+      columnHelper.accessor('bankMutation.tanggal_transaksi', {
+        id: 'tanggal_bayar',
+        header: () => <div className="font-medium text-xs">Tgl Bayar</div>,
+        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
+        enableSorting: true,
+        size: 75,
+      }),
+      // Total Payment (from BankMutation)
+      columnHelper.accessor((row) => Number(row.bankMutation?.jumlah) || 0, {
+        id: 'total_payment',
+        header: () => <div className="font-medium text-xs text-right">Payment</div>,
+        cell: (info) => {
+          const value = info.getValue();
+          return <div className="text-xs font-medium text-gray-900 text-right">{value > 0 ? formatCurrency(value) : '-'}</div>;
+        },
+        enableSorting: true,
+        size: 90,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status', // For sorting, backend expects 'statusId' or similar? Or maybe it doesn't support sorting by status name. 
