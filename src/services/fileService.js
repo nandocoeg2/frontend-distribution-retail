@@ -29,7 +29,7 @@ const fileService = {
     }
   },
 
-  uploadBulkPurchaseOrders: async (files) => {
+  uploadBulkPurchaseOrders: async (files, companyId) => {
     try {
       const token = authService.getToken();
       if (!token) {
@@ -39,6 +39,11 @@ const fileService = {
 
       for (const file of files) {
         formData.append('files', file);
+      }
+
+      // Add companyId for validation (must match company from PDF supplier code)
+      if (companyId) {
+        formData.append('companyId', companyId);
       }
 
       const response = await axios.post(`${API_BASE_URL}/bulk-purchase-order/bulk`, formData, {
@@ -55,7 +60,7 @@ const fileService = {
     }
   },
 
-  uploadBulkPurchaseOrdersTextExtraction: async (files) => {
+  uploadBulkPurchaseOrdersTextExtraction: async (files, companyId) => {
     try {
       const token = authService.getToken();
       if (!token) {
@@ -65,6 +70,11 @@ const fileService = {
 
       for (const file of files) {
         formData.append('files', file);
+      }
+
+      // Add companyId for validation (must match company from PDF supplier code)
+      if (companyId) {
+        formData.append('companyId', companyId);
       }
 
       const response = await axios.post(`${API_BASE_URL}/bulk-purchase-order/bulk/text-extraction`, formData, {

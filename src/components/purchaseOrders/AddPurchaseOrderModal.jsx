@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import fileService from '../../services/fileService.js';
+import authService from '../../services/authService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import PurchaseOrderDetailsForm from './PurchaseOrderDetailsForm.jsx';
 import { toast } from 'react-toastify';
@@ -99,12 +100,12 @@ const AddPurchaseOrderModal = ({
         return;
       }
       const allowedExtensions = ['.pdf', '.edi'];
-      
+
       // Filter files based on allowed extensions
       const filteredFiles = Array.from(files).filter((file) =>
         allowedExtensions.some((ext) => file.name.toLowerCase().endsWith(ext))
       );
-      
+
       // If in folder mode, automatically filter and allow upload
       if (uploadMode === 'folder') {
         if (filteredFiles.length === 0) {
@@ -147,11 +148,14 @@ const AddPurchaseOrderModal = ({
     setLoading(true);
     setError(null);
     try {
+      // Get user's selected company from authService
+      const companyId = authService.getCompanyData()?.id;
+
       // Use selected processing method
-      const result = processingMethod === 'ai' 
-        ? await fileService.uploadBulkPurchaseOrders(selectedFile)
-        : await fileService.uploadBulkPurchaseOrdersTextExtraction(selectedFile);
-      
+      const result = processingMethod === 'ai'
+        ? await fileService.uploadBulkPurchaseOrders(selectedFile, companyId)
+        : await fileService.uploadBulkPurchaseOrdersTextExtraction(selectedFile, companyId);
+
       if (result.success) {
         const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
         const data = result.data?.data || result.data;
@@ -163,9 +167,23 @@ const AddPurchaseOrderModal = ({
           if (errorFiles === 0) {
             toast.success(`${successFiles} file berhasil diproses (${methodLabel})`);
           } else if (successFiles === 0) {
-            toast.error(`${errorFiles} file gagal diproses (${methodLabel})`);
+            // Show error with details if available
+            const failedFiles = data?.failedFiles || [];
+            if (failedFiles.length > 0) {
+              const firstError = failedFiles[0];
+              toast.error(`${errorFiles} file gagal: ${firstError.reason}`, { autoClose: 10000 });
+            } else {
+              toast.error(`${errorFiles} file gagal diproses (${methodLabel})`);
+            }
           } else {
-            toast.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`);
+            // Show warning with details for partial failures
+            const failedFiles = data?.failedFiles || [];
+            if (failedFiles.length > 0) {
+              const firstError = failedFiles[0];
+              toast.warning(`${successFiles} berhasil, ${errorFiles} gagal: ${firstError.reason}`, { autoClose: 10000 });
+            } else {
+              toast.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`);
+            }
           }
         } else {
           toast.success(data?.message || `File uploaded successfully using ${methodLabel}!`);
@@ -218,13 +236,13 @@ const AddPurchaseOrderModal = ({
         setError(`Please fill in all required fields for detail #${i + 1}.`);
         return;
       }
-      
+
       // Validate that at least one quantity is provided
       if ((detail.quantity_pcs || 0) === 0 && (detail.quantity_carton || 0) === 0) {
         setError(`Detail #${i + 1}: Must order at least 1 carton or 1 pcs.`);
         return;
       }
-      
+
       // Validate qty_per_carton
       if (!detail.qty_per_carton || detail.qty_per_carton < 1) {
         setError(`Detail #${i + 1}: Qty per carton must be at least 1.`);
@@ -548,13 +566,13 @@ const AddPurchaseOrderModal = ({
                   <label className='block mb-2 text-sm font-medium text-gray-700'>
                     Upload Bulk Purchase Orders (PDF / EDI)
                   </label>
-                  
+
                   {/* Processing Method Selection */}
                   <div className='mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md'>
-                  <label className='block mb-2 text-sm font-medium text-gray-700'>
-                    Processing Method
-                  </label>
-                  <div className='flex items-start space-x-6'>
+                    <label className='block mb-2 text-sm font-medium text-gray-700'>
+                      Processing Method
+                    </label>
+                    <div className='flex items-start space-x-6'>
                       <label className='flex items-start space-x-2 cursor-pointer'>
                         <input
                           type='radio'
