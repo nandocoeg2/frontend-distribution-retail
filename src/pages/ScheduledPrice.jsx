@@ -157,7 +157,7 @@ const ScheduledPrice = () => {
               onDelete={handleDelete}
             />
 
-            {/* Pagination moved inside table */}
+
           </div>
 
           {/* Modals */}
