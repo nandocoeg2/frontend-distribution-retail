@@ -33,6 +33,9 @@ const DEFAULT_FORM_STATE = {
   ppn: '0'
 };
 
+// Stable reference for empty initial data to prevent infinite re-renders
+const EMPTY_INITIAL_DATA = {};
+
 const legacyDimensionMatchers = ['dimensiBarang', 'dimensi'];
 const itemStockSources = ['itemStock', 'itemStocks', 'item_stock'];
 const itemPriceSources = ['itemPrice', 'itemPrices', 'item_price'];
@@ -138,7 +141,7 @@ const parseDecimal = (value, fallback = 0) => {
   return Number.isNaN(parsed) ? fallback : parsed;
 };
 
-const ItemForm = ({ onSubmit, onClose, initialData = {}, loading = false, error = null }) => {
+const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading = false, error = null }) => {
   const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_STATE }));
   const [mixableItems, setMixableItems] = useState([]);
   const [loadingMixableItems, setLoadingMixableItems] = useState(false);
