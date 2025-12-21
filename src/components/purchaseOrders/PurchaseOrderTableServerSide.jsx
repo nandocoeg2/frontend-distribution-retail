@@ -81,6 +81,79 @@ const PurchaseOrderTableServerSide = forwardRef(({
     []
   );
 
+  const getQueryParams = useMemo(
+    () => ({ filters, ...rest }) => {
+      const mappedFilters = { ...filters };
+
+      if (mappedFilters.customer) {
+        if (Array.isArray(mappedFilters.customer) && mappedFilters.customer.length > 0) {
+          mappedFilters.customerIds = mappedFilters.customer;
+        }
+        delete mappedFilters.customer;
+      }
+
+      if (mappedFilters.top) {
+        if (Array.isArray(mappedFilters.top) && mappedFilters.top.length > 0) {
+          mappedFilters.termin_bayar_ids = mappedFilters.top;
+        }
+        delete mappedFilters.top;
+      }
+
+      if (mappedFilters.status) {
+        if (Array.isArray(mappedFilters.status) && mappedFilters.status.length > 0) {
+          mappedFilters.status_codes = mappedFilters.status;
+        }
+        delete mappedFilters.status;
+      }
+
+      if (mappedFilters.tanggal_masuk_po && typeof mappedFilters.tanggal_masuk_po === 'object') {
+        if (mappedFilters.tanggal_masuk_po.from) {
+          mappedFilters.tanggal_masuk_po_from = mappedFilters.tanggal_masuk_po.from;
+        }
+        if (mappedFilters.tanggal_masuk_po.to) {
+          mappedFilters.tanggal_masuk_po_to = mappedFilters.tanggal_masuk_po.to;
+        }
+        delete mappedFilters.tanggal_masuk_po;
+      }
+
+      if (mappedFilters.delivery_date && typeof mappedFilters.delivery_date === 'object') {
+        if (mappedFilters.delivery_date.from) {
+          mappedFilters.delivery_date_from = mappedFilters.delivery_date.from;
+        }
+        if (mappedFilters.delivery_date.to) {
+          mappedFilters.delivery_date_to = mappedFilters.delivery_date.to;
+        }
+        delete mappedFilters.delivery_date;
+      }
+
+      return {
+        ...rest,
+        filters: mappedFilters,
+      };
+    },
+    []
+  );
+
+  const {
+    data: orders,
+    pagination,
+    setPage,
+    hasActiveFilters,
+    isLoading,
+    isFetching,
+    error,
+    resetFilters,
+    tableOptions,
+  } = useServerSideTable({
+    queryHook: usePurchaseOrdersQuery,
+    selectData: (response) => response?.purchaseOrders ?? [],
+    selectPagination: (response) => response?.pagination,
+    initialPage,
+    initialLimit,
+    globalFilter: globalFilterConfig,
+    getQueryParams,
+  });
+
   const handleSelectAllInternalToggle = useCallback(() => {
     const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
 
@@ -104,64 +177,6 @@ const PurchaseOrderTableServerSide = forwardRef(({
       });
     }
   }, [orders, selectedOrders, onSelectionChange]);
-
-  const getQueryParams = useMemo(
-    () => ({ filters, ...rest }) => {
-      const mappedFilters = { ...filters };
-
-      if (mappedFilters.customer) {
-        // Handle array of customer IDs for multi-select
-        if (Array.isArray(mappedFilters.customer) && mappedFilters.customer.length > 0) {
-          mappedFilters.customerIds = mappedFilters.customer;
-        }
-        delete mappedFilters.customer;
-      }
-
-      if (mappedFilters.top) {
-        // Handle array of TOP IDs for multi-select
-        if (Array.isArray(mappedFilters.top) && mappedFilters.top.length > 0) {
-          mappedFilters.termin_bayar_ids = mappedFilters.top;
-        }
-        delete mappedFilters.top;
-      }
-
-      if (mappedFilters.status) {
-        // Handle array of status codes for multi-select
-        if (Array.isArray(mappedFilters.status) && mappedFilters.status.length > 0) {
-          mappedFilters.status_codes = mappedFilters.status;
-        }
-        delete mappedFilters.status;
-      }
-
-      // Handle date range filters for tanggal_masuk_po
-      if (mappedFilters.tanggal_masuk_po && typeof mappedFilters.tanggal_masuk_po === 'object') {
-        if (mappedFilters.tanggal_masuk_po.from) {
-          mappedFilters.tanggal_masuk_po_from = mappedFilters.tanggal_masuk_po.from;
-        }
-        if (mappedFilters.tanggal_masuk_po.to) {
-          mappedFilters.tanggal_masuk_po_to = mappedFilters.tanggal_masuk_po.to;
-        }
-        delete mappedFilters.tanggal_masuk_po;
-      }
-
-      // Handle date range filters for delivery_date
-      if (mappedFilters.delivery_date && typeof mappedFilters.delivery_date === 'object') {
-        if (mappedFilters.delivery_date.from) {
-          mappedFilters.delivery_date_from = mappedFilters.delivery_date.from;
-        }
-        if (mappedFilters.delivery_date.to) {
-          mappedFilters.delivery_date_to = mappedFilters.delivery_date.to;
-        }
-        delete mappedFilters.delivery_date;
-      }
-
-      return {
-        ...rest,
-        filters: mappedFilters,
-      };
-    },
-    []
-  );
 
   const [termOfPayments, setTermOfPayments] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -204,25 +219,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
     fetchCustomers();
   }, []);
 
-  const {
-    data: orders,
-    pagination,
-    setPage,
-    hasActiveFilters,
-    isLoading,
-    isFetching,
-    error,
-    resetFilters,
-    tableOptions,
-  } = useServerSideTable({
-    queryHook: usePurchaseOrdersQuery,
-    selectData: (response) => response?.purchaseOrders ?? [],
-    selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
-    globalFilter: globalFilterConfig,
-    getQueryParams,
-  });
+
 
   const columns = useMemo(
     () => [
