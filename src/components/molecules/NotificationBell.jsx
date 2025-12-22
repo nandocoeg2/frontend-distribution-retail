@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'react-toastify';
 import notificationService from '../../services/notificationService.js';
 
 const NotificationBell = () => {
@@ -42,6 +43,22 @@ const NotificationBell = () => {
             // Add new notification to the list
             setNotifications((prev) => [data.data, ...prev]);
             setUnreadCount((prev) => prev + 1);
+
+            // Show toast for BULK_PO_COMPLETE notifications
+            if (data.data?.type === 'BULK_PO_COMPLETE') {
+              const hasError = data.data.title?.includes('gagal');
+              if (hasError) {
+                toast.warning(data.data.title, {
+                  autoClose: 8000,
+                  onClick: () => setShowDropdown(true),
+                });
+              } else {
+                toast.success(data.data.title, {
+                  autoClose: 5000,
+                  onClick: () => setShowDropdown(true),
+                });
+              }
+            }
           } else if (data.type === 'NEW_ALERTS') {
             // New alerts were created, refresh the list
             fetchNotifications();
@@ -213,6 +230,22 @@ const NotificationBell = () => {
               <path
                 fillRule='evenodd'
                 d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                clipRule='evenodd'
+              />
+            </svg>
+          </div>
+        );
+      case 'BULK_PO_COMPLETE':
+        return (
+          <div className='w-8 h-8 bg-green-100 rounded-full flex items-center justify-center'>
+            <svg
+              className='w-4 h-4 text-green-600'
+              fill='currentColor'
+              viewBox='0 0 20 20'
+            >
+              <path
+                fillRule='evenodd'
+                d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
                 clipRule='evenodd'
               />
             </svg>

@@ -159,36 +159,15 @@ const AddPurchaseOrderModal = ({
       if (result.success) {
         const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
         const data = result.data?.data || result.data;
-        const successFiles = data?.successFiles;
-        const errorFiles = data?.errorFiles;
+        const totalFiles = data?.totalFiles || selectedFile.length;
 
-        // Show appropriate toast based on results
-        if (typeof successFiles === 'number' && typeof errorFiles === 'number') {
-          if (errorFiles === 0) {
-            toast.success(`${successFiles} file berhasil diproses (${methodLabel})`);
-          } else if (successFiles === 0) {
-            // Show error with details if available
-            const failedFiles = data?.failedFiles || [];
-            if (failedFiles.length > 0) {
-              const firstError = failedFiles[0];
-              toast.error(`${errorFiles} file gagal: ${firstError.reason}`, { autoClose: 10000 });
-            } else {
-              toast.error(`${errorFiles} file gagal diproses (${methodLabel})`);
-            }
-          } else {
-            // Show warning with details for partial failures
-            const failedFiles = data?.failedFiles || [];
-            if (failedFiles.length > 0) {
-              const firstError = failedFiles[0];
-              toast.warning(`${successFiles} berhasil, ${errorFiles} gagal: ${firstError.reason}`, { autoClose: 10000 });
-            } else {
-              toast.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`);
-            }
-          }
-        } else {
-          toast.success(data?.message || `File uploaded successfully using ${methodLabel}!`);
-        }
+        // Show info toast (blue) for background processing
+        toast.info(
+          `${totalFiles} file sedang diproses di background (${methodLabel}). Anda akan menerima notifikasi saat selesai.`,
+          { autoClose: 5000 }
+        );
 
+        // Clear inputs
         setSelectedFile(null);
         if (bulkFileInputRef.current) {
           bulkFileInputRef.current.value = '';
@@ -196,6 +175,9 @@ const AddPurchaseOrderModal = ({
         if (folderInputRef.current) {
           folderInputRef.current.value = '';
         }
+
+        // Close modal and notify parent
+        onClose();
         if (onFinished) onFinished();
       } else {
         throw new Error(result.error);
