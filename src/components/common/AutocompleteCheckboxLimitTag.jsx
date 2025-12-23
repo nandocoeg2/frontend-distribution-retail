@@ -154,9 +154,12 @@ const AutocompleteCheckboxLimitTag = ({
 
   const handleClearAll = (e) => {
     e.stopPropagation();
+    // Always trigger onChange when clearing all, even with fetchOnClose
+    // since clearing is a decisive action that should update immediately
     if (fetchOnClose) {
       setInternalValues([]);
-    } else if (onChange) {
+    }
+    if (onChange) {
       onChange({
         target: {
           name: name || 'autocomplete',

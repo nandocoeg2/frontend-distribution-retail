@@ -91,6 +91,7 @@ export const useServerSideTable = ({
   autoResetPageOnSort = true,
   autoResetPageOnColumnFilterChange = true,
   columnFilterDebounceMs = 500,
+  initialSorting = [],
   tableOptions: extraTableOptions = DEFAULT_TABLE_OPTIONS,
 } = {}) => {
   if (typeof queryHook !== 'function') {
@@ -99,7 +100,7 @@ export const useServerSideTable = ({
 
   const [page, setPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState(initialSorting);
 
   const globalFilterEnabled = Boolean(globalFilterOptions?.enabled);
   const globalFilterInitialValue = globalFilterOptions?.initialValue ?? '';

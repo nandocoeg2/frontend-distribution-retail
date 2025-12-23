@@ -1,24 +1,15 @@
-import React, { useState } from 'react';
-import { useScheduledPrices } from '../hooks/useScheduledPrices';
-import ScheduledPriceTable from '../components/scheduledPrice/ScheduledPriceTable';
-import ScheduledPriceFilters from '../components/scheduledPrice/ScheduledPriceFilters';
+import React, { useState, useRef } from 'react';
+import ScheduledPriceTableServerSide from '../components/scheduledPrice/ScheduledPriceTableServerSide';
 import AddScheduledPriceModal from '../components/scheduledPrice/AddScheduledPriceModal';
 import EditScheduledPriceModal from '../components/scheduledPrice/EditScheduledPriceModal';
 import ViewScheduledPriceModal from '../components/scheduledPrice/ViewScheduledPriceModal';
 import CancelScheduleModal from '../components/scheduledPrice/CancelScheduleModal';
 import useScheduledPriceOperations from '../hooks/useScheduledPriceOperations';
 import authService from '../services/authService';
-import { PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 const ScheduledPrice = () => {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [filters, setFilters] = useState({
-    status: '',
-    itemPriceId: '',
-    effectiveDateFrom: '',
-    effectiveDateTo: ''
-  });
+  const tableRef = useRef(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -31,29 +22,6 @@ const ScheduledPrice = () => {
   // Get companyId from auth service to filter schedules
   const companyData = authService.getCompanyData();
   const companyId = companyData?.id || null;
-
-  const queryParams = {
-    page,
-    limit,
-    companyId, // Filter by company
-    ...filters
-  };
-
-  const { data, isLoading, error, refetch } = useScheduledPrices(queryParams);
-
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    setPage(1); // Reset to first page when filters change
-  };
-
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
-  };
-
-  const handleLimitChange = (newLimit) => {
-    setLimit(newLimit);
-    setPage(1);
-  };
 
   const handleEdit = async (schedule) => {
     try {
@@ -88,21 +56,16 @@ const ScheduledPrice = () => {
     setShowCancelModal(true);
   };
 
-  const handleDelete = async (schedule) => {
-    if (window.confirm(`Are you sure you want to delete this schedule?`)) {
-      const success = await deleteSchedule(schedule.id);
-      if (success) {
-        refetch();
-      }
+  const handleDelete = async (scheduleId) => {
+    const success = await deleteSchedule(scheduleId);
+    if (success) {
+      tableRef.current?.refresh();
     }
   };
 
   const handleModalSuccess = () => {
-    refetch();
+    tableRef.current?.refresh();
   };
-
-  const schedules = data?.data || [];
-  const meta = data?.meta || { total: 0, page: 1, limit: 10, totalPages: 0 };
 
   return (
     <div>
@@ -126,38 +89,17 @@ const ScheduledPrice = () => {
             </div>
           </div>
 
-          {/* Filters */}
-          <ScheduledPriceFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-          />
-
-          {/* Table */}
+          {/* Server-side Table */}
           <div className="mt-3">
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600">{error.message || 'Failed to load schedules'}</p>
-              </div>
-            )}
-
-            <ScheduledPriceTable
-              schedules={schedules}
-              loading={isLoading}
-              pagination={{
-                currentPage: meta.page,
-                totalPages: meta.totalPages,
-                totalItems: meta.total,
-                itemsPerPage: meta.limit
-              }}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
+            <ScheduledPriceTableServerSide
+              ref={tableRef}
               onEdit={handleEdit}
               onView={handleView}
               onCancel={handleCancel}
               onDelete={handleDelete}
+              deleteLoading={operationLoading}
+              companyId={companyId}
             />
-
-
           </div>
 
           {/* Modals */}

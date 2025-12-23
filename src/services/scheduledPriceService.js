@@ -16,16 +16,54 @@ const parseErrorMessage = async (response, fallback) => {
 const scheduledPriceService = {
   ...baseService,
 
-  // Get all schedules with pagination and filters
+  // Get all schedules with pagination, filtering, and sorting
   getAllSchedules: (params = {}) => {
     const searchParams = new URLSearchParams();
+
+    // Pagination
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.status) searchParams.set('status', params.status);
-    if (params.itemPriceId) searchParams.set('itemPriceId', params.itemPriceId);
+
+    // Company filter
+    if (params.companyId) searchParams.set('companyId', params.companyId);
+
+    // Text filters
+    if (params.nama_barang) searchParams.set('nama_barang', params.nama_barang);
+    if (params.plu) searchParams.set('plu', params.plu);
+    if (params.item_code) searchParams.set('item_code', params.item_code);
+    if (params.barcode) searchParams.set('barcode', params.barcode);
+
+    // Range filters
+    if (params.harga_min) searchParams.set('harga_min', params.harga_min.toString());
+    if (params.harga_max) searchParams.set('harga_max', params.harga_max.toString());
+    if (params.new_price_min) searchParams.set('new_price_min', params.new_price_min.toString());
+    if (params.new_price_max) searchParams.set('new_price_max', params.new_price_max.toString());
+    if (params.pot1_min) searchParams.set('pot1_min', params.pot1_min.toString());
+    if (params.pot1_max) searchParams.set('pot1_max', params.pot1_max.toString());
+    if (params.pot2_min) searchParams.set('pot2_min', params.pot2_min.toString());
+    if (params.pot2_max) searchParams.set('pot2_max', params.pot2_max.toString());
+    if (params.ppn_min) searchParams.set('ppn_min', params.ppn_min.toString());
+    if (params.ppn_max) searchParams.set('ppn_max', params.ppn_max.toString());
+
+    // Date range
     if (params.effectiveDateFrom) searchParams.set('effectiveDateFrom', params.effectiveDateFrom);
     if (params.effectiveDateTo) searchParams.set('effectiveDateTo', params.effectiveDateTo);
-    if (params.companyId) searchParams.set('companyId', params.companyId);
+
+    // Multi-select arrays - append each value
+    if (params.customerIds?.length) {
+      params.customerIds.forEach(id => searchParams.append('customerIds', id));
+    }
+    if (params.statuses?.length) {
+      params.statuses.forEach(s => searchParams.append('statuses', s));
+    }
+
+    // Sorting
+    if (params.sortBy) searchParams.set('sortBy', params.sortBy);
+    if (params.sortOrder) searchParams.set('sortOrder', params.sortOrder);
+
+    // Legacy support
+    if (params.status) searchParams.set('status', params.status);
+    if (params.itemPriceId) searchParams.set('itemPriceId', params.itemPriceId);
 
     return get(`/item-price-schedules?${searchParams.toString()}`);
   },
