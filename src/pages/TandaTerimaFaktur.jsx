@@ -105,9 +105,9 @@ const TandaTerimaFakturPage = () => {
     }
   };
 
-  const handleDelete = (ttf) => {
-    if (!ttf?.id) return;
-    triggerDeleteTandaTerimaFaktur(ttf.id);
+  const handleDelete = (id) => {
+    if (!id) return;
+    triggerDeleteTandaTerimaFaktur(id);
   };
 
   return (

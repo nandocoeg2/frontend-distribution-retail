@@ -164,6 +164,41 @@ const TandaTerimaFakturTableServerSide = ({
         delete mappedFilters.grand_total;
       }
 
+      // Handle Jatuh Tempo date range (calculated field - filter via tanggal + batas_hari)
+      if (mappedFilters.tanggal_jatuh_tempo) {
+        if (mappedFilters.tanggal_jatuh_tempo.from) mappedFilters.tanggal_jatuh_tempo_start = mappedFilters.tanggal_jatuh_tempo.from;
+        if (mappedFilters.tanggal_jatuh_tempo.to) mappedFilters.tanggal_jatuh_tempo_end = mappedFilters.tanggal_jatuh_tempo.to;
+        delete mappedFilters.tanggal_jatuh_tempo;
+      }
+
+      // Handle TTF 1 date range
+      if (mappedFilters.tanggal_print_ttf1) {
+        if (mappedFilters.tanggal_print_ttf1.from) mappedFilters.tanggal_print_ttf1_start = mappedFilters.tanggal_print_ttf1.from;
+        if (mappedFilters.tanggal_print_ttf1.to) mappedFilters.tanggal_print_ttf1_end = mappedFilters.tanggal_print_ttf1.to;
+        delete mappedFilters.tanggal_print_ttf1;
+      }
+
+      // Handle TTF 2 date range
+      if (mappedFilters.tanggal_upload_ttf2) {
+        if (mappedFilters.tanggal_upload_ttf2.from) mappedFilters.tanggal_upload_ttf2_start = mappedFilters.tanggal_upload_ttf2.from;
+        if (mappedFilters.tanggal_upload_ttf2.to) mappedFilters.tanggal_upload_ttf2_end = mappedFilters.tanggal_upload_ttf2.to;
+        delete mappedFilters.tanggal_upload_ttf2;
+      }
+
+      // Handle Tanggal Bayar date range
+      if (mappedFilters.tanggal_bayar) {
+        if (mappedFilters.tanggal_bayar.from) mappedFilters.tanggal_bayar_start = mappedFilters.tanggal_bayar.from;
+        if (mappedFilters.tanggal_bayar.to) mappedFilters.tanggal_bayar_end = mappedFilters.tanggal_bayar.to;
+        delete mappedFilters.tanggal_bayar;
+      }
+
+      // Handle Total Payment Range
+      if (mappedFilters.total_payment) {
+        if (mappedFilters.total_payment.min) mappedFilters.total_payment_min = mappedFilters.total_payment.min;
+        if (mappedFilters.total_payment.max) mappedFilters.total_payment_max = mappedFilters.total_payment.max;
+        delete mappedFilters.total_payment;
+      }
+
       return {
         ...rest,
         filters: mappedFilters,
@@ -400,48 +435,155 @@ const TandaTerimaFakturTableServerSide = ({
         return jatuhTempo;
       }, {
         id: 'tanggal_jatuh_tempo',
-        header: () => <div className="font-medium text-xs">Jatuh Tempo</div>,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Jatuh Tempo</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => {
           const value = info.getValue();
           return <div className="text-xs text-gray-700">{value ? formatDate(value) : '-'}</div>;
         },
         enableSorting: true,
-        size: 80,
+        size: 90,
       }),
       // Tanggal TTF 1 (Print date)
       columnHelper.accessor('tanggal_print_ttf1', {
         id: 'tanggal_print_ttf1',
-        header: () => <div className="font-medium text-xs">TTF 1</div>,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">TTF 1</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
         enableSorting: true,
-        size: 70,
+        size: 90,
       }),
       // Tanggal TTF 2 (Upload/Validation date)
       columnHelper.accessor('tanggal_upload_ttf2', {
         id: 'tanggal_upload_ttf2',
-        header: () => <div className="font-medium text-xs">TTF 2</div>,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">TTF 2</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
         enableSorting: true,
-        size: 70,
+        size: 90,
       }),
       // Tanggal Bayar (from BankMutation)
       columnHelper.accessor('bankMutation.tanggal_transaksi', {
         id: 'tanggal_bayar',
-        header: () => <div className="font-medium text-xs">Tgl Bayar</div>,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tgl Bayar</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
         enableSorting: true,
-        size: 75,
+        size: 90,
       }),
       // Total Payment (from BankMutation)
       columnHelper.accessor((row) => Number(row.bankMutation?.jumlah) || 0, {
         id: 'total_payment',
-        header: () => <div className="font-medium text-xs text-right">Payment</div>,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { min: '', max: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs text-right">Payment</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="number"
+                  value={filterValue.min ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
+                  placeholder="Min"
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
+                  placeholder="Max"
+                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => {
           const value = info.getValue();
           return <div className="text-xs font-medium text-gray-900 text-right">{value > 0 ? formatCurrency(value) : '-'}</div>;
         },
         enableSorting: true,
-        size: 90,
+        size: 100,
       }),
       columnHelper.accessor('status.status_name', {
         id: 'status', // For sorting, backend expects 'statusId' or similar? Or maybe it doesn't support sorting by status name. 
