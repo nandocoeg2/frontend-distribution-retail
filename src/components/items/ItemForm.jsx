@@ -9,6 +9,7 @@ import authService from '../../services/authService';
 const DEFAULT_FORM_STATE = {
   companyId: '',
   plu: '',
+  item_code: '',
   nama_barang: '',
   eanBarcode: '',
   uom: 'KARTON',
@@ -240,6 +241,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
     setFormData({
       companyId: memoizedInitialData.companyId || defaultCompanyId,
       plu: memoizedInitialData.plu || '',
+      item_code: memoizedInitialData.item_code || '',
       nama_barang: memoizedInitialData.nama_barang || '',
       eanBarcode: memoizedInitialData.eanBarcode || '',
       uom: memoizedInitialData.uom || DEFAULT_FORM_STATE.uom,
@@ -308,6 +310,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
     const dataToSubmit = {
       companyId: formData.companyId,
       plu: formData.plu?.trim(),
+      item_code: formData.item_code?.trim() || null,
       nama_barang: formData.nama_barang?.trim(),
       allow_mixed_carton: Boolean(formData.allow_mixed_carton)
     };
@@ -411,6 +414,13 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           required
           disabled={isEditMode}
           placeholder="Contoh: PLU001"
+        />
+        <FormField
+          label="Item Code"
+          name="item_code"
+          value={formData.item_code}
+          onChange={handleChange}
+          placeholder="Opsional, kode item internal"
         />
         <FormField
           label="Nama Barang"

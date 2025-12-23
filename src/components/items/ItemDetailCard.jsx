@@ -385,6 +385,7 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
                   <InfoTable
                     data={[
                       { label: 'PLU', value: resolvedItem?.plu, copyable: true },
+                      { label: 'Item Code', value: resolvedItem?.item_code || '—', copyable: Boolean(resolvedItem?.item_code) },
                       { label: 'Nama Barang', value: resolvedItem?.nama_barang },
                       { label: 'Item ID', value: resolvedItem?.id, copyable: true },
                       { label: 'EAN Barcode', value: resolvedItem?.eanBarcode || '—', copyable: Boolean(resolvedItem?.eanBarcode) },
