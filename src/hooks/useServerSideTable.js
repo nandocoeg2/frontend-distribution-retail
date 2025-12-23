@@ -29,11 +29,11 @@ const isDefined = (value) => {
   // Handle range filter object (e.g., {start: 'xxx', end: 'yyy'} or {from: 'xxx', to: 'yyy'} or {min: 'xxx', max: 'yyy'})
   if (typeof value === 'object') {
     return (value.start !== undefined && value.start !== null && value.start !== '') ||
-           (value.end !== undefined && value.end !== null && value.end !== '') ||
-           (value.from !== undefined && value.from !== null && value.from !== '') ||
-           (value.to !== undefined && value.to !== null && value.to !== '') ||
-           (value.min !== undefined && value.min !== null && value.min !== '') ||
-           (value.max !== undefined && value.max !== null && value.max !== '');
+      (value.end !== undefined && value.end !== null && value.end !== '') ||
+      (value.from !== undefined && value.from !== null && value.from !== '') ||
+      (value.to !== undefined && value.to !== null && value.to !== '') ||
+      (value.min !== undefined && value.min !== null && value.min !== '') ||
+      (value.max !== undefined && value.max !== null && value.max !== '');
   }
   return true;
 };
@@ -65,7 +65,14 @@ const areFiltersEqual = (a = [], b = []) => {
 
   return a.every((item, index) => {
     const other = b[index];
-    return item?.id === other?.id && item?.value === other?.value;
+    if (item?.id !== other?.id) {
+      return false;
+    }
+    // Deep compare values for object types (e.g., range filters)
+    if (typeof item?.value === 'object' && typeof other?.value === 'object') {
+      return JSON.stringify(item?.value) === JSON.stringify(other?.value);
+    }
+    return item?.value === other?.value;
   });
 };
 
@@ -331,7 +338,12 @@ export const useServerSideTable = ({
         setPage(1);
       }
     },
-    onColumnFiltersChange: setColumnFiltersInput,
+    onColumnFiltersChange: (updater) => {
+      setColumnFiltersInput((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater;
+        return next;
+      });
+    },
     onPaginationChange: (updater) => {
       const current = { pageIndex: Math.max(page - 1, 0), pageSize: limit };
       const next =

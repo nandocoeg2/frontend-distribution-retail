@@ -1,33 +1,18 @@
-import React, { useState } from 'react';
-import useItemsPage from '../hooks/useItemsPage';
-import ItemSearch from '../components/items/ItemSearch';
-import ItemTable from '../components/items/ItemTable';
+import React, { useState, useRef } from 'react';
+import ItemTableServerSide from '../components/items/ItemTableServerSide';
 import AddItemModal from '../components/items/AddItemModal';
 import ItemDetailCard from '../components/items/ItemDetailCard';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { ConfirmationDialog } from '../components/ui';
-import { exportExcel } from '../services/itemService';
+import { exportExcel, deleteItem } from '../services/itemService';
 import toastService from '../services/toastService';
 
 const Items = () => {
-  const {
-    items,
-    pagination,
-    loading,
-    error,
-    searchQuery,
-    searchLoading,
-    handleSearchChange,
-    handlePageChange,
-    handleLimitChange,
-    deleteItem,
-    fetchItems
-  } = useItemsPage();
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedItemForDetail, setSelectedItemForDetail] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const tableRef = useRef(null);
 
   const openAddModal = () => setIsAddModalOpen(true);
 
@@ -35,7 +20,9 @@ const Items = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await exportExcel(searchQuery);
+      // Get current filters from table
+      const filters = tableRef.current?.getFilters?.() || {};
+      await exportExcel(filters.q || '');
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -48,38 +35,29 @@ const Items = () => {
   const handleExportExcel = () => {
     setShowExportConfirmation(true);
   };
+
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    if (fetchItems) {
-      fetchItems();
-    }
+    tableRef.current?.refetch?.();
   };
 
-  const handleViewDetail = (item) => {
-    setSelectedItemForDetail(item);
+  const handleViewDetail = (row) => {
+    setSelectedItemForDetail(row.original || row);
   };
 
   const handleCloseDetail = () => {
     setSelectedItemForDetail(null);
   };
 
-
-
-
-
-  if (error) {
-    return (
-      <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-        <p className='text-red-800'>Error: {error}</p>
-        <button
-          onClick={() => fetchItems && fetchItems()}
-          className='mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700'
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  const handleDeleteItem = async (id) => {
+    try {
+      await deleteItem(id);
+      toastService.success('Item berhasil dihapus');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      toastService.error(err.message || 'Gagal menghapus item');
+    }
+  };
 
   return (
     <div>
@@ -114,27 +92,12 @@ const Items = () => {
               </button>
             </div>
           </div>
-          <ItemSearch
-            searchQuery={searchQuery}
-            handleSearchChange={handleSearchChange}
-            searchLoading={searchLoading}
+          <ItemTableServerSide
+            ref={tableRef}
+            onViewDetail={handleViewDetail}
+            onDelete={handleDeleteItem}
+            selectedItemId={selectedItemForDetail?.id}
           />
-          {loading && !searchLoading ? (
-            <div className='flex justify-center items-center h-64'>
-              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-            </div>
-          ) : (
-            <ItemTable
-              items={items}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
-              onDelete={deleteItem}
-              onViewDetail={handleViewDetail}
-              selectedItemId={selectedItemForDetail?.id}
-              loading={loading || searchLoading}
-            />
-          )}
         </div>
       </div>
 
@@ -146,9 +109,7 @@ const Items = () => {
           item={selectedItemForDetail}
           onClose={handleCloseDetail}
           onUpdate={() => {
-            if (fetchItems) {
-              fetchItems();
-            }
+            tableRef.current?.refetch?.();
             handleViewDetail(selectedItemForDetail);
           }}
         />

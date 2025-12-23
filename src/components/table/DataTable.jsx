@@ -92,26 +92,27 @@ const DataTable = ({
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="space-y-2">
-                        {canSort ? (
-                          <div
-                            className="cursor-pointer select-none flex items-center space-x-1 hover:text-gray-700 font-medium"
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            <span className="flex-1">{content}</span>
-                            <span className="text-gray-400">
-                              {isSorted === 'asc' ? (
-                                <ArrowUpIcon className="h-4 w-4" />
-                              ) : isSorted === 'desc' ? (
-                                <ArrowDownIcon className="h-4 w-4" />
-                              ) : (
-                                <span className="opacity-50">⇅</span>
-                              )}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="font-medium">{content}</div>
-                        )}
+                      <div className="space-y-1">
+                        {/* Header content - not wrapped in click handler to allow filter inputs */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">{content}</div>
+                          {canSort && (
+                            <div
+                              className="cursor-pointer select-none ml-1 p-1 hover:bg-gray-200 rounded"
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              <span className="text-gray-400">
+                                {isSorted === 'asc' ? (
+                                  <ArrowUpIcon className="h-3 w-3" />
+                                ) : isSorted === 'desc' ? (
+                                  <ArrowDownIcon className="h-3 w-3" />
+                                ) : (
+                                  <span className="text-xs opacity-50">⇅</span>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </th>

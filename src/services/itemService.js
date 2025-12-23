@@ -183,6 +183,43 @@ export const searchItems = async (query, page = 1, limit = 10) => {
   return response.json();
 };
 
+/**
+ * Search items with per-column filters (server-side)
+ * @param {Object} params - Search parameters
+ * @param {number} params.page - Page number
+ * @param {number} params.limit - Items per page
+ * @param {string} params.q - Global search query
+ * @param {string} params.nama_barang - Filter by item name
+ * @param {string} params.plu - Filter by PLU
+ * @param {string} params.item_code - Filter by item code
+ * @param {string} params.eanBarcode - Filter by barcode
+ */
+export const searchItemsWithFilters = async (params = {}) => {
+  const searchParams = new URLSearchParams();
+
+  // Always include companyId to filter items by current company
+  const companyId = getCompanyId();
+  if (companyId) {
+    searchParams.append('companyId', companyId);
+  }
+
+  // Add all provided params
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, value);
+    }
+  });
+
+  const response = await fetch(`${API_URL}/search?${searchParams}`, {
+    headers: getHeaders()
+  });
+  if (!response.ok) {
+    const errorMessage = await parseErrorMessage(response, 'Failed to search items');
+    throw new Error(errorMessage);
+  }
+  return response.json();
+};
+
 export const createItem = async (itemData) => {
   // Always include companyId when creating items
   const companyId = getCompanyId();
