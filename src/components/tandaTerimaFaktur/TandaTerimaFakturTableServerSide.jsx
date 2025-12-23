@@ -11,6 +11,7 @@ import groupCustomerService from '../../services/groupCustomerService';
 import companyService from '../../services/companyService';
 import { termOfPaymentService } from '../../services/termOfPaymentService';
 import statusService from '../../services/statusService';
+import authService from '../../services/authService';
 
 const columnHelper = createColumnHelper();
 
@@ -199,9 +200,14 @@ const TandaTerimaFakturTableServerSide = ({
         delete mappedFilters.total_payment;
       }
 
+      const companyId = authService.getCompanyData()?.id;
+
       return {
         ...rest,
-        filters: mappedFilters,
+        filters: {
+          ...mappedFilters,
+          ...(companyId ? { companyId } : {}),
+        },
       };
     },
     []

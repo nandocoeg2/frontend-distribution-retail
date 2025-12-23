@@ -90,6 +90,21 @@ const CheckingListTableServerSide = ({
     []
   );
 
+  const companyId = authService.getCompanyData()?.id;
+
+  const getQueryParams = useCallback(({ filters, ...rest }) => {
+    const mappedFilters = { ...filters };
+
+    if (companyId) {
+      mappedFilters.companyId = companyId;
+    }
+
+    return {
+      ...rest,
+      filters: mappedFilters,
+    };
+  }, [companyId]);
+
   const {
     data: checklists,
     pagination,
@@ -106,6 +121,7 @@ const CheckingListTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    getQueryParams,
   });
 
   // Handler untuk select all toggle

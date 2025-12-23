@@ -189,6 +189,11 @@ const KwitansiPage = () => {
     // Convert column filters array to object for backend
     const filters = {};
 
+    const companyId = authService.getCompanyData()?.id;
+    if (companyId) {
+      filters.companyId = companyId;
+    }
+
     if (Array.isArray(columnFilters)) {
       columnFilters.forEach(({ id, value }) => {
         if (value !== undefined && value !== null && value !== '') {

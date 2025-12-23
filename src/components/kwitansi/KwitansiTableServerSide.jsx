@@ -13,6 +13,7 @@ import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import customerService from '../../services/customerService';
+import authService from '../../services/authService';
 
 const columnHelper = createColumnHelper();
 
@@ -110,6 +111,20 @@ const KwitansiTableServerSide = ({
     []
   );
 
+  const getQueryParams = useMemo(
+    () => ({ filters, ...rest }) => {
+      const companyId = authService.getCompanyData()?.id;
+      return {
+        ...rest,
+        filters: {
+          ...filters,
+          ...(companyId ? { companyId } : {}),
+        },
+      };
+    },
+    []
+  );
+
   const {
     data: kwitansis,
     pagination,
@@ -126,6 +141,7 @@ const KwitansiTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    getQueryParams,
   });
 
   // Handler untuk select all toggle
@@ -169,19 +185,10 @@ const KwitansiTableServerSide = ({
       // Get companyId from the first selected kwitansi
       const firstKwitansiId = selectedKwitansis[0];
       const firstKwitansi = kwitansis.find(k => resolveKwitansiId(k) === firstKwitansiId);
-      // Get company ID from localStorage
-      const companyData = localStorage.getItem('company');
-      let companyIdOverride = null;
-      if (companyData) {
-        try {
-          const parsedCompany = JSON.parse(companyData);
-          companyIdOverride = parsedCompany.id;
-        } catch (e) {
-          console.error('Failed to parse company data from localStorage', e);
-        }
-      }
+      // Get company ID from authService
+      const companyIdOverride = authService.getCompanyData()?.id;
 
-      // Fallback to existing logic if localStorage is empty (though it should be there)
+      // Fallback to existing logic if needed
       const companyId = String(companyIdOverride || firstKwitansi?.invoicePenagihan?.purchaseOrder?.company?.id || 'cm3c5v8g60000356c35478440');
 
       const html = await kwitansiService.exportKwitansiBulk(selectedKwitansis, companyId);
@@ -225,19 +232,10 @@ const KwitansiTableServerSide = ({
       const firstKwitansiId = selectedKwitansis[0];
       const firstKwitansi = kwitansis.find(k => resolveKwitansiId(k) === firstKwitansiId);
 
-      // Get company ID from localStorage
-      const companyData = localStorage.getItem('company');
-      let companyIdOverride = null;
-      if (companyData) {
-        try {
-          const parsedCompany = JSON.parse(companyData);
-          companyIdOverride = parsedCompany.id;
-        } catch (e) {
-          console.error('Failed to parse company data from localStorage', e);
-        }
-      }
+      // Get company ID from authService
+      const companyIdOverride = authService.getCompanyData()?.id;
 
-      // Fallback to existing logic if localStorage is empty
+      // Fallback to existing logic if needed
       // Using 'cm3c5v8g60000356c35478440' (Surya Pangan Asia) as found in database
       const companyId = String(companyIdOverride || firstKwitansi?.invoicePenagihan?.purchaseOrder?.company?.id || 'cm3c5v8g60000356c35478440');
 

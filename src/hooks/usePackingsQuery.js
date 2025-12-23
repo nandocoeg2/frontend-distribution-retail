@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import packingService from '../services/packingService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching packings with server-side filtering, sorting, and pagination
@@ -87,14 +88,20 @@ export const usePackingsByStatus = ({
   page = 1,
   limit = 10,
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['packings', 'status', statusCode, { page, limit }],
+    queryKey: ['packings', 'status', statusCode, { page, limit, companyId }],
     queryFn: async () => {
       const params = {
         page,
         limit,
         status_code: statusCode,
       };
+
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       const response = await packingService.getPackings(params);
 

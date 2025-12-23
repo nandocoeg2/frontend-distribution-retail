@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import purchaseOrderService from '../services/purchaseOrderService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching purchase orders with server-side filtering, sorting, and pagination
@@ -90,11 +91,16 @@ export const usePurchaseOrdersByStatus = ({
   return useQuery({
     queryKey: ['purchaseOrders', 'status', statusCode, { page, limit }],
     queryFn: async () => {
+      const companyId = authService.getCompanyData()?.id;
       const params = {
         page,
         limit,
         status_code: statusCode,
       };
+
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       const response = await purchaseOrderService.getPurchaseOrders(params);
 

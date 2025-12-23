@@ -1,4 +1,4 @@
-import { createApiService } from './apiService';
+import { createApiService, get } from './apiService';
 import authService from './authService';
 
 const baseService = createApiService('customers');
@@ -74,7 +74,28 @@ const customerService = {
 
   // Alias untuk getAll dengan nama yang lebih spesifik
   getAllCustomers: (page = 1, limit = 10) => {
-    return baseService.getAll(page, limit);
+    const companyData = authService.getCompanyData();
+    const params = {
+      page,
+      limit,
+    };
+    if (companyData?.id) {
+      params.companyId = companyData.id;
+    }
+    return get('/customers', params);
+  },
+
+  // Search customers with company filter
+  search: (query, page = 1, limit = 10) => {
+    const companyData = authService.getCompanyData();
+    const params = {
+      page,
+      limit,
+    };
+    if (companyData?.id) {
+      params.companyId = companyData.id;
+    }
+    return get(`/customers/search/${encodeURIComponent(query)}`, params);
   },
 
   // Bulk Upload Methods

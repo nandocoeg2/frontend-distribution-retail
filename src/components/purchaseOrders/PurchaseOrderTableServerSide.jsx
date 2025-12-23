@@ -6,6 +6,7 @@ import { formatDate, resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
 import { termOfPaymentService } from '../../services/termOfPaymentService';
 import customerService from '../../services/customerService';
+import authService from '../../services/authService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
@@ -81,9 +82,20 @@ const PurchaseOrderTableServerSide = forwardRef(({
     []
   );
 
+  // Get companyId from logged-in user's localStorage
+  const companyId = useMemo(() => {
+    const companyData = authService.getCompanyData();
+    return companyData?.id || null;
+  }, []);
+
   const getQueryParams = useMemo(
     () => ({ filters, ...rest }) => {
       const mappedFilters = { ...filters };
+
+      // Always add companyId filter to ensure data is filtered by the logged-in user's company
+      if (companyId) {
+        mappedFilters.companyId = companyId;
+      }
 
       if (mappedFilters.customer) {
         if (Array.isArray(mappedFilters.customer) && mappedFilters.customer.length > 0) {
@@ -131,7 +143,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
         filters: mappedFilters,
       };
     },
-    []
+    [companyId]
   );
 
   const {

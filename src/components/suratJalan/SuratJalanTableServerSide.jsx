@@ -234,6 +234,21 @@ const SuratJalanTableServerSide = ({
     []
   );
 
+  const companyId = authService.getCompanyData()?.id;
+
+  const getQueryParams = useCallback(({ filters, ...rest }) => {
+    const mappedFilters = { ...filters };
+
+    if (companyId) {
+      mappedFilters.companyId = companyId;
+    }
+
+    return {
+      ...rest,
+      filters: mappedFilters,
+    };
+  }, [companyId]);
+
   const {
     data: suratJalan,
     pagination,
@@ -251,6 +266,7 @@ const SuratJalanTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    getQueryParams,
   });
 
   const columns = useMemo(

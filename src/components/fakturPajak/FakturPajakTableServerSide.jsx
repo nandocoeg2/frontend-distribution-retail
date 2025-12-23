@@ -11,6 +11,7 @@ import { DataTable, DataTablePagination } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import customerService from '../../services/customerService';
 import { termOfPaymentService } from '../../services/termOfPaymentService';
+import authService from '../../services/authService';
 
 const columnHelper = createColumnHelper();
 
@@ -159,9 +160,14 @@ const FakturPajakTableServerSide = ({
         }
       }
 
+      const companyId = authService.getCompanyData()?.id;
+
       return {
         ...rest,
-        filters: mappedFilters,
+        filters: {
+          ...mappedFilters,
+          ...(companyId ? { companyId } : {}),
+        },
       };
     },
     []

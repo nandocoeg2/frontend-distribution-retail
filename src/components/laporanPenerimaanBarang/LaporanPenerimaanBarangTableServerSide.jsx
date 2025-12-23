@@ -22,6 +22,7 @@ import toastService from '../../services/toastService';
 import statusService from '../../services/statusService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import authService from '../../services/authService';
 
 const columnHelper = createColumnHelper();
 
@@ -183,6 +184,19 @@ const LaporanPenerimaanBarangTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    getQueryParams: useCallback(({ filters, ...rest }) => {
+      const companyId = authService.getCompanyData()?.id;
+      const mappedFilters = { ...filters };
+
+      if (companyId) {
+        mappedFilters.companyId = companyId;
+      }
+
+      return {
+        ...rest,
+        filters: mappedFilters,
+      };
+    }, []),
   });
 
   // Notify parent of filter changes for export

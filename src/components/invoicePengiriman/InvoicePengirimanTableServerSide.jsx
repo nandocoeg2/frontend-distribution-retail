@@ -15,6 +15,7 @@ import invoicePengirimanService from '../../services/invoicePengirimanService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import toastService from '../../services/toastService';
+import authService from '../../services/authService';
 
 const columnHelper = createColumnHelper();
 
@@ -197,7 +198,12 @@ const InvoicePengirimanTableServerSide = ({
   // Map frontend filter keys to backend parameters
   const getQueryParams = useMemo(
     () => ({ filters, ...rest }) => {
+      const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
+
+      if (companyId) {
+        mappedFilters.companyId = companyId;
+      }
 
       // Handle customer filter (array of IDs)
       if (mappedFilters.customerIds) {

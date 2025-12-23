@@ -99,6 +99,7 @@ const PackingTableServerSide = forwardRef(({
   onRowClick,
   selectedPackingId,
 }, ref) => {
+  const companyId = authService.getCompanyData()?.id;
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingTandaTerima, setIsPrintingTandaTerima] = useState(false);
   const [customers, setCustomers] = useState([]);
@@ -170,11 +171,15 @@ const PackingTableServerSide = forwardRef(({
       delete mappedFilters.tanggal_expired;
     }
 
+    if (companyId) {
+      mappedFilters.companyId = companyId;
+    }
+
     return {
       ...rest,
       filters: mappedFilters,
     };
-  }, []);
+  }, [companyId]);
 
   const handleBulkPrintSticker = async () => {
     if (!selectedPackings || selectedPackings.length === 0) {
@@ -312,6 +317,10 @@ const PackingTableServerSide = forwardRef(({
 
       // Reuse getQueryParams logic to format filters correctly
       const { filters: mappedFilters } = getQueryParams({ filters: currentFilters });
+
+      if (companyId) {
+        mappedFilters.companyId = companyId;
+      }
 
       await exportExcel(mappedFilters);
       toastService.success('Data berhasil diexport ke Excel');

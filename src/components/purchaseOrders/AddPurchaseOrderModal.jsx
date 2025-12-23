@@ -236,8 +236,10 @@ const AddPurchaseOrderModal = ({
     setError(null);
 
     // Prepare data for API
+    const companyId = authService.getCompanyData()?.id;
     const submitData = {
       ...formData,
+      companyId: companyId,
       purchaseOrderDetails:
         formData.po_type === 'SINGLE'
           ? JSON.stringify(purchaseOrderDetails)

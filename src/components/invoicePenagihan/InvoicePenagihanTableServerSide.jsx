@@ -8,6 +8,7 @@ import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import groupCustomerService from '../../services/groupCustomerService';
+import authService from '../../services/authService';
 
 const columnHelper = createColumnHelper();
 
@@ -135,9 +136,14 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         }
       }
 
+      const companyId = authService.getCompanyData()?.id;
+
       return {
         ...rest,
-        filters: mappedFilters,
+        filters: {
+          ...mappedFilters,
+          ...(companyId ? { companyId } : {}),
+        },
       };
     },
     []
@@ -185,13 +191,16 @@ const InvoicePenagihanTableServerSide = forwardRef(({
             filters.status_codes = value;
           } else if (id === 'group_customers' && Array.isArray(value) && value.length > 0) {
             filters.group_customers = value;
-          } else if (id === 'kepada') {
-            filters.kepada = value;
           } else {
             filters[id] = value;
           }
         }
       });
+
+      const companyId = authService.getCompanyData()?.id;
+      if (companyId) {
+        filters.companyId = companyId;
+      }
 
       return filters;
     },
