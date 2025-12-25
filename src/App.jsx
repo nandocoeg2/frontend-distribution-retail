@@ -63,6 +63,7 @@ import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import CheckingList from './pages/CheckingList.jsx';
 import StockMovements from './pages/StockMovements.jsx';
+import StokGantung from './pages/StokGantung.jsx';
 import ScheduledPrice from './pages/ScheduledPrice.jsx';
 
 // Component untuk routes yang menggunakan useAuth
@@ -267,6 +268,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <StockMovements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/stok-gantung'
+        element={
+          <ProtectedRoute>
+            <StokGantung />
           </ProtectedRoute>
         }
       />

@@ -2,16 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
-  ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline';
 import useStockMovementsPage from '../hooks/useStockMovementsPage';
 import StockMovementFilters from '../components/stockMovements/StockMovementFilters.jsx';
 import StockMovementTable from '../components/stockMovements/StockMovementTable.jsx';
-import { Spinner } from '../components/ui/Loading.jsx';
-import { useConfirmationDialog } from '../components/ui';
 import CreateStockInModal from '../components/stockMovements/CreateStockInModal.jsx';
 import CreateStockOutModal from '../components/stockMovements/CreateStockOutModal.jsx';
-import CreateReturnModal from '../components/stockMovements/CreateReturnModal.jsx';
 import { getItems } from '../services/itemService';
 import supplierService from '../services/supplierService';
 import toastService from '../services/toastService';
@@ -31,30 +27,18 @@ const StockMovements = () => {
     fetchMovements,
     createStockInMovement,
     createStockOutMovement,
-    createReturnMovement,
-    classifyReturnMovement,
     updateMovementNotes,
   } = useStockMovementsPage();
 
   const [showStockInModal, setShowStockInModal] = useState(false);
   const [showStockOutModal, setShowStockOutModal] = useState(false);
-  const [showReturnModal, setShowReturnModal] = useState(false);
   const [itemOptions, setItemOptions] = useState([]);
-  const [supplierOptions, setSupplierOptions] = useState([]);
-  const [optionsLoading, setOptionsLoading] = useState(false);
-  const [classifyLoadingId, setClassifyLoadingId] = useState(null);
-  const [pendingClassification, setPendingClassification] = useState(null);
   const [editingMovement, setEditingMovement] = useState(null);
   const [editNotesValue, setEditNotesValue] = useState('');
   const [editNotesLoading, setEditNotesLoading] = useState(false);
 
-  const {
-    showDialog,
-    hideDialog,
-    setLoading: setDialogLoading,
-    ConfirmationDialog,
-    dialogState,
-  } = useConfirmationDialog();
+  const [supplierOptions, setSupplierOptions] = useState([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
 
   const loadReferenceData = useCallback(async () => {
     setOptionsLoading(true);
@@ -126,64 +110,12 @@ const StockMovements = () => {
     loadReferenceData();
   }, [loadReferenceData]);
 
-  useEffect(() => {
-    if (!dialogState.show) {
-      setPendingClassification(null);
-    }
-  }, [dialogState.show]);
-
   const handleRetry = useCallback(() => {
     const currentPage = pagination?.currentPage || pagination?.page || 1;
     const limit =
       pagination?.itemsPerPage || pagination?.limit || undefined;
     fetchMovements(currentPage, limit);
   }, [fetchMovements, pagination]);
-
-  const handleClassifyRequest = useCallback(
-    (movement, action) => {
-      if (!movement?.id) {
-        toastService.error('ID return tidak ditemukan.');
-        return;
-      }
-
-      setPendingClassification({ movement, action });
-
-      const actionLabel = action === 'restock' ? 'Restock' : 'Reject';
-      const message =
-        action === 'restock'
-          ? `Return ${movement.movementNumber || movement.id} akan diklasifikasikan sebagai restock. Stok item akan bertambah.`
-          : `Return ${movement.movementNumber || movement.id} akan ditolak. Stok item tidak berubah.`;
-
-      showDialog({
-        title: 'Konfirmasi Klasifikasi Return',
-        message,
-        confirmText: actionLabel,
-        type: action === 'restock' ? 'success' : 'danger',
-      });
-    },
-    [showDialog]
-  );
-
-  const handleConfirmClassify = useCallback(async () => {
-    if (!pendingClassification?.movement?.id) {
-      hideDialog();
-      return;
-    }
-
-    const { movement, action } = pendingClassification;
-    setDialogLoading(true);
-    setClassifyLoadingId(movement.id);
-
-    try {
-      await classifyReturnMovement(movement.id, action);
-      hideDialog();
-    } catch (err) {
-      // Error handling already managed in hook/toast
-    } finally {
-      setDialogLoading(false);
-      setClassifyLoadingId(null);
-    }
-  }, [classifyReturnMovement, hideDialog, pendingClassification, setDialogLoading]);
 
   const handleEditNotes = useCallback((movement) => {
     setEditingMovement(movement);
@@ -219,14 +151,6 @@ const StockMovements = () => {
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h1 className='text-sm font-semibold text-gray-900'>Inventory</h1>
             <div className='flex gap-2'>
-              <button
-                type='button'
-                onClick={() => setShowReturnModal(true)}
-                className='inline-flex items-center rounded bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 transition-colors'
-              >
-                <ArrowUturnLeftIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
-                Return
-              </button>
               <button
                 type='button'
                 onClick={() => setShowStockOutModal(true)}
@@ -277,8 +201,6 @@ const StockMovements = () => {
             onLimitChange={handleLimitChange}
             loading={loading}
             searchLoading={searchLoading}
-            onClassify={handleClassifyRequest}
-            classifyLoadingId={classifyLoadingId}
             onEditNotes={handleEditNotes}
           />
         </div>
@@ -300,16 +222,6 @@ const StockMovements = () => {
         itemOptions={itemOptions}
         optionsLoading={optionsLoading}
       />
-
-      <CreateReturnModal
-        show={showReturnModal}
-        onClose={() => setShowReturnModal(false)}
-        onSubmit={createReturnMovement}
-        itemOptions={itemOptions}
-        optionsLoading={optionsLoading}
-      />
-
-      <ConfirmationDialog onConfirm={handleConfirmClassify} />
 
       {/* Edit Notes Modal */}
       {editingMovement && (

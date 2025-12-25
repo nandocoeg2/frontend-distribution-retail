@@ -1,0 +1,172 @@
+import authService from './authService';
+
+const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1/stok-gantung`;
+
+const isNonEmptyString = (value) =>
+    typeof value === 'string' && value.trim().length > 0;
+
+const extractErrorMessage = (payload, fallbackMessage) => {
+    if (!payload) {
+        return fallbackMessage;
+    }
+
+    if (isNonEmptyString(payload)) {
+        return payload.trim();
+    }
+
+    if (isNonEmptyString(payload?.message)) {
+        return payload.message.trim();
+    }
+
+    if (isNonEmptyString(payload?.error)) {
+        return payload.error.trim();
+    }
+
+    if (isNonEmptyString(payload?.error?.message)) {
+        return payload.error.message.trim();
+    }
+
+    if (Array.isArray(payload?.issues) && payload.issues.length > 0) {
+        const firstIssue = payload.issues[0];
+
+        if (isNonEmptyString(firstIssue)) {
+            return firstIssue.trim();
+        }
+
+        if (isNonEmptyString(firstIssue?.message)) {
+            return firstIssue.message.trim();
+        }
+    }
+
+    return fallbackMessage;
+};
+
+const parseErrorMessage = async (response, fallbackMessage) => {
+    try {
+        const errorPayload = await response.json();
+        return extractErrorMessage(errorPayload, fallbackMessage);
+    } catch (error) {
+        return fallbackMessage;
+    }
+};
+
+const buildHeaders = () => {
+    const token = authService.getToken();
+
+    return {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+    };
+};
+
+const buildQueryString = (params = {}) => {
+    const query = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null) {
+            return;
+        }
+
+        if (typeof value === 'string' && value.trim() === '') {
+            return;
+        }
+
+        query.set(key, value);
+    });
+
+    const queryString = query.toString();
+    return queryString ? `?${queryString}` : '';
+};
+
+export const getStokGantung = async ({
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    itemId,
+    dateFilterType,
+    startDate,
+    endDate,
+} = {}) => {
+    const query = buildQueryString({
+        page,
+        limit,
+        search,
+        status,
+        itemId,
+        dateFilterType,
+        startDate,
+        endDate,
+    });
+
+    const response = await fetch(`${API_BASE_URL}${query}`, {
+        headers: buildHeaders(),
+    });
+
+    if (!response.ok) {
+        const message = await parseErrorMessage(
+            response,
+            'Failed to fetch stok gantung'
+        );
+        throw new Error(message);
+    }
+
+    return response.json();
+};
+
+export const createReturn = async (payload) => {
+    const response = await fetch(`${API_BASE_URL}/return`, {
+        method: 'POST',
+        headers: buildHeaders(),
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const message = await parseErrorMessage(
+            response,
+            'Failed to create return movement'
+        );
+        throw new Error(message);
+    }
+
+    return response.json();
+};
+
+export const classifyReturn = async (movementId, action) => {
+    const response = await fetch(
+        `${API_BASE_URL}/return/${movementId}/classify`,
+        {
+            method: 'POST',
+            headers: buildHeaders(),
+            body: JSON.stringify({ action }),
+        }
+    );
+
+    if (!response.ok) {
+        const message = await parseErrorMessage(
+            response,
+            'Failed to classify return movement'
+        );
+        throw new Error(message);
+    }
+
+    return response.json();
+};
+
+export const updateNotes = async (movementId, notes) => {
+    const response = await fetch(`${API_BASE_URL}/${movementId}/notes`, {
+        method: 'PATCH',
+        headers: buildHeaders(),
+        body: JSON.stringify({ notes }),
+    });
+
+    if (!response.ok) {
+        const message = await parseErrorMessage(
+            response,
+            'Failed to update notes'
+        );
+        throw new Error(message);
+    }
+
+    return response.json();
+};
