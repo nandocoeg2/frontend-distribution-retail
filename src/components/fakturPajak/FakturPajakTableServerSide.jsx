@@ -202,6 +202,48 @@ const FakturPajakTableServerSide = ({
 
   const columns = useMemo(
     () => [
+      columnHelper.accessor((row) => row.invoicePenagihan, {
+        id: 'tanggal_invoice',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tgl Invoice</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => {
+          // invoicePenagihan is now one-to-one (single object)
+          const invoice = info.getValue();
+          if (!invoice) {
+            return <div className="text-xs text-gray-900">-</div>;
+          }
+          return (
+            <div className="text-xs text-gray-900">
+              {formatDate(invoice.tanggal)}
+            </div>
+          );
+        },
+        enableSorting: true,
+      }),
       columnHelper.accessor('no_pajak', {
         id: 'no_pajak',
         header: ({ column }) => (
@@ -258,48 +300,6 @@ const FakturPajakTableServerSide = ({
           return (
             <div className="text-xs text-gray-900">
               {invoice.no_invoice_penagihan || '-'}
-            </div>
-          );
-        },
-        enableSorting: true,
-      }),
-      columnHelper.accessor((row) => row.invoicePenagihan, {
-        id: 'tanggal_invoice',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Tgl Invoice</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="date"
-                  value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Dari tanggal"
-                />
-                <input
-                  type="date"
-                  value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Sampai tanggal"
-                />
-              </div>
-            </div>
-          );
-        },
-        cell: (info) => {
-          // invoicePenagihan is now one-to-one (single object)
-          const invoice = info.getValue();
-          if (!invoice) {
-            return <div className="text-xs text-gray-900">-</div>;
-          }
-          return (
-            <div className="text-xs text-gray-900">
-              {formatDate(invoice.tanggal)}
             </div>
           );
         },

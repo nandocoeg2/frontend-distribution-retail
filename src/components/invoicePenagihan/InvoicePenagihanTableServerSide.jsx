@@ -208,6 +208,42 @@ const InvoicePenagihanTableServerSide = forwardRef(({
 
   const columns = useMemo(
     () => [
+      columnHelper.accessor('tanggal', {
+        id: 'tanggal',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="date"
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Dari tanggal"
+                />
+                <input
+                  type="date"
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Sampai tanggal"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => (
+          <div className="text-xs text-gray-900">
+            {formatDate(info.getValue())}
+          </div>
+        ),
+        enableSorting: true,
+        enableColumnFilter: false,
+      }),
       columnHelper.accessor('no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
         header: ({ column }) => {
@@ -267,43 +303,6 @@ const InvoicePenagihanTableServerSide = forwardRef(({
           </div>
         ),
       }),
-      columnHelper.accessor('tanggal', {
-        id: 'tanggal',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">Tanggal</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="date"
-                  value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Dari tanggal"
-                />
-                <input
-                  type="date"
-                  value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Sampai tanggal"
-                />
-              </div>
-            </div>
-          );
-        },
-        cell: (info) => (
-          <div className="text-xs text-gray-900">
-            {formatDate(info.getValue())}
-          </div>
-        ),
-        enableSorting: true,
-        enableColumnFilter: false,
-      }),
-
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'kepada',
         header: ({ column }) => (

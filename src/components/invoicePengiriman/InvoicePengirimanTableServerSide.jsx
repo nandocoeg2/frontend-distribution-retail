@@ -286,6 +286,35 @@ const InvoicePengirimanTableServerSide = ({
         enableHiding: false,
         enableColumnFilter: false,
       }),
+      columnHelper.accessor('tanggal', {
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className='space-y-0.5'>
+              <div className='font-medium text-xs'>Tanggal</div>
+              <div className='flex flex-col gap-0.5'>
+                <input
+                  type='date'
+                  value={filterValue.from ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+                  onClick={(e) => e.stopPropagation()}
+                  title='Dari tanggal'
+                />
+                <input
+                  type='date'
+                  value={filterValue.to ?? ''}
+                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+                  onClick={(e) => e.stopPropagation()}
+                  title='Sampai tanggal'
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
+      }),
       columnHelper.accessor('no_invoice', {
         header: ({ column }) => (
           <div className='space-y-1'>
@@ -352,35 +381,6 @@ const InvoicePengirimanTableServerSide = ({
           </div>
         ),
         cell: (info) => <span className='text-xs truncate'>{info.row.original.purchaseOrder?.customer?.namaCustomer || '-'}</span>,
-      }),
-      columnHelper.accessor('tanggal', {
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className='space-y-0.5'>
-              <div className='font-medium text-xs'>Tanggal</div>
-              <div className='flex flex-col gap-0.5'>
-                <input
-                  type='date'
-                  value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-                  onClick={(e) => e.stopPropagation()}
-                  title='Dari tanggal'
-                />
-                <input
-                  type='date'
-                  value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-                  onClick={(e) => e.stopPropagation()}
-                  title='Sampai tanggal'
-                />
-              </div>
-            </div>
-          );
-        },
-        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor('grand_total', {
         header: ({ column }) => {
