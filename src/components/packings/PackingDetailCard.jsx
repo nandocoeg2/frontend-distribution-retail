@@ -9,7 +9,7 @@ import ActivityTimeline from '../common/ActivityTimeline';
 import PackingItemsTable from './PackingItemsTable';
 import PackingItemDetailModal from './PackingItemDetailModal';
 import { formatDate, formatDateTime } from '../../utils/formatUtils';
-import { exportPackingSticker, exportPackingTandaTerima } from '../../services/packingService';
+import { exportPackingSticker, exportPackingTandaTerima, exportPackingTandaTerimaGrouped } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import {
@@ -71,7 +71,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
-        
+
         printWindow.onload = () => {
           printWindow.focus();
           printWindow.print();
@@ -108,7 +108,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
-        
+
         printWindow.onload = () => {
           printWindow.focus();
           printWindow.print();
@@ -121,6 +121,43 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
     } catch (error) {
       console.error('Error exporting tanda terima:', error);
       toastService.error(error.message || 'Gagal mengekspor tanda terima');
+    }
+  };
+
+  const handleExportTandaTerimaGrouped = async () => {
+    try {
+      if (!packing || !packing.packingBoxes || packing.packingBoxes.length === 0) {
+        toastService.error('Tidak ada data box untuk dicetak');
+        return;
+      }
+
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info('Generating tanda terima grouped...');
+
+      const html = await exportPackingTandaTerimaGrouped(packing.id, companyData.id);
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success('Tanda terima grouped berhasil di-generate. Silakan print.');
+      } else {
+        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+      }
+    } catch (error) {
+      console.error('Error exporting tanda terima grouped:', error);
+      toastService.error(error.message || 'Gagal mengekspor tanda terima grouped');
     }
   };
 
@@ -182,6 +219,9 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
           </button>
           <button type="button" onClick={handleExportTandaTerima} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700">
             T.Terima
+          </button>
+          <button type="button" onClick={handleExportTandaTerimaGrouped} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-teal-600 rounded hover:bg-teal-700">
+            T.Terima Grouped
           </button>
           {onClose && (
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded" title="Close">

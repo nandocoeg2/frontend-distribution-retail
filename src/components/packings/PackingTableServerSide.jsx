@@ -11,7 +11,7 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
-import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportExcel } from '../../services/packingService';
+import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportPackingTandaTerimaGroupedBulk, exportExcel } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
@@ -102,6 +102,7 @@ const PackingTableServerSide = forwardRef(({
   const companyId = authService.getCompanyData()?.id;
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingTandaTerima, setIsPrintingTandaTerima] = useState(false);
+  const [isPrintingTandaTerimaGrouped, setIsPrintingTandaTerimaGrouped] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
@@ -268,6 +269,51 @@ const PackingTableServerSide = forwardRef(({
       toastService.error(error.message || 'Gagal mencetak tanda terima');
     } finally {
       setIsPrintingTandaTerima(false);
+    }
+  };
+
+  const handleBulkPrintTandaTerimaGrouped = async () => {
+    if (!selectedPackings || selectedPackings.length === 0) {
+      toastService.error('Tidak ada packing yang dipilih');
+      return;
+    }
+
+    setIsPrintingTandaTerimaGrouped(true);
+    try {
+      // Get company ID from auth
+      const companyData = authService.getCompanyData();
+      if (!companyData || !companyData.id) {
+        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
+        return;
+      }
+
+      toastService.info(`Memproses ${selectedPackings.length} tanda terima grouped...`);
+
+      // Call backend API to get Bulk HTML
+      const html = await exportPackingTandaTerimaGroupedBulk(selectedPackings, companyData.id);
+
+      // Open HTML in new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+
+        // Wait for content to load, then trigger print dialog
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
+        toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima grouped`);
+      } else {
+        console.error('Failed to open print window');
+        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
+      }
+    } catch (error) {
+      console.error('Error in bulk print tanda terima grouped:', error);
+      toastService.error(error.message || 'Gagal mencetak tanda terima grouped');
+    } finally {
+      setIsPrintingTandaTerimaGrouped(false);
     }
   };
   const globalFilterConfig = useMemo(
@@ -653,6 +699,9 @@ const PackingTableServerSide = forwardRef(({
               </button>
               <button onClick={handleBulkPrintTandaTerima} disabled={isPrintingTandaTerima || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50'>
                 <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerima ? '...' : 'T.Terima'}
+              </button>
+              <button onClick={handleBulkPrintTandaTerimaGrouped} disabled={isPrintingTandaTerimaGrouped || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50'>
+                <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima Grouped'}
               </button>
               <button onClick={onProcessSelected} disabled={actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
                 <PlayIcon className='h-3 w-3 mr-1' />{isProcessing ? '...' : 'Proses'}
