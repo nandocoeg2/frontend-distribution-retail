@@ -529,8 +529,8 @@ const PurchaseOrderTableServerSide = forwardRef(({
                 onClick={onBulkProcess}
                 disabled={isProcessing}
                 className={`inline-flex items-center px-2 py-1 text-xs text-white rounded ${isProcessing
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700'
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
                   }`}
               >
                 {isProcessing ? (
