@@ -73,7 +73,7 @@ const DataTable = ({
   return (
     <div className={wrapperClassName}>
       <table className={tableClassName}>
-        <thead>
+        <thead className="sticky top-0 z-10 bg-gray-50">
           {headerGroups.map((headerGroup) => (
             <tr key={headerGroup.id} className={headerRowClassName}>
               {headerGroup.headers.map((header) => {

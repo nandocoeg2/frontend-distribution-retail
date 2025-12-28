@@ -12,7 +12,6 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
 import purchaseOrderService from '../services/purchaseOrderService';
-import { getItemById } from '../services/itemService';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 
 const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
@@ -251,99 +250,11 @@ const PurchaseOrders = () => {
     }
   }, []);
 
-  // Helper: Dapatkan harga yang tepat berdasarkan targetDate dan schedules
-  const getEffectivePrice = (itemPrice, targetDate) => {
-    if (!itemPrice) return { harga: 0, source: 'none' };
-
-    const schedules = itemPrice.schedules || [];
-    const target = new Date(targetDate);
-
-    // Filter schedules yang effectiveDate <= targetDate dan status PENDING atau ACTIVE
-    const validSchedules = schedules.filter(schedule => {
-      const effectiveDate = new Date(schedule.effectiveDate);
-      const status = schedule.status?.toUpperCase();
-      return effectiveDate <= target && (status === 'PENDING' || status === 'ACTIVE');
-    });
-
-    // Jika ada schedule yang valid, ambil yang paling baru (effectiveDate terbesar)
-    if (validSchedules.length > 0) {
-      const latestSchedule = validSchedules.reduce((latest, current) => {
-        const latestDate = new Date(latest.effectiveDate);
-        const currentDate = new Date(current.effectiveDate);
-        return currentDate > latestDate ? current : latest;
-      });
-
-      return {
-        harga: parseFloat(latestSchedule.harga) || 0,
-        source: 'scheduled',
-        effectiveDate: latestSchedule.effectiveDate,
-        scheduleId: latestSchedule.id
-      };
-    }
-
-    // Fallback ke harga current dari itemPrice
-    return {
-      harga: parseFloat(itemPrice.harga) || 0,
-      source: 'current'
-    };
-  };
-
-  // Validasi harga item
+  // Validasi harga item - calls backend endpoint for efficient validation
   const validateItemPrices = async (purchaseOrderIds) => {
     try {
-      const priceDiscrepancies = [];
-
-      // Fetch semua purchase order yang dipilih
-      for (const poId of purchaseOrderIds) {
-        const poResponse = await purchaseOrderService.getPurchaseOrderById(poId);
-        const poData = poResponse?.data || poResponse;
-
-        if (!poData?.purchaseOrderDetails || !Array.isArray(poData.purchaseOrderDetails)) {
-          continue;
-        }
-
-        // Gunakan tanggal PO sebagai targetDate untuk validasi harga
-        const poDate = poData.po_date || poData.tanggal_po || new Date();
-
-        // Check setiap item di purchase order
-        for (const detail of poData.purchaseOrderDetails) {
-          if (!detail.itemId) continue;
-
-          try {
-            // Fetch item master data
-            const itemResponse = await getItemById(detail.itemId);
-            const itemData = itemResponse?.data || itemResponse;
-
-            const poPrice = parseFloat(detail.harga) || 0;
-
-            // Dapatkan harga efektif berdasarkan tanggal PO dan schedules
-            const effectivePrice = getEffectivePrice(itemData?.itemPrice, poDate);
-            const masterPrice = effectivePrice.harga;
-
-            // Jika harga berbeda, catat discrepancy
-            if (poPrice !== masterPrice) {
-              priceDiscrepancies.push({
-                poNumber: poData.po_number,
-                poDate: poDate,
-                itemName: detail.nama_barang,
-                plu: detail.plu,
-                poPrice: poPrice,
-                masterPrice: masterPrice,
-                priceSource: effectivePrice.source,
-                scheduleInfo: effectivePrice.source === 'scheduled' ? {
-                  effectiveDate: effectivePrice.effectiveDate,
-                  scheduleId: effectivePrice.scheduleId
-                } : null,
-                difference: Math.abs(poPrice - masterPrice)
-              });
-            }
-          } catch (error) {
-            console.error(`Error fetching item ${detail.itemId}:`, error);
-          }
-        }
-      }
-
-      return priceDiscrepancies;
+      const response = await purchaseOrderService.validateItemPrices(purchaseOrderIds);
+      return response?.data?.discrepancies || [];
     } catch (error) {
       console.error('Error validating item prices:', error);
       throw error;
@@ -463,86 +374,6 @@ const PurchaseOrders = () => {
     }
   };
 
-  const resolveOrderDetails = async (id) => {
-    if (!id) {
-      return null;
-    }
-
-    const existing = purchaseOrders.find((order) => order.id === id);
-    if (existing && (existing.createdAt || existing.created_at)) {
-      return existing;
-    }
-
-    try {
-      const response = await purchaseOrderService.getPurchaseOrderById(id);
-      if (response?.data) {
-        return response.data?.data || response.data;
-      }
-      return response;
-    } catch (error) {
-      console.error(`Failed to fetch purchase order ${id} for duplicate cleanup:`, error);
-      return null;
-    }
-  };
-
-  const determineDeletionTargets = async (groups) => {
-    const idsToDeleteSet = new Set();
-    const idsToKeepSet = new Set();
-    const fetchErrorSet = new Set();
-
-    for (const group of groups) {
-      const detailedOrders = await Promise.all(
-        group.ids.map(async (id) => {
-          const detail = await resolveOrderDetails(id);
-          if (!detail) {
-            fetchErrorSet.add(id);
-          }
-          return detail;
-        })
-      );
-
-      const normalized = detailedOrders
-        .map((order, index) => {
-          if (!order) {
-            return null;
-          }
-
-          const resolvedId = order.id || order._id || group.ids[index];
-          if (!resolvedId) {
-            fetchErrorSet.add(group.ids[index]);
-            return null;
-          }
-
-          const createdAtValue = resolveCreatedAtValue(order);
-          const timestamp = createdAtValue ? new Date(createdAtValue).getTime() : NaN;
-
-          return {
-            id: resolvedId,
-            timestamp: Number.isFinite(timestamp) ? timestamp : Number.MAX_SAFE_INTEGER,
-          };
-        })
-        .filter(Boolean);
-
-      if (normalized.length === 0) {
-        continue;
-      }
-
-      normalized.sort((a, b) => a.timestamp - b.timestamp);
-      const keep = normalized[0];
-      idsToKeepSet.add(keep.id);
-
-      normalized.slice(1).forEach(({ id }) => {
-        idsToDeleteSet.add(id);
-      });
-    }
-
-    return {
-      idsToDelete: Array.from(idsToDeleteSet),
-      idsToKeep: Array.from(idsToKeepSet),
-      fetchErrors: Array.from(fetchErrorSet),
-    };
-  };
-
   const promptDuplicateCleanup = (duplicateGroups, ids, options = {}) => {
     const idsSnapshot = [...ids];
 
@@ -562,41 +393,24 @@ const PurchaseOrders = () => {
     setBulkProcessing(true);
 
     try {
-      const { idsToDelete, idsToKeep, fetchErrors } = await determineDeletionTargets(duplicateGroups);
+      // Send duplicate groups directly to backend - backend determines keep/delete
+      const bulkResult = await purchaseOrderService.markDuplicatesFailed(duplicateGroups);
+      const resultData = bulkResult?.data || bulkResult;
 
-      if (fetchErrors.length > 0) {
-        showWarning(`Tidak dapat memuat detail untuk ${fetchErrors.length} purchase order duplikat. Data tersebut tidak akan diupdate otomatis.`);
-      }
-
-      if (idsToDelete.length === 0) {
-        if (fetchErrors.length > 0) {
-          showError('Tidak dapat menentukan purchase order duplikat yang akan diupdate. Silakan periksa data secara manual.');
-        } else {
-          showWarning('Tidak ditemukan purchase order duplikat yang perlu diupdate.');
-        }
-        hideDialog();
+      if (resultData?.failedIds?.length > 0) {
+        const maxDisplay = 3;
+        const displayIds = resultData.failedIds.slice(0, maxDisplay).join(', ');
+        const remaining = resultData.failedIds.length - maxDisplay;
+        const failedIds = remaining > 0 ? `${displayIds}, ... dan ${remaining} lainnya` : displayIds;
+        showError(`Gagal mengupdate ${resultData.failedIds.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
         return;
       }
 
-      const failedUpdates = [];
+      // Use idsToKeep and idsMarkedFailed from backend response
+      const idsMarkedFailed = resultData?.idsMarkedFailed || [];
+      const idsToKeep = resultData?.idsToKeep || [];
 
-      // Update status duplikat menjadi FAILED PURCHASE ORDER
-      for (const id of idsToDelete) {
-        try {
-          await purchaseOrderService.updatePurchaseOrder(id, { status_code: FAILED_STATUS_CODE });
-        } catch (err) {
-          failedUpdates.push({ id, error: err });
-          console.error(`Failed to update duplicate purchase order ${id}:`, err);
-        }
-      }
-
-      if (failedUpdates.length > 0) {
-        const failedIds = failedUpdates.map(({ id }) => id).join(', ');
-        showError(`Gagal mengupdate ${failedUpdates.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
-        return;
-      }
-
-      const failedSet = new Set(idsToDelete);
+      const failedSet = new Set(idsMarkedFailed);
       setSelectedOrders((prev) => prev.filter((id) => !failedSet.has(id)));
 
       const idsToProcessSet = new Set((originalIds || []).filter((id) => !failedSet.has(id)));
@@ -605,14 +419,14 @@ const PurchaseOrders = () => {
       const idsToProcess = Array.from(idsToProcessSet);
 
       if (idsToProcess.length === 0) {
-        showSuccess(`Berhasil mengupdate ${idsToDelete.length} purchase order duplikat menjadi FAILED. Tidak ada data tersisa untuk diproses.`);
+        showSuccess(`Berhasil mengupdate ${idsMarkedFailed.length} purchase order duplikat menjadi FAILED. Tidak ada data tersisa untuk diproses.`);
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
         hideDialog();
         return;
       }
 
-      const totalFailedCount = currentFailedCount + idsToDelete.length;
+      const totalFailedCount = currentFailedCount + idsMarkedFailed.length;
 
       await handleConfirmBulkProcess(idsToProcess, { failedCount: totalFailedCount });
     } catch (error) {

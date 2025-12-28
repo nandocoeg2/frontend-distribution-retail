@@ -480,6 +480,57 @@ const purchaseOrderService = {
     document.body.removeChild(a);
 
     return { success: true, filename };
+  },
+
+  // Validate item prices - compare PO prices with master data prices
+  validateItemPrices: async (purchaseOrderIds) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const response = await fetch(`${API_URL}/validate-prices`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ purchaseOrderIds }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to validate item prices');
+    }
+
+    return response.json();
+  },
+
+  // Bulk mark duplicate purchase orders as FAILED
+  // Backend determines which to keep (oldest) and marks rest as FAILED
+  markDuplicatesFailed: async (duplicateGroups) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const response = await fetch(`${API_URL}/mark-duplicates-failed`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ duplicateGroups }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to mark duplicates as failed');
+    }
+
+    return response.json();
   }
 };
 
