@@ -736,7 +736,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
           }}
           cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
           emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
-          wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(75vh-300px)]"
+          wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
         />
       </div>
 
