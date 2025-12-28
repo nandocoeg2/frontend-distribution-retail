@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import scheduledPriceService from '../services/scheduledPriceService';
 
 /**
@@ -64,12 +64,13 @@ export const useScheduledPricesQuery = ({
             }
 
             // Call backend API
+            // Note: axios interceptor already returns response.data, so response IS the API response body
+            // API returns: { success: true, data: [...schedules], pagination: {...} }
             const response = await scheduledPriceService.getAllSchedules(params);
 
-            // Handle nested response format: { success: true, data: [...], pagination: {...} }
-            const responseData = response?.data || response;
-            const schedulesData = responseData?.data || responseData || [];
-            const paginationData = responseData?.pagination || {
+            // Extract schedules and pagination from flat response structure
+            const schedulesData = response?.data || [];
+            const paginationData = response?.pagination || {
                 currentPage: parseInt(page) || 1,
                 totalPages: 1,
                 totalItems: Array.isArray(schedulesData) ? schedulesData.length : 0,
@@ -89,9 +90,9 @@ export const useScheduledPricesQuery = ({
                 pagination: normalizedPagination,
             };
         },
-        keepPreviousData: true, // Keep previous data while fetching new data
+        placeholderData: keepPreviousData, // React Query v5: Keep previous data while fetching new data
         staleTime: 0, // Always consider data stale to ensure fresh data after mutations
-        cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
+        gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes (renamed from cacheTime in v5)
     });
 };
 
