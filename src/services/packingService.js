@@ -65,6 +65,11 @@ export const completePackings = (ids) => {
   return post(`${API_URL}/complete`, { ids });
 };
 
+// Bulk update tanggal packing
+export const bulkUpdateTanggalPacking = (ids, tanggal_packing) => {
+  return post(`${API_URL}/bulk-update-tanggal`, { ids, tanggal_packing });
+};
+
 // Export packings to Excel
 export const exportExcel = async (filters = {}) => {
   try {
@@ -318,6 +323,7 @@ export default {
   searchPackingsAdvanced,
   processPackings,
   completePackings,
+  bulkUpdateTanggalPacking,
   exportPackingSticker,
   exportPackingStickerBulk,
   exportPackingTandaTerima,

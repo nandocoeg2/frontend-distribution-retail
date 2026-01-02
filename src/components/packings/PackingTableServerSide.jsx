@@ -6,17 +6,19 @@ import {
   PlayIcon,
   CheckIcon,
   PrinterIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
-import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportPackingTandaTerimaGroupedBulk, exportExcel } from '../../services/packingService';
+import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+
 
 const columnHelper = createColumnHelper();
 
@@ -106,6 +108,9 @@ const PackingTableServerSide = forwardRef(({
   const [customers, setCustomers] = useState([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const [isEditTanggalModalOpen, setIsEditTanggalModalOpen] = useState(false);
+  const [editTanggalLoading, setEditTanggalLoading] = useState(false);
+  const [selectedTanggal, setSelectedTanggal] = useState('');
 
   // Status options for multi-select filter
   const statusOptions = useMemo(() => [
@@ -316,6 +321,40 @@ const PackingTableServerSide = forwardRef(({
       setIsPrintingTandaTerimaGrouped(false);
     }
   };
+
+  const handleBulkEditTanggal = () => {
+    if (!selectedPackings || selectedPackings.length === 0) {
+      toastService.error('Tidak ada packing yang dipilih');
+      return;
+    }
+    setSelectedTanggal('');
+    setIsEditTanggalModalOpen(true);
+  };
+
+  const handleConfirmEditTanggal = async () => {
+    if (!selectedTanggal) {
+      toastService.error('Silakan pilih tanggal');
+      return;
+    }
+
+    setEditTanggalLoading(true);
+    try {
+      const result = await bulkUpdateTanggalPacking(selectedPackings, selectedTanggal);
+      toastService.success(result?.data?.message || `Berhasil mengupdate tanggal ${selectedPackings.length} packing`);
+      setIsEditTanggalModalOpen(false);
+      setSelectedTanggal('');
+      // Refresh table data
+      if (refetch) {
+        refetch();
+      }
+    } catch (error) {
+      console.error('Error in bulk edit tanggal:', error);
+      toastService.error(error.message || 'Gagal mengupdate tanggal packing');
+    } finally {
+      setEditTanggalLoading(false);
+    }
+  };
+
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -331,6 +370,7 @@ const PackingTableServerSide = forwardRef(({
     setPage,
     hasActiveFilters,
     resetFilters,
+    refetch,
     isLoading,
     error,
     tableOptions,
@@ -703,6 +743,9 @@ const PackingTableServerSide = forwardRef(({
               <button onClick={handleBulkPrintTandaTerimaGrouped} disabled={isPrintingTandaTerimaGrouped || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50'>
                 <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima Grouped'}
               </button>
+              <button onClick={handleBulkEditTanggal} disabled={editTanggalLoading || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50'>
+                <CalendarIcon className='h-3 w-3 mr-1' />{editTanggalLoading ? '...' : 'Edit Tanggal'}
+              </button>
               <button onClick={onProcessSelected} disabled={actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
                 <PlayIcon className='h-3 w-3 mr-1' />{isProcessing ? '...' : 'Proses'}
               </button>
@@ -760,6 +803,62 @@ const PackingTableServerSide = forwardRef(({
         type="info"
         loading={exportLoading}
       />
+
+      {/* Modal Edit Tanggal */}
+      {isEditTanggalModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => setIsEditTanggalModalOpen(false)}></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <CalendarIcon className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Edit Tanggal Packing
+                    </h3>
+                    <div className="mt-2">
+                      <div>
+                        <input
+                          type="date"
+                          id="tanggal_packing"
+                          name="tanggal_packing"
+                          value={selectedTanggal}
+                          onChange={(e) => setSelectedTanggal(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleConfirmEditTanggal}
+                  disabled={editTanggalLoading || !selectedTanggal}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-base font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editTanggalLoading ? 'Memproses...' : 'Update Tanggal'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditTanggalModalOpen(false)}
+                  disabled={editTanggalLoading}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
