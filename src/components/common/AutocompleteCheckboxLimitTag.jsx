@@ -5,6 +5,7 @@ const AutocompleteCheckboxLimitTag = ({
   options = [],
   value = [], // Array of selected values
   onChange,
+  onSearchChange, // Callback when search input changes (for backend search)
   placeholder = 'Select...',
   label,
   required = false,
@@ -95,8 +96,13 @@ const AutocompleteCheckboxLimitTag = ({
   }, [showOptions, fetchOnClose, internalValues, externalValues, onChange, name]);
 
   const handleInputChange = (e) => {
-    setInputValue(e.target.value);
+    const newValue = e.target.value;
+    setInputValue(newValue);
     setShowOptions(true);
+    // Trigger onSearchChange callback for backend search
+    if (onSearchChange) {
+      onSearchChange(newValue);
+    }
   };
 
   const handleOptionToggle = (option) => {

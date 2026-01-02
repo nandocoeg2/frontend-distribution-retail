@@ -7,7 +7,7 @@ import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import { useConfirmationDialog } from '../ui';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
-import useCustomerSearch from '../../hooks/useCustomerSearch';
+import customerService from '../../services/customerService';
 
 const columnHelper = createColumnHelper();
 
@@ -29,8 +29,22 @@ const ScheduledPriceTableServerSide = forwardRef(({
     const [deleteId, setDeleteId] = useState(null);
     const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
 
-    // Use customer search hook for customer options
-    const { searchResults: customers } = useCustomerSearch();
+    // Fetch all customers upfront like PurchaseOrderTableServerSide
+    const [customers, setCustomers] = useState([]);
+
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const response = await customerService.getAllCustomers(1, 9999);
+                const data = response?.data?.data || response?.data || [];
+                setCustomers(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error('Failed to fetch customers:', error);
+                setCustomers([]);
+            }
+        };
+        fetchCustomers();
+    }, []);
 
     // Add "Semua" option for null customerId
     const customerOptions = useMemo(() => {

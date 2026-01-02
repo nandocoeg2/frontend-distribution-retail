@@ -8,6 +8,7 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
   const [uploading, setUploading] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [showAllErrors, setShowAllErrors] = useState(false);
   const pollingIntervalRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -322,12 +323,71 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
                 </div>
               </>
             )}
-            {uploadStatus.reason && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                <span className="text-sm font-medium text-red-800">Alasan Gagal:</span>
-                <p className="text-sm text-red-700 mt-1">{uploadStatus.reason}</p>
-              </div>
-            )}
+            {uploadStatus.reason && (() => {
+              // Parse error message to extract error count and individual errors
+              const reasonText = uploadStatus.reason;
+              const errorMatch = reasonText.match(/^(\d+) error\(s\): (.+)$/s);
+
+              if (errorMatch) {
+                const totalErrors = parseInt(errorMatch[1], 10);
+                const errorContent = errorMatch[2];
+                // Split by semicolon to get individual errors
+                const allErrors = errorContent.split(';').map(e => e.trim()).filter(Boolean);
+                // Show first 3 errors initially
+                const displayErrors = allErrors.slice(0, 3);
+                const hiddenCount = allErrors.length - displayErrors.length;
+
+                return (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-red-800">Alasan Gagal:</span>
+                      {hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllErrors(!showAllErrors)}
+                          className="text-xs font-medium text-red-600 hover:text-red-800 underline focus:outline-none"
+                        >
+                          {showAllErrors ? 'Sembunyikan' : `Lihat semua (${allErrors.length} error)`}
+                        </button>
+                      )}
+                    </div>
+                    {!showAllErrors ? (
+                      <p className="text-sm text-red-700 mt-1">
+                        {displayErrors.join('; ')}
+                        {hiddenCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllErrors(true)}
+                            className="ml-1 text-red-600 hover:text-red-800 underline font-medium focus:outline-none"
+                          >
+                            ...dan {hiddenCount} error lainnya
+                          </button>
+                        )}
+                      </p>
+                    ) : (
+                      <div className="mt-2 max-h-48 overflow-y-auto border border-red-200 rounded bg-white p-2">
+                        <ul className="space-y-1">
+                          {allErrors.map((error, index) => (
+                            <li key={index} className="text-sm text-red-700 flex items-start">
+                              <span className="text-red-400 mr-2">•</span>
+                              <span>{error}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Fallback to simple display if format doesn't match
+              return (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <span className="text-sm font-medium text-red-800">Alasan Gagal:</span>
+                  <p className="text-sm text-red-700 mt-1">{reasonText}</p>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
