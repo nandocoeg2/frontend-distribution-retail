@@ -79,7 +79,7 @@ const KwitansiTableServerSide = ({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await customerService.getAllCustomers(1, 100);
+        const response = await customerService.getAllCustomers(1, 100, { hasKwitansi: true });
         // Handle response format: { success: true, data: { data: [...] } }
         // After axios interceptor unwraps: { data: { data: [...] } } or { data: [...] }
         let data = [];

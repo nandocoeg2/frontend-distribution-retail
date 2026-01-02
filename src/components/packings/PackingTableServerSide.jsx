@@ -125,7 +125,7 @@ const PackingTableServerSide = forwardRef(({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await customerService.getAllCustomers(1, 100);
+        const response = await customerService.getAllCustomers(1, 100, { hasPacking: true });
         const data = response?.data?.data || response?.data || [];
         setCustomers(Array.isArray(data) ? data : []);
       } catch (error) {

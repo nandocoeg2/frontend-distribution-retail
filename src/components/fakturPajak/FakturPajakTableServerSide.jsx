@@ -94,7 +94,7 @@ const FakturPajakTableServerSide = ({
     const fetchDropdownData = async () => {
       try {
         // Fetch customers
-        const customerResponse = await customerService.getAllCustomers(1, 100);
+        const customerResponse = await customerService.getAllCustomers(1, 100, { hasFakturPajak: true });
         const customerData = customerResponse?.data?.data || customerResponse?.data || [];
         setCustomers(Array.isArray(customerData) ? customerData : []);
 

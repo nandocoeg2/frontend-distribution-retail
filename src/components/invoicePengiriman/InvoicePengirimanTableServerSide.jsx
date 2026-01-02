@@ -67,7 +67,7 @@ const InvoicePengirimanTableServerSide = ({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await customerService.getAllCustomers(1, 100);
+        const response = await customerService.getAllCustomers(1, 100, { hasInvoicePengiriman: true });
         const data = response?.data?.data || response?.data || [];
         setCustomers(Array.isArray(data) ? data : []);
       } catch (error) {

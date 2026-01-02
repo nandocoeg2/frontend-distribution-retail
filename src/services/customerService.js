@@ -73,11 +73,12 @@ const customerService = {
   },
 
   // Alias untuk getAll dengan nama yang lebih spesifik
-  getAllCustomers: (page = 1, limit = 10) => {
+  getAllCustomers: (page = 1, limit = 10, options = {}) => {
     const companyData = authService.getCompanyData();
     const params = {
       page,
       limit,
+      ...options
     };
     if (companyData?.id) {
       params.companyId = companyData.id;

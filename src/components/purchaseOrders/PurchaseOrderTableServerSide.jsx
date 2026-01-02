@@ -221,7 +221,8 @@ const PurchaseOrderTableServerSide = forwardRef(({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await customerService.getAllCustomers(1, 9999);
+        // Filter only customers that have purchase orders
+        const response = await customerService.getAllCustomers(1, 9999, { hasPurchaseOrder: true });
         const data = response?.data?.data || response?.data || [];
         setCustomers(Array.isArray(data) ? data : []);
       } catch (error) {
