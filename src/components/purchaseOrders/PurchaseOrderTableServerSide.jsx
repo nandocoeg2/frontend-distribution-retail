@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { formatDate, resolveStatusVariant } from '../../utils/modalUtils';
 import { usePurchaseOrdersQuery } from '../../hooks/usePurchaseOrdersQuery';
@@ -321,16 +321,26 @@ const PurchaseOrderTableServerSide = forwardRef(({
               <div className="flex flex-col gap-0.5">
                 <input
                   type="date"
-                  value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  defaultValue={filterValue.from ?? ''}
+                  onBlur={(e) => {
+                    if (e.target.value !== filterValue.from) {
+                      column.setFilterValue({ ...filterValue, from: e.target.value });
+                      setPage(1);
+                    }
+                  }}
                   className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   onClick={(e) => e.stopPropagation()}
                   title="Dari tanggal"
                 />
                 <input
                   type="date"
-                  value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  defaultValue={filterValue.to ?? ''}
+                  onBlur={(e) => {
+                    if (e.target.value !== filterValue.to) {
+                      column.setFilterValue({ ...filterValue, to: e.target.value });
+                      setPage(1);
+                    }
+                  }}
                   className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   onClick={(e) => e.stopPropagation()}
                   title="Sampai tanggal"
@@ -351,16 +361,26 @@ const PurchaseOrderTableServerSide = forwardRef(({
               <div className="flex flex-col gap-0.5">
                 <input
                   type="date"
-                  value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
+                  defaultValue={filterValue.from ?? ''}
+                  onBlur={(e) => {
+                    if (e.target.value !== filterValue.from) {
+                      column.setFilterValue({ ...filterValue, from: e.target.value });
+                      setPage(1);
+                    }
+                  }}
                   className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   onClick={(e) => e.stopPropagation()}
                   title="Dari tanggal"
                 />
                 <input
                   type="date"
-                  value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
+                  defaultValue={filterValue.to ?? ''}
+                  onBlur={(e) => {
+                    if (e.target.value !== filterValue.to) {
+                      column.setFilterValue({ ...filterValue, to: e.target.value });
+                      setPage(1);
+                    }
+                  }}
                   className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                   onClick={(e) => e.stopPropagation()}
                   title="Sampai tanggal"
@@ -445,17 +465,13 @@ const PurchaseOrderTableServerSide = forwardRef(({
       }),
       columnHelper.display({
         id: 'actions',
-        size: 70,
+        size: 50,
         header: () => <div className="font-medium text-xs">Act</div>,
         cell: ({ row }) => {
           const order = row.original;
-          const editDisabled = isEditDisabled(order);
           const cancelAllowed = isCancelAllowed(order);
           return (
             <div className="flex gap-0.5">
-              <button type="button" onClick={(e) => { e.stopPropagation(); !editDisabled && onEdit(order); }} className={`p-0.5 ${editDisabled ? 'text-gray-400 cursor-not-allowed' : 'text-green-600 hover:text-green-900'}`} disabled={editDisabled} title="Edit">
-                <PencilIcon className="h-3.5 w-3.5" />
-              </button>
               {cancelAllowed && onCancel && (
                 <button type="button" onClick={(e) => { e.stopPropagation(); onCancel(order.id, order.po_number); }} disabled={cancelLoading} className="p-0.5 text-orange-600 hover:text-orange-900 disabled:opacity-50" title="Cancel">
                   <XCircleIcon className="h-3.5 w-3.5" />
@@ -475,7 +491,6 @@ const PurchaseOrderTableServerSide = forwardRef(({
       selectedOrders,
       onSelectionChange,
       handleSelectAllInternalToggle,
-      onEdit,
       onDelete,
       onCancel,
       deleteLoading,
