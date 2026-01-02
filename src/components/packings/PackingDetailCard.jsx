@@ -1,3 +1,4 @@
+import PackingGroupedItemsTable from './PackingGroupedItemsTable';
 import React, { useState } from 'react';
 import {
   ArchiveBoxIcon,
@@ -6,7 +7,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import ActivityTimeline from '../common/ActivityTimeline';
-import PackingItemsTable from './PackingItemsTable';
+// import PackingItemsTable from './PackingItemsTable'; // Unused now
 import PackingItemDetailModal from './PackingItemDetailModal';
 import { formatDate, formatDateTime } from '../../utils/formatUtils';
 import { exportPackingSticker, exportPackingTandaTerima, exportPackingTandaTerimaGrouped } from '../../services/packingService';
@@ -291,7 +292,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
                 <span className="text-xs font-medium text-gray-700">Packing Boxes</span>
                 <span className="px-2 py-0.5 text-xs font-medium text-blue-800 bg-blue-100 rounded-full">{packing.packingBoxes?.length || 0} boxes</span>
               </div>
-              <PackingItemsTable packingBoxes={packing.packingBoxes} onItemClick={handleItemClick} />
+              <PackingGroupedItemsTable packingBoxes={packing.packingBoxes} />
             </TabPanel>
 
             <TabPanel tabId="timeline">
