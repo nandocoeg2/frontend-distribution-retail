@@ -8,6 +8,7 @@ import { DataTable, DataTablePagination } from '../table';
 import { useConfirmationDialog } from '../ui';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import customerService from '../../services/customerService';
+import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -437,19 +438,15 @@ const ScheduledPriceTableServerSide = forwardRef(({
                         <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
                             <div className="font-medium text-xs">Effective</div>
                             <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="date"
+                                <DateFilter
                                     value={filterValue.from ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                                    placeholder="Dari"
                                 />
-                                <input
-                                    type="date"
+                                <DateFilter
                                     value={filterValue.to ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                                    placeholder="Sampai"
                                 />
                             </div>
                         </div>

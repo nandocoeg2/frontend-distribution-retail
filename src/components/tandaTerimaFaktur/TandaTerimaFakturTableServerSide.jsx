@@ -12,6 +12,7 @@ import companyService from '../../services/companyService';
 import { termOfPaymentService } from '../../services/termOfPaymentService';
 import statusService from '../../services/statusService';
 import authService from '../../services/authService';
+import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -242,17 +243,15 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">Billing Date</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>
@@ -447,17 +446,15 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">Jatuh Tempo</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>
@@ -479,17 +476,15 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">TTF 1</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>
@@ -508,17 +503,15 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">TTF 2</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>
@@ -537,17 +530,15 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">Tgl Bayar</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>

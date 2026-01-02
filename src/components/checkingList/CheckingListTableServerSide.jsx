@@ -1,7 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import DatePicker from 'react-datepicker/dist/react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
 import { TrashIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
@@ -11,45 +9,9 @@ import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
-
-const DateFilter = ({ column, setPage }) => {
-  const [dateValue, setDateValue] = useState(column.getFilterValue() ?? '');
-
-  const onFilterChange = useCallback(() => {
-    column.setFilterValue(dateValue);
-    setPage(1);
-  }, [column, dateValue, setPage]);
-
-  return (
-    <div className="space-y-1">
-      <div className="font-medium text-xs">Tanggal</div>
-      <div className="flex items-center border border-gray-300 rounded bg-white focus-within:ring-1 focus-within:ring-blue-500 overflow-hidden">
-        <DatePicker
-          selected={dateValue ? new Date(dateValue) : null}
-          onChange={(date) => {
-            // Convert date object to YYYY-MM-DD string for filter
-            const formattedDate = date ? date.toISOString().split('T')[0] : '';
-            setDateValue(formattedDate);
-          }}
-          onBlur={() => {
-            onFilterChange();
-          }}
-          dateFormat="yyyy-MM-dd"
-          placeholderText="Pilih tanggal..."
-          className="w-[100px] px-2 py-1 text-xs border-none focus:ring-0 focus:outline-none bg-transparent"
-          wrapperClassName="w-full"
-          popperClassName="!z-[9999]"
-          calendarClassName="!text-xs !p-2 shadow-lg border border-gray-200 [&_.react-datepicker__day--outside-month]:!text-gray-300"
-          dayClassName={() => "!text-xs !w-6 !h-6 !leading-6"}
-          withPortal={false} // Ensure it pops out correctly, or rely on popper
-          popperPlacement="bottom-start"
-        />
-      </div>
-    </div>
-  );
-};
 
 const resolveChecklistId = (item) => {
   if (!item || typeof item !== 'object') {
@@ -204,7 +166,7 @@ const CheckingListTableServerSide = ({
 
     setIsExporting(true);
     try {
-      toastService.info(`Memproses ${selectedChecklists.length} checklist...`);
+      toastService.info('Memproses ' + selectedChecklists.length + ' checklist...');
 
       const html = await checkingListService.exportCheckingListBulk(selectedChecklists, companyData.id);
 
@@ -214,7 +176,7 @@ const CheckingListTableServerSide = ({
         printWindow.document.close();
         printWindow.focus();
         printWindow.print();
-        toastService.success(`Berhasil memproses ${selectedChecklists.length} checklist.`);
+        toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist.');
       } else {
         toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
@@ -243,7 +205,7 @@ const CheckingListTableServerSide = ({
 
     setIsExportingGrouped(true);
     try {
-      toastService.info(`Memproses ${selectedChecklists.length} checklist grouped...`);
+      toastService.info('Memproses ' + selectedChecklists.length + ' checklist grouped...');
 
       const html = await checkingListService.exportCheckingListGroupedBulk(selectedChecklists, companyData.id);
 
@@ -253,7 +215,7 @@ const CheckingListTableServerSide = ({
         printWindow.document.close();
         printWindow.focus();
         printWindow.print();
-        toastService.success(`Berhasil memproses ${selectedChecklists.length} checklist grouped.`);
+        toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist grouped.');
       } else {
         toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
       }
@@ -318,7 +280,16 @@ const CheckingListTableServerSide = ({
       }),
       columnHelper.accessor('tanggal', {
         header: ({ column }) => (
-          <DateFilter column={column} setPage={setPage} />
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Tanggal</div>
+            <DateFilter
+              value={column.getFilterValue() ?? ''}
+              onChange={(val) => {
+                column.setFilterValue(val);
+                setPage(1);
+              }}
+            />
+          </div>
         ),
         cell: (info) => formatDateTime(info.getValue()),
       }),

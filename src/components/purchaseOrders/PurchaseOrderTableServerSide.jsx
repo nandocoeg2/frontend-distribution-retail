@@ -10,6 +10,7 @@ import authService from '../../services/authService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -319,31 +320,15 @@ const PurchaseOrderTableServerSide = forwardRef(({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">Tgl Masuk</div>
               <div className="flex flex-col gap-0.5">
-                <input
-                  type="date"
-                  defaultValue={filterValue.from ?? ''}
-                  onBlur={(e) => {
-                    if (e.target.value !== filterValue.from) {
-                      column.setFilterValue({ ...filterValue, from: e.target.value });
-                      setPage(1);
-                    }
-                  }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Dari tanggal"
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
-                  defaultValue={filterValue.to ?? ''}
-                  onBlur={(e) => {
-                    if (e.target.value !== filterValue.to) {
-                      column.setFilterValue({ ...filterValue, to: e.target.value });
-                      setPage(1);
-                    }
-                  }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Sampai tanggal"
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>
@@ -359,31 +344,15 @@ const PurchaseOrderTableServerSide = forwardRef(({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">Delivery</div>
               <div className="flex flex-col gap-0.5">
-                <input
-                  type="date"
-                  defaultValue={filterValue.from ?? ''}
-                  onBlur={(e) => {
-                    if (e.target.value !== filterValue.from) {
-                      column.setFilterValue({ ...filterValue, from: e.target.value });
-                      setPage(1);
-                    }
-                  }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Dari tanggal"
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
-                  defaultValue={filterValue.to ?? ''}
-                  onBlur={(e) => {
-                    if (e.target.value !== filterValue.to) {
-                      column.setFilterValue({ ...filterValue, to: e.target.value });
-                      setPage(1);
-                    }
-                  }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Sampai tanggal"
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>

@@ -23,6 +23,7 @@ import statusService from '../../services/statusService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import authService from '../../services/authService';
+import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -434,21 +435,15 @@ const LaporanPenerimaanBarangTableServerSide = ({
             <div className="space-y-0.5">
               <div className="font-medium text-xs">Tanggal</div>
               <div className="flex flex-col gap-0.5">
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.from ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, from: e.target.value }); setPage(1); }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Dari tanggal"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
                 />
-                <input
-                  type="date"
+                <DateFilter
                   value={filterValue.to ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, to: e.target.value }); setPage(1); }}
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                  title="Sampai tanggal"
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
                 />
               </div>
             </div>
