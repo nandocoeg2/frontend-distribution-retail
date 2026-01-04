@@ -223,13 +223,28 @@ const usePackingsPage = () => {
     });
   }, []);
 
-  const handleSelectAllPackings = useCallback(() => {
-    if (selectedPackings.length === packings.length) {
-      setSelectedPackings([]);
+  const handleSelectAllPackings = useCallback((visiblePackings = []) => {
+    // Use visiblePackings (data displayed in table) if provided, otherwise fall back to packings from hook state
+    const dataToUse = visiblePackings.length > 0 ? visiblePackings : packings;
+    const allIds = dataToUse.map(packing => packing.id);
+    const allSelected = allIds.length > 0 && allIds.every(id => selectedPackings.includes(id));
+    
+    if (allSelected) {
+      // Deselect all visible items
+      setSelectedPackings(prev => prev.filter(id => !allIds.includes(id)));
     } else {
-      setSelectedPackings(packings.map(packing => packing.id));
+      // Select all visible items (merge with existing selections)
+      setSelectedPackings(prev => {
+        const newSelection = [...prev];
+        allIds.forEach(id => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
     }
-  }, [packings, selectedPackings.length]);
+  }, [packings, selectedPackings]);
 
   const handleProcessPackings = useCallback(async () => {
     if (selectedPackings.length === 0) {
@@ -337,3 +352,4 @@ const usePackingsPage = () => {
 };
 
 export default usePackingsPage;
+

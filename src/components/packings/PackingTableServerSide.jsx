@@ -444,7 +444,7 @@ const PackingTableServerSide = forwardRef(({
               ref={(input) => {
                 if (input) input.indeterminate = isIndeterminate;
               }}
-              onChange={onSelectAllPackings}
+              onChange={() => onSelectAllPackings(packings)}
               className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
             />
           );
