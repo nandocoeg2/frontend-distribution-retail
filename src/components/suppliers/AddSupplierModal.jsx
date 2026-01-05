@@ -5,27 +5,34 @@ import toastService from '@/services/toastService';
 
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
+const initialFormData = {
+  name: '',
+  code: '',
+  supplier_code_letter: '',
+  address: '',
+  phoneNumber: '',
+  description: '',
+  email: '',
+  fax: '',
+  direktur: '',
+  npwp: '',
+  id_tku: '',
+  logo: '',
+  bank: {
+    name: '',
+    account: '',
+    holder: ''
+  }
+};
+
 const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) => {
   const [activeTab, setActiveTab] = useState('single');
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    supplier_code_letter: '',
-    address: '',
-    phoneNumber: '',
-    description: '',
-    email: '',
-    fax: '',
-    direktur: '',
-    npwp: '',
-    id_tku: '',
-    logo: '',
-    bank: {
-      name: '',
-      account: '',
-      holder: ''
-    }
-  });
+  const [formData, setFormData] = useState(initialFormData);
+
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setActiveTab('single');
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -71,12 +78,18 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
       if (!response.ok) throw new Error('Failed to create supplier');
 
       const newSupplier = await response.json();
+      resetForm();
       onSupplierAdded(newSupplier);
       toastService.success('Supplier created successfully');
       onClose();
     } catch (err) {
       toastService.error('Failed to create supplier');
     }
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   if (!show) {
@@ -91,7 +104,7 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
             Add Supplier
           </h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className='text-gray-400 hover:text-gray-500'
           >
             <svg className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
@@ -128,7 +141,7 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
             formData={formData}
             handleInputChange={handleInputChange}
             handleSubmit={createSupplier}
-            closeModal={onClose}
+            closeModal={handleClose}
           />
         )}
 
