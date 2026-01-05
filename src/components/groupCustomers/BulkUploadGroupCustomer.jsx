@@ -45,13 +45,16 @@ const BulkUploadGroupCustomer = ({ onClose, onSuccess }) => {
       if (response.success && response.data) {
         const fileData = response.data.files?.[0];
 
-        // Get status string from response.data.status or fileData.status.status_code
-        let statusStr = response.data.status;
-        if (!statusStr && fileData?.status) {
-          statusStr = typeof fileData.status === 'object'
-            ? (fileData.status.status_code || fileData.status.name)
+        // Get file status first (more accurate), then fall back to bulk status
+        let fileStatusStr = '';
+        if (fileData?.status) {
+          fileStatusStr = typeof fileData.status === 'object'
+            ? (fileData.status.status_code || fileData.status.status_name || '')
             : fileData.status;
         }
+
+        // Use file status if available, otherwise use bulk status
+        const statusStr = fileStatusStr || response.data.status || '';
 
         setUploadStatus({
           bulkId: response.data.bulkId,
@@ -59,15 +62,20 @@ const BulkUploadGroupCustomer = ({ onClose, onSuccess }) => {
           filename: fileData?.filename,
           reason: fileData?.reason || null,
           statistics: {
-            totalRows: response.data.totalFiles,
-            createdCount: response.data.successFiles,
-            errorCount: response.data.errorFiles,
+            totalFiles: response.data.totalFiles,
+            createdCount: response.data.rowStatistics?.createdCount || 0,
+            updatedCount: response.data.rowStatistics?.updatedCount || 0,
+            errorCount: response.data.rowStatistics?.errorCount || 0,
           }
         });
 
-        // Stop polling if completed or failed
-        const isCompleted = statusStr?.includes?.('COMPLETED');
-        const isFailed = statusStr?.includes?.('FAILED');
+        // Stop polling if completed or failed (check both file status and statusBreakdown)
+        const hasCompletedFiles = response.data.statusBreakdown &&
+          Object.keys(response.data.statusBreakdown).some(key => key.includes('COMPLETED'));
+        const hasFailedFiles = response.data.statusBreakdown &&
+          Object.keys(response.data.statusBreakdown).some(key => key.includes('FAILED'));
+        const isCompleted = statusStr?.toUpperCase?.()?.includes?.('COMPLETED') || hasCompletedFiles;
+        const isFailed = statusStr?.toUpperCase?.()?.includes?.('FAILED') || hasFailedFiles;
 
         if (isCompleted || isFailed) {
           if (pollingIntervalRef.current) {
@@ -87,6 +95,12 @@ const BulkUploadGroupCustomer = ({ onClose, onSuccess }) => {
       }
     } catch (error) {
       console.error('Error polling status:', error);
+      // Stop polling on error
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      toastService.error('Gagal mendapatkan status upload');
     }
   };
 
@@ -301,11 +315,15 @@ const BulkUploadGroupCustomer = ({ onClose, onSuccess }) => {
               <>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Total Files:</span>
-                  <span className="text-sm font-medium text-gray-900">{uploadStatus.statistics.totalRows || 0}</span>
+                  <span className="text-sm font-medium text-gray-900">{uploadStatus.statistics.totalFiles || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Berhasil:</span>
+                  <span className="text-sm text-gray-600">Data Baru:</span>
                   <span className="text-sm font-medium text-green-600">{uploadStatus.statistics.createdCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Data Diupdate:</span>
+                  <span className="text-sm font-medium text-blue-600">{uploadStatus.statistics.updatedCount || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Gagal:</span>
