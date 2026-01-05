@@ -59,9 +59,10 @@ const BulkUploadSupplier = ({ onClose, onSuccess }) => {
           filename: fileData?.filename,
           reason: fileData?.reason || null,
           statistics: {
-            totalRows: response.data.totalFiles,
-            createdCount: response.data.successFiles,
-            errorCount: response.data.errorFiles,
+            totalFiles: response.data.totalFiles,
+            createdCount: response.data.rowStatistics?.createdCount || 0,
+            updatedCount: response.data.rowStatistics?.updatedCount || 0,
+            errorCount: response.data.rowStatistics?.errorCount || 0,
           }
         });
 
@@ -301,11 +302,15 @@ const BulkUploadSupplier = ({ onClose, onSuccess }) => {
               <>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Total Files:</span>
-                  <span className="text-sm font-medium text-gray-900">{uploadStatus.statistics.totalRows || 0}</span>
+                  <span className="text-sm font-medium text-gray-900">{uploadStatus.statistics.totalFiles || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Berhasil:</span>
+                  <span className="text-sm text-gray-600">Data Baru:</span>
                   <span className="text-sm font-medium text-green-600">{uploadStatus.statistics.createdCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Data Diupdate:</span>
+                  <span className="text-sm font-medium text-blue-600">{uploadStatus.statistics.updatedCount || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Gagal:</span>
