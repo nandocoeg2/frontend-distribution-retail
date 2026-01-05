@@ -5,6 +5,7 @@ import PurchaseOrderStatusTable from '../components/dashboard/PurchaseOrderStatu
 import PurchaseOrderFilters, { purchaseOrderFilterDefaults } from '../components/dashboard/PurchaseOrderFilters.jsx';
 import Pagination from '../components/common/Pagination.jsx';
 import dashboardService from '../services/dashboardService.js';
+import authService from '../services/authService.js';
 
 const normalize = (v) => (v == null ? '' : String(v).trim().toLowerCase());
 const resolveStatusCodeString = (s) => !s ? '' : typeof s === 'string' ? normalize(s) : normalize(s.status_code || s.status_name);
@@ -37,10 +38,10 @@ const Dashboard = () => {
   const statusMapsRef = useRef({ shipping: new Map(), billing: new Map(), payment: new Map() });
   const [statusOptions, setStatusOptions] = useState({ shippingStatus: [], billingStatus: [], paymentStatus: [] });
 
-  const hasActiveFilters = useMemo(() => 
-    Boolean(filters.search?.trim()) || filters.shippingStatus !== 'all' || 
+  const hasActiveFilters = useMemo(() =>
+    Boolean(filters.search?.trim()) || filters.shippingStatus !== 'all' ||
     filters.billingStatus !== 'all' || filters.paymentStatus !== 'all' || onlyPending
-  , [filters, onlyPending]);
+    , [filters, onlyPending]);
 
   const updateStatusOptions = useCallback((rows = []) => {
     const { shipping, billing, payment } = statusMapsRef.current;
@@ -54,6 +55,8 @@ const Dashboard = () => {
 
   const buildQueryParams = useCallback(() => {
     const params = { page, limit };
+    const companyId = authService.getCompanyData()?.id;
+    if (companyId) params.companyId = companyId;
     if (filters.search?.trim()) params.po_number = filters.search.trim();
     if (filters.shippingStatus !== 'all') params.status_pengiriman = filters.shippingStatus;
     if (filters.billingStatus !== 'all') params.status_tagihan = filters.billingStatus;
