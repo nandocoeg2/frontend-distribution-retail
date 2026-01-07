@@ -59,8 +59,12 @@ api.interceptors.response.use(
   },
   (error) => {
     let errorMessage = 'An unexpected error occurred.';
+    let errorData = null;
+
     if (error.response) {
       const { status, data } = error.response;
+      errorData = data; // Preserve full error response
+
       if (status === 401 || status === 403) {
         authService.clearUserData();
 
@@ -77,15 +81,19 @@ api.interceptors.response.use(
         toastService.error('Session expired. Please login again.');
         return Promise.reject(new Error('Unauthorized'));
       }
-      errorMessage = data.message || data.error?.message || `Error ${status}`;
+      errorMessage = data.message || data.error?.message || data.error || `Error ${status}`;
     } else if (error.request) {
       errorMessage = 'Network error. Please check your connection.';
     } else {
       errorMessage = error.message;
     }
 
+    // Create error with message and attach full response data
+    const customError = new Error(errorMessage);
+    customError.data = errorData; // Attach full error data including issues array
+
     // The hook or component is responsible for showing the toast
-    return Promise.reject(new Error(errorMessage));
+    return Promise.reject(customError);
   }
 );
 
