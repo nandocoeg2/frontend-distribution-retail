@@ -17,6 +17,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState(null);
 
   // Auto-calculate harga1 (after pot1)
   useEffect(() => {
@@ -47,6 +48,8 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setGeneralError(null);
+    setErrors({});
 
     // Check if status is still PENDING
     if (schedule.status !== 'PENDING') {
@@ -83,6 +86,19 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
       onClose();
     } catch (error) {
       console.error('Update schedule error:', error);
+
+      // Extract detailed validation errors from error.data.issues
+      let errorMessage = error.message || 'Gagal mengupdate schedule';
+
+      if (error.data && error.data.issues && Array.isArray(error.data.issues)) {
+        // Format issues into readable messages
+        errorMessage = error.data.issues.map(issue => {
+          const path = issue.path?.replace('body.', '') || 'Field';
+          return `${path}: ${issue.message}`;
+        }).join('\n');
+      }
+
+      setGeneralError(errorMessage);
     }
   };
 
@@ -108,6 +124,27 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
           {errors.general && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-600">{errors.general}</p>
+            </div>
+          )}
+
+          {generalError && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-red-800 text-xs font-medium mb-1">Validasi Gagal</p>
+                  <ul className="text-red-700 text-xs space-y-0.5">
+                    {generalError.split('\n').map((line, index) => (
+                      <li key={index} className="flex items-start gap-1">
+                        <span className="text-red-400">•</span>
+                        <span>{line}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
 
@@ -160,6 +197,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 </label>
                 <input
                   type="number"
+                  min={0}
                   value={formData.harga}
                   onChange={(e) => handleChange('harga', e.target.value)}
                   placeholder="12000"
@@ -177,11 +215,12 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 </label>
                 <input
                   type="number"
+                  min={0}
+                  max={100}
                   value={formData.ppn}
                   onChange={(e) => handleChange('ppn', e.target.value)}
                   placeholder="11"
                   step="0.01"
-                  max="100"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -195,11 +234,12 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 </label>
                 <input
                   type="number"
+                  min={0}
+                  max={100}
                   value={formData.pot1}
                   onChange={(e) => handleChange('pot1', e.target.value)}
                   placeholder="5"
                   step="0.01"
-                  max="100"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -210,6 +250,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 </label>
                 <input
                   type="number"
+                  min={0}
                   value={formData.harga1}
                   disabled
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -224,11 +265,12 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 </label>
                 <input
                   type="number"
+                  min={0}
+                  max={100}
                   value={formData.pot2}
                   onChange={(e) => handleChange('pot2', e.target.value)}
                   placeholder="2"
                   step="0.01"
-                  max="100"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -239,6 +281,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
                 </label>
                 <input
                   type="number"
+                  min={0}
                   value={formData.harga2}
                   disabled
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"

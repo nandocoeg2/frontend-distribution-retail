@@ -349,6 +349,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                   </label>
                   <input
                     type="number"
+                    min={0}
                     value={formData.harga}
                     onChange={(e) => handleChange('harga', e.target.value)}
                     placeholder="12000"
@@ -366,11 +367,12 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                   </label>
                   <input
                     type="number"
+                    min={0}
+                    max={100}
                     value={formData.ppn}
                     onChange={(e) => handleChange('ppn', e.target.value)}
                     placeholder="11"
                     step="0.01"
-                    max="100"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -384,11 +386,12 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                   </label>
                   <input
                     type="number"
+                    min={0}
+                    max={100}
                     value={formData.pot1}
                     onChange={(e) => handleChange('pot1', e.target.value)}
                     placeholder="5"
                     step="0.01"
-                    max="100"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -413,11 +416,12 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                   </label>
                   <input
                     type="number"
+                    min={0}
+                    max={100}
                     value={formData.pot2}
                     onChange={(e) => handleChange('pot2', e.target.value)}
                     placeholder="2"
                     step="0.01"
-                    max="100"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -428,6 +432,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                   </label>
                   <input
                     type="number"
+                    min={0}
                     value={formData.harga2}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
