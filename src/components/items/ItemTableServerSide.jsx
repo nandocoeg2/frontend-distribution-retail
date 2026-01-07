@@ -136,7 +136,7 @@ const ItemTableServerSide = forwardRef(({
         () => [
             columnHelper.accessor('company.kode_company', {
                 id: 'company',
-                size: 70,
+                size: 50,
                 header: ({ column }) => (
                     <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
                         <div className="font-medium text-xs">Company</div>
@@ -149,6 +149,7 @@ const ItemTableServerSide = forwardRef(({
                             valueKey="id"
                             limitTags={1}
                             size="small"
+                            sx={{ width: '100%' }}
                             fetchOnClose
                         />
                     </div>
@@ -158,7 +159,7 @@ const ItemTableServerSide = forwardRef(({
                 ),
             }),
             columnHelper.accessor('nama_barang', {
-                size: 220,
+                size: 140,
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Nama Barang</div>
@@ -178,8 +179,9 @@ const ItemTableServerSide = forwardRef(({
                     </span>
                 ),
             }),
+
             columnHelper.accessor('plu', {
-                size: 65,
+                size: 100,
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">PLU</div>
@@ -196,7 +198,7 @@ const ItemTableServerSide = forwardRef(({
                 cell: (info) => <span className="text-xs font-medium">{info.getValue() || '-'}</span>,
             }),
             columnHelper.accessor('item_code', {
-                size: 105,
+                size: 100,
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Kode Barang</div>
@@ -213,7 +215,7 @@ const ItemTableServerSide = forwardRef(({
                 cell: (info) => <span className="text-xs">{info.getValue() || '-'}</span>,
             }),
             columnHelper.accessor('eanBarcode', {
-                size: 105,
+                size: 100,
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Barcode</div>
@@ -231,7 +233,7 @@ const ItemTableServerSide = forwardRef(({
             }),
             columnHelper.accessor('itemPrice.harga', {
                 id: 'basePrice',
-                size: 75,
+                size: 100,
                 enableColumnFilter: true,
                 filterFn: () => true, // Server-side filtering, always return true
                 header: ({ column }) => {
@@ -242,6 +244,7 @@ const ItemTableServerSide = forwardRef(({
                             <div className="flex flex-col gap-0.5">
                                 <input
                                     type="number"
+                                    min={0}
                                     value={filterValue.min ?? ''}
                                     onChange={(e) => {
                                         column.setFilterValue({ ...filterValue, min: e.target.value });
@@ -255,6 +258,7 @@ const ItemTableServerSide = forwardRef(({
                                 />
                                 <input
                                     type="number"
+                                    min={0}
                                     value={filterValue.max ?? ''}
                                     onChange={(e) => {
                                         column.setFilterValue({ ...filterValue, max: e.target.value });
@@ -278,7 +282,7 @@ const ItemTableServerSide = forwardRef(({
             }),
             columnHelper.accessor('itemStock.stok_quantity', {
                 id: 'stock',
-                size: 70,
+                size: 100,
                 enableColumnFilter: true,
                 filterFn: () => true, // Server-side filtering, always return true
                 header: ({ column }) => {
@@ -289,6 +293,7 @@ const ItemTableServerSide = forwardRef(({
                             <div className="flex flex-col gap-0.5">
                                 <input
                                     type="number"
+                                    min={0}
                                     value={filterValue.min ?? ''}
                                     onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
                                     placeholder="Min"
@@ -299,6 +304,7 @@ const ItemTableServerSide = forwardRef(({
                                 />
                                 <input
                                     type="number"
+                                    min={0}
                                     value={filterValue.max ?? ''}
                                     onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
                                     placeholder="Max"
@@ -318,7 +324,7 @@ const ItemTableServerSide = forwardRef(({
                 ),
             }),
             columnHelper.accessor('updatedAt', {
-                size: 100,
+                size: 65,
                 enableColumnFilter: true,
                 filterFn: () => true, // Server-side filtering, always return true
                 header: ({ column }) => {
@@ -349,7 +355,7 @@ const ItemTableServerSide = forwardRef(({
             }),
             columnHelper.display({
                 id: 'actions',
-                size: 40,
+                size: 60,
                 header: () => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Action</div>
