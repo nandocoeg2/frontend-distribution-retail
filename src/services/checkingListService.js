@@ -203,6 +203,68 @@ class CheckingListService {
       throw error;
     }
   }
+
+  async exportCheckingListBulk(checklistIds, companyId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_BASE_URL}${RESOURCE_PATH}/export/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'text/html',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+          body: JSON.stringify({ ids: checklistIds, companyId }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error?.message || 'Failed to bulk export checklist';
+        throw new Error(errorMessage);
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error bulk exporting checklist surat jalan:', error);
+      throw error;
+    }
+  }
+
+  async exportCheckingListGroupedBulk(checklistIds, companyId) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_BASE_URL}${RESOURCE_PATH}/export-grouped/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'text/html',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'include',
+          body: JSON.stringify({ ids: checklistIds, companyId }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error?.message || 'Failed to bulk export checklist grouped';
+        throw new Error(errorMessage);
+      }
+
+      const html = await response.text();
+      return html;
+    } catch (error) {
+      console.error('Error bulk exporting checklist surat jalan grouped:', error);
+      throw error;
+    }
+  }
 }
 
 export default new CheckingListService();

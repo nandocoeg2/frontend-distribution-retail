@@ -471,28 +471,26 @@ const CheckingListTableServerSide = ({
 
       {/* Bulk Action Bar */}
       {hasSelectedChecklists && (
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-blue-900">
-              {selectedChecklists.length} checklist dipilih
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
+        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
+          <span className="text-xs font-medium text-blue-900">
+            {selectedChecklists.length} dipilih
+          </span>
+          <div className="flex items-center gap-1.5">
             <button
               onClick={handleExportSelected}
               disabled={isExporting || isExportingGrouped}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <DocumentArrowDownIcon className="h-4 w-4" />
-              <span>{isExporting ? 'Memproses...' : 'Export PDF'}</span>
+              <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+              {isExporting ? 'Proses...' : 'Print'}
             </button>
             <button
               onClick={handleExportGroupedSelected}
               disabled={isExporting || isExportingGrouped}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <DocumentArrowDownIcon className="h-4 w-4" />
-              <span>{isExportingGrouped ? 'Memproses...' : 'Export PDF Grouped'}</span>
+              <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+              {isExportingGrouped ? 'Proses...' : 'Print Grouped'}
             </button>
           </div>
         </div>

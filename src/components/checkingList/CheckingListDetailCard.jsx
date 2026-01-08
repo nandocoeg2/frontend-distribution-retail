@@ -358,7 +358,7 @@ const CheckingListDetailCard = ({
                 <PencilIcon className='w-5 h-5' />
                 <span>Edit</span>
               </button>
-              <button
+              {/* <button
                 type='button'
                 onClick={handleExportPdf}
                 disabled={isLoading || !checklist || exportLoading}
@@ -383,7 +383,7 @@ const CheckingListDetailCard = ({
                   <ArrowDownTrayIcon className='w-5 h-5' />
                 )}
                 <span>{exportGroupedLoading ? 'Exporting...' : 'Export PDF Grouped'}</span>
-              </button>
+              </button> */}
               <button
                 onClick={onClose}
                 className='p-2 transition-colors rounded-lg hover:bg-gray-100'
