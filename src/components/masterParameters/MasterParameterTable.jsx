@@ -2,16 +2,16 @@ import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { useConfirmationDialog } from '../ui';
 
-const MasterParameterTable = ({ 
-  masterParameters, 
-  pagination = {}, 
-  onPageChange, 
-  onLimitChange, 
-  onDelete, 
-  onViewDetail, 
-  selectedParameterId, 
-  searchQuery = '', 
-  loading = false 
+const MasterParameterTable = ({
+  masterParameters,
+  pagination = {},
+  onPageChange,
+  onLimitChange,
+  onDelete,
+  onViewDetail,
+  selectedParameterId,
+  searchQuery = '',
+  loading = false
 }) => {
   const [deleteId, setDeleteId] = React.useState(null);
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
@@ -70,14 +70,13 @@ const MasterParameterTable = ({
               </tr>
             ) : (
               parametersArray.map((parameter) => (
-                <tr 
-                  key={parameter.id} 
+                <tr
+                  key={parameter.id}
                   onClick={() => onViewDetail(parameter)}
-                  className={`cursor-pointer transition-colors h-8 ${
-                    selectedParameterId === parameter.id 
-                      ? 'bg-blue-50 border-l-4 border-blue-500' 
+                  className={`cursor-pointer transition-colors h-8 ${selectedParameterId === parameter.id
+                      ? 'bg-blue-50 border-l-4 border-blue-500'
                       : 'hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">
                     {parameter.key}
@@ -108,10 +107,10 @@ const MasterParameterTable = ({
           </tbody>
         </table>
       </div>
-      
+
       <div className="flex justify-between items-center">
         <div className="text-xs text-gray-700">
-          Showing <span className="font-medium">{((pagination.currentPage || 1) - 1) * (pagination.itemsPerPage || 10) + 1}</span> to <span className="font-medium">{Math.min((pagination.currentPage || 1) * (pagination.itemsPerPage || 10), pagination.totalItems || 0)}</span> of <span className="font-medium">{pagination.totalItems || 0}</span>
+          Showing <span className="font-medium">{(pagination.totalItems || 0) === 0 ? 0 : ((pagination.currentPage || 1) - 1) * (pagination.itemsPerPage || 10) + 1}</span> to <span className="font-medium">{Math.min((pagination.currentPage || 1) * (pagination.itemsPerPage || 10), pagination.totalItems || 0)}</span> of <span className="font-medium">{pagination.totalItems || 0}</span>
         </div>
         <div className="flex items-center space-x-2">
           <select
@@ -141,8 +140,8 @@ const MasterParameterTable = ({
           </nav>
         </div>
       </div>
-      
-      <ConfirmationDialog 
+
+      <ConfirmationDialog
         onConfirm={handleConfirmDelete}
       />
     </div>

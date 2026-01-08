@@ -17,6 +17,8 @@ const API_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
 const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) => {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [supplierData, setSupplierData] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -45,29 +47,65 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
     metaInfo: false,
   });
 
+  // Fetch supplier data by ID when component opens
+  const fetchSupplierById = async (id) => {
+    try {
+      setLoading(true);
+      const accessToken = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/suppliers/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (!response.ok) throw new Error('Failed to fetch supplier');
+
+      const result = await response.json();
+      setSupplierData(result.data);
+    } catch (err) {
+      console.error('Error fetching supplier:', err);
+      toastService.error('Gagal memuat data supplier');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (supplier) {
+    if (supplier?.id) {
+      fetchSupplierById(supplier.id);
+    }
+  }, [supplier?.id]);
+
+  useEffect(() => {
+    if (supplierData) {
       setFormData({
-        name: supplier.name || '',
-        code: supplier.code || '',
-        supplier_code_letter: supplier.supplier_code_letter || '',
-        address: supplier.address || '',
-        phoneNumber: supplier.phoneNumber || '',
-        description: supplier.description || '',
-        email: supplier.email || '',
-        fax: supplier.fax || '',
-        direktur: supplier.direktur || '',
-        npwp: supplier.npwp || '',
-        id_tku: supplier.id_tku || '',
-        logo: supplier.logo || '',
+        name: supplierData.name || '',
+        code: supplierData.code || '',
+        supplier_code_letter: supplierData.supplier_code_letter || '',
+        address: supplierData.address || '',
+        phoneNumber: supplierData.phoneNumber || '',
+        description: supplierData.description || '',
+        email: supplierData.email || '',
+        fax: supplierData.fax || '',
+        direktur: supplierData.direktur || '',
+        npwp: supplierData.npwp || '',
+        id_tku: supplierData.id_tku || '',
+        logo: supplierData.logo || '',
         bank: {
-          name: supplier.bank?.name || '',
-          account: supplier.bank?.account || '',
-          holder: supplier.bank?.holder || ''
+          name: supplierData.bank?.name || '',
+          account: supplierData.bank?.account || '',
+          holder: supplierData.bank?.holder || ''
         }
       });
     }
-  }, [supplier]);
+  }, [supplierData]);
 
   const toggleSection = (section) => {
     setExpandedSections((prev) => ({
@@ -82,25 +120,25 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    // Reset to original values
-    if (supplier) {
+    // Reset to original values from fetched data
+    if (supplierData) {
       setFormData({
-        name: supplier.name || '',
-        code: supplier.code || '',
-        supplier_code_letter: supplier.supplier_code_letter || '',
-        address: supplier.address || '',
-        phoneNumber: supplier.phoneNumber || '',
-        description: supplier.description || '',
-        email: supplier.email || '',
-        fax: supplier.fax || '',
-        direktur: supplier.direktur || '',
-        npwp: supplier.npwp || '',
-        id_tku: supplier.id_tku || '',
-        logo: supplier.logo || '',
+        name: supplierData.name || '',
+        code: supplierData.code || '',
+        supplier_code_letter: supplierData.supplier_code_letter || '',
+        address: supplierData.address || '',
+        phoneNumber: supplierData.phoneNumber || '',
+        description: supplierData.description || '',
+        email: supplierData.email || '',
+        fax: supplierData.fax || '',
+        direktur: supplierData.direktur || '',
+        npwp: supplierData.npwp || '',
+        id_tku: supplierData.id_tku || '',
+        logo: supplierData.logo || '',
         bank: {
-          name: supplier.bank?.name || '',
-          account: supplier.bank?.account || '',
-          holder: supplier.bank?.holder || ''
+          name: supplierData.bank?.name || '',
+          account: supplierData.bank?.account || '',
+          holder: supplierData.bank?.holder || ''
         }
       });
     }
@@ -158,6 +196,8 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
 
       toastService.success('Supplier updated successfully');
       setIsEditMode(false);
+      // Refetch supplier data to get updated values
+      await fetchSupplierById(supplier.id);
       if (onUpdate) {
         onUpdate();
       }
@@ -170,6 +210,18 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
   };
 
   if (!supplier) return null;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+        <div className="flex justify-center items-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Memuat data supplier...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-md rounded-lg p-6 mt-6">
@@ -495,128 +547,48 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
           >
             <InfoTable
               data={[
-                { label: 'Nama Supplier', value: supplier.name },
-                { label: 'Kode Supplier', value: supplier.code },
-                { label: 'Kode Supplier Surat', value: supplier.supplier_code_letter || '—' },
-                { label: 'ID Supplier', value: supplier.id, copyable: true },
-                { label: 'Deskripsi', value: supplier.description || '—' },
+                { label: 'Nama Supplier', value: supplierData?.name || '—' },
+                { label: 'Kode Supplier', value: supplierData?.code || '—' },
+                { label: 'Kode Surat', value: supplierData?.supplier_code_letter || '—' },
                 {
                   label: 'Alamat',
                   component: (
                     <span className="flex items-center gap-2">
                       <MapPinIcon className="h-4 w-4 text-gray-400" />
-                      {supplier.address || '—'}
+                      {supplierData?.address || '—'}
                     </span>
                   )
                 },
+                { label: 'Email', value: supplierData?.email || '—', copyable: !!supplierData?.email },
+                { label: 'Telepon', value: supplierData?.phoneNumber || '—', copyable: !!supplierData?.phoneNumber },
+                { label: 'Fax', value: supplierData?.fax || '—', copyable: !!supplierData?.fax },
+                { label: 'Direktur', value: supplierData?.direktur || '—' },
+                { label: 'NPWP', value: supplierData?.npwp || '—', copyable: !!supplierData?.npwp },
+                { label: 'ID TKU', value: supplierData?.id_tku || '—', copyable: !!supplierData?.id_tku },
+                {
+                  label: 'Bank Name',
+                  component: (
+                    <span className="flex items-center gap-2">
+                      <BanknotesIcon className="h-4 w-4 text-gray-400" />
+                      {supplierData?.bank?.name || '—'}
+                    </span>
+                  )
+                },
+                { label: 'Account Number', value: supplierData?.bank?.account || '—', copyable: !!supplierData?.bank?.account },
+                { label: 'Account Holder', value: supplierData?.bank?.holder || '—' },
               ]}
             />
-            {supplier.logo && (
+            {supplierData?.logo && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <p className="text-sm font-medium text-gray-700 mb-2">Logo:</p>
                 <img
-                  src={supplier.logo}
+                  src={supplierData.logo}
                   alt="Supplier Logo"
                   className="h-24 w-24 object-contain border border-gray-300 rounded"
                 />
               </div>
             )}
           </AccordionItem>
-
-          {/* Contact Information */}
-          <AccordionItem
-            title='Informasi Kontak'
-            isExpanded={expandedSections.contactInfo}
-            onToggle={() => toggleSection('contactInfo')}
-            bgColor='bg-gradient-to-r from-blue-50 to-blue-100'
-          >
-            <InfoTable
-              data={[
-                {
-                  label: 'Nomor Telepon',
-                  component: (
-                    <span className="flex items-center gap-2">
-                      <DevicePhoneMobileIcon className="h-4 w-4 text-gray-400" />
-                      {supplier.phoneNumber || '—'}
-                    </span>
-                  ),
-                  copyable: !!supplier.phoneNumber
-                },
-                {
-                  label: 'Email',
-                  value: supplier.email || '—',
-                  copyable: !!supplier.email
-                },
-                {
-                  label: 'Fax',
-                  value: supplier.fax || '—',
-                  copyable: !!supplier.fax
-                }
-              ]}
-            />
-          </AccordionItem>
-
-          {/* Company Information */}
-          {(supplier.direktur || supplier.npwp || supplier.id_tku) && (
-            <AccordionItem
-              title='Informasi Perusahaan'
-              isExpanded={expandedSections.companyInfo}
-              onToggle={() => toggleSection('companyInfo')}
-              bgColor='bg-gradient-to-r from-yellow-50 to-yellow-100'
-            >
-              <InfoTable
-                data={[
-                  {
-                    label: 'Direktur',
-                    value: supplier.direktur || '—'
-                  },
-                  {
-                    label: 'NPWP',
-                    value: supplier.npwp || '—',
-                    copyable: !!supplier.npwp
-                  },
-                  {
-                    label: 'ID TKU',
-                    value: supplier.id_tku || '—',
-                    copyable: !!supplier.id_tku
-                  }
-                ]}
-              />
-            </AccordionItem>
-          )}
-
-          {/* Bank Information */}
-          {supplier.bank && (
-            <AccordionItem
-              title='Informasi Bank'
-              isExpanded={expandedSections.bankInfo}
-              onToggle={() => toggleSection('bankInfo')}
-              bgColor='bg-gradient-to-r from-green-50 to-green-100'
-            >
-              <InfoTable
-                data={[
-                  {
-                    label: 'Nama Bank',
-                    component: (
-                      <span className="flex items-center gap-2">
-                        <BanknotesIcon className="h-4 w-4 text-gray-400" />
-                        {supplier.bank.name || '—'}
-                      </span>
-                    )
-                  },
-                  {
-                    label: 'Nama Pemegang Rekening',
-                    value: supplier.bank.holder || '—',
-                  },
-                  {
-                    label: 'Nomor Rekening',
-                    value: supplier.bank.account || '—',
-                    copyable: !!supplier.bank.account,
-                  },
-                ]}
-              />
-            </AccordionItem>
-          )}
 
           {/* System Information */}
           <AccordionItem
@@ -632,13 +604,13 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
                   component: (
                     <span className="flex items-center gap-2">
                       <CalendarDaysIcon className="h-4 w-4 text-gray-400" />
-                      {formatDateTime(supplier.createdAt)}
+                      {formatDateTime(supplierData?.createdAt)}
                     </span>
                   ),
                 },
                 {
                   label: 'Diperbarui Pada',
-                  value: formatDateTime(supplier.updatedAt),
+                  value: formatDateTime(supplierData?.updatedAt),
                 },
               ]}
             />

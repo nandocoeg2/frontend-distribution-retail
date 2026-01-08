@@ -24,17 +24,19 @@ const parseMasterParametersResponse = (response) => {
     rawData = Array.isArray(rawData?.data) ? rawData.data : [];
   }
 
-  const metaData = response?.data?.meta || {};
-  const currentPage = metaData.page || INITIAL_PAGINATION.currentPage;
-  const itemsPerPage = metaData.limit || INITIAL_PAGINATION.itemsPerPage;
-  const totalItems = metaData.total || INITIAL_PAGINATION.totalItems;
+  // API returns pagination in data.pagination, not data.meta
+  const paginationData = response?.data?.pagination || response?.data?.meta || {};
+  const currentPage = paginationData.currentPage || paginationData.page || INITIAL_PAGINATION.currentPage;
+  const itemsPerPage = paginationData.itemsPerPage || paginationData.limit || INITIAL_PAGINATION.itemsPerPage;
+  const totalItems = paginationData.totalItems || paginationData.total || INITIAL_PAGINATION.totalItems;
+  const totalPages = paginationData.totalPages || Math.ceil(totalItems / itemsPerPage) || INITIAL_PAGINATION.totalPages;
 
   return {
     results: rawData,
     pagination: {
       currentPage,
       page: currentPage,
-      totalPages: metaData.totalPages || INITIAL_PAGINATION.totalPages,
+      totalPages,
       totalItems,
       total: totalItems,
       itemsPerPage,

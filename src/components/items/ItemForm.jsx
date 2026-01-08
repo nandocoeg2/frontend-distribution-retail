@@ -12,7 +12,7 @@ const DEFAULT_FORM_STATE = {
   item_code: '',
   nama_barang: '',
   eanBarcode: '',
-  uom: 'KARTON',
+  uom: 'PCS',
   allow_mixed_carton: true,
   mixedWithItemIds: [],
   berat: '0',
@@ -374,7 +374,22 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
     <form onSubmit={handleSubmit} className="space-y-5">
       {error ? (
         <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-red-800 text-xs">{error}</p>
+          <div className="flex items-start gap-2">
+            <svg className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-red-800 text-xs font-medium mb-1">Validasi Gagal</p>
+              <ul className="text-red-700 text-xs space-y-0.5">
+                {error.split('\n').map((line, index) => (
+                  <li key={index} className="flex items-start gap-1">
+                    <span className="text-red-400">•</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -420,7 +435,8 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           name="item_code"
           value={formData.item_code}
           onChange={handleChange}
-          placeholder="Opsional, kode item internal"
+          required
+          placeholder="Contoh: ITM001"
         />
         <FormField
           label="Nama Barang"
@@ -442,7 +458,8 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           name="uom"
           value={formData.uom}
           onChange={handleChange}
-          placeholder="Contoh: KARTON"
+          required
+          placeholder="Contoh: PCS"
           helperText="Nilai disimpan dalam huruf besar."
         />
         <div className="flex items-start gap-2 pt-2">

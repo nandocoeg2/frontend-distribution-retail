@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import scheduledPriceService from '../services/scheduledPriceService';
+import { extractErrorMessage } from '../utils/errorUtils';
 
 const useScheduledPriceOperations = () => {
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,16 @@ const useScheduledPriceOperations = () => {
     navigate('/login');
     toastService.error('Session expired. Please login again.');
   }, [navigate]);
+
+  // Helper to format validation issues into readable messages
+  const formatValidationIssues = (issues) => {
+    if (!Array.isArray(issues) || issues.length === 0) return null;
+
+    return issues.map(issue => {
+      const path = issue.path?.replace('body.', '') || 'Field';
+      return `${path}: ${issue.message}`;
+    }).join('\n');
+  };
 
   const createSchedule = useCallback(async (scheduleData) => {
     try {
@@ -27,7 +38,7 @@ const useScheduledPriceOperations = () => {
       } else {
         // Handle validation errors with issues array
         if (response.issues && Array.isArray(response.issues)) {
-          const errorMessages = response.issues.map(issue => issue.message).join(', ');
+          const errorMessages = formatValidationIssues(response.issues);
           throw new Error(errorMessages);
         }
         throw new Error(response.error?.message || response.error || 'Failed to create schedule');
@@ -36,15 +47,24 @@ const useScheduledPriceOperations = () => {
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
-        const errorMessage = err.message || 'Failed to create schedule';
+        // Try to extract detailed error from error.data (attached by apiService)
+        let errorMessage = err.message || 'Failed to create schedule';
+
+        if (err.data && err.data.issues && Array.isArray(err.data.issues)) {
+          errorMessage = formatValidationIssues(err.data.issues);
+        } else if (err.data) {
+          errorMessage = extractErrorMessage(err.data, errorMessage);
+        }
+
         setError(errorMessage);
-        toastService.error(errorMessage);
+        toastService.error(err.data.error);
       }
       throw err;
     } finally {
       setLoading(false);
     }
   }, [handleAuthError]);
+
 
   const updateSchedule = useCallback(async (id, scheduleData) => {
     try {

@@ -1,4 +1,5 @@
 import authService from './authService';
+import { parseErrorMessage } from '../utils/errorUtils';
 
 // Helper to get current company ID from auth service
 const getCompanyId = () => {
@@ -8,50 +9,6 @@ const getCompanyId = () => {
 
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/items`;
 
-const extractErrorMessage = (errorData, fallbackMessage) => {
-  if (!errorData) {
-    return fallbackMessage;
-  }
-
-  if (typeof errorData === 'string' && errorData.trim()) {
-    return errorData;
-  }
-
-  if (typeof errorData.message === 'string' && errorData.message.trim()) {
-    return errorData.message;
-  }
-
-  if (typeof errorData.error === 'string' && errorData.error.trim()) {
-    return errorData.error;
-  }
-
-  if (errorData.error && typeof errorData.error.message === 'string' && errorData.error.message.trim()) {
-    return errorData.error.message;
-  }
-
-  if (Array.isArray(errorData.errors) && errorData.errors.length) {
-    const firstError = errorData.errors[0];
-
-    if (typeof firstError === 'string' && firstError.trim()) {
-      return firstError;
-    }
-
-    if (firstError && typeof firstError.message === 'string' && firstError.message.trim()) {
-      return firstError.message;
-    }
-  }
-
-  return fallbackMessage;
-};
-
-const parseErrorMessage = async (response, fallbackMessage) => {
-  try {
-    const errorData = await response.json();
-    return extractErrorMessage(errorData, fallbackMessage);
-  } catch (error) {
-    return fallbackMessage;
-  }
-};
 
 const getHeaders = () => {
   const token = authService.getToken();

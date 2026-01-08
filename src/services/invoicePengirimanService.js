@@ -165,6 +165,27 @@ class InvoicePengirimanService {
     }
   }
 
+  async exportInvoicePengirimanBulk(ids) {
+    try {
+      const token = authService.getToken();
+      const response = await axios.post(`${API_BASE_URL}/export/bulk`,
+        { ids },
+        {
+          headers: {
+            'Accept': 'text/html',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          withCredentials: true
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting invoice pengiriman bulk:', error);
+      throw error;
+    }
+  }
+
   async exportExcel(filters = {}) {
     try {
       const token = authService.getToken();
