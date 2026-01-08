@@ -215,7 +215,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={handleExportPDF} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
+          {/* <button type="button" onClick={handleExportPDF} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
             Stiker
           </button>
           <button type="button" onClick={handleExportTandaTerima} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700">
@@ -223,7 +223,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
           </button>
           <button type="button" onClick={handleExportTandaTerimaGrouped} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-teal-600 rounded hover:bg-teal-700">
             T.Terima Grouped
-          </button>
+          </button> */}
           {onClose && (
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded" title="Close">
               <XMarkIcon className="w-4 h-4 text-gray-500" />
