@@ -476,21 +476,21 @@ const CheckingListTableServerSide = ({
             {selectedChecklists.length} dipilih
           </span>
           <div className="flex items-center gap-1.5">
-            <button
+            {/* <button
               onClick={handleExportSelected}
               disabled={isExporting || isExportingGrouped}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <DocumentArrowDownIcon className="h-3.5 w-3.5" />
               {isExporting ? 'Proses...' : 'Print'}
-            </button>
+            </button> */}
             <button
               onClick={handleExportGroupedSelected}
               disabled={isExporting || isExportingGrouped}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <DocumentArrowDownIcon className="h-3.5 w-3.5" />
-              {isExportingGrouped ? 'Proses...' : 'Print Grouped'}
+              {isExportingGrouped ? 'Proses...' : 'Print'}
             </button>
           </div>
         </div>
