@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
@@ -236,6 +237,32 @@ const SuratJalanTableServerSide = ({
 
   const companyId = authService.getCompanyData()?.id;
 
+  const [poSearch, setPoSearch] = useState('');
+  const [deliverSearch, setDeliverSearch] = useState('');
+
+  // Add queries for autocomplete options
+  const { data: poOptions = [] } = useQuery({
+    queryKey: ['surat-jalan-po-options', companyId, poSearch],
+    queryFn: async () => {
+      const res = await suratJalanService.getUniqueValues('po_number', poSearch, companyId);
+      return (res?.data || []).map(val => ({ id: val, name: val }));
+    },
+    staleTime: 5 * 60 * 1000,
+    keepPreviousData: true,
+    enabled: !!companyId,
+  });
+
+  const { data: deliverOptions = [] } = useQuery({
+    queryKey: ['surat-jalan-deliver-options', companyId, deliverSearch],
+    queryFn: async () => {
+      const res = await suratJalanService.getUniqueValues('deliver_to', deliverSearch, companyId);
+      return (res?.data || []).map(val => ({ id: val, name: val }));
+    },
+    staleTime: 5 * 60 * 1000,
+    keepPreviousData: true,
+    enabled: !!companyId,
+  });
+
   const getQueryParams = useCallback(({ filters, ...rest }) => {
     const mappedFilters = { ...filters };
 
@@ -342,16 +369,19 @@ const SuratJalanTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No PO</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
+            <AutocompleteCheckboxLimitTag
+              options={poOptions}
+              value={column.getFilterValue() || []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
                 setPage(1);
               }}
+              onSearchChange={(val) => setPoSearch(val)}
               placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              limitTags={1}
+              size="small"
+              fetchOnClose={true}
+              className="w-full"
             />
           </div>
         ),
@@ -362,16 +392,19 @@ const SuratJalanTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Deliver</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
+            <AutocompleteCheckboxLimitTag
+              options={deliverOptions}
+              value={column.getFilterValue() || []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
                 setPage(1);
               }}
+              onSearchChange={(val) => setDeliverSearch(val)}
               placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
+              limitTags={1}
+              size="small"
+              fetchOnClose={true}
+              className="w-full"
             />
           </div>
         ),

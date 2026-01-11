@@ -726,11 +726,11 @@ const PackingTableServerSide = forwardRef(({
               <button onClick={handleBulkPrintSticker} disabled={isPrinting || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50'>
                 <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Stiker'}
               </button>
-              <button onClick={handleBulkPrintTandaTerima} disabled={isPrintingTandaTerima || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50'>
+              {/* <button onClick={handleBulkPrintTandaTerima} disabled={isPrintingTandaTerima || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50'>
                 <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerima ? '...' : 'T.Terima'}
-              </button>
+              </button> */}
               <button onClick={handleBulkPrintTandaTerimaGrouped} disabled={isPrintingTandaTerimaGrouped || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50'>
-                <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima Grouped'}
+                <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima'}
               </button>
               <button onClick={handleBulkEditTanggal} disabled={editTanggalLoading || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50'>
                 <CalendarIcon className='h-3 w-3 mr-1' />{editTanggalLoading ? '...' : 'Edit Tanggal'}

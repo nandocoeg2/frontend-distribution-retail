@@ -11,6 +11,22 @@ class SuratJalanService {
         accept: 'application/json',
         'Content-Type': 'application/json',
       },
+      paramsSerializer: (params) => {
+        const parts = [];
+        for (const key in params) {
+          const val = params[key];
+          if (val === null || typeof val === 'undefined') continue;
+
+          if (Array.isArray(val)) {
+            val.forEach(v => {
+              parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+            });
+          } else {
+            parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+          }
+        }
+        return parts.join('&');
+      },
       withCredentials: true,
     });
 
@@ -310,7 +326,20 @@ class SuratJalanService {
       throw error;
     }
   }
+
+  async getUniqueValues(field, search = '', companyId = null) {
+    try {
+      const params = { field };
+      if (search) params.search = search;
+      if (companyId) params.companyId = companyId;
+
+      const response = await this.api.get('/surat-jalan/unique-values', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching unique values:', error);
+      throw error;
+    }
+  }
 }
 
 export default new SuratJalanService();
-
