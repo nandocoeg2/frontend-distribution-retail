@@ -164,9 +164,11 @@ const Companies = () => {
           company={selectedCompanyForDetail}
           onClose={handleCloseDetail}
           updateCompany={updateCompany}
-          onUpdate={() => {
+          onUpdate={(updatedCompany) => {
             fetchCompanies(pagination.currentPage, pagination.itemsPerPage);
-            handleViewDetail(selectedCompanyForDetail);
+            if (updatedCompany) {
+              handleViewDetail(updatedCompany);
+            }
           }}
         />
       )}

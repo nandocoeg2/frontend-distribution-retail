@@ -145,7 +145,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         toastService.success('Company updated successfully');
         setIsEditMode(false);
         if (onUpdate) {
-          onUpdate();
+          onUpdate(response.data);
         }
       }
     } catch (error) {
