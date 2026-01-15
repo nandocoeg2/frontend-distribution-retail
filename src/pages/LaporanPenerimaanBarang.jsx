@@ -232,7 +232,13 @@ const LaporanPenerimaanBarang = () => {
   }, [selectedReport?.id, updateReport, refreshData, closeEditModal]);
 
   const handleDeleteConfirm = useCallback(async () => {
+    const idToDelete = deleteReportConfirmation.itemToDelete;
     await deleteReportConfirmation.confirmDelete();
+
+    if (idToDelete) {
+      setSelectedReportIds((prev) => prev.filter((id) => id !== idToDelete));
+    }
+
     await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
   }, [deleteReportConfirmation, queryClient]);
 
