@@ -9,6 +9,8 @@ import { useConfirmationDialog } from '../ui';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import customerService from '../../services/customerService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -130,6 +132,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
         initialPage: 1,
         initialLimit: 10,
         initialSorting: [{ id: 'effectiveDate', desc: true }],
+        columnFilterDebounceMs: 0,
         getQueryParams,
     });
 
@@ -183,14 +186,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Item Name</div>
-                        <input
-                            type="text"
-                            value={column.getFilterValue() ?? ''}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="Filter..."
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        <TextColumnFilter column={column} placeholder="Filter..." />
                     </div>
                 ),
                 cell: (info) => (
@@ -207,14 +203,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">PLU</div>
-                        <input
-                            type="text"
-                            value={column.getFilterValue() ?? ''}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="Filter..."
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        <TextColumnFilter column={column} placeholder="Filter..." />
                     </div>
                 ),
                 cell: (info) => <span className="text-xs font-medium">{info.getValue() || '-'}</span>,
@@ -253,32 +242,14 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 minSize: 80,
                 enableColumnFilter: true,
                 filterFn: () => true,
-                header: ({ column }) => {
-                    const filterValue = column.getFilterValue() || { min: '', max: '' };
-                    return (
-                        <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">Base Price</div>
-                            <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            </div>
+                header: ({ column }) => (
+                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="font-medium text-xs">Base Price</div>
+                        <div className="flex flex-col gap-0.5">
+                            <RangeColumnFilter column={column} setPage={setPage} />
                         </div>
-                    );
-                },
+                    </div>
+                ),
                 cell: (info) => (
                     <span className="text-xs text-right block">{formatCurrency(info.getValue() ?? 0)}</span>
                 ),
@@ -290,32 +261,14 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 minSize: 80,
                 enableColumnFilter: true,
                 filterFn: () => true,
-                header: ({ column }) => {
-                    const filterValue = column.getFilterValue() || { min: '', max: '' };
-                    return (
-                        <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">New Price</div>
-                            <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            </div>
+                header: ({ column }) => (
+                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="font-medium text-xs">New Price</div>
+                        <div className="flex flex-col gap-0.5">
+                            <RangeColumnFilter column={column} setPage={setPage} />
                         </div>
-                    );
-                },
+                    </div>
+                ),
                 cell: (info) => (
                     <span className="text-xs text-right block text-green-600 font-medium">{formatCurrency(info.getValue() ?? 0)}</span>
                 ),
@@ -327,32 +280,14 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 minSize: 85,
                 enableColumnFilter: true,
                 filterFn: () => true,
-                header: ({ column }) => {
-                    const filterValue = column.getFilterValue() || { min: '', max: '' };
-                    return (
-                        <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">POT A</div>
-                            <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            </div>
+                header: ({ column }) => (
+                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="font-medium text-xs">POT A</div>
+                        <div className="flex flex-col gap-0.5">
+                            <RangeColumnFilter column={column} setPage={setPage} />
                         </div>
-                    );
-                },
+                    </div>
+                ),
                 cell: (info) => <span className="text-xs text-center block">{info.getValue() ?? 0}%</span>,
             }),
             // POT B
@@ -362,32 +297,14 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 minSize: 85,
                 enableColumnFilter: true,
                 filterFn: () => true,
-                header: ({ column }) => {
-                    const filterValue = column.getFilterValue() || { min: '', max: '' };
-                    return (
-                        <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">POT B</div>
-                            <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            </div>
+                header: ({ column }) => (
+                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="font-medium text-xs">POT B</div>
+                        <div className="flex flex-col gap-0.5">
+                            <RangeColumnFilter column={column} setPage={setPage} />
                         </div>
-                    );
-                },
+                    </div>
+                ),
                 cell: (info) => <span className="text-xs text-center block">{info.getValue() ?? 0}%</span>,
             }),
             // PPN
@@ -397,32 +314,14 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 minSize: 85,
                 enableColumnFilter: true,
                 filterFn: () => true,
-                header: ({ column }) => {
-                    const filterValue = column.getFilterValue() || { min: '', max: '' };
-                    return (
-                        <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">PPN</div>
-                            <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded"
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            </div>
+                header: ({ column }) => (
+                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="font-medium text-xs">PPN</div>
+                        <div className="flex flex-col gap-0.5">
+                            <RangeColumnFilter column={column} setPage={setPage} />
                         </div>
-                    );
-                },
+                    </div>
+                ),
                 cell: (info) => <span className="text-xs text-center block">{info.getValue() ?? 0}%</span>,
             }),
             // Effective Date
