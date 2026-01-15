@@ -10,6 +10,7 @@ import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -123,6 +124,7 @@ const CheckingListTableServerSide = ({
     initialLimit,
     globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   // Handler untuk select all toggle
@@ -298,17 +300,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Surat Jalan</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => {
@@ -340,17 +332,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Checker</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
@@ -359,17 +341,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Driver</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
@@ -378,17 +350,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Kendaraan</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
@@ -397,17 +359,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Kota</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',

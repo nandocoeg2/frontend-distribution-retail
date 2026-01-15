@@ -24,46 +24,12 @@ import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
-// Grandtotal filter component with local state for onBlur behavior
-const GrandTotalFilter = ({ column, label, setPage }) => {
-  const filterValue = column.getFilterValue() || { min: '', max: '' };
-  const [localMin, setLocalMin] = useState(filterValue.min ?? '');
-  const [localMax, setLocalMax] = useState(filterValue.max ?? '');
 
-  useEffect(() => { setLocalMin(filterValue.min ?? ''); }, [filterValue.min]);
-  useEffect(() => { setLocalMax(filterValue.max ?? ''); }, [filterValue.max]);
-
-  return (
-    <div className="space-y-0.5">
-      <div className="font-medium text-xs">{label}</div>
-      <div className="flex flex-col gap-0.5">
-        <input
-          type="number"
-          value={localMin}
-          onChange={(e) => setLocalMin(e.target.value)}
-          onBlur={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.target.blur(); } }}
-          placeholder="Min"
-          className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-          onClick={(e) => e.stopPropagation()}
-        />
-        <input
-          type="number"
-          value={localMax}
-          onChange={(e) => setLocalMax(e.target.value)}
-          onBlur={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.target.blur(); } }}
-          placeholder="Max"
-          className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-          onClick={(e) => e.stopPropagation()}
-        />
-      </div>
-    </div>
-  );
-};
 
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toLowerCase() : '';
@@ -185,6 +151,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    columnFilterDebounceMs: 0,
     getQueryParams: useCallback(({ filters, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
@@ -456,17 +423,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No LPB</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -476,17 +433,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No PO</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -516,17 +463,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -564,7 +501,10 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor((row) => row.detailInvoice?.grand_total ?? null, {
         id: 'grandtotal_lpb',
         header: ({ column }) => (
-          <GrandTotalFilter column={column} label="Grandtotal LPB" setPage={setPage} />
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Grandtotal LPB</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
         ),
         cell: (info) => {
           const value = info.getValue();
@@ -574,7 +514,10 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.grand_total ?? null, {
         id: 'grandtotal_invoice',
         header: ({ column }) => (
-          <GrandTotalFilter column={column} label="Grandtotal Invoice" setPage={setPage} />
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Grandtotal Invoice</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
         ),
         cell: (info) => {
           const value = info.getValue();

@@ -11,6 +11,7 @@ import { DataTable, DataTablePagination } from '../table';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
+import TextColumnFilter from '../common/TextColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -281,6 +282,7 @@ const SuratJalanTableServerSide = ({
     initialPage,
     initialLimit,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   const columns = useMemo(
@@ -333,17 +335,7 @@ const SuratJalanTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No Surat Jalan</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || 'N/A'}</span>,
@@ -399,17 +391,7 @@ const SuratJalanTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || 'N/A',

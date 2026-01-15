@@ -19,6 +19,7 @@ import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 
 
 const columnHelper = createColumnHelper();
@@ -385,6 +386,7 @@ const PackingTableServerSide = forwardRef(({
     initialLimit,
     globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   // Export functionality
@@ -466,17 +468,7 @@ const PackingTableServerSide = forwardRef(({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No PO</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className='font-medium'>{info.getValue() || 'N/A'}</span>,

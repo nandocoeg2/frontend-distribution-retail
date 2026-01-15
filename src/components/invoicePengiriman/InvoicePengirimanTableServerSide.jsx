@@ -17,6 +17,8 @@ import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag
 import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -250,6 +252,7 @@ const InvoicePengirimanTableServerSide = ({
     initialLimit,
     globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   const columns = useMemo(
@@ -314,17 +317,7 @@ const InvoicePengirimanTableServerSide = ({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No Invoice</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => (
@@ -338,17 +331,7 @@ const InvoicePengirimanTableServerSide = ({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No PO</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => (
@@ -383,24 +366,7 @@ const InvoicePengirimanTableServerSide = ({
           return (
             <div className='space-y-0.5'>
               <div className='font-medium text-xs'>Jumlah</div>
-              <div className='flex flex-col gap-0.5'>
-                <input
-                  type='number'
-                  value={filterValue.min ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                  placeholder='Min'
-                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type='number'
-                  value={filterValue.max ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                  placeholder='Max'
-                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
+              <RangeColumnFilter column={column} setPage={setPage} />
             </div>
           );
         },

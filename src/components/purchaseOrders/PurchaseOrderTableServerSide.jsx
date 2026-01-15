@@ -57,6 +57,33 @@ const isCancelAllowed = (order) => {
   return normalizedCode === 'processing purchase order';
 };
 
+const TextColumnFilter = ({ column, placeholder = "..." }) => {
+  const filterValue = column.getFilterValue();
+  const [value, setValue] = useState(filterValue ?? '');
+
+  useEffect(() => {
+    setValue(filterValue ?? '');
+  }, [filterValue]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      column.setFilterValue(value);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={handleKeyDown}
+      placeholder={placeholder}
+      className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+};
+
 const PurchaseOrderTableServerSide = forwardRef(({
   onViewDetail,
   onEdit,
@@ -164,6 +191,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
     initialPage,
     initialLimit,
     globalFilter: globalFilterConfig,
+    columnFilterDebounceMs: 0, // Disable debounce to trigger immediately on manual commit
     getQueryParams,
   });
 
@@ -280,14 +308,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
         header: ({ column }) => (
           <div className="space-y-0.5">
             <div className="font-medium text-xs">PO#</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder="..."
-              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} />
           </div>
         ),
         cell: (info) => <span className="text-xs font-medium">{info.getValue() || '-'}</span>,
