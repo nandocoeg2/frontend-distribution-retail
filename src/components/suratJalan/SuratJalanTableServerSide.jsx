@@ -84,21 +84,9 @@ const SuratJalanTableServerSide = ({
     loading: false,
   });
 
-  // Handle checkbox click for processed items - show confirmation dialog
+  // Handle checkbox click
   const handleCheckboxChange = useCallback((item) => {
-    const isProcessed = Boolean(item?.checklistSuratJalanId);
-
-    if (isProcessed) {
-      // User is trying to uncheck a processed item - show confirmation to unprocess
-      setUnprocessDialog({
-        show: true,
-        item: item,
-        loading: false,
-      });
-    } else {
-      // Normal selection/deselection for unprocessed items
-      onSelectSuratJalan && onSelectSuratJalan(item);
-    }
+    onSelectSuratJalan && onSelectSuratJalan(item);
   }, [onSelectSuratJalan]);
 
   // Handle unprocess confirmation
@@ -292,7 +280,6 @@ const SuratJalanTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: globalFilterConfig,
     getQueryParams,
   });
 
@@ -327,18 +314,15 @@ const SuratJalanTableServerSide = ({
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
           const isProcessed = Boolean(row.original.checklistSuratJalanId);
           const isInSelection = selectedIds.includes(row.original.id);
-          // Processed items are checked by default, unprocessed items check based on selection
-          const isChecked = isProcessed || isInSelection;
+          // Only check if it is in user selection
+          const isChecked = isInSelection;
           return (
             <input
               type="checkbox"
               checked={isChecked}
               onChange={() => handleCheckboxChange(row.original)}
-              className={`h-3.5 w-3.5 focus:ring-blue-500 border-gray-300 rounded cursor-pointer ${isProcessed ? 'text-orange-600' : 'text-blue-600'
-                }`}
-              title={isProcessed
-                ? 'Klik untuk unprocess (hapus dari checklist)'
-                : 'Pilih surat jalan'}
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+              title="Pilih surat jalan"
             />
           );
         },
