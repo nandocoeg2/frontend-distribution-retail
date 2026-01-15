@@ -4,7 +4,7 @@ import CompanyTable from '@/components/companies/CompanyTable';
 import CompanySearch from '@/components/companies/CompanySearch';
 import AddCompanyModal from '@/components/companies/AddCompanyModal';
 import CompanyDetailCard from '@/components/companies/CompanyDetailCard';
-import { createCompany, updateCompany, exportExcel } from '@/services/companyService';
+import { createCompany, updateCompany, exportExcel, getCompanyById } from '@/services/companyService';
 import toastService from '@/services/toastService';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
@@ -53,8 +53,31 @@ const Companies = () => {
     setShowExportConfirmation(true);
   };
 
-  const handleViewDetail = (company) => {
-    setSelectedCompanyForDetail(company);
+
+
+  // ... existing code
+
+  const handleViewDetail = async (company) => {
+    try {
+      // Set loading state if needed, or just set selectedCompanyForDetail after fetch
+      // To provide immediate feedback, we can set the summary data first if acceptable,
+      // but to ensure full data (like big images) we fetch.
+      // Let's fetch first.
+
+      const response = await getCompanyById(company.id);
+      if (response && response.success) {
+        setSelectedCompanyForDetail(response.data);
+      } else {
+        // Fallback to existing data if fetch fails? Or error.
+        console.error("Failed to fetch company details");
+        setSelectedCompanyForDetail(company); // Fallback
+        toastService.error("Could not fetch latest details, showing cached data.");
+      }
+    } catch (error) {
+      console.error("Error fetching company details:", error);
+      toastService.error("Failed to fetch company details.");
+      setSelectedCompanyForDetail(company); // Fallback
+    }
   };
 
   const handleCloseDetail = () => {

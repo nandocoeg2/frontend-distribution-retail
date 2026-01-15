@@ -15,11 +15,12 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     email: '',
     direktur_utama: '',
     npwp: '',
-    direktur_utama: '',
-    npwp: '',
+    id_tku: '',
     logo: null,
     signature_surat_jalan_nama: '',
     signature_surat_jalan_image: null,
+    signature_invoice_nama: '',
+    signature_invoice_image: null,
   });
 
   useEffect(() => {
@@ -37,10 +38,12 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
-        npwp: company.npwp || '',
+        id_tku: company.id_tku || '',
         logo: company.logo || null,
         signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
         signature_surat_jalan_image: company.signature_surat_jalan_image || null,
+        signature_invoice_nama: company.signature_invoice_nama || '',
+        signature_invoice_image: company.signature_invoice_image || null,
       });
     }
   }, [company]);
@@ -81,10 +84,30 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     }));
   };
 
+  const handleSignatureInvoiceImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: base64String
+    }));
+  };
+
+  const handleSignatureInvoiceImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: null
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Send all data including logo
-    onCompanyUpdated(company.id, formData);
+    const dataToSend = { ...formData };
+
+    // Convert empty strings to null for optional text fields if needed, 
+    // or rely on schema accepting empty strings. 
+    // BUT for images, ensure null is handled if schema update doesn't fix it fully.
+
+    onCompanyUpdated(company.id, dataToSend);
   };
 
   if (!show) {
@@ -109,6 +132,9 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
           signatureImage={formData.signature_surat_jalan_image}
           onSignatureImageChange={handleSignatureImageChange}
           onSignatureImageRemove={handleSignatureImageRemove}
+          signatureInvoiceImage={formData.signature_invoice_image}
+          onSignatureInvoiceImageChange={handleSignatureInvoiceImageChange}
+          onSignatureInvoiceImageRemove={handleSignatureInvoiceImageRemove}
         />
       </div>
     </div>

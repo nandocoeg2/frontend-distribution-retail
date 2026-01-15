@@ -232,6 +232,19 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
             signatureImage={formData.signature_surat_jalan_image}
             onSignatureImageChange={handleSignatureImageChange}
             onSignatureImageRemove={handleSignatureImageRemove}
+            signatureInvoiceImage={formData.signature_invoice_image}
+            onSignatureInvoiceImageChange={(base64String) => {
+              setFormData((prev) => ({
+                ...prev,
+                signature_invoice_image: base64String
+              }));
+            }}
+            onSignatureInvoiceImageRemove={() => {
+              setFormData((prev) => ({
+                ...prev,
+                signature_invoice_image: null
+              }));
+            }}
           />
         </div>
       ) : (
@@ -275,6 +288,30 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
               {company.signature_surat_jalan_nama && (
                 <p className="text-center mt-2 text-sm text-gray-600">
                   Signatory: <span className="font-medium text-gray-900">{company.signature_surat_jalan_nama}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Invoice Signature Image Display */}
+          {company.signature_invoice_image && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center mb-4">
+                <PencilIcon className="h-5 w-5 text-gray-500 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Invoice Signature</h3>
+              </div>
+              <div className="flex justify-center">
+                <div className="w-48 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={company.signature_invoice_image}
+                    alt="Invoice Signature"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
+              {company.signature_invoice_nama && (
+                <p className="text-center mt-2 text-sm text-gray-600">
+                  Signatory: <span className="font-medium text-gray-900">{company.signature_invoice_nama}</span>
                 </p>
               )}
             </div>

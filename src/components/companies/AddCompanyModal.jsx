@@ -20,6 +20,8 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     logo: null,
     signature_surat_jalan_nama: '',
     signature_surat_jalan_image: null,
+    signature_invoice_nama: '',
+    signature_invoice_image: null,
   });
 
   const handleInputChange = (e) => {
@@ -58,6 +60,20 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     }));
   };
 
+  const handleSignatureInvoiceImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: base64String
+    }));
+  };
+
+  const handleSignatureInvoiceImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: null
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Only send logo if it exists
@@ -67,6 +83,9 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     }
     if (!dataToSend.signature_surat_jalan_image) {
       delete dataToSend.signature_surat_jalan_image;
+    }
+    if (!dataToSend.signature_invoice_image) {
+      delete dataToSend.signature_invoice_image;
     }
     onCompanyAdded(dataToSend);
   };
@@ -90,6 +109,8 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
       logo: null,
       signature_surat_jalan_nama: '',
       signature_surat_jalan_image: null,
+      signature_invoice_nama: '',
+      signature_invoice_image: null,
     });
     onClose();
   };
@@ -115,6 +136,9 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
           signatureImage={formData.signature_surat_jalan_image}
           onSignatureImageChange={handleSignatureImageChange}
           onSignatureImageRemove={handleSignatureImageRemove}
+          signatureInvoiceImage={formData.signature_invoice_image}
+          onSignatureInvoiceImageChange={handleSignatureInvoiceImageChange}
+          onSignatureInvoiceImageRemove={handleSignatureInvoiceImageRemove}
         />
       </div>
     </div>
