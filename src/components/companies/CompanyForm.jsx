@@ -9,17 +9,34 @@ const CompanyForm = ({
   isEdit = false,
   logo,
   onLogoChange,
-  onLogoRemove
+  onLogoRemove,
+  // Signature props
+  signatureImage,
+  onSignatureImageChange,
+  onSignatureImageRemove
 }) => {
   return (
     <form onSubmit={handleSubmit}>
-      {/* Logo Upload Section */}
-      <div className="mb-6">
-        <ImageUpload
-          logo={logo}
-          onLogoChange={onLogoChange}
-          onLogoRemove={onLogoRemove}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Logo Upload Section */}
+        <div>
+          <ImageUpload
+            label="Company Logo"
+            image={logo}
+            onImageChange={onLogoChange}
+            onImageRemove={onLogoRemove}
+          />
+        </div>
+
+        {/* Signature Upload Section */}
+        <div>
+          <ImageUpload
+            label="Digital Signature"
+            image={signatureImage}
+            onImageChange={onSignatureImageChange}
+            onImageRemove={onSignatureImageRemove}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -48,6 +65,19 @@ const CompanyForm = ({
             placeholder="e.g., ABC (max 5 chars)"
           />
           <p className="text-xs text-gray-500 mt-1">Kode singkat untuk surat jalan (maksimal 5 karakter)</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company Signature Name</label>
+          <input
+            type="text"
+            name="signature_surat_jalan_nama"
+            value={formData.signature_surat_jalan_nama || ''}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., Mayang (Default)"
+          />
+          <p className="text-xs text-gray-500 mt-1">Nama yang muncul di tanda tangan surat jalan</p>
         </div>
 
         <div>

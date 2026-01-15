@@ -15,7 +15,11 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     email: '',
     direktur_utama: '',
     npwp: '',
-    logo: null
+    direktur_utama: '',
+    npwp: '',
+    logo: null,
+    signature_surat_jalan_nama: '',
+    signature_surat_jalan_image: null,
   });
 
   useEffect(() => {
@@ -33,16 +37,19 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
-        logo: company.logo || null
+        npwp: company.npwp || '',
+        logo: company.logo || null,
+        signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
+        signature_surat_jalan_image: company.signature_surat_jalan_image || null,
       });
     }
   }, [company]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -57,6 +64,20 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     setFormData((prev) => ({
       ...prev,
       logo: null
+    }));
+  };
+
+  const handleSignatureImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: base64String
+    }));
+  };
+
+  const handleSignatureImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: null
     }));
   };
 
@@ -76,15 +97,18 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
           Edit Company
         </h3>
-        <CompanyForm 
-          formData={formData} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={handleSubmit} 
+        <CompanyForm
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
           closeModal={onClose}
           isEdit={true}
           logo={formData.logo}
           onLogoChange={handleLogoChange}
           onLogoRemove={handleLogoRemove}
+          signatureImage={formData.signature_surat_jalan_image}
+          onSignatureImageChange={handleSignatureImageChange}
+          onSignatureImageRemove={handleSignatureImageRemove}
         />
       </div>
     </div>

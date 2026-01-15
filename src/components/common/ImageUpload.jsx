@@ -2,15 +2,29 @@ import React, { useState, useRef, useEffect } from 'react';
 import HeroIcon from '../atoms/HeroIcon';
 import toastService from '@/services/toastService';
 
-const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
+const ImageUpload = ({
+  image,
+  onImageChange,
+  onImageRemove,
+  label = 'Image',
+  // Backward compatibility alias
+  logo,
+  onLogoChange,
+  onLogoRemove
+}) => {
+  // Use generic props or fall back to logo props
+  const currentImage = image !== undefined ? image : logo;
+  const currentOnChange = onImageChange || onLogoChange;
+  const currentOnRemove = onImageRemove || onLogoRemove;
+
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(logo || null);
+  const [previewUrl, setPreviewUrl] = useState(currentImage || null);
   const fileInputRef = useRef(null);
 
-  // Update preview when logo prop changes
+  // Update preview when prop changes
   useEffect(() => {
-    setPreviewUrl(logo || null);
-  }, [logo]);
+    setPreviewUrl(currentImage || null);
+  }, [currentImage]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -36,8 +50,8 @@ const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
     reader.onloadend = () => {
       const base64String = reader.result;
       setPreviewUrl(base64String);
-      onLogoChange(base64String);
-      toastService.success('Logo loaded successfully');
+      if (currentOnChange) currentOnChange(base64String);
+      toastService.success(`${label} loaded successfully`);
       setUploading(false);
     };
     reader.onerror = () => {
@@ -47,9 +61,9 @@ const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
     reader.readAsDataURL(file);
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveImage = () => {
     setPreviewUrl(null);
-    onLogoRemove();
+    if (currentOnRemove) currentOnRemove();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -62,9 +76,9 @@ const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
   return (
     <div className='space-y-2'>
       <label className='block text-sm font-medium text-gray-700 mb-1'>
-        Company Logo
+        {label}
       </label>
-      
+
       <div className='flex items-start space-x-4'>
         {/* Preview area */}
         <div className='flex-shrink-0'>
@@ -72,7 +86,7 @@ const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
             <div className='relative w-32 h-32 border-2 border-gray-300 rounded-lg overflow-hidden bg-gray-50'>
               <img
                 src={previewUrl}
-                alt='Company logo preview'
+                alt={`${label} preview`}
                 className='w-full h-full object-contain'
               />
               {uploading && (
@@ -97,7 +111,7 @@ const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
             onChange={handleFileSelect}
             className='hidden'
           />
-          
+
           <div className='flex flex-wrap gap-2'>
             <button
               type='button'
@@ -106,13 +120,13 @@ const ImageUpload = ({ logo, onLogoChange, onLogoRemove }) => {
               className='inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
             >
               <HeroIcon name='arrow-up-tray' className='w-4 h-4 mr-2' />
-              {uploading ? 'Uploading...' : previewUrl ? 'Change Logo' : 'Upload Logo'}
+              {uploading ? 'Uploading...' : previewUrl ? `Change ${label}` : `Upload ${label}`}
             </button>
 
             {previewUrl && !uploading && (
               <button
                 type='button'
-                onClick={handleRemoveLogo}
+                onClick={handleRemoveImage}
                 className='inline-flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50'
               >
                 <HeroIcon name='trash' className='w-4 h-4 mr-2' />
