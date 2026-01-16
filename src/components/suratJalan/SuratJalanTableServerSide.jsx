@@ -5,6 +5,7 @@ import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon, DocumentDup
 import { StatusBadge } from '../ui/Badge';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
+import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
@@ -87,6 +88,12 @@ const SuratJalanTableServerSide = ({
     loading: false,
   });
 
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
+
   // Handle checkbox click
   const handleCheckboxChange = useCallback((item) => {
     onSelectSuratJalan && onSelectSuratJalan(item);
@@ -146,18 +153,11 @@ const SuratJalanTableServerSide = ({
       // Call bulk export endpoint
       const html = await suratJalanService.exportSuratJalanBulk(ids, companyData.id);
 
-      // Open in new window
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-      } else {
-        toastService.error('Popup window diblokir');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Surat Jalan Preview (${ids.length} dokumen)`);
+      setPreviewFileName(`surat-jalan-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
       toastService.success('Bulk print generated successfully');
     } catch (error) {
@@ -196,17 +196,11 @@ const SuratJalanTableServerSide = ({
       // Call bulk export paket endpoint
       const html = await suratJalanService.exportSuratJalanPaketBulk(ids, companyData.id);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-      } else {
-        toastService.error('Popup window diblokir');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Surat Jalan Paket Preview (${ids.length} dokumen)`);
+      setPreviewFileName(`surat-jalan-paket-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
       toastService.success('Bulk paket print generated successfully');
     } catch (error) {
@@ -644,6 +638,18 @@ const SuratJalanTableServerSide = ({
         cancelText="Batal"
         type="warning"
         loading={unprocessDialog.loading}
+      />
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
       />
     </div>
   );

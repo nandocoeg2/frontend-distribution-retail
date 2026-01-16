@@ -7,9 +7,11 @@ import {
   KwitansiDetailCard,
 } from '@/components/kwitansi';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import PdfPreviewModal from '@/components/common/PdfPreviewModal';
 import toastService from '@/services/toastService';
 import kwitansiService from '@/services/kwitansiService';
 import authService from '@/services/authService';
+
 
 const KwitansiPage = () => {
   const queryClient = useQueryClient();
@@ -32,6 +34,13 @@ const KwitansiPage = () => {
   const [exportExcelLoading, setExportExcelLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const [pendingExportFilters, setPendingExportFilters] = useState(null);
+
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
+
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
@@ -88,27 +97,18 @@ const KwitansiPage = () => {
           return;
         }
 
-        toastService.info('Generating kwitansi...');
+        toastService.info('Generating preview...');
 
         // Call backend API to get HTML
         const html = await kwitansiService.exportKwitansi(kwitansiId, companyData.id);
 
-        // Open HTML in new window for printing
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(html);
-          printWindow.document.close();
+        // Open preview modal with HTML content
+        setPreviewHtmlContent(html);
+        setPreviewTitle('Kwitansi Preview');
+        setPreviewFileName(`kwitansi-${kwitansiId}.pdf`);
+        setPdfPreviewOpen(true);
 
-          // Wait for content to load, then trigger print dialog
-          printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-          };
-
-          toastService.success('Kwitansi berhasil di-generate. Silakan print.');
-        } else {
-          toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-        }
+        toastService.success('Preview berhasil di-generate.');
       } catch (error) {
         console.error('Failed to export kwitansi:', error);
         toastService.error(error.message || 'Gagal mengekspor kwitansi');
@@ -141,27 +141,18 @@ const KwitansiPage = () => {
           return;
         }
 
-        toastService.info('Generating kwitansi paket (Kwitansi + Invoice Pengiriman)...');
+        toastService.info('Generating preview (Kwitansi + Invoice Pengiriman)...');
 
         // Call backend API to get HTML
         const html = await kwitansiService.exportKwitansiPaket(kwitansiId, companyData.id);
 
-        // Open HTML in new window for printing
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(html);
-          printWindow.document.close();
+        // Open preview modal with HTML content
+        setPreviewHtmlContent(html);
+        setPreviewTitle('Kwitansi Paket Preview');
+        setPreviewFileName(`kwitansi-paket-${kwitansiId}.pdf`);
+        setPdfPreviewOpen(true);
 
-          // Wait for content to load, then trigger print dialog
-          printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-          };
-
-          toastService.success('Kwitansi paket berhasil di-generate. Silakan print.');
-        } else {
-          toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-        }
+        toastService.success('Preview paket berhasil di-generate.');
       } catch (error) {
         console.error('Failed to export kwitansi paket:', error);
         toastService.error(error.message || 'Gagal mengekspor kwitansi paket');
@@ -391,6 +382,18 @@ const KwitansiPage = () => {
         confirmText="Ya, Export"
         cancelText="Batal"
         loading={exportExcelLoading}
+      />
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
       />
     </div>
   );

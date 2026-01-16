@@ -12,6 +12,7 @@ import toastService from '../../services/toastService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import PdfPreviewModal from '../common/PdfPreviewModal';
 import customerService from '../../services/customerService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
@@ -74,6 +75,12 @@ const KwitansiTableServerSide = ({
   const [isPrinting, setIsPrinting] = useState(false);
   const [isPrintingPaket, setIsPrintingPaket] = useState(false);
   const [customers, setCustomers] = useState([]);
+
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
 
   // Fetch customers for multi-select filter
   useEffect(() => {
@@ -194,21 +201,13 @@ const KwitansiTableServerSide = ({
 
       const html = await kwitansiService.exportKwitansiBulk(selectedKwitansis, companyId);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Kwitansi Preview (${selectedKwitansis.length} dokumen)`);
+      setPreviewFileName(`kwitansi-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
-        // Wait for resources to load
-        setTimeout(() => {
-          printWindow.focus();
-          printWindow.print();
-        }, 500);
-
-        toastService.success(`Berhasil memproses ${selectedKwitansis.length} kwitansi.`);
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      toastService.success(`Berhasil memproses ${selectedKwitansis.length} kwitansi.`);
 
     } catch (error) {
       console.error('Error in bulk print kwitansi:', error);
@@ -237,26 +236,17 @@ const KwitansiTableServerSide = ({
       const companyIdOverride = authService.getCompanyData()?.id;
 
       // Fallback to existing logic if needed
-      // Using 'cm3c5v8g60000356c35478440' (Surya Pangan Asia) as found in database
       const companyId = String(companyIdOverride || firstKwitansi?.invoicePenagihan?.purchaseOrder?.company?.id || 'cm3c5v8g60000356c35478440');
 
       const html = await kwitansiService.exportKwitansiPaketBulk(selectedKwitansis, companyId);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Kwitansi Paket Preview (${selectedKwitansis.length} dokumen)`);
+      setPreviewFileName(`kwitansi-paket-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
-        // Wait for resources to load
-        setTimeout(() => {
-          printWindow.focus();
-          printWindow.print();
-        }, 500);
-
-        toastService.success(`Berhasil memproses ${selectedKwitansis.length} kwitansi paket.`);
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      toastService.success(`Berhasil memproses ${selectedKwitansis.length} kwitansi paket.`);
 
     } catch (error) {
       console.error('Error in bulk print kwitansi paket:', error);
@@ -632,6 +622,18 @@ const KwitansiTableServerSide = ({
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
+      />
     </div>
   );
 };

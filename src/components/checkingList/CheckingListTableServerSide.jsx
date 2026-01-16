@@ -9,6 +9,7 @@ import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 
@@ -83,6 +84,13 @@ const CheckingListTableServerSide = ({
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingGrouped, setIsExportingGrouped] = useState(false);
+
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
+
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -152,7 +160,6 @@ const CheckingListTableServerSide = ({
     }
   }, [checklists, selectedChecklists, onSelectChecklist]);
 
-  // Handler untuk Export PDF
   // Handler untuk Export PDF (Bulk)
   const handleExportSelected = async () => {
     if (!selectedChecklists || selectedChecklists.length === 0) {
@@ -172,16 +179,13 @@ const CheckingListTableServerSide = ({
 
       const html = await checkingListService.exportCheckingListBulk(selectedChecklists, companyData.id);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist.');
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Checking List Preview (${selectedChecklists.length} dokumen)`);
+      setPreviewFileName(`checking-list-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
+
+      toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist.');
 
     } catch (error) {
       console.error('Error in bulk export checklist:', error);
@@ -191,7 +195,6 @@ const CheckingListTableServerSide = ({
     }
   };
 
-  // Handler untuk Export PDF Grouped
   // Handler untuk Export PDF Grouped (Bulk)
   const handleExportGroupedSelected = async () => {
     if (!selectedChecklists || selectedChecklists.length === 0) {
@@ -211,16 +214,13 @@ const CheckingListTableServerSide = ({
 
       const html = await checkingListService.exportCheckingListGroupedBulk(selectedChecklists, companyData.id);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist grouped.');
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Checking List Grouped Preview (${selectedChecklists.length} dokumen)`);
+      setPreviewFileName(`checking-list-grouped-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
+
+      toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist grouped.');
 
     } catch (error) {
       console.error('Error in bulk export checklist grouped:', error);
@@ -510,6 +510,18 @@ const CheckingListTableServerSide = ({
           />
         </>
       )}
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
+      />
     </div>
   );
 };

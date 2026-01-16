@@ -169,12 +169,12 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
               <button onClick={handleEditClick} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-yellow-600 rounded hover:bg-yellow-700'>
                 <PencilIcon className='w-3 h-3 mr-1' />Edit
               </button>
-              <button onClick={handleGenerateInvoicePenagihan} disabled={isGenerating || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50'>
+              {/* <button onClick={handleGenerateInvoicePenagihan} disabled={isGenerating || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50'>
                 {isGenerating ? '...' : 'Generate'}
               </button>
               <button onClick={handlePrintInvoice} disabled={isPrinting || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
                 {isPrinting ? '...' : 'Print'}
-              </button>
+              </button> */}
               {onClose && (
                 <button onClick={onClose} className='p-1 hover:bg-gray-100 rounded' title='Close'>
                   <XMarkIcon className='w-4 h-4 text-gray-500' />
