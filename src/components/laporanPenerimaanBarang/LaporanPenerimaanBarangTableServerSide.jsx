@@ -438,6 +438,16 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
+      columnHelper.accessor('no_po_pengganti', {
+        id: 'no_po_pengganti',
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No PO Pengganti</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
+        cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
+      }),
       columnHelper.accessor('customer.namaCustomer', {
         id: 'customerIds',
         header: ({ column }) => (

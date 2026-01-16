@@ -32,18 +32,29 @@ const AssignPurchaseOrderModal = ({
       const params = {
         page: 1,
         limit: 50,
+        hasNoLpb: true, // Only show POs that haven't been assigned to any LPB
       };
-      
+
+      // Filter by company if lpbData has companyId
+      if (lpbData?.companyId) {
+        params.companyId = lpbData.companyId;
+      }
+
+      // Filter by customer if lpbData has customerId
+      if (lpbData?.customerId) {
+        params.customerId = lpbData.customerId;
+      }
+
       if (query) {
         params.po_number = query;
       }
 
       const response = await purchaseOrderService.getPurchaseOrders(params);
       // Handle nested response structure: response.data.data or response.data.purchaseOrders
-      const orders = 
-        response?.data?.data || 
-        response?.data?.purchaseOrders || 
-        response?.purchaseOrders || 
+      const orders =
+        response?.data?.data ||
+        response?.data?.purchaseOrders ||
+        response?.purchaseOrders ||
         [];
       setPurchaseOrders(orders);
     } catch (error) {
@@ -52,7 +63,7 @@ const AssignPurchaseOrderModal = ({
     } finally {
       setIsLoadingPurchaseOrders(false);
     }
-  }, []);
+  }, [lpbData?.companyId, lpbData?.customerId]);
 
   const handleSearch = useCallback(
     async (query) => {
@@ -79,159 +90,133 @@ const AssignPurchaseOrderModal = ({
 
   const autocompleteOptions = purchaseOrders.map((po) => ({
     id: po.id,
-    name: po.po_number || 'N/A',
+    name: `${po.po_number || 'N/A'} - ${po.customer?.namaCustomer || '-'}`,
+    po_number: po.po_number,
     po_date: po.po_date,
     customer: po.customer?.namaCustomer || 'N/A',
   }));
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <LinkIcon className="w-6 h-6 text-blue-600" />
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full flex flex-col">
+        {/* Header - Compact */}
+        <div className="flex justify-between items-center px-4 py-2 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 bg-blue-100 rounded">
+              <LinkIcon className="w-4 h-4 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Assign Purchase Order
-              </h2>
-              <p className="text-sm text-gray-600">
-                Hubungkan LPB dengan Purchase Order
-              </p>
+              <h2 className="text-sm font-bold text-gray-900">Assign Purchase Order</h2>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+            className="p-1 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
           >
-            <XMarkIcon className="w-6 h-6 text-gray-500" />
+            <XMarkIcon className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {lpbData && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Informasi LPB
-              </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-600">No. LPB:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {lpbData.no_lpb || 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Tanggal:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {lpbData.tanggal_po
-                      ? new Date(lpbData.tanggal_po).toLocaleDateString('id-ID')
-                      : 'N/A'}
-                  </span>
+        {/* Content - Compact */}
+        <div className="flex-1 overflow-visible p-3">
+          <div className="flex gap-3">
+            {/* Left: LPB Info */}
+            {lpbData && (
+              <div className="w-1/3 p-2 bg-gray-50 rounded border border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-700 mb-1.5">Info LPB</h3>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">No. LPB:</span>
+                    <span className="font-medium text-gray-900 truncate ml-1">{lpbData.no_lpb || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Tanggal:</span>
+                    <span className="font-medium text-gray-900">
+                      {lpbData.tanggal_po ? new Date(lpbData.tanggal_po).toLocaleDateString('id-ID') : '-'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Customer:</span>
+                    <span className="font-medium text-gray-900 truncate ml-1">{lpbData.customer?.namaCustomer || '-'}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <Autocomplete
-                label="Purchase Order"
-                placeholder="Cari berdasarkan No. PO..."
-                options={autocompleteOptions}
-                value={selectedPurchaseOrderId}
-                onChange={handleChange}
-                displayKey="name"
-                valueKey="id"
-                required
-                disabled={isSubmitting}
-                onSearch={handleSearch}
-                loading={isLoadingPurchaseOrders}
-                showId={false}
-                className="w-full"
-              />
+            {/* Right: PO Selection */}
+            <div className={lpbData ? 'w-2/3' : 'w-full'}>
+              <form onSubmit={handleSubmit} className="space-y-2">
+                <Autocomplete
+                  label="Pilih Purchase Order"
+                  placeholder="Cari No. PO..."
+                  options={autocompleteOptions}
+                  value={selectedPurchaseOrderId}
+                  onChange={handleChange}
+                  displayKey="name"
+                  valueKey="id"
+                  required
+                  disabled={isSubmitting}
+                  onSearch={handleSearch}
+                  loading={isLoadingPurchaseOrders}
+                  showId={false}
+                  className="w-full"
+                  optionsClassName="bg-white border-gray-300 z-[60]"
+                />
 
-              {selectedPurchaseOrderId && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                    PO Terpilih
-                  </h4>
-                  {(() => {
-                    const selectedPO = purchaseOrders.find(
-                      (po) => po.id === selectedPurchaseOrderId
-                    );
-                    if (!selectedPO) return null;
-
-                    return (
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-blue-700">No. PO:</span>
-                          <span className="ml-2 font-medium text-blue-900">
-                            {selectedPO.po_number || 'N/A'}
-                          </span>
+                {selectedPurchaseOrderId && (
+                  <div className="p-2 bg-blue-50 rounded border border-blue-200">
+                    <h4 className="text-xs font-semibold text-blue-800 mb-1">PO Terpilih</h4>
+                    {(() => {
+                      const selectedPO = purchaseOrders.find((po) => po.id === selectedPurchaseOrderId);
+                      if (!selectedPO) return null;
+                      return (
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-blue-600">No. PO:</span>
+                            <span className="font-medium text-blue-900">{selectedPO.po_number || '-'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-blue-600">Customer:</span>
+                            <span className="font-medium text-blue-900 truncate">{selectedPO.customer?.namaCustomer || '-'}</span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-blue-700">Customer:</span>
-                          <span className="ml-2 font-medium text-blue-900">
-                            {selectedPO.customer?.namaCustomer || 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                disabled={!selectedPurchaseOrderId || isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Menyimpan...
+                      );
+                    })()}
                   </div>
-                ) : (
-                  'Assign'
                 )}
-              </button>
+
+                {/* Footer - Inline */}
+                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!selectedPurchaseOrderId || isSubmitting}
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </span>
+                    ) : (
+                      'Assign'
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
