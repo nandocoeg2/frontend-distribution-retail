@@ -68,13 +68,13 @@ const resolveReportId = (report) => {
 const LaporanPenerimaanBarangTableServerSide = ({
   onView,
   onEdit,
-  onDelete,
-  deleteLoading = false,
   selectedReports = [],
   onSelectReport,
   onSelectAllReports,
   onCompleteSelected,
+  onDeleteSelected,
   isCompleting = false,
+  isDeleting = false,
   hasSelectedReports = false,
   initialPage = 1,
   initialLimit = 10,
@@ -561,7 +561,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
         header: 'Actions',
         cell: ({ row }) => {
           const report = row.original;
-          const reportId = resolveReportId(report);
           const hasPurchaseOrder = report.purchaseOrderId || report.purchaseOrder;
 
           return (
@@ -601,15 +600,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
                   <LinkSlashIcon className="h-4 w-4" />
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => reportId && onDelete(reportId)}
-                disabled={deleteLoading || !reportId}
-                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Delete"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
             </div>
           );
         },
@@ -623,8 +613,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
       handleSelectAllInternalToggle,
       onView,
       onEdit,
-      onDelete,
-      deleteLoading,
       setPage,
       handleOpenAssignModal,
       handleUnassignClick,
@@ -652,6 +640,9 @@ const LaporanPenerimaanBarangTableServerSide = ({
               </button>
               <button onClick={onCompleteSelected} disabled={actionDisabled} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
                 <CheckIcon className="h-3 w-3 mr-1" />{isCompleting ? '...' : 'Selesai'}
+              </button>
+              <button onClick={onDeleteSelected} disabled={isDeleting} className="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50">
+                <TrashIcon className="h-3 w-3 mr-1" />{isDeleting ? '...' : 'Hapus'}
               </button>
             </div>
           ) : <div />}

@@ -158,10 +158,10 @@ const useCheckingListPage = () => {
       try {
         const response = hasFilters
           ? await checkingListService.searchChecklists(
-              sanitizedFilters,
-              page,
-              limit
-            )
+            sanitizedFilters,
+            page,
+            limit
+          )
           : await checkingListService.getAllChecklists(page, limit);
 
         const { results, pagination: nextPagination } =
@@ -343,64 +343,66 @@ const useCheckingListPage = () => {
     [authHandler, refreshAfterMutation]
   );
 
-  const deleteChecklistFunction = useCallback(
-    async (id) => {
+  const bulkDeleteChecklists = useCallback(
+    async (ids = []) => {
+      const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+
+      if (!payloadIds.length) {
+        toastService.warning('Pilih minimal satu checklist surat jalan untuk dihapus.');
+        return null;
+      }
+
       try {
-        const result = await checkingListService.deleteChecklist(id);
-        if (!(result?.success || result == null || result === '')) {
+        const result = await checkingListService.bulkDeleteChecklists(payloadIds);
+
+        if (result?.success === false) {
           throw new Error(
-            result?.error?.message || 'Failed to delete checklist surat jalan'
+            result?.message ||
+            result?.error?.message ||
+            'Failed to delete checklist surat jalan'
           );
         }
-        toastService.success('Checklist surat jalan berhasil dihapus');
 
-        const currentPagination =
-          paginationRef.current || pagination || INITIAL_PAGINATION;
-        const itemsPerPage =
-          currentPagination.itemsPerPage ||
-          currentPagination.limit ||
-          INITIAL_PAGINATION.itemsPerPage;
-        const currentPage =
-          currentPagination.currentPage ||
-          currentPagination.page ||
-          INITIAL_PAGINATION.currentPage;
-        const totalItems =
-          currentPagination.totalItems ||
-          currentPagination.total ||
-          checklists.length;
+        const responseData = result?.data || result || {};
+        const successItems = Array.isArray(responseData?.success) ? responseData.success : [];
+        const failedItems = Array.isArray(responseData?.failed) ? responseData.failed : [];
 
-        const newTotalItems = Math.max(totalItems - 1, 0);
-        const newTotalPages = Math.max(
-          Math.ceil(newTotalItems / itemsPerPage),
-          1
-        );
-        const nextPage = Math.min(currentPage, newTotalPages);
+        if (successItems.length > 0) {
+          const baseMessage = `Berhasil menghapus ${successItems.length} checklist surat jalan.`;
+          if (failedItems.length > 0) {
+            toastService.success(`${baseMessage} ${failedItems.length} checklist gagal dihapus.`);
+          } else {
+            toastService.success(baseMessage);
+          }
+        }
 
-        await performFetch({
-          page: nextPage,
-          limit: itemsPerPage,
-          filters: activeFiltersRef.current,
-        });
+        if (!successItems.length && failedItems.length > 0) {
+          toastService.warning(`${failedItems.length} checklist gagal dihapus.`);
+        }
+
+        await refreshAfterMutation();
+        return { success: successItems, failed: failedItems };
       } catch (err) {
         if (err?.response?.status === 401 || err?.response?.status === 403) {
           authHandler();
-          return;
+          return null;
         }
+
         const message =
-          err?.response?.data?.error?.message ||
           err?.response?.data?.message ||
+          err?.response?.data?.error?.message ||
           err?.message ||
           'Failed to delete checklist surat jalan';
         toastService.error(message);
         throw err;
       }
     },
-    [authHandler, checklists.length, pagination, performFetch]
+    [authHandler, refreshAfterMutation]
   );
 
-  const deleteChecklistConfirmation = useDeleteConfirmation(
-    deleteChecklistFunction,
-    'Apakah Anda yakin ingin menghapus checklist surat jalan ini?',
+  const bulkDeleteConfirmation = useDeleteConfirmation(
+    bulkDeleteChecklists,
+    'Apakah Anda yakin ingin menghapus checklist surat jalan yang dipilih?',
     'Hapus Checklist Surat Jalan'
   );
 
@@ -486,8 +488,8 @@ const useCheckingListPage = () => {
     handleLimitChange,
     createChecklist,
     updateChecklist,
-    deleteChecklist: deleteChecklistConfirmation.showDeleteConfirmation,
-    deleteChecklistConfirmation,
+    bulkDeleteChecklists,
+    bulkDeleteConfirmation,
     fetchChecklists: performFetch,
     fetchChecklistById,
     handleAuthError: authHandler,

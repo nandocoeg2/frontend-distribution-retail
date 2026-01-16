@@ -418,33 +418,59 @@ const useLaporanPenerimaanBarangPage = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
-  const deleteReportFunction = useCallback(async (id) => {
+  const bulkDeleteReports = useCallback(async (ids = []) => {
+    const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+
+    if (!payloadIds.length) {
+      toastService.warning('Pilih minimal satu laporan penerimaan barang untuk dihapus.');
+      return null;
+    }
+
     try {
-      const result = await laporanPenerimaanBarangService.deleteReport(id);
-      if (!(result?.success || result === '' || result == null)) {
-        throw new Error(result?.error?.message || 'Failed to delete laporan penerimaan barang');
+      const result = await laporanPenerimaanBarangService.bulkDeleteReports(payloadIds);
+
+      if (result?.success === false) {
+        throw new Error(
+          result?.message ||
+          result?.error?.message ||
+          'Failed to delete laporan penerimaan barang'
+        );
       }
-      toastService.success('Laporan penerimaan barang deleted successfully');
 
-      const itemsPerPage = resolveLimit();
-      const currentPage = pagination.currentPage || pagination.page || 1;
-      const totalItems = pagination.totalItems || pagination.total || reports.length;
-      const newTotalItems = Math.max(totalItems - 1, 0);
-      const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
-      const nextPage = Math.min(currentPage, newTotalPages);
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const responseData = result?.data || result || {};
+      const successItems = Array.isArray(responseData?.success) ? responseData.success : [];
+      const failedItems = Array.isArray(responseData?.failed) ? responseData.failed : [];
 
-      await performSearch(trimmedQuery, nextPage, itemsPerPage);
+      if (successItems.length > 0) {
+        const baseMessage = `Berhasil menghapus ${successItems.length} laporan penerimaan barang.`;
+        if (failedItems.length > 0) {
+          toastService.success(`${baseMessage} ${failedItems.length} laporan gagal dihapus.`);
+        } else {
+          toastService.success(baseMessage);
+        }
+      }
+
+      if (!successItems.length && failedItems.length > 0) {
+        toastService.warning(`${failedItems.length} laporan gagal dihapus.`);
+      }
+
+      await refreshAfterMutation();
+      return { success: successItems, failed: failedItems };
     } catch (err) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
         authHandler();
-        return;
+        return null;
       }
-      const message = err?.response?.data?.error?.message || err?.message || 'Failed to delete laporan penerimaan barang';
-      setError(message);
+
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        'Failed to delete laporan penerimaan barang';
       toastService.error(message);
+      throw err;
     }
-  }, [authHandler, pagination, performSearch, reports.length, resolveLimit, searchQuery, setError]);
+  }, [authHandler, refreshAfterMutation]);
 
   const completeReports = useCallback(async (ids = []) => {
     const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
@@ -500,9 +526,9 @@ const useLaporanPenerimaanBarangPage = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
-  const deleteReportConfirmation = useDeleteConfirmation(
-    deleteReportFunction,
-    'Are you sure you want to delete this laporan penerimaan barang?',
+  const bulkDeleteConfirmation = useDeleteConfirmation(
+    bulkDeleteReports,
+    'Are you sure you want to delete selected laporan penerimaan barang?',
     'Delete Laporan Penerimaan Barang'
   );
 
@@ -524,8 +550,8 @@ const useLaporanPenerimaanBarangPage = () => {
     handleLimitChange: handleLimitChangeInternal,
     createReport,
     updateReport,
-    deleteReport: deleteReportConfirmation.showDeleteConfirmation,
-    deleteReportConfirmation,
+    bulkDeleteReports,
+    bulkDeleteConfirmation,
     fetchReports,
     handleAuthError: authHandler,
     createReportFromFile,

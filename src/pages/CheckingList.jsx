@@ -6,7 +6,7 @@ import {
   CheckingListModal,
   CheckingListDetailCard,
 } from '@/components/checkingList';
-import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { useConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const resolveChecklistId = (checklist) => {
@@ -31,8 +31,7 @@ const CheckingList = () => {
     error,
     createChecklist,
     updateChecklist,
-    deleteChecklist: showDeleteChecklistDialog,
-    deleteChecklistConfirmation,
+    bulkDeleteChecklists,
     fetchChecklistById,
     handleRetryFetch,
   } = useCheckingListPage();
@@ -41,6 +40,14 @@ const CheckingList = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedChecklist, setSelectedChecklist] = useState(null);
   const [selectedChecklists, setSelectedChecklists] = useState([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const {
+    showDialog: showDeleteDialog,
+    hideDialog: hideDeleteDialog,
+    setLoading: setDeleteDialogLoading,
+    ConfirmationDialog: DeleteConfirmationDialog,
+  } = useConfirmationDialog();
 
   const pageTitle = useMemo(
     () => 'Manajemen Checklist Surat Jalan',
@@ -107,22 +114,6 @@ const CheckingList = () => {
     }
   }, [queryClient, selectedChecklist, fetchChecklistById]);
 
-  const handleDeleteChecklist = useCallback(
-    (checklistId) => {
-      if (!checklistId) {
-        return;
-      }
-      showDeleteChecklistDialog(checklistId);
-    },
-    [showDeleteChecklistDialog]
-  );
-
-  const handleDeleteConfirm = async () => {
-    await deleteChecklistConfirmation.confirmDelete();
-    // Invalidate queries to refresh data
-    await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
-  };
-
   const handleRetry = () => {
     handleRetryFetch();
   };
@@ -138,6 +129,47 @@ const CheckingList = () => {
   }, []);
 
   const hasSelectedChecklists = selectedChecklists.length > 0;
+
+  const handleDeleteSelected = useCallback(() => {
+    if (!hasSelectedChecklists) {
+      return;
+    }
+
+    showDeleteDialog({
+      title: 'Hapus Checklist Surat Jalan',
+      message: `Apakah Anda yakin ingin menghapus ${selectedChecklists.length} checklist surat jalan yang dipilih?`,
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      type: 'danger',
+    });
+  }, [hasSelectedChecklists, selectedChecklists.length, showDeleteDialog]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    setDeleteDialogLoading(true);
+    setIsDeleting(true);
+
+    try {
+      const result = await bulkDeleteChecklists(selectedChecklists);
+
+      if (result && Array.isArray(result.failed)) {
+        const failedIds = result.failed
+          .map((item) => item.id)
+          .filter(Boolean);
+
+        setSelectedChecklists(Array.from(new Set(failedIds)));
+      } else if (result) {
+        setSelectedChecklists([]);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+      hideDeleteDialog();
+    } catch (deleteError) {
+      console.error('Failed to delete checklist surat jalan:', deleteError);
+    } finally {
+      setDeleteDialogLoading(false);
+      setIsDeleting(false);
+    }
+  }, [bulkDeleteChecklists, selectedChecklists, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
 
   return (
     <div className='p-2'>
@@ -171,13 +203,13 @@ const CheckingList = () => {
           ) : (
             <CheckingListTableServerSide
               onViewDetail={handleViewDetail}
-              onDelete={handleDeleteChecklist}
-              deleteLoading={deleteChecklistConfirmation.loading}
               selectedChecklistId={selectedChecklist?.id}
               initialPage={pagination?.currentPage || 1}
               initialLimit={pagination?.itemsPerPage || 10}
               selectedChecklists={selectedChecklists}
               onSelectChecklist={handleSelectChecklist}
+              onDeleteSelected={handleDeleteSelected}
+              isDeleting={isDeleting}
               hasSelectedChecklists={hasSelectedChecklists}
             />
           )}
@@ -200,17 +232,7 @@ const CheckingList = () => {
         />
       )}
 
-      <ConfirmationDialog
-        show={deleteChecklistConfirmation.showConfirm}
-        onClose={deleteChecklistConfirmation.hideDeleteConfirmation}
-        onConfirm={handleDeleteConfirm}
-        title={deleteChecklistConfirmation.title}
-        message={deleteChecklistConfirmation.message}
-        type='danger'
-        confirmText='Hapus'
-        cancelText='Batal'
-        loading={deleteChecklistConfirmation.loading}
-      />
+      <DeleteConfirmationDialog onConfirm={handleConfirmDelete} />
     </div>
   );
 };

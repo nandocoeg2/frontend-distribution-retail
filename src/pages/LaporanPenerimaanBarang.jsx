@@ -7,7 +7,6 @@ import {
   LaporanPenerimaanBarangDetailCard,
 } from '@/components/laporanPenerimaanBarang';
 import {
-  ConfirmationDialog,
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
@@ -35,8 +34,7 @@ const LaporanPenerimaanBarang = () => {
     fetchBulkStatus,
     fetchBulkFiles,
     updateReport,
-    deleteReport,
-    deleteReportConfirmation,
+    bulkDeleteReports,
     fetchReportById,
     completeReports,
   } = useLaporanPenerimaanBarangPage();
@@ -64,6 +62,15 @@ const LaporanPenerimaanBarang = () => {
     setLoading: setExportDialogLoading,
     ConfirmationDialog: ExportConfirmationDialog,
   } = useConfirmationDialog();
+
+  const {
+    showDialog: showDeleteDialog,
+    hideDialog: hideDeleteDialog,
+    setLoading: setDeleteDialogLoading,
+    ConfirmationDialog: DeleteConfirmationDialog,
+  } = useConfirmationDialog();
+
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const resolveReportId = useCallback((report) => {
     if (!report) {
@@ -172,6 +179,47 @@ const LaporanPenerimaanBarang = () => {
     }
   }, [completeReports, selectedReportIds, resolveReportId, hideCompleteDialog, setCompleteDialogLoading, queryClient]);
 
+  const handleDeleteSelected = useCallback(() => {
+    if (!hasSelectedReports) {
+      return;
+    }
+
+    showDeleteDialog({
+      title: 'Hapus Laporan Penerimaan Barang',
+      message: `Apakah Anda yakin ingin menghapus ${selectedReportIds.length} laporan penerimaan barang yang dipilih?`,
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      type: 'danger',
+    });
+  }, [hasSelectedReports, selectedReportIds.length, showDeleteDialog]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    setDeleteDialogLoading(true);
+    setIsDeleting(true);
+
+    try {
+      const result = await bulkDeleteReports(selectedReportIds);
+
+      if (result && Array.isArray(result.failed)) {
+        const failedIds = result.failed
+          .map((item) => item.id)
+          .filter(Boolean);
+
+        setSelectedReportIds(Array.from(new Set(failedIds)));
+      } else if (result) {
+        setSelectedReportIds([]);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
+      hideDeleteDialog();
+    } catch (error) {
+      console.error('Failed to delete laporan penerimaan barang:', error);
+    } finally {
+      setDeleteDialogLoading(false);
+      setIsDeleting(false);
+    }
+  }, [bulkDeleteReports, selectedReportIds, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
+
   const openCreateModal = useCallback(() => {
     setSelectedReport(null);
     setIsCreateModalOpen(true);
@@ -231,17 +279,6 @@ const LaporanPenerimaanBarang = () => {
     closeEditModal();
   }, [selectedReport?.id, updateReport, refreshData, closeEditModal]);
 
-  const handleDeleteConfirm = useCallback(async () => {
-    const idToDelete = deleteReportConfirmation.itemToDelete;
-    await deleteReportConfirmation.confirmDelete();
-
-    if (idToDelete) {
-      setSelectedReportIds((prev) => prev.filter((id) => id !== idToDelete));
-    }
-
-    await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
-  }, [deleteReportConfirmation, queryClient]);
-
   return (
     <div className='p-3 space-y-3'>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
@@ -266,13 +303,13 @@ const LaporanPenerimaanBarang = () => {
           <LaporanPenerimaanBarangTableServerSide
             onView={handleViewDetail}
             onEdit={openEditModal}
-            onDelete={deleteReport}
-            deleteLoading={deleteReportConfirmation.loading}
             selectedReports={selectedReportIds}
             onSelectReport={handleSelectReport}
             onSelectAllReports={handleSelectAllReports}
             onCompleteSelected={handleCompleteSelected}
+            onDeleteSelected={handleDeleteSelected}
             isCompleting={isCompletingReports}
+            isDeleting={isDeleting}
             hasSelectedReports={hasSelectedReports}
             initialPage={1}
             initialLimit={10}
@@ -304,17 +341,7 @@ const LaporanPenerimaanBarang = () => {
 
       <ExportConfirmationDialog onConfirm={handleConfirmExport} />
 
-      <ConfirmationDialog
-        show={deleteReportConfirmation.showConfirm}
-        onClose={deleteReportConfirmation.hideDeleteConfirmation}
-        onConfirm={handleDeleteConfirm}
-        title={deleteReportConfirmation.title}
-        message={deleteReportConfirmation.message}
-        type='danger'
-        confirmText='Hapus'
-        cancelText='Batal'
-        loading={deleteReportConfirmation.loading}
-      />
+      <DeleteConfirmationDialog onConfirm={handleConfirmDelete} />
 
       {selectedReportForDetail && (
         <LaporanPenerimaanBarangDetailCard report={selectedReportForDetail} onClose={handleCloseDetail} loading={detailLoading} />

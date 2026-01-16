@@ -73,13 +73,13 @@ const resolveStatusText = (status) => {
 
 const CheckingListTableServerSide = ({
   onViewDetail,
-  onDelete,
-  deleteLoading = false,
   selectedChecklistId = null,
   initialPage = 1,
   initialLimit = 10,
   selectedChecklists = [],
   onSelectChecklist,
+  onDeleteSelected,
+  isDeleting = false,
   hasSelectedChecklists = false,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
@@ -364,40 +364,12 @@ const CheckingListTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Aksi',
-        cell: ({ row }) => {
-          const checklist = row.original;
-          const checklistId = resolveChecklistId(checklist);
-
-          return (
-            <div className="flex items-center gap-2">
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete && checklistId && onDelete(checklistId);
-                }}
-                disabled={deleteLoading}
-                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
     ],
     [
       checklists,
       selectedChecklists,
       onSelectChecklist,
       handleSelectAllInternalToggle,
-      onDelete,
-      deleteLoading,
       setPage,
     ]
   );
@@ -443,6 +415,14 @@ const CheckingListTableServerSide = ({
             >
               <DocumentArrowDownIcon className="h-3.5 w-3.5" />
               {isExportingGrouped ? 'Proses...' : 'Print Grouped'}
+            </button>
+            <button
+              onClick={onDeleteSelected}
+              disabled={isDeleting}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <TrashIcon className="h-3.5 w-3.5" />
+              {isDeleting ? 'Proses...' : 'Hapus'}
             </button>
           </div>
         </div>
