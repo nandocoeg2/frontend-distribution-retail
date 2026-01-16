@@ -3,15 +3,17 @@ import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
-import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import { ConfirmationDialog } from '../ui/ConfirmationDialog';
+import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
-import TextColumnFilter from '../common/TextColumnFilter';
+
 
 const columnHelper = createColumnHelper();
 
@@ -259,6 +261,17 @@ const SuratJalanTableServerSide = ({
       mappedFilters.companyId = companyId;
     }
 
+    // Handle date range filters for tanggal_surat_jalan
+    if (mappedFilters.tanggal_surat_jalan && typeof mappedFilters.tanggal_surat_jalan === 'object') {
+      if (mappedFilters.tanggal_surat_jalan.from) {
+        mappedFilters.tanggal_surat_jalan_from = mappedFilters.tanggal_surat_jalan.from;
+      }
+      if (mappedFilters.tanggal_surat_jalan.to) {
+        mappedFilters.tanggal_surat_jalan_to = mappedFilters.tanggal_surat_jalan.to;
+      }
+      delete mappedFilters.tanggal_surat_jalan;
+    }
+
     return {
       ...rest,
       filters: mappedFilters,
@@ -330,6 +343,29 @@ const SuratJalanTableServerSide = ({
         },
         enableSorting: false,
         enableColumnFilter: false,
+      }),
+      columnHelper.accessor('tanggal_surat_jalan', {
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-1">
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <span className="font-medium">{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : '-'}</span>,
       }),
       columnHelper.accessor('no_surat_jalan', {
         header: ({ column }) => (
