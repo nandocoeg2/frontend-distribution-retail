@@ -66,7 +66,13 @@ const PdfPreviewModal = ({
                                 doc.documentElement.scrollHeight,
                                 500
                             );
+                            const width = Math.max(
+                                doc.body.scrollWidth,
+                                doc.documentElement.scrollWidth,
+                                794 // 210mm in pixels approx
+                            );
                             iframe.style.height = height + 'px';
+                            iframe.style.width = width + 'px';
                         }
                     } catch (err) {
                         console.warn('Could not resize iframe:', err);
@@ -290,15 +296,18 @@ const PdfPreviewModal = ({
                     <div
                         className="bg-white shadow-2xl mx-auto"
                         style={{
-                            width: '210mm',
-                            maxWidth: '100%'
+                            minWidth: '210mm',
+                            width: 'fit-content',
+                            maxWidth: 'none'
                         }}
                     >
                         <iframe
                             ref={iframeRef}
                             className="w-full border-0"
                             style={{
-                                minHeight: '500px'
+                                minHeight: '500px',
+                                minWidth: '210mm',
+                                width: 'fit-content'
                             }}
                             title="Document Preview"
                             onLoad={(e) => {
@@ -312,7 +321,13 @@ const PdfPreviewModal = ({
                                             doc.documentElement.scrollHeight,
                                             500
                                         );
+                                        const width = Math.max(
+                                            doc.body.scrollWidth,
+                                            doc.documentElement.scrollWidth,
+                                            794 // 210mm in pixels
+                                        );
                                         iframe.style.height = height + 'px';
+                                        iframe.style.width = width + 'px';
                                     }
                                 } catch (err) {
                                     console.warn('Could not resize iframe:', err);

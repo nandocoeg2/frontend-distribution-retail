@@ -261,7 +261,7 @@ const KwitansiDetailCard = ({
                   Edit
                 </button>
               )}
-              {onExport && (
+              {/* {onExport && (
                 <button
                   onClick={() => onExport(detail)}
                   disabled={loading || exportLoading || !detail?.id}
@@ -290,7 +290,7 @@ const KwitansiDetailCard = ({
                   )}
                   Paket
                 </button>
-              )}
+              )} */}
               {onClose && (
                 <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" title="Close">
                   <XMarkIcon className="w-4 h-4 text-gray-500" />
