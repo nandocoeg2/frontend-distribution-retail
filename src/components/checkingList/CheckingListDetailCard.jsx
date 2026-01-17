@@ -19,6 +19,7 @@ import { formatDateTime } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import ActivityTimeline from '../common/ActivityTimeline';
 import checkingListService from '../../services/checkingListService';
+import { getAuditTrails } from '../../services/auditTrailService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import CheckingListForm from './CheckingListForm';
@@ -1128,6 +1129,11 @@ const CheckingListDetailCard = ({
                 auditTrails={normalizedAuditTrails}
                 title='Activity Timeline'
                 emptyMessage='Belum ada audit trail untuk checklist ini.'
+                hasMore={checklist?.hasMoreAuditTrails}
+                totalAuditTrails={checklist?.totalAuditTrails || 0}
+                tableName='ChecklistSuratJalan'
+                recordId={checklist?.id}
+                onLoadMore={getAuditTrails}
               />
             </TabPanel>
           </TabContent>
