@@ -10,6 +10,9 @@ import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag
 import { getCompanies } from '../../services/companyService';
 import DateFilter from '../common/DateFilter';
 
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
+
 const columnHelper = createColumnHelper();
 
 const ItemTableServerSide = forwardRef(({
@@ -108,6 +111,7 @@ const ItemTableServerSide = forwardRef(({
         selectPagination: (response) => response?.pagination,
         initialPage: 1,
         initialLimit: 10,
+        columnFilterDebounceMs: 0,
         getQueryParams,
     });
 
@@ -163,14 +167,7 @@ const ItemTableServerSide = forwardRef(({
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Nama Barang</div>
-                        <input
-                            type="text"
-                            value={column.getFilterValue() ?? ''}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="Filter..."
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        <TextColumnFilter column={column} placeholder="Filter..." />
                     </div>
                 ),
                 cell: (info) => (
@@ -185,14 +182,7 @@ const ItemTableServerSide = forwardRef(({
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">PLU</div>
-                        <input
-                            type="text"
-                            value={column.getFilterValue() ?? ''}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="Filter..."
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        <TextColumnFilter column={column} placeholder="Filter..." />
                     </div>
                 ),
                 cell: (info) => <span className="text-xs font-medium">{info.getValue() || '-'}</span>,
@@ -202,14 +192,7 @@ const ItemTableServerSide = forwardRef(({
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Kode Barang</div>
-                        <input
-                            type="text"
-                            value={column.getFilterValue() ?? ''}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="Filter..."
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        <TextColumnFilter column={column} placeholder="Filter..." />
                     </div>
                 ),
                 cell: (info) => <span className="text-xs">{info.getValue() || '-'}</span>,
@@ -219,14 +202,7 @@ const ItemTableServerSide = forwardRef(({
                 header: ({ column }) => (
                     <div className="space-y-0.5">
                         <div className="font-medium text-xs">Barcode</div>
-                        <input
-                            type="text"
-                            value={column.getFilterValue() ?? ''}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="Filter..."
-                            className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        <TextColumnFilter column={column} placeholder="Filter..." />
                     </div>
                 ),
                 cell: (info) => <span className="text-xs">{info.getValue() || '-'}</span>,
@@ -242,34 +218,7 @@ const ItemTableServerSide = forwardRef(({
                         <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
                             <div className="font-medium text-xs">Base Price</div>
                             <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => {
-                                        column.setFilterValue({ ...filterValue, min: e.target.value });
-                                        setPage(1);
-                                    }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => {
-                                        column.setFilterValue({ ...filterValue, max: e.target.value });
-                                        setPage(1);
-                                    }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                />
+                                <RangeColumnFilter column={column} setPage={setPage} />
                             </div>
                         </div>
                     );
@@ -291,28 +240,7 @@ const ItemTableServerSide = forwardRef(({
                         <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
                             <div className="font-medium text-xs">Stock</div>
                             <div className="flex flex-col gap-0.5">
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={filterValue.min ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                                    placeholder="Min"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                />
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={filterValue.max ?? ''}
-                                    onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                                    placeholder="Max"
-                                    className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                />
+                                <RangeColumnFilter column={column} setPage={setPage} />
                             </div>
                         </div>
                     );

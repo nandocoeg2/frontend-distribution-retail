@@ -15,7 +15,12 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     email: '',
     direktur_utama: '',
     npwp: '',
-    logo: null
+    id_tku: '',
+    logo: null,
+    signature_surat_jalan_nama: '',
+    signature_surat_jalan_image: null,
+    signature_invoice_nama: '',
+    signature_invoice_image: null,
   });
 
   useEffect(() => {
@@ -33,16 +38,21 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         email: company.email || '',
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
-        logo: company.logo || null
+        id_tku: company.id_tku || '',
+        logo: company.logo || null,
+        signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
+        signature_surat_jalan_image: company.signature_surat_jalan_image || null,
+        signature_invoice_nama: company.signature_invoice_nama || '',
+        signature_invoice_image: company.signature_invoice_image || null,
       });
     }
   }, [company]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -60,10 +70,44 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
     }));
   };
 
+  const handleSignatureImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: base64String
+    }));
+  };
+
+  const handleSignatureImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: null
+    }));
+  };
+
+  const handleSignatureInvoiceImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: base64String
+    }));
+  };
+
+  const handleSignatureInvoiceImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: null
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Send all data including logo
-    onCompanyUpdated(company.id, formData);
+    const dataToSend = { ...formData };
+
+    // Convert empty strings to null for optional text fields if needed, 
+    // or rely on schema accepting empty strings. 
+    // BUT for images, ensure null is handled if schema update doesn't fix it fully.
+
+    onCompanyUpdated(company.id, dataToSend);
   };
 
   if (!show) {
@@ -76,15 +120,21 @@ const EditCompanyModal = ({ show, onClose, company, onCompanyUpdated, handleAuth
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
           Edit Company
         </h3>
-        <CompanyForm 
-          formData={formData} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={handleSubmit} 
+        <CompanyForm
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
           closeModal={onClose}
           isEdit={true}
           logo={formData.logo}
           onLogoChange={handleLogoChange}
           onLogoRemove={handleLogoRemove}
+          signatureImage={formData.signature_surat_jalan_image}
+          onSignatureImageChange={handleSignatureImageChange}
+          onSignatureImageRemove={handleSignatureImageRemove}
+          signatureInvoiceImage={formData.signature_invoice_image}
+          onSignatureInvoiceImageChange={handleSignatureInvoiceImageChange}
+          onSignatureInvoiceImageRemove={handleSignatureInvoiceImageRemove}
         />
       </div>
     </div>

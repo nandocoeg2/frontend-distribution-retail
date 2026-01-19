@@ -10,6 +10,7 @@ import ActivityTimeline from '../common/ActivityTimeline';
 // import PackingItemsTable from './PackingItemsTable'; // Unused now
 import PackingItemDetailModal from './PackingItemDetailModal';
 import { formatDate, formatDateTime } from '../../utils/formatUtils';
+import { getAuditTrails } from '../../services/auditTrailService';
 import { exportPackingSticker, exportPackingTandaTerima, exportPackingTandaTerimaGrouped } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
@@ -296,17 +297,29 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
             </TabPanel>
 
             <TabPanel tabId="timeline">
-              <ActivityTimeline auditTrails={packing.auditTrails} title="Timeline" emptyMessage="No audit trail." formatDate={formatDate} />
+              <ActivityTimeline
+                auditTrails={packing.auditTrails}
+                title="Timeline"
+                emptyMessage="No audit trail."
+                formatDate={formatDate}
+                hasMore={packing?.hasMoreAuditTrails}
+                totalAuditTrails={packing?.totalAuditTrails || 0}
+                tableName='Packing'
+                recordId={packing?.id}
+                onLoadMore={getAuditTrails}
+              />
             </TabPanel>
           </TabContent>
         </div>
       )}
 
       {/* Packing Item Detail Modal */}
-      {isItemDetailOpen && (
-        <PackingItemDetailModal item={selectedItem} onClose={closeItemDetail} />
-      )}
-    </div>
+      {
+        isItemDetailOpen && (
+          <PackingItemDetailModal item={selectedItem} onClose={closeItemDetail} />
+        )
+      }
+    </div >
   );
 };
 

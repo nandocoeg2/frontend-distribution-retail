@@ -33,7 +33,10 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     direktur_utama: '',
     npwp: '',
     id_tku: '',
-    logo: null
+    id_tku: '',
+    logo: null,
+    signature_surat_jalan_nama: '',
+    signature_surat_jalan_image: null,
   });
   const [saving, setSaving] = useState(false);
 
@@ -54,7 +57,10 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
         id_tku: company.id_tku || '',
-        logo: company.logo || null
+        id_tku: company.id_tku || '',
+        logo: company.logo || null,
+        signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
+        signature_surat_jalan_image: company.signature_surat_jalan_image || null,
       });
     }
   }, [company]);
@@ -82,7 +88,10 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         direktur_utama: company.direktur_utama || '',
         npwp: company.npwp || '',
         id_tku: company.id_tku || '',
-        logo: company.logo || null
+        id_tku: company.id_tku || '',
+        logo: company.logo || null,
+        signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
+        signature_surat_jalan_image: company.signature_surat_jalan_image || null,
       });
     }
   };
@@ -109,6 +118,20 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     }));
   };
 
+  const handleSignatureImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: base64String
+    }));
+  };
+
+  const handleSignatureImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: null
+    }));
+  };
+
   const handleSave = async () => {
     if (!formData.kode_company || !formData.nama_perusahaan) {
       toastService.error('Please fill all required fields');
@@ -122,7 +145,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
         toastService.success('Company updated successfully');
         setIsEditMode(false);
         if (onUpdate) {
-          onUpdate();
+          onUpdate(response.data);
         }
       }
     } catch (error) {
@@ -206,6 +229,22 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
             logo={formData.logo}
             onLogoChange={handleLogoChange}
             onLogoRemove={handleLogoRemove}
+            signatureImage={formData.signature_surat_jalan_image}
+            onSignatureImageChange={handleSignatureImageChange}
+            onSignatureImageRemove={handleSignatureImageRemove}
+            signatureInvoiceImage={formData.signature_invoice_image}
+            onSignatureInvoiceImageChange={(base64String) => {
+              setFormData((prev) => ({
+                ...prev,
+                signature_invoice_image: base64String
+              }));
+            }}
+            onSignatureInvoiceImageRemove={() => {
+              setFormData((prev) => ({
+                ...prev,
+                signature_invoice_image: null
+              }));
+            }}
           />
         </div>
       ) : (
@@ -227,6 +266,54 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Signature Image Display */}
+          {company.signature_surat_jalan_image && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center mb-4">
+                <PencilIcon className="h-5 w-5 text-gray-500 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Digital Signature</h3>
+              </div>
+              <div className="flex justify-center">
+                <div className="w-48 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={company.signature_surat_jalan_image}
+                    alt="Signature"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
+              {company.signature_surat_jalan_nama && (
+                <p className="text-center mt-2 text-sm text-gray-600">
+                  Signatory: <span className="font-medium text-gray-900">{company.signature_surat_jalan_nama}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Invoice Signature Image Display */}
+          {company.signature_invoice_image && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center mb-4">
+                <PencilIcon className="h-5 w-5 text-gray-500 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Invoice Signature</h3>
+              </div>
+              <div className="flex justify-center">
+                <div className="w-48 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={company.signature_invoice_image}
+                    alt="Invoice Signature"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              </div>
+              {company.signature_invoice_nama && (
+                <p className="text-center mt-2 text-sm text-gray-600">
+                  Signatory: <span className="font-medium text-gray-900">{company.signature_invoice_nama}</span>
+                </p>
+              )}
             </div>
           )}
 

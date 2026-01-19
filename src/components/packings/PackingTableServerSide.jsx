@@ -17,8 +17,10 @@ import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import PdfPreviewModal from '../common/PdfPreviewModal';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 
 
 const columnHelper = createColumnHelper();
@@ -112,6 +114,12 @@ const PackingTableServerSide = forwardRef(({
   const [isEditTanggalModalOpen, setIsEditTanggalModalOpen] = useState(false);
   const [editTanggalLoading, setEditTanggalLoading] = useState(false);
   const [selectedTanggal, setSelectedTanggal] = useState('');
+
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
 
   // Status options for multi-select filter
   const statusOptions = useMemo(() => [
@@ -208,23 +216,13 @@ const PackingTableServerSide = forwardRef(({
       // Call backend API to get Bulk HTML
       const html = await exportPackingStickerBulk(selectedPackings, companyData.id);
 
-      // Open HTML in new window for printing
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Stiker Preview (${selectedPackings.length} dokumen)`);
+      setPreviewFileName(`stiker-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
-        // Wait for content to load, then trigger print dialog
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success(`Berhasil membuka stiker untuk ${selectedPackings.length} packing`);
-      } else {
-        console.error('Failed to open print window');
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      toastService.success(`Berhasil membuka stiker untuk ${selectedPackings.length} packing`);
     } catch (error) {
       console.error('Error in bulk print sticker:', error);
       toastService.error(error.message || 'Gagal mencetak stiker');
@@ -253,23 +251,13 @@ const PackingTableServerSide = forwardRef(({
       // Call backend API to get Bulk HTML
       const html = await exportPackingTandaTerimaBulk(selectedPackings, companyData.id);
 
-      // Open HTML in new window for printing
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Tanda Terima Preview (${selectedPackings.length} dokumen)`);
+      setPreviewFileName(`tanda-terima-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
-        // Wait for content to load, then trigger print dialog
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima`);
-      } else {
-        console.error('Failed to open print window');
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima`);
     } catch (error) {
       console.error('Error in bulk print tanda terima:', error);
       toastService.error(error.message || 'Gagal mencetak tanda terima');
@@ -298,23 +286,13 @@ const PackingTableServerSide = forwardRef(({
       // Call backend API to get Bulk HTML
       const html = await exportPackingTandaTerimaGroupedBulk(selectedPackings, companyData.id);
 
-      // Open HTML in new window for printing
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Tanda Terima Grouped Preview (${selectedPackings.length} dokumen)`);
+      setPreviewFileName(`tanda-terima-grouped-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
-        // Wait for content to load, then trigger print dialog
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima grouped`);
-      } else {
-        console.error('Failed to open print window');
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima grouped`);
     } catch (error) {
       console.error('Error in bulk print tanda terima grouped:', error);
       toastService.error(error.message || 'Gagal mencetak tanda terima grouped');
@@ -385,6 +363,7 @@ const PackingTableServerSide = forwardRef(({
     initialLimit,
     globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   // Export functionality
@@ -466,17 +445,7 @@ const PackingTableServerSide = forwardRef(({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No PO</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className='font-medium'>{info.getValue() || 'N/A'}</span>,
@@ -848,6 +817,18 @@ const PackingTableServerSide = forwardRef(({
           </div>
         </div>
       )}
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
+      />
     </div>
   );
 });

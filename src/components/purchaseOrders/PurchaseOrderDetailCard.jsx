@@ -12,6 +12,7 @@ import {
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { formatDate, formatDateTime } from '../../utils/formatUtils';
+import { getAuditTrails } from '../../services/auditTrailService';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   AccordionItem,
@@ -168,7 +169,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         if (printWindow) {
           printWindow.document.write(html);
           printWindow.document.close();
-          
+
           printWindow.onload = () => {
             printWindow.focus();
             printWindow.print();
@@ -205,7 +206,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
 
         const html = await invoicePengirimanService.exportInvoicePengiriman(invoiceId);
         const printWindow = window.open('', '_blank');
-        
+
         if (!printWindow) {
           throw new Error('Tidak dapat membuka jendela cetak. Periksa pengaturan pop-up browser.');
         }
@@ -262,7 +263,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         if (printWindow) {
           printWindow.document.write(html);
           printWindow.document.close();
-          
+
           printWindow.onload = () => {
             printWindow.focus();
             printWindow.print();
@@ -472,9 +473,9 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
 
                 <div className='space-y-1'>
                   {[{ key: 'PURCHASE_ORDER', label: 'Purchase Order', info: purchaseOrderPrintInfo, enabled: true },
-                    { key: 'PACKING', label: 'Packing', info: order.packing ? `${order.packing.packing_number} • ${order.packing.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.packing },
-                    { key: 'INVOICE_PENGIRIMAN', label: 'Invoice', info: order.invoice ? `${order.invoice.no_invoice} • ${order.invoice.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.invoice },
-                    { key: 'SURAT_JALAN', label: 'Surat Jalan', info: order.suratJalan ? `${order.suratJalan.no_surat_jalan} • ${order.suratJalan.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.suratJalan },
+                  { key: 'PACKING', label: 'Packing', info: order.packing ? `${order.packing.packing_number} • ${order.packing.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.packing },
+                  { key: 'INVOICE_PENGIRIMAN', label: 'Invoice', info: order.invoice ? `${order.invoice.no_invoice} • ${order.invoice.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.invoice },
+                  { key: 'SURAT_JALAN', label: 'Surat Jalan', info: order.suratJalan ? `${order.suratJalan.no_surat_jalan} • ${order.suratJalan.is_printed ? 'Printed' : 'Not printed'}` : 'N/A', enabled: !!order.suratJalan },
                   ].map((doc) => (
                     <label key={doc.key} className={`flex items-center p-2 border rounded cursor-pointer ${doc.enabled ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-gray-100 border-gray-200 opacity-50'}`}>
                       <input type='checkbox' checked={selectedDocuments[doc.key]} onChange={() => handleDocumentCheckbox(doc.key)} disabled={!doc.enabled} className='w-3 h-3 text-blue-600 border-gray-300 rounded disabled:opacity-50' />
@@ -540,6 +541,11 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
             title='Activity Timeline'
             emptyMessage='No audit trail data available for this purchase order.'
             formatDate={formatDateTime}
+            hasMore={order?.hasMoreAuditTrails}
+            totalAuditTrails={order?.totalAuditTrails || 0}
+            tableName='PurchaseOrder'
+            recordId={order?.id}
+            onLoadMore={getAuditTrails}
           />
         )}
       </div>

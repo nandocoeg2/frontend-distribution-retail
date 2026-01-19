@@ -71,12 +71,19 @@ class LaporanPenerimaanBarangService {
     }
   }
 
-  async deleteReport(id) {
+  async bulkDeleteReports(ids = []) {
     try {
-      const response = await this.api.delete('/laporan-penerimaan-barang/' + id);
+      const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+      if (!payloadIds.length) {
+        throw new Error('Minimal satu ID laporan diperlukan untuk dihapus');
+      }
+
+      const response = await this.api.delete('/laporan-penerimaan-barang/bulk-delete', {
+        data: { ids: payloadIds },
+      });
       return response.data;
     } catch (error) {
-      console.error('Error deleting laporan penerimaan barang:', error);
+      console.error('Error bulk deleting laporan penerimaan barang:', error);
       throw error;
     }
   }

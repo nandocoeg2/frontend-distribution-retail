@@ -15,14 +15,20 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     email: '',
     direktur_utama: '',
     npwp: '',
-    logo: null
+    direktur_utama: '',
+    npwp: '',
+    logo: null,
+    signature_surat_jalan_nama: '',
+    signature_surat_jalan_image: null,
+    signature_invoice_nama: '',
+    signature_invoice_image: null,
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: value 
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
     }));
   };
 
@@ -40,12 +46,46 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
     }));
   };
 
+  const handleSignatureImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: base64String
+    }));
+  };
+
+  const handleSignatureImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_surat_jalan_image: null
+    }));
+  };
+
+  const handleSignatureInvoiceImageChange = (base64String) => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: base64String
+    }));
+  };
+
+  const handleSignatureInvoiceImageRemove = () => {
+    setFormData((prev) => ({
+      ...prev,
+      signature_invoice_image: null
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Only send logo if it exists
     const dataToSend = { ...formData };
     if (!dataToSend.logo) {
       delete dataToSend.logo;
+    }
+    if (!dataToSend.signature_surat_jalan_image) {
+      delete dataToSend.signature_surat_jalan_image;
+    }
+    if (!dataToSend.signature_invoice_image) {
+      delete dataToSend.signature_invoice_image;
     }
     onCompanyAdded(dataToSend);
   };
@@ -65,7 +105,12 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
       email: '',
       direktur_utama: '',
       npwp: '',
-      logo: null
+      npwp: '',
+      logo: null,
+      signature_surat_jalan_nama: '',
+      signature_surat_jalan_image: null,
+      signature_invoice_nama: '',
+      signature_invoice_image: null,
     });
     onClose();
   };
@@ -80,14 +125,20 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
         <h3 className='text-lg font-medium text-gray-900 mb-4'>
           Add New Company
         </h3>
-        <CompanyForm 
-          formData={formData} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={handleSubmit} 
+        <CompanyForm
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
           closeModal={handleClose}
           logo={formData.logo}
           onLogoChange={handleLogoChange}
           onLogoRemove={handleLogoRemove}
+          signatureImage={formData.signature_surat_jalan_image}
+          onSignatureImageChange={handleSignatureImageChange}
+          onSignatureImageRemove={handleSignatureImageRemove}
+          signatureInvoiceImage={formData.signature_invoice_image}
+          onSignatureInvoiceImageChange={handleSignatureInvoiceImageChange}
+          onSignatureInvoiceImageRemove={handleSignatureInvoiceImageRemove}
         />
       </div>
     </div>

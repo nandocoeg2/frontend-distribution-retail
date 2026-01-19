@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  XMarkIcon, 
+import {
+  XMarkIcon,
   ArrowDownTrayIcon,
   DocumentTextIcon,
   CurrencyDollarIcon,
@@ -55,9 +55,9 @@ const toDateInputValue = (value) => {
   return date.toISOString().split('T')[0];
 };
 
-const KwitansiDetailCard = ({ 
-  kwitansi, 
-  onClose, 
+const KwitansiDetailCard = ({
+  kwitansi,
+  onClose,
   loading = false,
   onExport,
   exportLoading,
@@ -86,6 +86,11 @@ const KwitansiDetailCard = ({
   } = useTermOfPaymentAutocomplete({
     selectedId: formData.termOfPaymentId
   });
+
+  // Early return if no kwitansi data
+  if (!kwitansi) return null;
+
+  const detail = kwitansi || {};
 
   // Create options for disabled autocomplete fields
   const invoicePenagihanOptions = detail?.invoicePenagihan ? [
@@ -118,9 +123,6 @@ const KwitansiDetailCard = ({
     }
   }, [kwitansi]);
 
-  if (!kwitansi) return null;
-
-  const detail = kwitansi || {};
   const statusCode = detail?.status?.status_code;
 
   const handleEditClick = () => {
@@ -182,7 +184,7 @@ const KwitansiDetailCard = ({
 
     try {
       setSaving(true);
-      
+
       const payload = {
         invoicePenagihanId: formData.invoicePenagihanId.trim(),
         no_kwitansi: formData.no_kwitansi.trim(),
@@ -200,7 +202,7 @@ const KwitansiDetailCard = ({
       }
 
       const result = await updateKwitansi(kwitansi.id, payload);
-      
+
       if (result) {
         toastService.success('Kwitansi berhasil diperbarui');
         setIsEditMode(false);
@@ -259,7 +261,7 @@ const KwitansiDetailCard = ({
                   Edit
                 </button>
               )}
-              {onExport && (
+              {/* {onExport && (
                 <button
                   onClick={() => onExport(detail)}
                   disabled={loading || exportLoading || !detail?.id}
@@ -288,7 +290,7 @@ const KwitansiDetailCard = ({
                   )}
                   Paket
                 </button>
-              )}
+              )} */}
               {onClose && (
                 <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" title="Close">
                   <XMarkIcon className="w-4 h-4 text-gray-500" />

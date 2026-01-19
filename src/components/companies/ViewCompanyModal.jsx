@@ -62,6 +62,55 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
                 </div>
               )}
 
+              {/* Company Signature */}
+              {company?.signature_surat_jalan_image && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <BuildingOfficeIcon className="h-5 w-5 text-gray-500 mr-2" />
+                    <h3 className="text-lg font-semibold text-gray-900">Digital Signature</h3>
+                  </div>
+                  <div className="flex justify-center flex-col items-center">
+                    <div className="w-48 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center mb-2">
+                      <img
+                        src={company.signature_surat_jalan_image}
+                        alt="Signature"
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                    {company?.signature_surat_jalan_nama && (
+                      <p className="text-sm text-gray-600">
+                        Signatory: <span className="font-medium text-gray-900">{company.signature_surat_jalan_nama}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+              )}
+
+              {/* Invoice Signature */}
+              {company?.signature_invoice_image && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                  <div className="flex items-center mb-4">
+                    <BuildingOfficeIcon className="h-5 w-5 text-gray-500 mr-2" />
+                    <h3 className="text-lg font-semibold text-gray-900">Invoice Digital Signature</h3>
+                  </div>
+                  <div className="flex justify-center flex-col items-center">
+                    <div className="w-48 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center mb-2">
+                      <img
+                        src={company.signature_invoice_image}
+                        alt="Invoice Signature"
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                    {company?.signature_invoice_nama && (
+                      <p className="text-sm text-gray-600">
+                        Signatory: <span className="font-medium text-gray-900">{company.signature_invoice_nama}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Company Information */}
               <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
                 <div className="flex items-center mb-4">
@@ -165,7 +214,7 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

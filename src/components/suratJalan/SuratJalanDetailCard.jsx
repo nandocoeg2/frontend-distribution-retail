@@ -282,12 +282,12 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
         <div className='flex items-center gap-1'>
           {!isEditMode ? (
             <>
-              <button type='button' onClick={handleExportPDF} disabled={exportLoading || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
+              {/* <button type='button' onClick={handleExportPDF} disabled={exportLoading || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
                 {exportLoading ? '...' : 'Print'}
               </button>
               <button type='button' onClick={handleExportPaket} disabled={exportPaketLoading || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 disabled:opacity-50'>
                 {exportPaketLoading ? '...' : 'Paket'}
-              </button>
+              </button> */}
               <button onClick={handleEditClick} className='inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50'>
                 <PencilIcon className='w-3 h-3 mr-1' />Edit
               </button>

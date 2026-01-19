@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDateTime as formatJakartaDateTime } from '../../utils/formatUtils';
 import { StatusBadge } from '../ui';
 import {
@@ -10,6 +10,7 @@ import {
   PaperAirplaneIcon,
   Cog8ToothIcon,
   QuestionMarkCircleIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/solid';
 
 const ActivityTimeline = ({
@@ -18,9 +19,17 @@ const ActivityTimeline = ({
   emptyMessage = 'No activity found.',
   showCount = true,
   formatDate = null,
+  // New props for Load More functionality
+  hasMore = false,
+  totalAuditTrails = 0,
+  onLoadMore = null,
+  tableName = null,
+  recordId = null,
 }) => {
   const formatDateTime = formatDate || formatJakartaDateTime;
   const iconClasses = 'w-5 h-5';
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadedAuditTrails, setLoadedAuditTrails] = useState([]);
 
   const iconMap = {
     CREATE: <PlusCircleIcon className={iconClasses + ' text-green-600'} />,
@@ -87,9 +96,49 @@ const ActivityTimeline = ({
     return String(value);
   };
 
-  const entries = Array.isArray(auditTrails)
-    ? [...auditTrails].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  // Combine initial auditTrails with loaded ones, removing duplicates
+  const allAuditTrails = React.useMemo(() => {
+    const combined = [...auditTrails, ...loadedAuditTrails];
+    const uniqueMap = new Map();
+    combined.forEach(trail => {
+      if (!uniqueMap.has(trail.id)) {
+        uniqueMap.set(trail.id, trail);
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [auditTrails, loadedAuditTrails]);
+
+  const entries = Array.isArray(allAuditTrails)
+    ? [...allAuditTrails].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     : [];
+
+  // Check if there are more items to load
+  const canLoadMore = hasMore || (totalAuditTrails > 0 && entries.length < totalAuditTrails);
+
+  const handleLoadMore = async () => {
+    if (!onLoadMore || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      // Calculate the next page based on how many items we already have
+      // Initial data from backend is 5 items, then we load 10 at a time
+      const loadedCount = loadedAuditTrails.length;
+      const limit = 10;
+      // First load: we have 5 items, so start from page 1 offset 5 (skip first 5)
+      // Second load: we have 15 items (5 + 10), so we need next 10
+      // Using skip-based pagination calculation
+      const page = Math.floor((auditTrails.length + loadedCount) / limit) + 1;
+
+      const result = await onLoadMore(tableName, recordId, page, limit);
+      if (result?.data) {
+        setLoadedAuditTrails(prev => [...prev, ...result.data]);
+      }
+    } catch (error) {
+      console.error('Failed to load more audit trails:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   return (
     <div className='space-y-6'>
@@ -97,7 +146,7 @@ const ActivityTimeline = ({
         <h3 className='text-xl font-semibold text-gray-900'>{title}</h3>
         {showCount && (
           <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
-            {entries.length} activities
+            {entries.length}{totalAuditTrails > entries.length ? ` / ${totalAuditTrails}` : ''} activities
           </div>
         )}
       </div>
@@ -106,93 +155,122 @@ const ActivityTimeline = ({
         <div className='absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200' />
 
         {entries.length > 0 ? (
-          entries.map((trail) => {
-            const actionLabel = (trail.action || '').toUpperCase();
-            const displayAction = (trail.action || '')
-              .toLowerCase()
-              .replace('_', ' ');
+          <>
+            {entries.map((trail) => {
+              const actionLabel = (trail.action || '').toUpperCase();
+              const displayAction = (trail.action || '')
+                .toLowerCase()
+                .replace('_', ' ');
 
-            const userInitial =
-              (trail.user?.firstName && trail.user.firstName.charAt(0)) ||
-              (trail.user?.username && trail.user.username.charAt(0)) ||
-              'U';
-            const userFullName =
-              trail.user?.firstName && trail.user?.lastName
-                ? trail.user.firstName + ' ' + trail.user.lastName
-                : trail.user?.username;
+              const userInitial =
+                (trail.user?.firstName && trail.user.firstName.charAt(0)) ||
+                (trail.user?.username && trail.user.username.charAt(0)) ||
+                'U';
+              const userFullName =
+                trail.user?.firstName && trail.user?.lastName
+                  ? trail.user.firstName + ' ' + trail.user.lastName
+                  : trail.user?.username;
 
-            return (
-              <div key={trail.id} className='relative flex items-start mb-6'>
-                <div className='flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm bg-white'>
-                  {renderActionIcon(actionLabel)}
-                </div>
-                <div className='flex-1 p-4 ml-4 bg-white border border-gray-200 rounded-lg shadow-sm'>
-                  <div className='flex items-start justify-between'>
-                    <div className='flex-1'>
-                      <h4 className='font-semibold text-gray-900 capitalize'>
-                        {displayAction} {trail.tableName}
-                      </h4>
-                      <p className='mt-1 text-sm text-gray-600'>
-                        {formatDateTime(trail.timestamp)}
-                      </p>
-                      {trail.user && (
-                        <div className='flex items-center mt-2 space-x-2'>
-                          <div className='flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full'>
-                            <span className='text-xs font-semibold text-white'>{userInitial}</span>
-                          </div>
-                          <span className='text-sm text-gray-700'>{userFullName}</span>
-                          <span className='text-xs text-gray-500'>
-                            ({trail.user.username})
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <StatusBadge
-                      status={actionLabel || 'UNKNOWN'}
-                      variant={getStatusVariant(actionLabel)}
-                      size='sm'
-                      dot
-                    />
+              return (
+                <div key={trail.id} className='relative flex items-start mb-6'>
+                  <div className='flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm bg-white'>
+                    {renderActionIcon(actionLabel)}
                   </div>
-
-                  {trail.details && (
-                    <div className='pt-3 mt-3 border-t border-gray-100'>
-                      <h5 className='mb-2 text-sm font-medium text-gray-700'>Details:</h5>
-                      <div className='grid grid-cols-1 gap-2 text-xs md:grid-cols-2'>
-                        {Object.entries(trail.details)
-                          .filter(
-                            ([key]) =>
-                              ![
-                                'id',
-                                'createdAt',
-                                'updatedAt',
-                                'createdBy',
-                                'updatedBy',
-                              ].includes(key)
-                          )
-                          .map(([key, value]) => {
-                            const label = key
-                              .replace(/([A-Z])/g, ' ')
-                              .replace(/_/g, ' ')
-                              .trim();
-
-                            return (
-                              <div
-                                key={key}
-                                className='flex items-start justify-between px-3 py-2 bg-gray-50 rounded-md border border-gray-100'
-                              >
-                                <span className='font-medium text-gray-700 capitalize'>{label}</span>
-                                <span className='text-gray-600 ml-2 text-right'>{formatValue(value)}</span>
-                              </div>
-                            );
-                          })}
+                  <div className='flex-1 p-4 ml-4 bg-white border border-gray-200 rounded-lg shadow-sm'>
+                    <div className='flex items-start justify-between'>
+                      <div className='flex-1'>
+                        <h4 className='font-semibold text-gray-900 capitalize'>
+                          {displayAction} {trail.tableName}
+                        </h4>
+                        <p className='mt-1 text-sm text-gray-600'>
+                          {formatDateTime(trail.timestamp)}
+                        </p>
+                        {trail.user && (
+                          <div className='flex items-center mt-2 space-x-2'>
+                            <div className='flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full'>
+                              <span className='text-xs font-semibold text-white'>{userInitial}</span>
+                            </div>
+                            <span className='text-sm text-gray-700'>{userFullName}</span>
+                            <span className='text-xs text-gray-500'>
+                              ({trail.user.username})
+                            </span>
+                          </div>
+                        )}
                       </div>
+                      <StatusBadge
+                        status={actionLabel || 'UNKNOWN'}
+                        variant={getStatusVariant(actionLabel)}
+                        size='sm'
+                        dot
+                      />
                     </div>
-                  )}
+
+                    {trail.details && (
+                      <div className='pt-3 mt-3 border-t border-gray-100'>
+                        <h5 className='mb-2 text-sm font-medium text-gray-700'>Details:</h5>
+                        <div className='grid grid-cols-1 gap-2 text-xs md:grid-cols-2'>
+                          {Object.entries(trail.details)
+                            .filter(
+                              ([key]) =>
+                                ![
+                                  'id',
+                                  'createdAt',
+                                  'updatedAt',
+                                  'createdBy',
+                                  'updatedBy',
+                                ].includes(key)
+                            )
+                            .map(([key, value]) => {
+                              const label = key
+                                .replace(/([A-Z])/g, ' ')
+                                .replace(/_/g, ' ')
+                                .trim();
+
+                              return (
+                                <div
+                                  key={key}
+                                  className='flex items-start justify-between px-3 py-2 bg-gray-50 rounded-md border border-gray-100'
+                                >
+                                  <span className='font-medium text-gray-700 capitalize'>{label}</span>
+                                  <span className='text-gray-600 ml-2 text-right'>{formatValue(value)}</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+
+            {/* Load More Button */}
+            {canLoadMore && onLoadMore && (
+              <div className='relative flex justify-center py-4'>
+                <button
+                  type='button'
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <svg className='animate-spin h-4 w-4' viewBox='0 0 24 24'>
+                        <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4' fill='none' />
+                        <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z' />
+                      </svg>
+                      Memuat...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDownIcon className='w-4 h-4' />
+                      Lihat Lebih Banyak ({totalAuditTrails - entries.length} lagi)
+                    </>
+                  )}
+                </button>
               </div>
-            );
-          })
+            )}
+          </>
         ) : (
           <div className='text-center py-8 text-gray-500'>{emptyMessage}</div>
         )}

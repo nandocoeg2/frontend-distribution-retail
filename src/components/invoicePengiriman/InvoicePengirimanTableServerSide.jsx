@@ -14,9 +14,12 @@ import { DataTable, DataTablePagination } from '../table';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import PdfPreviewModal from '../common/PdfPreviewModal';
 import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -63,6 +66,12 @@ const InvoicePengirimanTableServerSide = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [customers, setCustomers] = useState([]);
 
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
+
   // Fetch customers for autocomplete filter
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -91,23 +100,13 @@ const InvoicePengirimanTableServerSide = ({
       // Call backend API to get bulk HTML
       const html = await invoicePengirimanService.exportInvoicePengirimanBulk(selectedInvoices);
 
-      // Open HTML in new window for printing
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Invoice Pengiriman Preview (${selectedInvoices.length} dokumen)`);
+      setPreviewFileName(`invoice-pengiriman-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
-        // Wait for content to load, then trigger print dialog
-        // Use a small timeout to ensure styles are applied
-        setTimeout(() => {
-          printWindow.focus();
-          printWindow.print();
-        }, 500);
-
-        toastService.success(`Berhasil memproses ${selectedInvoices.length} invoice.`);
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      toastService.success(`Berhasil memproses ${selectedInvoices.length} invoice.`);
     } catch (error) {
       console.error('Error in bulk print:', error);
       toastService.error(error.message || 'Gagal mencetak invoice');
@@ -250,6 +249,7 @@ const InvoicePengirimanTableServerSide = ({
     initialLimit,
     globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   const columns = useMemo(
@@ -314,17 +314,7 @@ const InvoicePengirimanTableServerSide = ({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No Invoice</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => (
@@ -338,17 +328,7 @@ const InvoicePengirimanTableServerSide = ({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No PO</div>
-            <input
-              type='text'
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder='Filter...'
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => (
@@ -383,24 +363,7 @@ const InvoicePengirimanTableServerSide = ({
           return (
             <div className='space-y-0.5'>
               <div className='font-medium text-xs'>Jumlah</div>
-              <div className='flex flex-col gap-0.5'>
-                <input
-                  type='number'
-                  value={filterValue.min ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                  placeholder='Min'
-                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type='number'
-                  value={filterValue.max ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                  placeholder='Max'
-                  className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
+              <RangeColumnFilter column={column} setPage={setPage} />
             </div>
           );
         },
@@ -621,6 +584,18 @@ const InvoicePengirimanTableServerSide = ({
           pageSizeOptions={[5, 10, 20, 50, 100]}
         />
       )}
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
+      />
     </div>
   );
 };

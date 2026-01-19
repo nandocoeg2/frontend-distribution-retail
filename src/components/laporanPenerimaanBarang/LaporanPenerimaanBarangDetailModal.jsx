@@ -3,6 +3,7 @@ import { ClockIcon, DocumentTextIcon, XMarkIcon } from '@heroicons/react/24/outl
 import InfoTable from '../ui/InfoTable';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { formatDateTime } from '../../utils/formatUtils';
+import { getAuditTrails } from '../../services/auditTrailService';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   TabContainer,
@@ -277,6 +278,11 @@ const LaporanPenerimaanBarangDetailModal = ({
                   auditTrails={auditTrails}
                   title='Riwayat Aktivitas'
                   emptyMessage='Belum ada aktivitas untuk laporan ini.'
+                  hasMore={report?.hasMoreAuditTrails}
+                  totalAuditTrails={report?.totalAuditTrails || 0}
+                  tableName='LaporanPenerimaanBarang'
+                  recordId={report?.id}
+                  onLoadMore={getAuditTrails}
                 />
               )}
             </TabPanel>

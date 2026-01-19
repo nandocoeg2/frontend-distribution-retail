@@ -3,14 +3,18 @@ import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
-import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import { ConfirmationDialog } from '../ui/ConfirmationDialog';
+import PdfPreviewModal from '../common/PdfPreviewModal';
+import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
+
 
 const columnHelper = createColumnHelper();
 
@@ -84,21 +88,15 @@ const SuratJalanTableServerSide = ({
     loading: false,
   });
 
-  // Handle checkbox click for processed items - show confirmation dialog
-  const handleCheckboxChange = useCallback((item) => {
-    const isProcessed = Boolean(item?.checklistSuratJalanId);
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
 
-    if (isProcessed) {
-      // User is trying to uncheck a processed item - show confirmation to unprocess
-      setUnprocessDialog({
-        show: true,
-        item: item,
-        loading: false,
-      });
-    } else {
-      // Normal selection/deselection for unprocessed items
-      onSelectSuratJalan && onSelectSuratJalan(item);
-    }
+  // Handle checkbox click
+  const handleCheckboxChange = useCallback((item) => {
+    onSelectSuratJalan && onSelectSuratJalan(item);
   }, [onSelectSuratJalan]);
 
   // Handle unprocess confirmation
@@ -155,18 +153,11 @@ const SuratJalanTableServerSide = ({
       // Call bulk export endpoint
       const html = await suratJalanService.exportSuratJalanBulk(ids, companyData.id);
 
-      // Open in new window
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-      } else {
-        toastService.error('Popup window diblokir');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Surat Jalan Preview (${ids.length} dokumen)`);
+      setPreviewFileName(`surat-jalan-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
       toastService.success('Bulk print generated successfully');
     } catch (error) {
@@ -205,17 +196,11 @@ const SuratJalanTableServerSide = ({
       // Call bulk export paket endpoint
       const html = await suratJalanService.exportSuratJalanPaketBulk(ids, companyData.id);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-      } else {
-        toastService.error('Popup window diblokir');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Surat Jalan Paket Preview (${ids.length} dokumen)`);
+      setPreviewFileName(`surat-jalan-paket-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
 
       toastService.success('Bulk paket print generated successfully');
     } catch (error) {
@@ -270,6 +255,17 @@ const SuratJalanTableServerSide = ({
       mappedFilters.companyId = companyId;
     }
 
+    // Handle date range filters for tanggal_surat_jalan
+    if (mappedFilters.tanggal_surat_jalan && typeof mappedFilters.tanggal_surat_jalan === 'object') {
+      if (mappedFilters.tanggal_surat_jalan.from) {
+        mappedFilters.tanggal_surat_jalan_from = mappedFilters.tanggal_surat_jalan.from;
+      }
+      if (mappedFilters.tanggal_surat_jalan.to) {
+        mappedFilters.tanggal_surat_jalan_to = mappedFilters.tanggal_surat_jalan.to;
+      }
+      delete mappedFilters.tanggal_surat_jalan;
+    }
+
     return {
       ...rest,
       filters: mappedFilters,
@@ -292,8 +288,8 @@ const SuratJalanTableServerSide = ({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
-    globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   const columns = useMemo(
@@ -327,39 +323,49 @@ const SuratJalanTableServerSide = ({
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
           const isProcessed = Boolean(row.original.checklistSuratJalanId);
           const isInSelection = selectedIds.includes(row.original.id);
-          // Processed items are checked by default, unprocessed items check based on selection
-          const isChecked = isProcessed || isInSelection;
+          // Only check if it is in user selection
+          const isChecked = isInSelection;
           return (
             <input
               type="checkbox"
               checked={isChecked}
               onChange={() => handleCheckboxChange(row.original)}
-              className={`h-3.5 w-3.5 focus:ring-blue-500 border-gray-300 rounded cursor-pointer ${isProcessed ? 'text-orange-600' : 'text-blue-600'
-                }`}
-              title={isProcessed
-                ? 'Klik untuk unprocess (hapus dari checklist)'
-                : 'Pilih surat jalan'}
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+              title="Pilih surat jalan"
             />
           );
         },
         enableSorting: false,
         enableColumnFilter: false,
       }),
+      columnHelper.accessor('tanggal_surat_jalan', {
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-1">
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <span className="font-medium">{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : '-'}</span>,
+      }),
       columnHelper.accessor('no_surat_jalan', {
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No Surat Jalan</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || 'N/A'}</span>,
@@ -415,17 +421,7 @@ const SuratJalanTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || 'N/A',
@@ -642,6 +638,18 @@ const SuratJalanTableServerSide = ({
         cancelText="Batal"
         type="warning"
         loading={unprocessDialog.loading}
+      />
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
       />
     </div>
   );

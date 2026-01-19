@@ -136,12 +136,19 @@ class CheckingListService {
     }
   }
 
-  async deleteChecklist(id) {
+  async bulkDeleteChecklists(ids = []) {
     try {
-      const response = await this.api.delete(`${RESOURCE_PATH}/${id}`);
+      const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
+      if (!payloadIds.length) {
+        throw new Error('Minimal satu ID checklist diperlukan untuk dihapus');
+      }
+
+      const response = await this.api.delete(`${RESOURCE_PATH}/bulk-delete`, {
+        data: { ids: payloadIds },
+      });
       return response.data;
     } catch (error) {
-      console.error('Error deleting checklist surat jalan:', error);
+      console.error('Error bulk deleting checklist surat jalan:', error);
       throw error;
     }
   }

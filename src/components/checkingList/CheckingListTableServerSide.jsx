@@ -9,7 +9,9 @@ import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
+import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -71,17 +73,24 @@ const resolveStatusText = (status) => {
 
 const CheckingListTableServerSide = ({
   onViewDetail,
-  onDelete,
-  deleteLoading = false,
   selectedChecklistId = null,
   initialPage = 1,
   initialLimit = 10,
   selectedChecklists = [],
   onSelectChecklist,
+  onDeleteSelected,
+  isDeleting = false,
   hasSelectedChecklists = false,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingGrouped, setIsExportingGrouped] = useState(false);
+
+  // PDF Preview states
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('document.pdf');
+
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -123,6 +132,7 @@ const CheckingListTableServerSide = ({
     initialLimit,
     globalFilter: globalFilterConfig,
     getQueryParams,
+    columnFilterDebounceMs: 0,
   });
 
   // Handler untuk select all toggle
@@ -150,7 +160,6 @@ const CheckingListTableServerSide = ({
     }
   }, [checklists, selectedChecklists, onSelectChecklist]);
 
-  // Handler untuk Export PDF
   // Handler untuk Export PDF (Bulk)
   const handleExportSelected = async () => {
     if (!selectedChecklists || selectedChecklists.length === 0) {
@@ -170,16 +179,13 @@ const CheckingListTableServerSide = ({
 
       const html = await checkingListService.exportCheckingListBulk(selectedChecklists, companyData.id);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist.');
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Checking List Preview (${selectedChecklists.length} dokumen)`);
+      setPreviewFileName(`checking-list-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
+
+      toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist.');
 
     } catch (error) {
       console.error('Error in bulk export checklist:', error);
@@ -189,7 +195,6 @@ const CheckingListTableServerSide = ({
     }
   };
 
-  // Handler untuk Export PDF Grouped
   // Handler untuk Export PDF Grouped (Bulk)
   const handleExportGroupedSelected = async () => {
     if (!selectedChecklists || selectedChecklists.length === 0) {
@@ -209,16 +214,13 @@ const CheckingListTableServerSide = ({
 
       const html = await checkingListService.exportCheckingListGroupedBulk(selectedChecklists, companyData.id);
 
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist grouped.');
-      } else {
-        toastService.error('Gagal membuka window print. Pastikan pop-up tidak diblokir.');
-      }
+      // Open preview modal with HTML content
+      setPreviewHtmlContent(html);
+      setPreviewTitle(`Checking List Grouped Preview (${selectedChecklists.length} dokumen)`);
+      setPreviewFileName(`checking-list-grouped-bulk-${Date.now()}.pdf`);
+      setPdfPreviewOpen(true);
+
+      toastService.success('Berhasil memproses ' + selectedChecklists.length + ' checklist grouped.');
 
     } catch (error) {
       console.error('Error in bulk export checklist grouped:', error);
@@ -298,17 +300,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Surat Jalan</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => {
@@ -340,17 +332,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Checker</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
@@ -359,17 +341,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Driver</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
@@ -378,17 +350,7 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Kendaraan</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
@@ -397,46 +359,10 @@ const CheckingListTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Kota</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
-      }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Aksi',
-        cell: ({ row }) => {
-          const checklist = row.original;
-          const checklistId = resolveChecklistId(checklist);
-
-          return (
-            <div className="flex items-center gap-2">
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete && checklistId && onDelete(checklistId);
-                }}
-                disabled={deleteLoading}
-                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        },
-        enableSorting: false,
       }),
     ],
     [
@@ -444,8 +370,6 @@ const CheckingListTableServerSide = ({
       selectedChecklists,
       onSelectChecklist,
       handleSelectAllInternalToggle,
-      onDelete,
-      deleteLoading,
       setPage,
     ]
   );
@@ -491,6 +415,14 @@ const CheckingListTableServerSide = ({
             >
               <DocumentArrowDownIcon className="h-3.5 w-3.5" />
               {isExportingGrouped ? 'Proses...' : 'Print Grouped'}
+            </button>
+            <button
+              onClick={onDeleteSelected}
+              disabled={isDeleting}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <TrashIcon className="h-3.5 w-3.5" />
+              {isDeleting ? 'Proses...' : 'Hapus'}
             </button>
           </div>
         </div>
@@ -558,6 +490,18 @@ const CheckingListTableServerSide = ({
           />
         </>
       )}
+
+      {/* PDF Preview Modal */}
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => {
+          setPdfPreviewOpen(false);
+          setPreviewHtmlContent(null);
+        }}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
+      />
     </div>
   );
 };
