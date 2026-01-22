@@ -25,7 +25,7 @@ const columnHelper = createColumnHelper();
 
 const getStatusVariant = (status) => {
   const value = (status?.status_name || status?.status_code || '').toLowerCase();
-  if (value.includes('paid') || value.includes('completed') || value.includes('sudah')) return 'success';
+  if (value.includes('paid') || value.includes('completed') || value.includes('sudah') || value.includes('terkirim')) return 'success';
   if (value.includes('cancelled') || value.includes('failed')) return 'danger';
   if (value.includes('overdue')) return 'danger';
   if (value.includes('pending')) return 'secondary';
