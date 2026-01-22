@@ -90,10 +90,9 @@ const resolveCreatedAtValue = (source) => {
 
 const PurchaseOrders = () => {
   const queryClient = useQueryClient();
-  const {
+const {
     purchaseOrders,
     getPurchaseOrder,
-    deletePurchaseOrder,
   } = usePurchaseOrders();
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
@@ -102,9 +101,10 @@ const PurchaseOrders = () => {
   const tableRef = useRef(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
-  const [selectedOrders, setSelectedOrders] = useState([]);
+const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
-  const [cancelLoading, setCancelLoading] = useState(false);
+  const [bulkCancelling, setBulkCancelling] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const { showDialog, hideDialog, setLoading, ConfirmationDialog } = useConfirmationDialog();
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
@@ -151,59 +151,105 @@ const PurchaseOrders = () => {
     setSelectedOrderForDetail(null);
   };
 
-  const handleEditModalOpen = async (order) => {
+const handleEditModalOpen = async (order) => {
     setEditModalOpen(true);
     const orderData = await getPurchaseOrder(order.id);
     setSelectedOrder(orderData);
   };
 
-  const handleDeleteOrder = useCallback(async (id, poNumber) => {
+  // Bulk Cancel handler
+  const handleBulkCancel = useCallback(async () => {
+    if (selectedOrders.length === 0) {
+      showWarning('Pilih minimal satu purchase order untuk dibatalkan.');
+      return;
+    }
+
+    const idsSnapshot = [...selectedOrders];
+
     openConfirmationDialog({
-      title: 'Hapus Purchase Order',
-      message: `Apakah Anda yakin ingin menghapus Purchase Order "${poNumber}"? Tindakan ini tidak dapat dibatalkan.`,
+      title: 'Cancel Purchase Orders',
+      message: `Apakah Anda yakin ingin membatalkan ${idsSnapshot.length} Purchase Order yang dipilih?`,
+      confirmText: 'Cancel',
+      cancelText: 'Batal',
+      type: 'warning',
+    }, async () => {
+      setLoading(true);
+      setBulkCancelling(true);
+      try {
+        const result = await purchaseOrderService.bulkCancelPurchaseOrders(idsSnapshot);
+        const resultData = result?.data || result;
+        
+        hideDialog();
+        
+        const successCount = resultData?.successCount || 0;
+        const failedCount = resultData?.failedIds?.length || 0;
+
+        if (successCount > 0 && failedCount === 0) {
+          showSuccess(`Berhasil membatalkan ${successCount} purchase order.`);
+        } else if (successCount > 0 && failedCount > 0) {
+          showWarning(`Berhasil membatalkan ${successCount} purchase order. ${failedCount} gagal dibatalkan.`);
+        } else {
+          showError(`Gagal membatalkan purchase order.`);
+        }
+
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+        setSelectedOrders([]);
+      } catch (error) {
+        showError(`Gagal membatalkan purchase orders: ${error.message}`);
+      } finally {
+        setLoading(false);
+        setBulkCancelling(false);
+      }
+    });
+  }, [selectedOrders, hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, showWarning, queryClient]);
+
+  // Bulk Delete handler
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedOrders.length === 0) {
+      showWarning('Pilih minimal satu purchase order untuk dihapus.');
+      return;
+    }
+
+    const idsSnapshot = [...selectedOrders];
+
+    openConfirmationDialog({
+      title: 'Hapus Purchase Orders',
+      message: `Apakah Anda yakin ingin menghapus ${idsSnapshot.length} Purchase Order yang dipilih? Tindakan ini tidak dapat dibatalkan.`,
       confirmText: 'Hapus',
       cancelText: 'Batal',
       type: 'danger',
     }, async () => {
       setLoading(true);
+      setBulkDeleting(true);
       try {
-        await deletePurchaseOrder(id);
+        const result = await purchaseOrderService.bulkDeletePurchaseOrders(idsSnapshot);
+        const resultData = result?.data || result;
+        
         hideDialog();
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-        showSuccess('Purchase order deleted successfully');
-      } catch (error) {
-        showError(`Gagal menghapus purchase order: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-    });
-  }, [deletePurchaseOrder, hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, queryClient]);
+        
+        const successCount = resultData?.successCount || 0;
+        const failedCount = resultData?.failedIds?.length || 0;
 
-  const handleCancelOrder = useCallback(async (id, poNumber) => {
-    openConfirmationDialog({
-      title: 'Cancel Purchase Order',
-      message: `Apakah Anda yakin ingin membatalkan Purchase Order "${poNumber}"?`,
-      confirmText: 'Confirm',
-      cancelText: 'Batal',
-      type: 'warning',
-    }, async () => {
-      setLoading(true);
-      setCancelLoading(true);
-      try {
-        await purchaseOrderService.cancelPurchaseOrder(id);
-        hideDialog();
+        if (successCount > 0 && failedCount === 0) {
+          showSuccess(`Berhasil menghapus ${successCount} purchase order.`);
+        } else if (successCount > 0 && failedCount > 0) {
+          showWarning(`Berhasil menghapus ${successCount} purchase order. ${failedCount} gagal dihapus.`);
+        } else {
+          showError(`Gagal menghapus purchase order.`);
+        }
+
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-        showSuccess('Purchase order berhasil dibatalkan');
+        setSelectedOrders([]);
       } catch (error) {
-        showError(`Gagal membatalkan purchase order: ${error.message}`);
+        showError(`Gagal menghapus purchase orders: ${error.message}`);
       } finally {
         setLoading(false);
-        setCancelLoading(false);
+        setBulkDeleting(false);
       }
     });
-  }, [hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, queryClient]);
+  }, [selectedOrders, hideDialog, openConfirmationDialog, setLoading, showError, showSuccess, showWarning, queryClient]);
 
   const handleExportExcel = async () => {
     openConfirmationDialog({
@@ -472,19 +518,20 @@ const PurchaseOrders = () => {
             </div>
           </div>
 
-          {/* TanStack Table with Server-Side Features */}
+{/* TanStack Table with Server-Side Features */}
           <PurchaseOrderTableServerSide
             ref={tableRef}
             onViewDetail={handleViewDetail}
             onEdit={handleEditModalOpen}
-            onDelete={handleDeleteOrder}
-            onCancel={handleCancelOrder}
-            cancelLoading={cancelLoading}
             selectedOrders={selectedOrders}
             onSelectionChange={handleSelectionChange}
             onSelectAll={handleSelectAll}
             onBulkProcess={handleBulkProcess}
+            onBulkCancel={handleBulkCancel}
+            onBulkDelete={handleBulkDelete}
             isProcessing={bulkProcessing}
+            isCancelling={bulkCancelling}
+            isDeleting={bulkDeleting}
             hasSelectedOrders={selectedOrders.length > 0}
             initialPage={1}
             initialLimit={10}

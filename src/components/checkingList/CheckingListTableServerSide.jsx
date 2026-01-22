@@ -8,7 +8,7 @@ import checkingListService from '../../services/checkingListService';
 import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
@@ -75,7 +75,7 @@ const CheckingListTableServerSide = ({
   onViewDetail,
   selectedChecklistId = null,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   selectedChecklists = [],
   onSelectChecklist,
   onDeleteSelected,
@@ -133,6 +133,7 @@ const CheckingListTableServerSide = ({
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'checking-list', // Persist filter state to sessionStorage
   });
 
   // Handler untuk select all toggle
@@ -482,12 +483,7 @@ const CheckingListTableServerSide = ({
             emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
           />
 
-          <DataTablePagination
-            table={table}
-            pagination={pagination}
-            itemLabel="checklist"
-            pageSizeOptions={[5, 10, 20, 50, 100]}
-          />
+
         </>
       )}
 

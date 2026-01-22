@@ -10,7 +10,7 @@ import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
@@ -75,7 +75,7 @@ const SuratJalanTableServerSide = ({
   isUnprocessing = false,
   hasSelectedSuratJalan = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   onRowClick,
   selectedSuratJalanId,
   onFiltersChange,
@@ -290,6 +290,7 @@ const SuratJalanTableServerSide = ({
     initialLimit,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
 
   const columns = useMemo(
@@ -618,14 +619,7 @@ const SuratJalanTableServerSide = ({
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
       />
 
-      {!loading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="surat jalan"
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
+
 
       {/* Unprocess Confirmation Dialog */}
       <ConfirmationDialog

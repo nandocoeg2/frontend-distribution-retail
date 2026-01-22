@@ -11,7 +11,7 @@ import {
 import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
@@ -100,7 +100,7 @@ const PackingTableServerSide = forwardRef(({
   isCompleting = false,
   hasSelectedPackings = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   onRowClick,
   selectedPackingId,
 }, ref) => {
@@ -364,6 +364,7 @@ const PackingTableServerSide = forwardRef(({
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'packings', // Persist filter state to sessionStorage
   });
 
   // Export functionality
@@ -742,14 +743,7 @@ const PackingTableServerSide = forwardRef(({
         emptyCellClassName='px-1.5 py-0.5 text-center text-gray-500'
       />
 
-      {!isLoading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel='packing'
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
+
       <ConfirmationDialog
         show={showExportConfirmation}
         onClose={() => setShowExportConfirmation(false)}

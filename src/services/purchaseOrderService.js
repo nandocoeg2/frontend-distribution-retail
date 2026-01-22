@@ -140,35 +140,12 @@ const purchaseOrderService = {
       body: JSON.stringify(updateData),
     });
 
-    if (!response.ok) {
+if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || 'Failed to update purchase order');
     }
 
     return response.json();
-  },
-
-  // Delete purchase order
-  deletePurchaseOrder: async (id) => {
-    const accessToken = localStorage.getItem('token');
-    if (!accessToken) {
-      throw new Error('No access token found');
-    }
-
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Failed to delete purchase order');
-    }
-
-    return response.status === 204 ? { success: true } : response.json();
   },
 
   // Search purchase orders
@@ -377,7 +354,7 @@ const purchaseOrderService = {
   },
 
   // Print documents
-  printDocuments: async (id, documents) => {
+printDocuments: async (id, documents) => {
     const accessToken = localStorage.getItem('token');
     if (!accessToken) {
       throw new Error('No access token found');
@@ -396,33 +373,6 @@ const purchaseOrderService = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || 'Failed to print documents');
-    }
-
-    return response.json();
-  },
-
-  // Cancel purchase order
-  cancelPurchaseOrder: async (id, alasan = null) => {
-    const accessToken = localStorage.getItem('token');
-    if (!accessToken) {
-      throw new Error('No access token found');
-    }
-
-    const body = alasan ? { alasan } : {};
-
-    const response = await fetch(`${API_URL}/${id}/cancel`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Gagal membatalkan purchase order');
     }
 
     return response.json();
@@ -507,7 +457,7 @@ const purchaseOrderService = {
     return response.json();
   },
 
-  // Bulk mark duplicate purchase orders as FAILED
+// Bulk mark duplicate purchase orders as FAILED
   // Backend determines which to keep (oldest) and marks rest as FAILED
   markDuplicatesFailed: async (duplicateGroups) => {
     const accessToken = localStorage.getItem('token');
@@ -528,6 +478,61 @@ const purchaseOrderService = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || 'Failed to mark duplicates as failed');
+    }
+
+    return response.json();
+  },
+
+  // Bulk delete purchase orders
+  bulkDeletePurchaseOrders: async (ids) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const response = await fetch(`${API_URL}/bulk-delete`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to bulk delete purchase orders');
+    }
+
+    return response.json();
+  },
+
+  // Bulk cancel purchase orders
+  bulkCancelPurchaseOrders: async (ids, alasan = null) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const body = { ids };
+    if (alasan) {
+      body.alasan = alasan;
+    }
+
+    const response = await fetch(`${API_URL}/bulk-cancel`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Failed to bulk cancel purchase orders');
     }
 
     return response.json();

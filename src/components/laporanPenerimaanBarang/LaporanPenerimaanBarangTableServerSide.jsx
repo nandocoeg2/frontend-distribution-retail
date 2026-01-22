@@ -13,7 +13,7 @@ import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import AssignPurchaseOrderModal from './AssignPurchaseOrderModal';
 import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerimaanBarangOperations';
@@ -77,7 +77,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   isDeleting = false,
   hasSelectedReports = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   selectedReportId = null,
   onFiltersChange,
 }) => {
@@ -165,6 +165,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         filters: mappedFilters,
       };
     }, []),
+    storageKey: 'laporan-penerimaan-barang', // Persist filter state to sessionStorage
   });
 
   // Notify parent of filter changes for export
@@ -679,14 +680,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         />
       </div>
 
-      {!isLoading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="laporan"
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
+
 
       {/* Assign Purchase Order Modal */}
       <AssignPurchaseOrderModal

@@ -9,7 +9,7 @@ import customerService from '../../services/customerService';
 import authService from '../../services/authService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
@@ -38,23 +38,6 @@ const isEditDisabled = (order) => {
     normalizedName === 'completed purchase order' ||
     normalizedCode === 'completed purchase order'
   );
-};
-
-const isCancelAllowed = (order) => {
-  if (!order?.status) {
-    return false;
-  }
-
-  const normalize = (value) => {
-    if (!value) {
-      return '';
-    }
-    return value.toString().trim().toLowerCase().replace(/_/g, ' ');
-  };
-
-  const normalizedCode = normalize(order.status.status_code);
-  // Cancel hanya diizinkan untuk status PROCESSING PURCHASE ORDER
-  return normalizedCode === 'processing purchase order';
 };
 
 const TextColumnFilter = ({ column, placeholder = "..." }) => {
@@ -87,18 +70,18 @@ const TextColumnFilter = ({ column, placeholder = "..." }) => {
 const PurchaseOrderTableServerSide = forwardRef(({
   onViewDetail,
   onEdit,
-  onDelete,
-  onCancel,
-  deleteLoading = false,
-  cancelLoading = false,
   selectedOrders = [],
   onSelectionChange,
   onSelectAll,
   onBulkProcess,
+  onBulkCancel,
+  onBulkDelete,
   isProcessing = false,
+  isCancelling = false,
+  isDeleting = false,
   hasSelectedOrders = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   selectedOrderId = null,
 }, ref) => {
   const globalFilterConfig = useMemo(
@@ -193,6 +176,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0, // Disable debounce to trigger immediately on manual commit
     getQueryParams,
+    storageKey: 'purchase-orders', // Persist filter state to sessionStorage
   });
 
   const handleSelectAllInternalToggle = useCallback(() => {
@@ -454,38 +438,12 @@ const PurchaseOrderTableServerSide = forwardRef(({
         },
         enableSorting: false,
       }),
-      columnHelper.display({
-        id: 'actions',
-        size: 50,
-        header: () => <div className="font-medium text-xs">Act</div>,
-        cell: ({ row }) => {
-          const order = row.original;
-          const cancelAllowed = isCancelAllowed(order);
-          return (
-            <div className="flex gap-0.5">
-              {cancelAllowed && onCancel && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); onCancel(order.id, order.po_number); }} disabled={cancelLoading} className="p-0.5 text-orange-600 hover:text-orange-900 disabled:opacity-50" title="Cancel">
-                  <XCircleIcon className="h-3.5 w-3.5" />
-                </button>
-              )}
-              <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(order.id, order.po_number); }} disabled={deleteLoading} className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50" title="Delete">
-                <TrashIcon className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
     ],
     [
       orders,
       selectedOrders,
       onSelectionChange,
       handleSelectAllInternalToggle,
-      onDelete,
-      onCancel,
-      deleteLoading,
-      cancelLoading,
       setPage,
       termOfPayments,
       customers,
@@ -526,29 +484,81 @@ const PurchaseOrderTableServerSide = forwardRef(({
     <div className="space-y-2">
       {(hasActiveFilters || hasSelectedOrders) && (
         <div className="flex justify-between items-center">
-          {hasSelectedOrders && onBulkProcess ? (
+          {hasSelectedOrders ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-green-700">
                 {selectedOrders.length} dipilih
               </span>
-              <button
-                onClick={onBulkProcess}
-                disabled={isProcessing}
-                className={`inline-flex items-center px-2 py-1 text-xs text-white rounded ${isProcessing
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700'
-                  }`}
-              >
-                {isProcessing ? (
-                  <>
-                    <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Memproses...
-                  </>
-                ) : `Proses (${selectedOrders.length})`}
-              </button>
+              {onBulkProcess && (
+                <button
+                  onClick={onBulkProcess}
+                  disabled={isProcessing || isCancelling || isDeleting}
+                  className={`inline-flex items-center px-2 py-1 text-xs text-white rounded ${isProcessing || isCancelling || isDeleting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                >
+                  {isProcessing ? (
+                    <>
+                      <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Memproses...
+                    </>
+                  ) : `Proses (${selectedOrders.length})`}
+                </button>
+              )}
+              {onBulkCancel && (
+                <button
+                  onClick={onBulkCancel}
+                  disabled={isProcessing || isCancelling || isDeleting}
+                  className={`inline-flex items-center px-2 py-1 text-xs text-white rounded ${isProcessing || isCancelling || isDeleting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-orange-500 hover:bg-orange-600'
+                    }`}
+                >
+                  {isCancelling ? (
+                    <>
+                      <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Membatalkan...
+                    </>
+                  ) : (
+                    <>
+                      <XCircleIcon className="h-3 w-3 mr-1" />
+                      Cancel
+                    </>
+                  )}
+                </button>
+              )}
+              {onBulkDelete && (
+                <button
+                  onClick={onBulkDelete}
+                  disabled={isProcessing || isCancelling || isDeleting}
+                  className={`inline-flex items-center px-2 py-1 text-xs text-white rounded ${isProcessing || isCancelling || isDeleting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Menghapus...
+                    </>
+                  ) : (
+                    <>
+                      <TrashIcon className="h-3 w-3 mr-1" />
+                      Hapus
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           ) : <div />}
           {hasActiveFilters && (
@@ -586,14 +596,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
         onRowClick={onViewDetail}
       />
 
-      {!loading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="purchase order"
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
+
     </div>
   );
 });

@@ -138,6 +138,16 @@ class InvoicePengirimanService {
     }
   }
 
+  async bulkDeleteInvoicePengiriman(ids) {
+    try {
+      const response = await this.api.post('/bulk-delete', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk deleting invoice pengiriman:', error);
+      throw error;
+    }
+  }
+
   async generateInvoicePenagihan(id) {
     try {
       const response = await this.api.post(`/${id}/generate-invoice-penagihan`);
