@@ -60,6 +60,14 @@ const NotificationBell = () => {
                 });
               }
             }
+
+            // Show toast for DUPLICATE_UPLOAD notifications
+            if (data.data?.type === 'DUPLICATE_UPLOAD') {
+              toast.warning(data.data.title, {
+                autoClose: 8000,
+                onClick: () => setShowDropdown(true),
+              });
+            }
           } else if (data.type === 'NEW_ALERTS') {
             // New alerts were created, refresh the list
             fetchNotifications();
@@ -255,6 +263,23 @@ const NotificationBell = () => {
               <path
                 fillRule='evenodd'
                 d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+                clipRule='evenodd'
+              />
+            </svg>
+          </div>
+        );
+      case 'DUPLICATE_UPLOAD':
+        return (
+          <div className='w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center'>
+            <svg
+              className='w-4 h-4 text-yellow-600'
+              fill='currentColor'
+              viewBox='0 0 20 20'
+            >
+              <path d='M9 2a1 1 0 000 2h2a1 1 0 100-2H9z' />
+              <path
+                fillRule='evenodd'
+                d='M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z'
                 clipRule='evenodd'
               />
             </svg>
