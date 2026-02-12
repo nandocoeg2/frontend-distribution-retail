@@ -7,9 +7,9 @@ const INITIAL_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10,
+  itemsPerPage: 9999,
   page: 1,
-  limit: 10,
+  limit: 9999,
   total: 0
 };
 

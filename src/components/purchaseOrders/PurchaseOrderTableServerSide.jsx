@@ -171,8 +171,8 @@ const PurchaseOrderTableServerSide = forwardRef(({
     queryHook: usePurchaseOrdersQuery,
     selectData: (response) => response?.purchaseOrders ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialPage: 1, // Force page 1
+    initialLimit: 10000, // Force fetching all data
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0, // Disable debounce to trigger immediately on manual commit
     getQueryParams,
@@ -594,6 +594,17 @@ const PurchaseOrderTableServerSide = forwardRef(({
         cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
         onRowClick={onViewDetail}
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerCellClassName="px-1.5 py-1 text-xs border-t border-gray-300"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td key={column.id} className="px-1.5 py-1 text-xs border-t border-gray-300">
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
 
 

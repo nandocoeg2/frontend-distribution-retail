@@ -15,7 +15,7 @@ import authService from '../services/authService';
  */
 export const usePurchaseOrdersQuery = ({
   page = 1,
-  limit = 10,
+  limit = 9999,
   sorting = [],
   filters = {},
   globalFilter = '',
@@ -58,7 +58,7 @@ export const usePurchaseOrdersQuery = ({
         currentPage: parseInt(page) || 1,
         totalPages: 1,
         totalItems: Array.isArray(ordersData) ? ordersData.length : 0,
-        itemsPerPage: parseInt(limit) || 10,
+        itemsPerPage: parseInt(limit) || 9999,
       };
 
       // Normalize pagination values (convert strings to numbers if needed)
@@ -86,7 +86,7 @@ export const usePurchaseOrdersQuery = ({
 export const usePurchaseOrdersByStatus = ({
   statusCode,
   page = 1,
-  limit = 10,
+  limit = 9999,
 }) => {
   return useQuery({
     queryKey: ['purchaseOrders', 'status', statusCode, { page, limit }],
@@ -111,7 +111,7 @@ export const usePurchaseOrdersByStatus = ({
         currentPage: parseInt(page) || 1,
         totalPages: 1,
         totalItems: Array.isArray(ordersData) ? ordersData.length : 0,
-        itemsPerPage: parseInt(limit) || 10,
+        itemsPerPage: parseInt(limit) || 9999,
       };
 
       // Normalize pagination values (convert strings to numbers if needed)

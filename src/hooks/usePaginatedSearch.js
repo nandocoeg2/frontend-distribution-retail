@@ -7,7 +7,7 @@ const DEFAULT_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10
+  itemsPerPage: 9999
 };
 
 const isValueEmpty = (value) => {
@@ -158,10 +158,10 @@ const usePaginatedSearch = ({
     const state = pageState || paginationRef.current || initialPagination;
 
     if (!state) {
-      return initialPagination.itemsPerPage || initialPagination.limit || 10;
+      return initialPagination.itemsPerPage || initialPagination.limit || 9999;
     }
 
-    return state.itemsPerPage || state.limit || initialPagination.itemsPerPage || 10;
+    return state.itemsPerPage || state.limit || initialPagination.itemsPerPage || 9999;
   }, [initialPagination]);
 
   const performSearch = useCallback(async (value = currentInputRef.current, page = 1, limit = resolveLimit()) => {

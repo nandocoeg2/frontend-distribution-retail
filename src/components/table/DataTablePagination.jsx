@@ -4,7 +4,7 @@ const defaultSummaryFormatter = ({ pagination, itemLabel }) => {
   const currentPage = pagination?.currentPage ?? 1;
   const totalItems = pagination?.totalItems ?? 0;
   const totalPages = pagination?.totalPages ?? 1;
-  const itemsPerPage = pagination?.itemsPerPage ?? 10;
+  const itemsPerPage = pagination?.itemsPerPage ?? 9999;
   const displayedCount = currentPage >= totalPages ? totalItems : currentPage * itemsPerPage;
 
   return (
