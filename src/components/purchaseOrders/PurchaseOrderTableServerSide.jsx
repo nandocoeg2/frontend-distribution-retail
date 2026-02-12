@@ -172,7 +172,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
     selectData: (response) => response?.purchaseOrders ?? [],
     selectPagination: (response) => response?.pagination,
     initialPage: 1, // Force page 1
-    initialLimit: 10000, // Force fetching all data
+    initialLimit: 9999, // Force fetching all data
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0, // Disable debounce to trigger immediately on manual commit
     getQueryParams,

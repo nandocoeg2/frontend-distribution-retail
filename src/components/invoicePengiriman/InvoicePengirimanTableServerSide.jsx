@@ -279,8 +279,8 @@ const InvoicePengirimanTableServerSide = ({
     queryHook: useInvoicePengirimanQuery,
     selectData: (response) => response?.invoicePengiriman ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialLimit: 9999,
+    initialPage: 1,
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
@@ -589,9 +589,20 @@ const InvoicePengirimanTableServerSide = ({
         onRowClick={onViewDetail}
         cellClassName='px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900'
         emptyCellClassName='px-1.5 py-0.5 text-center text-gray-500'
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
-
-
 
       {/* PDF Preview Modal */}
       <PdfPreviewModal

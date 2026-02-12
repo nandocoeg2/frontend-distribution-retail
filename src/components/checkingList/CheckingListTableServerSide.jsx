@@ -128,8 +128,8 @@ const CheckingListTableServerSide = ({
     queryHook: useCheckingListQuery,
     selectData: (response) => response?.checklists ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialLimit: 9999,
+    initialPage: 1,
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
@@ -481,6 +481,19 @@ const CheckingListTableServerSide = ({
               onViewDetail && onViewDetail(checklist);
             }}
             emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
+            footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+            footerContent={
+              <tr>
+                {table.getVisibleLeafColumns().map((column) => (
+                  <td
+                    key={column.id}
+                    className="px-2 py-1 text-xs border-t border-gray-300 text-center"
+                  >
+                    {pagination?.totalItems || 0}
+                  </td>
+                ))}
+              </tr>
+            }
           />
 
 
