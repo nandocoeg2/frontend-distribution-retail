@@ -10,7 +10,7 @@ import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
@@ -75,7 +75,7 @@ const SuratJalanTableServerSide = ({
   isUnprocessing = false,
   hasSelectedSuratJalan = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   onRowClick,
   selectedSuratJalanId,
   onFiltersChange,
@@ -286,10 +286,11 @@ const SuratJalanTableServerSide = ({
     queryHook: useSuratJalanQuery,
     selectData: (response) => response?.suratJalan ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialLimit: 9999,
+    initialPage: 1,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
 
   const columns = useMemo(
@@ -616,16 +617,22 @@ const SuratJalanTableServerSide = ({
         onRowClick={onRowClick}
         cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
 
-      {!loading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="surat jalan"
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
+
 
       {/* Unprocess Confirmation Dialog */}
       <ConfirmationDialog

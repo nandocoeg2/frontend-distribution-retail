@@ -4,6 +4,7 @@ import {
   DocumentTextIcon,
   XMarkIcon,
   TagIcon,
+  ListBulletIcon,
 } from '@heroicons/react/24/outline';
 import InfoTable from '../ui/InfoTable';
 import ActivityTimeline from '../common/ActivityTimeline';
@@ -53,16 +54,53 @@ const renderFileList = (files) => {
   );
 };
 
+/**
+ * Format quantity with UOM
+ * @param {number|null} qty - Quantity value
+ * @param {string|null} uom - Unit of measure (e.g., "CTN", "PCS")
+ * @returns {string} Formatted quantity string
+ */
+const formatQtyWithUom = (qty, uom) => {
+  if (qty === null || qty === undefined) return '-';
+  const unit = uom || 'PCS';
+  return `${qty} ${unit}`;
+};
+
+/**
+ * Get style class for selisih value
+ * @param {number|null} selisih - Difference value
+ * @returns {string} Tailwind CSS classes
+ */
+const getSelisihStyle = (selisih) => {
+  if (selisih === null || selisih === undefined) return 'text-gray-400';
+  if (selisih < 0) return 'text-red-600 font-medium bg-red-50';
+  if (selisih > 0) return 'text-green-600 font-medium bg-green-50';
+  return 'text-gray-600';
+};
+
+/**
+ * Format selisih value with prefix
+ * @param {number|null} selisih - Difference value
+ * @param {string|null} uom - Unit of measure
+ * @returns {string} Formatted selisih string
+ */
+const formatSelisih = (selisih, uom) => {
+  if (selisih === null || selisih === undefined) return '-';
+  if (selisih === 0) return `0 ${uom || 'PCS'}`;
+  const prefix = selisih > 0 ? '+' : '';
+  return `${prefix}${selisih} ${uom || 'PCS'}`;
+};
+
 const LaporanPenerimaanBarangDetailCard = ({
   report,
   onClose,
   loading = false,
 }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('items');
 
   useEffect(() => {
     if (report) {
-      setActiveTab('overview');
+      setActiveTab('items');
     }
   }, [report]);
 
@@ -79,6 +117,81 @@ const LaporanPenerimaanBarangDetailCard = ({
     () => resolveStatusVariant(statusLabel),
     [statusLabel]
   );
+
+  // Merge PO details and LPB details for comparison table
+  const { mergedItems, selisihCount } = useMemo(() => {
+    const poDetails = report?.purchaseOrder?.purchaseOrderDetails || [];
+    const lpbDetails = report?.detailItems || [];
+
+    // Create map from PO Details by PLU
+    const poDetailsMap = new Map();
+    poDetails.forEach((detail) => {
+      poDetailsMap.set(detail.plu, detail);
+    });
+
+    // Create map from LPB Details by PLU
+    const lpbDetailsMap = new Map();
+    lpbDetails.forEach((item) => {
+      lpbDetailsMap.set(item.plu, item);
+    });
+
+    // Collect all unique PLUs, prioritizing PO order
+    const processedPLUs = new Set();
+    const items = [];
+
+    // First, add items from PO (to maintain PO order)
+    poDetails.forEach((poDetail) => {
+      const plu = poDetail.plu;
+      if (!processedPLUs.has(plu)) {
+        processedPLUs.add(plu);
+        const lpbDetail = lpbDetailsMap.get(plu);
+
+        const qtyPO = poDetail.total_quantity_order ?? null;
+        const qtyLPB = lpbDetail?.total_quantity_order ?? null;
+
+        let qtySelisih = null;
+        if (qtyPO !== null && qtyLPB !== null) {
+          qtySelisih = qtyLPB - qtyPO;
+        }
+
+        items.push({
+          plu,
+          nama_barang: poDetail.nama_barang || lpbDetail?.nama_barang || '-',
+          qtyPO,
+          qtyLPB,
+          qtySelisih,
+          uom: poDetail.item?.uom || 'PCS',
+        });
+      }
+    });
+
+    // Then, add items only in LPB (not in PO)
+    lpbDetails.forEach((lpbDetail) => {
+      const plu = lpbDetail.plu;
+      if (!processedPLUs.has(plu)) {
+        processedPLUs.add(plu);
+
+        items.push({
+          plu,
+          nama_barang: lpbDetail.nama_barang || '-',
+          qtyPO: null,
+          qtyLPB: lpbDetail.total_quantity_order ?? null,
+          qtySelisih: null, // Can't calculate if no PO
+          uom: 'PCS',
+        });
+      }
+    });
+
+    // Count items with selisih (non-zero difference)
+    const countSelisih = items.filter(
+      (item) => item.qtySelisih !== null && item.qtySelisih !== 0
+    ).length;
+
+    return {
+      mergedItems: items,
+      selisihCount: countSelisih,
+    };
+  }, [report]);
 
   const overviewDetails = useMemo(() => {
     return [
@@ -167,10 +280,18 @@ const LaporanPenerimaanBarangDetailCard = ({
     return report.auditTrails;
   }, [report]);
 
-  const fileCount = Array.isArray(report?.files) ? report.files.length : 0;
   const auditTrailCount = auditTrails.length;
   const purchaseOrderNumber =
     report?.purchaseOrder?.po_number || report?.purchaseOrderId || 'Tidak ada PO';
+
+  // Badge for items tab
+  const itemsBadge = useMemo(() => {
+    if (mergedItems.length === 0) return null;
+    if (selisihCount > 0) {
+      return `${mergedItems.length} (${selisihCount} selisih)`;
+    }
+    return mergedItems.length;
+  }, [mergedItems.length, selisihCount]);
 
   if (!report) return null;
 
@@ -202,11 +323,71 @@ const LaporanPenerimaanBarangDetailCard = ({
       ) : (
         <div>
           <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
+            <Tab id='items' label='Detail Item' icon={<ListBulletIcon className='w-3 h-3' />} badge={itemsBadge} />
             <Tab id='overview' label='Overview' icon={<DocumentTextIcon className='w-3 h-3' />} />
             <Tab id='timeline' label='Timeline' icon={<ClockIcon className='w-3 h-3' />} badge={auditTrailCount} />
           </TabContainer>
 
           <TabContent activeTab={activeTab}>
+            {/* Tab 1: Detail Item */}
+            <TabPanel tabId='items'>
+              <div className='border border-gray-200 rounded overflow-hidden'>
+                {mergedItems.length > 0 ? (
+                  <div className='overflow-x-auto'>
+                    <table className='min-w-full divide-y divide-gray-200 text-xs'>
+                      <thead className='bg-gray-50'>
+                        <tr>
+                          <th className='px-2 py-2 text-left font-semibold text-gray-600 w-8'>No</th>
+                          <th className='px-2 py-2 text-left font-semibold text-gray-600'>Nama Item</th>
+                          <th className='px-2 py-2 text-left font-semibold text-gray-600 w-24'>PLU</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-20'>Qty PO</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-20'>Qty LPB</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-24'>Qty Selisih</th>
+                        </tr>
+                      </thead>
+                      <tbody className='bg-white divide-y divide-gray-200'>
+                        {mergedItems.map((item, index) => (
+                          <tr key={item.plu} className='hover:bg-gray-50'>
+                            <td className='px-2 py-2 text-gray-500'>{index + 1}</td>
+                            <td className='px-2 py-2 text-gray-900 font-medium'>{item.nama_barang}</td>
+                            <td className='px-2 py-2 text-gray-600 font-mono'>{item.plu}</td>
+                            <td className='px-2 py-2 text-right text-gray-600'>
+                              {formatQtyWithUom(item.qtyPO, item.uom)}
+                            </td>
+                            <td className='px-2 py-2 text-right text-gray-600'>
+                              {formatQtyWithUom(item.qtyLPB, item.uom)}
+                            </td>
+                            <td className={`px-2 py-2 text-right rounded ${getSelisihStyle(item.qtySelisih)}`}>
+                              {formatSelisih(item.qtySelisih, item.uom)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className='py-6 text-center text-xs text-gray-500'>
+                    Tidak ada data item
+                  </div>
+                )}
+
+                {/* Summary footer */}
+                {mergedItems.length > 0 && (
+                  <div className='bg-gray-50 px-3 py-2 border-t border-gray-200 flex justify-between items-center text-xs'>
+                    <span className='text-gray-600'>
+                      Total: <span className='font-semibold'>{mergedItems.length}</span> item
+                    </span>
+                    {selisihCount > 0 && (
+                      <span className='text-orange-600 font-medium'>
+                        {selisihCount} item memiliki selisih
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </TabPanel>
+
+            {/* Tab 2: Overview */}
             <TabPanel tabId='overview'>
               <div className='space-y-2'>
                 <div className='border border-gray-200 rounded p-2'>
@@ -226,6 +407,7 @@ const LaporanPenerimaanBarangDetailCard = ({
               </div>
             </TabPanel>
 
+            {/* Tab 3: Timeline */}
             <TabPanel tabId='timeline'>
               {auditTrails.length > 0 ? (
                 <ActivityTimeline auditTrails={auditTrails} title='' showCount={false} emptyMessage='Belum ada aktivitas.' />

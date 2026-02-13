@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import purchaseOrderService from '@/services/purchaseOrderService';
 
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 9999;
 
 const normalizeId = (value) => {
   if (value === null || value === undefined) {
@@ -145,10 +145,10 @@ const usePurchaseOrderAutocomplete = ({
       try {
         const response = query
           ? await purchaseOrderService.searchPurchaseOrders(
-              { po_number: query },
-              1,
-              pageSize
-            )
+            { po_number: query },
+            1,
+            pageSize
+          )
           : await purchaseOrderService.getAllPurchaseOrders(1, pageSize);
 
         const records = extractRecords(response);
@@ -157,8 +157,8 @@ const usePurchaseOrderAutocomplete = ({
         const selectedId = selectedValueRef.current;
         const selectedOption = selectedId
           ? optionsRef.current.find(
-              (option) => normalizeId(option.id) === selectedId
-            )
+            (option) => normalizeId(option.id) === selectedId
+          )
           : null;
 
         const nextOptions = selectedOption

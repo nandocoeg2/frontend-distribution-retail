@@ -8,7 +8,7 @@ import checkingListService from '../../services/checkingListService';
 import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
@@ -75,7 +75,7 @@ const CheckingListTableServerSide = ({
   onViewDetail,
   selectedChecklistId = null,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   selectedChecklists = [],
   onSelectChecklist,
   onDeleteSelected,
@@ -128,11 +128,12 @@ const CheckingListTableServerSide = ({
     queryHook: useCheckingListQuery,
     selectData: (response) => response?.checklists ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialLimit: 9999,
+    initialPage: 1,
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'checking-list', // Persist filter state to sessionStorage
   });
 
   // Handler untuk select all toggle
@@ -480,14 +481,22 @@ const CheckingListTableServerSide = ({
               onViewDetail && onViewDetail(checklist);
             }}
             emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
+            footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+            footerContent={
+              <tr>
+                {table.getVisibleLeafColumns().map((column) => (
+                  <td
+                    key={column.id}
+                    className="px-2 py-1 text-xs border-t border-gray-300 text-center"
+                  >
+                    {pagination?.totalItems || 0}
+                  </td>
+                ))}
+              </tr>
+            }
           />
 
-          <DataTablePagination
-            table={table}
-            pagination={pagination}
-            itemLabel="checklist"
-            pageSizeOptions={[5, 10, 20, 50, 100]}
-          />
+
         </>
       )}
 

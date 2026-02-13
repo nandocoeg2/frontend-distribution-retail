@@ -6,12 +6,12 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
     page: currentPage = 1,
     totalPages = 1,
     total: totalItems = 0,
-    limit: itemsPerPage = 10
+    limit: itemsPerPage = 9999
   } = {
     page: parseInt(pagination?.page || pagination?.currentPage || 1),
     totalPages: parseInt(pagination?.totalPages || 1),
     total: parseInt(pagination?.total || pagination?.totalItems || 0),
-    limit: parseInt(pagination?.limit || pagination?.itemsPerPage || 10),
+    limit: parseInt(pagination?.limit || pagination?.itemsPerPage || 9999),
     ...pagination
   };
 
@@ -63,8 +63,8 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
           onClick={handlePrevious}
           disabled={currentPage === 1}
           className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${currentPage === 1
-              ? 'text-gray-300 cursor-not-allowed'
-              : 'text-gray-700 hover:bg-gray-50'
+            ? 'text-gray-300 cursor-not-allowed'
+            : 'text-gray-700 hover:bg-gray-50'
             }`}
         >
           Previous
@@ -73,8 +73,8 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
           onClick={handleNext}
           disabled={currentPage === totalPages}
           className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${currentPage === totalPages
-              ? 'text-gray-300 cursor-not-allowed'
-              : 'text-gray-700 hover:bg-gray-50'
+            ? 'text-gray-300 cursor-not-allowed'
+            : 'text-gray-700 hover:bg-gray-50'
             }`}
         >
           Next
@@ -140,8 +140,8 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
                 key={page}
                 onClick={() => onPageChange(page)}
                 className={`relative inline-flex items-center px-3 py-1 text-xs font-semibold ${currentPage === page
-                    ? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
-                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
+                  ? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
                   } ${page === pageNumbers[0] ? '' : 'ml-0'} focus:z-20 focus:outline-offset-0`}
               >
                 {page}

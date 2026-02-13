@@ -7,9 +7,9 @@ const INITIAL_PAGINATION = {
   currentPage: 1,
   totalPages: 1,
   totalItems: 0,
-  itemsPerPage: 10,
+  itemsPerPage: 9999,
   page: 1,
-  limit: 10,
+  limit: 9999,
   total: 0
 };
 
@@ -185,18 +185,6 @@ const usePurchaseOrders = () => {
     return handleSearchSubmit(page, limit);
   }, [handleSearchSubmit, resolveLimit]);
 
-  const computeNextPageAfterDelete = useCallback(() => {
-    const itemsPerPage = resolveLimit();
-    const currentPage = pagination.currentPage || pagination.page || 1;
-    const totalItems = pagination.totalItems || pagination.total || purchaseOrders.length;
-    const newTotalItems = Math.max(totalItems - 1, 0);
-    const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
-    return {
-      nextPage: Math.min(currentPage, newTotalPages),
-      itemsPerPage
-    };
-  }, [pagination, purchaseOrders.length, resolveLimit]);
-
   const getPurchaseOrder = useCallback(async (id) => {
     try {
       const result = await purchaseOrderService.getPurchaseOrderById(id);
@@ -261,28 +249,6 @@ const usePurchaseOrders = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
-  const deletePurchaseOrder = useCallback(async (id) => {
-    try {
-      const result = await purchaseOrderService.deletePurchaseOrder(id);
-      if (result?.success === false) {
-        throw new Error(result?.error?.message || 'Failed to delete purchase order');
-      }
-      toastService.success('Purchase order deleted successfully');
-      const { nextPage, itemsPerPage } = computeNextPageAfterDelete();
-      await performSearch(filtersRef.current, nextPage, itemsPerPage);
-      return true;
-    } catch (err) {
-      if (err?.message?.includes('token') || err?.message?.includes('unauthorized')) {
-        authHandler();
-      } else {
-        const message = err?.response?.data?.error?.message || err?.message || 'Failed to delete purchase order';
-        setError(message);
-        toastService.error(message);
-      }
-      return false;
-    }
-  }, [authHandler, computeNextPageAfterDelete, performSearch, setError]);
-
   useEffect(() => {
     fetchPurchaseOrders(1, INITIAL_PAGINATION.itemsPerPage);
   }, [fetchPurchaseOrders]);
@@ -320,7 +286,6 @@ const usePurchaseOrders = () => {
     searchQuery,
     fetchPurchaseOrders,
     searchPurchaseOrders,
-    deletePurchaseOrder,
     createPurchaseOrder,
     updatePurchaseOrder,
     getPurchaseOrder,

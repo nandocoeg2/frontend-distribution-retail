@@ -8,6 +8,7 @@ const NotificationBell = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sseConnected, setSseConnected] = useState(false);
+  const [detailModal, setDetailModal] = useState({ open: false, notification: null });
   const dropdownRef = useRef(null);
   const bellRef = useRef(null);
   const eventSourceRef = useRef(null);
@@ -58,6 +59,14 @@ const NotificationBell = () => {
                   onClick: () => setShowDropdown(true),
                 });
               }
+            }
+
+            // Show toast for DUPLICATE_UPLOAD notifications
+            if (data.data?.type === 'DUPLICATE_UPLOAD') {
+              toast.warning(data.data.title, {
+                autoClose: 8000,
+                onClick: () => setShowDropdown(true),
+              });
             }
           } else if (data.type === 'NEW_ALERTS') {
             // New alerts were created, refresh the list
@@ -201,6 +210,14 @@ const NotificationBell = () => {
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
   };
 
+  const handleOpenDetail = (notification) => {
+    setDetailModal({ open: true, notification });
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModal({ open: false, notification: null });
+  };
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'LOW_STOCK':
@@ -246,6 +263,23 @@ const NotificationBell = () => {
               <path
                 fillRule='evenodd'
                 d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+                clipRule='evenodd'
+              />
+            </svg>
+          </div>
+        );
+      case 'DUPLICATE_UPLOAD':
+        return (
+          <div className='w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center'>
+            <svg
+              className='w-4 h-4 text-yellow-600'
+              fill='currentColor'
+              viewBox='0 0 20 20'
+            >
+              <path d='M9 2a1 1 0 000 2h2a1 1 0 100-2H9z' />
+              <path
+                fillRule='evenodd'
+                d='M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z'
                 clipRule='evenodd'
               />
             </svg>
@@ -415,6 +449,18 @@ const NotificationBell = () => {
                       <p className='text-xs text-gray-500 mt-2'>
                         {formatRelativeTime(notification.createdAt)}
                       </p>
+                      {/* Detail button for notifications with long messages */}
+                      {notification.message && notification.message.length > 100 && (
+                        <button
+                          onClick={() => handleOpenDetail(notification)}
+                          className='mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1'
+                        >
+                          <svg className='w-3 h-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+                          </svg>
+                          Lihat Detail
+                        </button>
+                      )}
                       {notification.type === 'LOW_STOCK' &&
                         notification.inventory && (
                           <div className='mt-2 text-xs text-gray-600'>
@@ -450,6 +496,71 @@ const NotificationBell = () => {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailModal.open && detailModal.notification && (
+        <div className='fixed inset-0 z-[10000] flex items-center justify-center'>
+          {/* Backdrop */}
+          <div
+            className='absolute inset-0 bg-black bg-opacity-50'
+            onClick={handleCloseDetail}
+          />
+          {/* Modal Content */}
+          <div className='relative bg-white rounded-lg shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden'>
+            {/* Header */}
+            <div className='flex items-center justify-between p-4 border-b border-gray-200'>
+              <div className='flex items-center gap-3'>
+                {getNotificationIcon(detailModal.notification.type)}
+                <h3 className='text-lg font-semibold text-gray-900'>
+                  Detail Notifikasi
+                </h3>
+              </div>
+              <button
+                onClick={handleCloseDetail}
+                className='p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors'
+              >
+                <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                </svg>
+              </button>
+            </div>
+            {/* Body */}
+            <div className='p-4 overflow-y-auto max-h-[60vh]'>
+              <p className='text-sm font-medium text-gray-900 mb-2'>
+                {detailModal.notification.title}
+              </p>
+              <p className='text-xs text-gray-500 mb-4'>
+                {formatRelativeTime(detailModal.notification.createdAt)}
+              </p>
+              <div className='bg-gray-50 rounded-lg p-4'>
+                <pre className='text-sm text-gray-700 whitespace-pre-wrap font-sans'>
+                  {detailModal.notification.message}
+                </pre>
+              </div>
+            </div>
+            {/* Footer */}
+            <div className='flex justify-end gap-2 p-4 border-t border-gray-200'>
+              {!detailModal.notification.isRead && (
+                <button
+                  onClick={() => {
+                    handleMarkAsRead(detailModal.notification.id);
+                    handleCloseDetail();
+                  }}
+                  className='px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors'
+                >
+                  Tandai Sudah Dibaca
+                </button>
+              )}
+              <button
+                onClick={handleCloseDetail}
+                className='px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors'
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

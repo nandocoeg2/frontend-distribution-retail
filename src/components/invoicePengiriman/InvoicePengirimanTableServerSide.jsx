@@ -10,7 +10,7 @@ import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { useInvoicePengirimanQuery } from '../../hooks/useInvoicePengirimanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import customerService from '../../services/customerService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
@@ -25,7 +25,7 @@ const columnHelper = createColumnHelper();
 
 const getStatusVariant = (status) => {
   const value = (status?.status_name || status?.status_code || '').toLowerCase();
-  if (value.includes('paid') || value.includes('completed') || value.includes('sudah')) return 'success';
+  if (value.includes('paid') || value.includes('completed') || value.includes('sudah') || value.includes('terkirim')) return 'success';
   if (value.includes('cancelled') || value.includes('failed')) return 'danger';
   if (value.includes('overdue')) return 'danger';
   if (value.includes('pending')) return 'secondary';
@@ -50,13 +50,14 @@ const InvoicePengirimanTableServerSide = ({
   onView,
   onEdit,
   onDelete,
+  onBulkDelete,
   deleteLoading = false,
   selectedInvoices = [],
   onSelectInvoice,
   onSelectAllInvoices,
   hasSelectedInvoices = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 9999,
   onViewDetail,
   selectedInvoiceId,
   onExportExcel,
@@ -64,6 +65,7 @@ const InvoicePengirimanTableServerSide = ({
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [customers, setCustomers] = useState([]);
 
   // PDF Preview states
@@ -186,6 +188,38 @@ const InvoicePengirimanTableServerSide = ({
       setIsGenerating(false);
     }
   };
+
+  const handleBulkDeleteInvoice = async () => {
+    if (!selectedInvoices || selectedInvoices.length === 0) {
+      toastService.error('Tidak ada invoice yang dipilih');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const result = await invoicePengirimanService.bulkDeleteInvoicePengiriman(selectedInvoices);
+
+      if (result?.success) {
+        const { deletedCount, failedIds } = result.data || {};
+        if (failedIds && failedIds.length > 0) {
+          toastService.warning(`Berhasil menghapus ${deletedCount} invoice. ${failedIds.length} gagal dihapus.`);
+        } else {
+          toastService.success(`Berhasil menghapus ${deletedCount} invoice.`);
+        }
+        // Trigger refresh via parent callback
+        if (onBulkDelete) {
+          onBulkDelete(selectedInvoices);
+        }
+      } else {
+        toastService.error('Gagal menghapus invoice');
+      }
+    } catch (error) {
+      console.error('Error in bulk delete:', error);
+      toastService.error(error?.response?.data?.error?.message || error.message || 'Gagal menghapus invoice');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
@@ -245,11 +279,12 @@ const InvoicePengirimanTableServerSide = ({
     queryHook: useInvoicePengirimanQuery,
     selectData: (response) => response?.invoicePengiriman ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialLimit: 9999,
+    initialPage: 1,
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'invoice-pengiriman', // Persist filter state to sessionStorage
   });
 
   const columns = useMemo(
@@ -465,27 +500,6 @@ const InvoicePengirimanTableServerSide = ({
         },
         enableSorting: true,
       }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Aksi',
-        cell: ({ row }) => (
-          <div className='flex justify-center space-x-2'>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(row.original.id);
-              }}
-              disabled={deleteLoading}
-              className='text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed'
-              title='Delete'
-            >
-              <TrashIcon className='h-4 w-4' />
-            </button>
-          </div>
-        ),
-        enableSorting: false,
-      }),
     ],
     [
       invoices,
@@ -493,8 +507,6 @@ const InvoicePengirimanTableServerSide = ({
       onSelectInvoice,
       onSelectAllInvoices,
       onView,
-      onDelete,
-      deleteLoading,
       setPage,
       customers,
     ]
@@ -520,6 +532,9 @@ const InvoicePengirimanTableServerSide = ({
             </button>
             <button onClick={handleBulkPrintInvoice} disabled={isPrinting} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
               <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Print'}
+            </button>
+            <button onClick={handleBulkDeleteInvoice} disabled={isDeleting || deleteLoading} className='inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50'>
+              <TrashIcon className='h-3 w-3 mr-1' />{isDeleting ? '...' : 'Delete'}
             </button>
           </div>
         ) : <div />}
@@ -574,16 +589,20 @@ const InvoicePengirimanTableServerSide = ({
         onRowClick={onViewDetail}
         cellClassName='px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900'
         emptyCellClassName='px-1.5 py-0.5 text-center text-gray-500'
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
-
-      {!loading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel='invoice pengiriman'
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
 
       {/* PDF Preview Modal */}
       <PdfPreviewModal

@@ -1,5 +1,43 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { getCoreRowModel } from '@tanstack/react-table';
+
+// ==================== SESSION STORAGE HELPERS ====================
+const STORAGE_PREFIX = 'table-filter-';
+
+const getStorageKey = (key) => `${STORAGE_PREFIX}${key}`;
+
+const loadFromStorage = (storageKey) => {
+  if (!storageKey) return null;
+  try {
+    const stored = sessionStorage.getItem(getStorageKey(storageKey));
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('Failed to load filter state from sessionStorage:', error);
+  }
+  return null;
+};
+
+const saveToStorage = (storageKey, state) => {
+  if (!storageKey) return;
+  try {
+    sessionStorage.setItem(getStorageKey(storageKey), JSON.stringify(state));
+  } catch (error) {
+    console.warn('Failed to save filter state to sessionStorage:', error);
+  }
+};
+
+const clearStorage = (storageKey) => {
+  if (!storageKey) return;
+  try {
+    sessionStorage.removeItem(getStorageKey(storageKey));
+  } catch (error) {
+    console.warn('Failed to clear filter state from sessionStorage:', error);
+  }
+};
+
+// ==================== END SESSION STORAGE HELPERS ====================
 
 const DEFAULT_PAGINATION = {
   currentPage: 1,
@@ -93,14 +131,18 @@ export const useServerSideTable = ({
   columnFilterDebounceMs = 500,
   initialSorting = [],
   tableOptions: extraTableOptions = DEFAULT_TABLE_OPTIONS,
+  storageKey, // NEW: Optional key for sessionStorage persistence
 } = {}) => {
   if (typeof queryHook !== 'function') {
     throw new Error('useServerSideTable requires a queryHook function');
   }
 
-  const [page, setPage] = useState(initialPage);
+  // Load persisted state from sessionStorage (only on initial mount)
+  const storedState = useRef(loadFromStorage(storageKey)).current;
+
+  const [page, setPage] = useState(storedState?.page ?? initialPage);
   const [limit, setLimit] = useState(initialLimit);
-  const [sorting, setSorting] = useState(initialSorting);
+  const [sorting, setSorting] = useState(storedState?.sorting ?? initialSorting);
 
   const globalFilterEnabled = Boolean(globalFilterOptions?.enabled);
   const globalFilterInitialValue = globalFilterOptions?.initialValue ?? '';
@@ -108,10 +150,10 @@ export const useServerSideTable = ({
   const resetPageOnGlobalFilterChange = globalFilterOptions?.resetPageOnChange !== false;
 
   const [globalFilter, setGlobalFilter] = useState(
-    globalFilterEnabled ? globalFilterInitialValue : ''
+    globalFilterEnabled ? (storedState?.globalFilter ?? globalFilterInitialValue) : ''
   );
   const [debouncedGlobalFilter, setDebouncedGlobalFilter] = useState(
-    globalFilterEnabled ? globalFilterInitialValue : ''
+    globalFilterEnabled ? (storedState?.globalFilter ?? globalFilterInitialValue) : ''
   );
 
   useEffect(() => {
@@ -145,12 +187,20 @@ export const useServerSideTable = ({
     [lockedFilters]
   );
 
-  const [columnFiltersInput, setColumnFiltersInput] = useState(() =>
-    mergeLockedFilters([], normalizedLockedFilters)
-  );
-  const [columnFiltersApplied, setColumnFiltersApplied] = useState(() =>
-    mergeLockedFilters([], normalizedLockedFilters)
-  );
+  const [columnFiltersInput, setColumnFiltersInput] = useState(() => {
+    // If we have stored state with column filters, use them (merged with locked filters)
+    if (storedState?.columnFilters && Array.isArray(storedState.columnFilters)) {
+      return mergeLockedFilters(storedState.columnFilters, normalizedLockedFilters);
+    }
+    return mergeLockedFilters([], normalizedLockedFilters);
+  });
+  const [columnFiltersApplied, setColumnFiltersApplied] = useState(() => {
+    // If we have stored state with column filters, use them (merged with locked filters)
+    if (storedState?.columnFilters && Array.isArray(storedState.columnFilters)) {
+      return mergeLockedFilters(storedState.columnFilters, normalizedLockedFilters);
+    }
+    return mergeLockedFilters([], normalizedLockedFilters);
+  });
 
   useEffect(() => {
     setColumnFiltersInput((prev) => {
@@ -196,6 +246,35 @@ export const useServerSideTable = ({
     });
     return map;
   }, [normalizedLockedFilters]);
+
+  // ==================== PERSIST STATE TO SESSION STORAGE ====================
+  // Save filter state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (!storageKey) return;
+
+    // Only save non-locked filters to storage
+    const filtersToStore = columnFiltersApplied.filter(
+      (filter) => !lockedFilterMap.has(filter.id)
+    );
+
+    const stateToStore = {
+      columnFilters: filtersToStore,
+      globalFilter: globalFilterEnabled ? globalFilter : '',
+      sorting,
+      page,
+    };
+
+    saveToStorage(storageKey, stateToStore);
+  }, [
+    storageKey,
+    columnFiltersApplied,
+    globalFilter,
+    globalFilterEnabled,
+    sorting,
+    page,
+    lockedFilterMap,
+  ]);
+  // ==================== END PERSIST STATE ====================
 
   const filters = useMemo(() => {
     const filterObj = {};
@@ -314,7 +393,11 @@ export const useServerSideTable = ({
       setDebouncedGlobalFilter(globalFilterInitialValue);
     }
 
+    setSorting(initialSorting);
     setPage(1);
+
+    // Clear persisted state from sessionStorage
+    clearStorage(storageKey);
   };
 
   const tableOptions = {
