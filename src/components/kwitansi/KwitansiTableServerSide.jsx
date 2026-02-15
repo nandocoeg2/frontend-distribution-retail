@@ -146,8 +146,8 @@ const KwitansiTableServerSide = ({
     queryHook: useKwitansiQuery,
     selectData: (response) => response?.kwitansis ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialPage: 1,
+    initialLimit: 9999,
     globalFilter: globalFilterConfig,
     getQueryParams,
   });
@@ -612,16 +612,20 @@ const KwitansiTableServerSide = ({
         }}
         cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-2 py-1 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
-
-      {!isLoading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="kwitansi"
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
 
       {/* PDF Preview Modal */}
       <PdfPreviewModal

@@ -62,9 +62,10 @@ const InvoicePengirimanTableServerSide = ({
   selectedInvoiceId,
   onExportExcel,
   exportLoading = false,
+  onOpenGenerateDialog,
+  isGenerating = false,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [customers, setCustomers] = useState([]);
 
@@ -117,75 +118,15 @@ const InvoicePengirimanTableServerSide = ({
     }
   };
 
-  const handleBulkGenerateInvoicePenagihan = async () => {
+  const handleBulkGenerateInvoicePenagihan = () => {
     if (!selectedInvoices || selectedInvoices.length === 0) {
       toastService.error('Tidak ada invoice yang dipilih');
       return;
     }
 
-    setIsGenerating(true);
-    try {
-      toastService.info(`Memproses ${selectedInvoices.length} invoice (membuat 3 dokumen per invoice)...`);
-
-      let successCount = 0;
-      let failCount = 0;
-      const failedInvoices = [];
-
-      // Loop through selected invoices and generate invoice penagihan
-      for (let i = 0; i < selectedInvoices.length; i++) {
-        const invoiceId = selectedInvoices[i];
-
-        try {
-          const response = await invoicePengirimanService.generateInvoicePenagihan(invoiceId);
-
-          if (response?.success) {
-            successCount++;
-          } else {
-            failCount++;
-            failedInvoices.push({ id: invoiceId, error: response?.error?.message || 'Unknown error' });
-          }
-        } catch (error) {
-          failCount++;
-          let errorMessage = 'Unknown error';
-
-          if (error?.response?.status === 409) {
-            errorMessage = 'Invoice Penagihan sudah ada';
-          } else if (error?.response?.status === 404) {
-            errorMessage = 'Invoice tidak ditemukan';
-          } else if (error?.response?.status === 400) {
-            errorMessage = error?.response?.data?.error?.message || 'Data tidak valid';
-          } else {
-            errorMessage = 'Gagal membuat dokumen invoice';
-          }
-
-          failedInvoices.push({ id: invoiceId, error: errorMessage });
-          console.error(`Error generating invoice penagihan for ${invoiceId}:`, error);
-        }
-
-        // Small delay between requests to prevent overwhelming the server
-        if (i < selectedInvoices.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-
-      // Show results with enhanced messaging
-      if (successCount > 0 && failCount === 0) {
-        toastService.success(`✅ Berhasil membuat semua dokumen untuk ${successCount} invoice (Invoice Penagihan + Kwitansi + Faktur Pajak)`);
-      } else if (successCount > 0 && failCount > 0) {
-        toastService.warning(`✅ Berhasil membuat semua dokumen untuk ${successCount} invoice. ${failCount} gagal.`);
-      } else {
-        toastService.error('❌ Gagal membuat dokumen invoice');
-      }
-
-      // Log failed invoices for debugging
-      if (failedInvoices.length > 0) {
-        console.log('Failed invoices:', failedInvoices);
-      }
-    } catch (error) {
-      console.error('Error in bulk generate:', error);
-      toastService.error(error.message || 'Gagal membuat dokumen invoice');
-    } finally {
-      setIsGenerating(false);
+    // Call parent handler to show confirmation dialog
+    if (onOpenGenerateDialog) {
+      onOpenGenerateDialog(selectedInvoices);
     }
   };
 
