@@ -313,6 +313,20 @@ const InvoicePengirimanTableServerSide = ({
           </div>
         ),
       }),
+      columnHelper.accessor((row) => row.purchaseOrder?.laporanPenerimaanBarang?.[0]?.no_lpb, {
+        id: 'no_lpb',
+        header: ({ column }) => (
+          <div className='space-y-1'>
+            <div className='font-medium text-xs'>No LPB</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
+        cell: (info) => (
+          <div className='font-medium text-gray-900'>
+            {info.getValue() || '-'}
+          </div>
+        ),
+      }),
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'customerIds',
         header: ({ column }) => (
