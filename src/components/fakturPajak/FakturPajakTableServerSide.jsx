@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
   TrashIcon,
+  DocumentPlusIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useFakturPajakQuery } from '../../hooks/useFakturPajakQuery';
@@ -61,10 +62,13 @@ const FakturPajakTableServerSide = ({
   initialPage = 1,
   initialLimit = 10,
   selectedFakturPajakId = null,
+  onBulkGenerate,
+  onBulkDelete,
   onQueryParamsChange,
 }) => {
   const [customers, setCustomers] = useState([]);
   const [termOfPayments, setTermOfPayments] = useState([]);
+  const [selectedFakturIds, setSelectedFakturIds] = useState([]);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -170,6 +174,27 @@ const FakturPajakTableServerSide = ({
     getQueryParams,
   });
 
+  // Reset selection when data changes (page change, filter change)
+  useEffect(() => {
+    setSelectedFakturIds([]);
+  }, [fakturPajaks]);
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedFakturIds(fakturPajaks.map((f) => f.id));
+    } else {
+      setSelectedFakturIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    setSelectedFakturIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+
+
   // Notify parent when queryParams change for export functionality
   useEffect(() => {
     if (onQueryParamsChange && queryParams) {
@@ -179,6 +204,31 @@ const FakturPajakTableServerSide = ({
 
   const columns = useMemo(
     () => [
+      columnHelper.display({
+        id: 'select',
+        header: () => (
+          <input
+            type="checkbox"
+            checked={
+              fakturPajaks.length > 0 &&
+              selectedFakturIds.length === fakturPajaks.length
+            }
+            onChange={handleSelectAll}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={selectedFakturIds.includes(row.original.id)}
+            onChange={() => handleSelectOne(row.original.id)}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        enableSorting: false,
+      }),
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: 'tanggal_invoice',
         header: ({ column }) => {
@@ -479,68 +529,7 @@ const FakturPajakTableServerSide = ({
         ),
         enableSorting: true,
       }),
-      columnHelper.display({
-        id: 'tandaTerimaFaktur',
-        header: 'Tanda Terima Faktur',
-        cell: ({ row }) => {
-          const fakturPajak = row.original;
-          const isGenerating = generatingTandaTerimaFakturPajakId === fakturPajak.id;
-          const hasTTF = Boolean(fakturPajak?.tandaTerimaFakturId || fakturPajak?.tandaTerimaFaktur?.id);
 
-          return (
-            <div className="flex flex-col items-center justify-center space-y-1">
-              <div className="flex items-center space-x-2">
-                {isGenerating && (
-                  <span className="w-4 h-4 border-2 border-green-200 border-t-green-600 rounded-full animate-spin" />
-                )}
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
-                  checked={hasTTF}
-                  onChange={(event) => {
-                    if (event.target.checked && onGenerateTandaTerimaFaktur) {
-                      onGenerateTandaTerimaFaktur(fakturPajak);
-                    }
-                  }}
-                  disabled={hasTTF || isGenerating}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-              {fakturPajak?.tandaTerimaFaktur?.code_supplier && (
-                <span className="text-xs text-gray-500">
-                  {fakturPajak.tandaTerimaFaktur.code_supplier}
-                </span>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
-      columnHelper.display({
-        id: 'actions',
-        header: () => <div className="text-right font-medium">Aksi</div>,
-        cell: ({ row }) => {
-          const fakturPajak = row.original;
-          return (
-            <div className="flex items-center justify-end space-x-2">
-              {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(fakturPajak);
-                  }}
-                  className="p-1 text-red-600 hover:text-red-900"
-                  title="Hapus"
-                  disabled={deleteLoading}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
     ],
     [
       fakturPajaks,
@@ -553,6 +542,7 @@ const FakturPajakTableServerSide = ({
       selectedFakturPajakId,
       customers,
       termOfPayments,
+      selectedFakturIds,
     ]
   );
 
@@ -563,6 +553,33 @@ const FakturPajakTableServerSide = ({
 
   return (
     <div className="space-y-4">
+      {selectedFakturIds.length > 0 && (
+        <div className="flex items-center gap-2 mb-2 p-2 bg-blue-50 rounded border border-blue-100">
+          <span className="text-xs font-medium text-blue-700">
+            {selectedFakturIds.length} dipilih
+          </span>
+          {onBulkGenerate && (
+            <button
+              onClick={() => onBulkGenerate(selectedFakturIds)}
+              className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              <DocumentPlusIcon className="h-3 w-3 mr-1" />
+              Generate TTF
+            </button>
+          )}
+          {onBulkDelete && (
+            <button
+              onClick={() => onBulkDelete(selectedFakturIds)}
+              className="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              disabled={deleteLoading}
+            >
+              <TrashIcon className="h-3 w-3 mr-1" />
+              Hapus
+            </button>
+          )}
+        </div>
+      )}
+
       {hasActiveFilters && (
         <div className="flex justify-end">
           <button
