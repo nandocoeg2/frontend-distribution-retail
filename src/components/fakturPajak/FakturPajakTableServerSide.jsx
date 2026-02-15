@@ -326,7 +326,7 @@ const FakturPajakTableServerSide = ({
         },
         enableSorting: true,
       }),
-      columnHelper.accessor((row) => row.laporanPenerimaanBarang?.no_lpb, {
+      columnHelper.accessor((row) => row.laporanPenerimaanBarang?.no_lpb || row.invoicePenagihan?.purchaseOrder?.laporanPenerimaanBarang?.[0]?.no_lpb, {
         id: 'no_lpb',
         header: ({ column }) => (
           <div className="space-y-1">
@@ -349,9 +349,9 @@ const FakturPajakTableServerSide = ({
           return (
             <div>
               <div className="text-xs text-gray-900">{info.getValue() || '-'}</div>
-              {item?.laporanPenerimaanBarang?.tanggal_terima && (
+              {(item?.laporanPenerimaanBarang?.tanggal_po || item?.invoicePenagihan?.purchaseOrder?.laporanPenerimaanBarang?.[0]?.tanggal_po) && (
                 <div className="text-xs text-gray-500">
-                  {formatDate(item.laporanPenerimaanBarang.tanggal_terima)}
+                  {formatDate(item?.laporanPenerimaanBarang?.tanggal_po || item?.invoicePenagihan?.purchaseOrder?.laporanPenerimaanBarang?.[0]?.tanggal_po)}
                 </div>
               )}
             </div>
