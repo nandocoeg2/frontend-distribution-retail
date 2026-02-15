@@ -217,6 +217,16 @@ class KwitansiService {
     }
   }
 
+  async bulkDeleteKwitansi(ids) {
+    try {
+      const response = await this.api.post('/bulk-delete', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk deleting kwitansi:', error);
+      throw error;
+    }
+  }
+
   /**
    * Export kwitansi to Excel
    * @param {Object} filters - Optional filter parameters from the table

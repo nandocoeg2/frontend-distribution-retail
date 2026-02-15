@@ -82,7 +82,7 @@ const FakturPajakPage = () => {
       setBulkGenerateTtfLoading(true);
       const result = await fakturPajakService.bulkGenerateTandaTerimaFaktur(bulkGenerateTtfConfirmation.ids);
 
-      const { successCount, failedCount } = result;
+      const { successCount, failedCount } = result.data || result;
       if (failedCount > 0) {
         toastService.warning(`${successCount} berhasil, ${failedCount} gagal dibuat.`);
       } else {

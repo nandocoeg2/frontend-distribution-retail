@@ -450,7 +450,7 @@ const NotificationBell = () => {
                         {formatRelativeTime(notification.createdAt)}
                       </p>
                       {/* Detail button for notifications with long messages */}
-                      {notification.message && notification.message.length > 100 && (
+                      {notification.message && notification.message.length > 50 && (
                         <button
                           onClick={() => handleOpenDetail(notification)}
                           className='mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1'
