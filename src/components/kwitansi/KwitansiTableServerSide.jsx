@@ -13,6 +13,7 @@ import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import PdfPreviewModal from '../common/PdfPreviewModal';
+import { ConfirmationDialog, useConfirmationDialog } from '../ui/ConfirmationDialog';
 import customerService from '../../services/customerService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
@@ -82,6 +83,13 @@ const KwitansiTableServerSide = ({
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewFileName, setPreviewFileName] = useState('document.pdf');
 
+  const {
+    showDialog,
+    hideDialog,
+    setLoading,
+    ConfirmationDialog: ConfirmationDialogComponent,
+  } = useConfirmationDialog();
+
   // Fetch customers for multi-select filter
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -146,8 +154,8 @@ const KwitansiTableServerSide = ({
     queryHook: useKwitansiQuery,
     selectData: (response) => response?.kwitansis ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialPage: 1,
+    initialLimit: 9999,
     globalFilter: globalFilterConfig,
     getQueryParams,
   });
@@ -254,6 +262,52 @@ const KwitansiTableServerSide = ({
     } finally {
       setIsPrintingPaket(false);
     }
+  };
+
+  const confirmBulkDelete = async () => {
+    setLoading(true);
+    try {
+      const result = await kwitansiService.bulkDeleteKwitansi(selectedKwitansis);
+
+      if (result.deletedCount > 0) {
+        toastService.success(`Berhasil menghapus ${result.deletedCount} kwitansi.`);
+
+        if (result.failedIds && result.failedIds.length > 0) {
+          toastService.warning(`${result.failedIds.length} kwitansi gagal dihapus.`);
+        }
+
+        // Clear selection
+        selectedKwitansis.forEach(id => {
+          onSelectKwitansi(id, false);
+        });
+
+        // Refresh data
+        setPage(1);
+      } else {
+        toastService.error('Gagal menghapus kwitansi.');
+      }
+    } catch (error) {
+      console.error('Error in bulk delete kwitansi:', error);
+      toastService.error(error.message || 'Gagal menghapus kwitansi');
+    } finally {
+      setLoading(false);
+      hideDialog();
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (!selectedKwitansis || selectedKwitansis.length === 0) {
+      toastService.error('Tidak ada kwitansi yang dipilih');
+      return;
+    }
+
+    showDialog({
+      title: 'Hapus Kwitansi',
+      message: `Apakah Anda yakin ingin menghapus ${selectedKwitansis.length} kwitansi yang dipilih? Data yang dihapus tidak dapat dikembalikan.`,
+      confirmText: 'Hapus',
+      type: 'danger',
+      onConfirm: confirmBulkDelete
+    });
   };
 
   const columns = useMemo(
@@ -494,39 +548,13 @@ const KwitansiTableServerSide = ({
         ),
         enableSorting: true,
       }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => {
-          const kwitansi = row.original;
 
-          return (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(kwitansi);
-                }}
-                disabled={deleteLoading}
-                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Hapus"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
     ],
     [
       kwitansis,
       selectedKwitansis,
       onSelectKwitansi,
       handleSelectAllInternalToggle,
-      onDelete,
-      deleteLoading,
-      setPage,
       customers,
     ]
   );
@@ -543,7 +571,7 @@ const KwitansiTableServerSide = ({
         <div className="flex justify-end items-center">
           <button
             onClick={resetFilters}
-            className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             Reset Filter
           </button>
@@ -551,30 +579,35 @@ const KwitansiTableServerSide = ({
       )}
 
       {hasSelectedKwitansis && (
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-blue-900">
-              {selectedKwitansis.length} kwitansi dipilih
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handlePrintSelected}
-              disabled={isPrinting || isPrintingPaket}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <PrinterIcon className="h-4 w-4" />
-              <span>{isPrinting ? 'Memproses...' : 'Print'}</span>
-            </button>
-            <button
-              onClick={handlePrintPaketSelected}
-              disabled={isPrinting || isPrintingPaket}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <PrinterIcon className="h-4 w-4" />
-              <span>{isPrintingPaket ? 'Memproses...' : 'Print Paket'}</span>
-            </button>
-          </div>
+        <div className="flex items-center gap-2 mb-2 p-2 bg-blue-50 rounded border border-blue-100">
+          <span className="text-xs font-medium text-blue-700">
+            {selectedKwitansis.length} kwitansi dipilih
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={deleteLoading}
+            className="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Bulk Delete"
+          >
+            <TrashIcon className="h-3 w-3 mr-1" />
+            Hapus
+          </button>
+          <button
+            onClick={handlePrintSelected}
+            disabled={isPrinting || isPrintingPaket}
+            className="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <PrinterIcon className="h-3 w-3 mr-1" />
+            {isPrinting ? '...' : 'Print'}
+          </button>
+          <button
+            onClick={handlePrintPaketSelected}
+            disabled={isPrinting || isPrintingPaket}
+            className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <PrinterIcon className="h-3 w-3 mr-1" />
+            {isPrintingPaket ? '...' : 'Print Paket'}
+          </button>
         </div>
       )}
 
@@ -612,16 +645,20 @@ const KwitansiTableServerSide = ({
         }}
         cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-2 py-1 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
-
-      {!isLoading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="kwitansi"
-          pageSizeOptions={[5, 10, 20, 50, 100]}
-        />
-      )}
 
       {/* PDF Preview Modal */}
       <PdfPreviewModal
@@ -634,6 +671,9 @@ const KwitansiTableServerSide = ({
         title={previewTitle}
         fileName={previewFileName}
       />
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialogComponent />
     </div>
   );
 };

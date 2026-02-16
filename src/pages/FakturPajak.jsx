@@ -43,6 +43,61 @@ const FakturPajakPage = () => {
     Boolean(generateTtfDialogFakturPajak) &&
     generatingTtfFakturPajakId === generateTtfDialogFakturPajak.id;
 
+  // Bulk Actions State
+  const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState({
+    show: false,
+    ids: [],
+  });
+  const [bulkGenerateTtfConfirmation, setBulkGenerateTtfConfirmation] = useState({
+    show: false,
+    ids: [],
+  });
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [bulkGenerateTtfLoading, setBulkGenerateTtfLoading] = useState(false);
+
+  const handleBulkDeleteClick = (ids) => {
+    setBulkDeleteConfirmation({ show: true, ids });
+  };
+
+  const handleBulkGenerateTtfClick = (ids) => {
+    setBulkGenerateTtfConfirmation({ show: true, ids });
+  };
+
+  const confirmBulkDelete = async () => {
+    try {
+      setBulkDeleteLoading(true);
+      await fakturPajakService.bulkDeleteFakturPajak(bulkDeleteConfirmation.ids);
+      toastService.success('Faktur Pajak terpilih berhasil dihapus');
+      setBulkDeleteConfirmation({ show: false, ids: [] });
+      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
+    } catch (err) {
+      toastService.error(err.message || 'Gagal menghapus Faktur Pajak');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const confirmBulkGenerateTtf = async () => {
+    try {
+      setBulkGenerateTtfLoading(true);
+      const result = await fakturPajakService.bulkGenerateTandaTerimaFaktur(bulkGenerateTtfConfirmation.ids);
+
+      const { successCount, failedCount } = result.data || result;
+      if (failedCount > 0) {
+        toastService.warning(`${successCount} berhasil, ${failedCount} gagal dibuat.`);
+      } else {
+        toastService.success(`${successCount} Tanda Terima Faktur berhasil dibuat.`);
+      }
+
+      setBulkGenerateTtfConfirmation({ show: false, ids: [] });
+      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
+    } catch (err) {
+      toastService.error(err.message || 'Gagal membuat Tanda Terima Faktur');
+    } finally {
+      setBulkGenerateTtfLoading(false);
+    }
+  };
+
   // Handle query params change from table component
   const handleQueryParamsChange = useCallback((params) => {
     currentQueryParams.current = params;
@@ -272,6 +327,8 @@ const FakturPajakPage = () => {
             onDelete={handleDelete}
             onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
             generatingTandaTerimaFakturPajakId={generatingTtfFakturPajakId}
+            onBulkGenerate={handleBulkGenerateTtfClick}
+            onBulkDelete={handleBulkDeleteClick}
             deleteLoading={deleteFakturPajakConfirmation.loading}
             initialPage={1}
             initialLimit={10}
@@ -335,7 +392,6 @@ const FakturPajakPage = () => {
         loading={generateTtfDialogLoading}
       />
 
-      {/* Export Excel Confirmation Dialog */}
       <ConfirmationDialog
         show={showExportConfirmation}
         onClose={() => setShowExportConfirmation(false)}
@@ -346,6 +402,30 @@ const FakturPajakPage = () => {
         confirmText='Ya, Export'
         cancelText='Batal'
         loading={exportLoading}
+      />
+
+      <ConfirmationDialog
+        show={bulkDeleteConfirmation.show}
+        onClose={() => setBulkDeleteConfirmation({ show: false, ids: [] })}
+        onConfirm={confirmBulkDelete}
+        title='Hapus Faktur Pajak'
+        message={`Apakah Anda yakin ingin menghapus ${bulkDeleteConfirmation.ids.length} Faktur Pajak yang dipilih?`}
+        type='danger'
+        confirmText='Hapus'
+        cancelText='Batal'
+        loading={bulkDeleteLoading}
+      />
+
+      <ConfirmationDialog
+        show={bulkGenerateTtfConfirmation.show}
+        onClose={() => setBulkGenerateTtfConfirmation({ show: false, ids: [] })}
+        onConfirm={confirmBulkGenerateTtf}
+        title='Generate Tanda Terima Faktur'
+        message={`Apakah Anda yakin ingin membuat Tanda Terima Faktur untuk ${bulkGenerateTtfConfirmation.ids.length} Faktur Pajak yang dipilih?`}
+        type='warning'
+        confirmText='Ya, Buat'
+        cancelText='Batal'
+        loading={bulkGenerateTtfLoading}
       />
     </div>
   );

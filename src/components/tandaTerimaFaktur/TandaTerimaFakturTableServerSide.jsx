@@ -228,8 +228,8 @@ const TandaTerimaFakturTableServerSide = ({
     queryHook: useTandaTerimaFakturQuery,
     selectData: (response) => response?.tandaTerimaFakturs ?? [],
     selectPagination: (response) => response?.pagination,
-    initialPage,
-    initialLimit,
+    initialPage: 1,
+    initialLimit: 9999,
     globalFilter: globalFilterConfig,
     getQueryParams,
   });
@@ -741,21 +741,20 @@ const TandaTerimaFakturTableServerSide = ({
         }}
         cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
+        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
       />
-
-      {!loading && !error && (
-        <DataTablePagination
-          table={table}
-          pagination={pagination}
-          itemLabel="item"
-          pageSizeOptions={[10, 25, 50, 100]}
-          firstLabel="««"
-          prevLabel="«"
-          nextLabel="»"
-          lastLabel="»»"
-          className="text-xs"
-        />
-      )}
     </div>
   );
 };

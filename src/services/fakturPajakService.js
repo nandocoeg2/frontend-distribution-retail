@@ -357,6 +357,26 @@ class FakturPajakService {
       throw error;
     }
   }
+
+  async bulkDeleteFakturPajak(ids) {
+    try {
+      const response = await this.api.post('/bulk-delete', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk deleting faktur pajak:', error);
+      throw error;
+    }
+  }
+
+  async bulkGenerateTandaTerimaFaktur(ids) {
+    try {
+      const response = await this.api.post('/bulk-generate-ttf', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk generating tanda terima faktur:', error);
+      throw error;
+    }
+  }
 }
 
 export default new FakturPajakService();

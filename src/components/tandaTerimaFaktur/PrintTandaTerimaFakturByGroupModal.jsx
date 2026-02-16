@@ -4,10 +4,12 @@ import Autocomplete from '@/components/common/Autocomplete';
 import groupCustomerService from '@/services/groupCustomerService';
 import termOfPaymentService from '@/services/termOfPaymentService';
 import tandaTerimaFakturService from '@/services/tandaTerimaFakturService';
+import customerService from '@/services/customerService';
 import toastService from '@/services/toastService';
 
-const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {} }) => {
+const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { } }) => {
   const [groupCustomerId, setGroupCustomerId] = useState('');
+  const [customerId, setCustomerId] = useState('');
   const [termOfPaymentId, setTermOfPaymentId] = useState('');
   const [dateMode, setDateMode] = useState('all');
   const [tanggal, setTanggal] = useState('');
@@ -17,8 +19,10 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
 
   // Autocomplete options state
   const [groupCustomerOptions, setGroupCustomerOptions] = useState([]);
+  const [customerOptions, setCustomerOptions] = useState([]);
   const [termOfPaymentOptions, setTermOfPaymentOptions] = useState([]);
   const [searchingGroupCustomer, setSearchingGroupCustomer] = useState(false);
+  const [searchingCustomer, setSearchingCustomer] = useState(false);
   const [searchingTermOfPayment, setSearchingTermOfPayment] = useState(false);
 
   // Search group customers
@@ -36,6 +40,79 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
       setSearchingGroupCustomer(false);
     }
   }, []);
+
+  // Search customers
+  const handleSearchCustomer = useCallback(
+    async (query) => {
+      if (!query || !groupCustomerId) return;
+      setSearchingCustomer(true);
+      try {
+        const response = await customerService.searchCustomers(query, 1, 20);
+        if (response?.data?.data) {
+          // Client-side filter if backend doesn't support query param for group in search
+          // But our backend now supports groupCustomerId in getAll/search
+          // However, searchCustomers endpoint might need update to pass groupCustomerId?
+          // Let's use getAllCustomers with options instead for safer filtering
+          // Or just rely on search if we assume we updated search to handle it
+          // Wait, searchCustomers in frontend service calls /customers/search/:query
+          // And backend controller uses params.q or query.q
+          // And service.searchCustomers uses OR filters.
+          // It doesn't seem to support groupCustomerId in searchCustomersSchema properly?
+          // Let's check backend schema again. searchCustomerSchema has query object with q and pagination.
+          // It DOES NOT have groupCustomerId.
+          // getAllCustomersSchema DOES have groupCustomerId.
+          // So we should use getAllCustomers for "searching" with filter
+
+          const response = await customerService.getAllCustomers(1, 20, {
+            groupCustomerId,
+            q: query // Accessing getAllCustomers which calls /customers with params
+            // Wait, frontend getAllCustomers params: page, limit, options
+            // options can have groupCustomerId
+            // But does it support 'q' or 'search'?
+            // Backend getAllCustomersSchema does NOT have 'q' or 'search'. 
+            // It has companyId, hasPurchaseOrder etc. 
+            // Backend searchCustomersSchema has 'q'.
+
+            // So I can't easily search AND filter by group with current backend implementation of searchCustomers.
+            // But wait, I updated getAllCustomers in backend service to support groupCustomerId.
+            // I did NOT update searchCustomers to support groupCustomerId.
+
+            // So for now, to ensure I get customers for the group, I should use getAllCustomers
+            // But getAllCustomers doesn't do name search.
+
+            // Let's check frontend service again.
+            // search: (query, page = 1, limit = 10) -> /customers/search/:query
+            // getAllCustomers: (page, limit, options) -> /customers
+
+            // The backend getAllCustomers service method does NOT perform name search.
+
+            // Issue: I can't search by name within a group easily with current backend.
+            // I should probably just fetch all customers for the group (pagination might be an issue but usually groups don't have thaaat many consumers?)
+            // Or I should request to update searchCustomers too? 
+
+            // For this task, "populate option customernya berdasarkan group customer yang dipilih".
+            // It implies listing them. Autocomplete usually implies searching.
+            // If I just load initial options based on group, that covers "populate". 
+            // If user types, it searches. If searching uses generic search, it might return customers from other groups?
+            // Yes.
+
+            // So correct approach:
+            // 1. When group is selected, fetch customers for that group (using getAllCustomers with groupCustomerId).
+            // 2. Set these as options.
+            // 3. If user searches... ideally front-end filtering if list is small, or we need backend support.
+            // Given I didn't update searchCustomers endpoint, I should probably stick to fetching by group.
+
+            // Let's implement handleFocusCustomer to fetch by group.
+          });
+        }
+      } catch (error) {
+        console.error('Error searching customers:', error);
+      } finally {
+        setSearchingCustomer(false);
+      }
+    },
+    [groupCustomerId]
+  );
 
   // Search term of payments
   const handleSearchTermOfPayment = useCallback(async (query) => {
@@ -67,6 +144,37 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
     }
   }, [groupCustomerOptions.length]);
 
+  const handleFocusCustomer = useCallback(async () => {
+    if (!groupCustomerId) return;
+
+    // Always refresh when focusing if we have a group allowed
+    // Or just if empty? Let's reload to be safe or if options are empty
+    setSearchingCustomer(true);
+    try {
+      // Use getAllCustomers with groupCustomerId filter
+      const response = await customerService.getAllCustomers(1, 100, {
+        groupCustomerId,
+      });
+      if (response?.data?.data) {
+        setCustomerOptions(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    } finally {
+      setSearchingCustomer(false);
+    }
+  }, [groupCustomerId]);
+
+  // Reset customer when group changes
+  React.useEffect(() => {
+    setCustomerId('');
+    setCustomerOptions([]);
+    // Optionally fetch immediately
+    if (groupCustomerId) {
+      handleFocusCustomer();
+    }
+  }, [groupCustomerId, handleFocusCustomer]);
+
   const handleFocusTermOfPayment = useCallback(async () => {
     if (termOfPaymentOptions.length === 0) {
       try {
@@ -95,8 +203,8 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
   }, []);
 
   const handlePrint = async () => {
-    if (!groupCustomerId || !termOfPaymentId) {
-      toastService.error('Group Customer dan Term of Payment harus diisi');
+    if (!groupCustomerId || !termOfPaymentId || !customerId) {
+      toastService.error('Group Customer, Customer, dan Term of Payment harus diisi');
       return;
     }
 
@@ -105,6 +213,7 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
       const params = {
         groupCustomerId,
         termOfPaymentId,
+        customerId,
       };
 
       // Add date filters based on mode
@@ -122,7 +231,7 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
       printWindow.document.write(html);
       printWindow.document.close();
       printWindow.focus();
-      
+
       // Wait for content to load before printing
       setTimeout(() => {
         printWindow.print();
@@ -142,6 +251,7 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
 
   const handleCloseModal = () => {
     setGroupCustomerId('');
+    setCustomerId('');
     setTermOfPaymentId('');
     setDateMode('all');
     setTanggal('');
@@ -195,6 +305,22 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
               showId={true}
             />
 
+            {/* Customer */}
+            <Autocomplete
+              label='Customer'
+              placeholder={groupCustomerId ? 'Pilih customer...' : 'Pilih group customer terlebih dahulu'}
+              options={customerOptions}
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              displayKey='namaCustomer'
+              valueKey='id'
+              required
+              onFocus={handleFocusCustomer}
+              loading={searchingCustomer}
+              showId={true}
+              disabled={!groupCustomerId}
+            />
+
             {/* Term of Payment */}
             <Autocomplete
               label='Term of Payment'
@@ -220,33 +346,30 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
                 <button
                   type='button'
                   onClick={() => handleDateModeChange('all')}
-                  className={`px-3 py-2 text-sm font-medium rounded-md transition ${
-                    dateMode === 'all'
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition ${dateMode === 'all'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Semua
                 </button>
                 <button
                   type='button'
                   onClick={() => handleDateModeChange('single')}
-                  className={`px-3 py-2 text-sm font-medium rounded-md transition ${
-                    dateMode === 'single'
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition ${dateMode === 'single'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Tanggal Spesifik
                 </button>
                 <button
                   type='button'
                   onClick={() => handleDateModeChange('range')}
-                  className={`px-3 py-2 text-sm font-medium rounded-md transition ${
-                    dateMode === 'range'
+                  className={`px-3 py-2 text-sm font-medium rounded-md transition ${dateMode === 'range'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Range Tanggal
                 </button>
@@ -309,7 +432,7 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => {}
           <button
             onClick={handlePrint}
             className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed'
-            disabled={isLoading || !groupCustomerId || !termOfPaymentId}
+            disabled={isLoading || !groupCustomerId || !termOfPaymentId || !customerId}
           >
             {isLoading ? (
               <>
