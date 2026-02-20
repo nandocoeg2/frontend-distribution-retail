@@ -594,7 +594,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
         cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
         onRowClick={onViewDetail}
-        footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
         footerCellClassName="px-1.5 py-1 text-xs border-t border-gray-300"
         footerContent={
           <tr>

@@ -481,7 +481,7 @@ const CheckingListTableServerSide = ({
               onViewDetail && onViewDetail(checklist);
             }}
             emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
-            footerRowClassName="bg-gray-200 font-bold sticky bottom-0 z-10"
+            footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
             footerContent={
               <tr>
                 {table.getVisibleLeafColumns().map((column) => (
