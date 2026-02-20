@@ -162,7 +162,7 @@ export const exportPackingSticker = async (packingId, companyId) => {
 };
 
 // Export bulk packing sticker to HTML for printing
-export const exportPackingStickerBulk = async (ids, companyId) => {
+export const exportPackingStickerBulk = async (ids, companyId, printerType = 'type1') => {
   try {
     const token = localStorage.getItem('token');
     const response = await fetch(
@@ -175,7 +175,7 @@ export const exportPackingStickerBulk = async (ids, companyId) => {
           'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
-        body: JSON.stringify({ ids, companyId }),
+        body: JSON.stringify({ ids, companyId, printerType }),
       }
     );
 
