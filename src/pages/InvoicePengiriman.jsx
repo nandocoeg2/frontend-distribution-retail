@@ -6,6 +6,7 @@ import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoice
 import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import GenerateInvoicePenagihanDialog from '@/components/invoicePengiriman/GenerateInvoicePenagihanDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
 import toastService from '@/services/toastService';
 
@@ -340,7 +341,7 @@ const InvoicePengirimanPage = () => {
     });
   }, []);
 
-  const handleGenerateConfirm = useCallback(async () => {
+  const handleGenerateConfirm = useCallback(async (tanggalDokumen) => {
     const invoiceIds = generateConfirmation.invoiceIds;
 
     if (!invoiceIds || invoiceIds.length === 0) {
@@ -361,7 +362,9 @@ const InvoicePengirimanPage = () => {
         const invoiceId = invoiceIds[i];
 
         try {
-          const response = await invoicePengirimanService.generateInvoicePenagihan(invoiceId);
+          const response = await invoicePengirimanService.generateInvoicePenagihan(invoiceId, {
+            tanggal_dokumen: tanggalDokumen,
+          });
 
           if (response?.success) {
             successCount++;
@@ -513,19 +516,11 @@ const InvoicePengirimanPage = () => {
         loading={exportLoading}
       />
 
-      <ConfirmationDialog
+      <GenerateInvoicePenagihanDialog
         show={generateConfirmation.show}
         onClose={closeGenerateDialog}
         onConfirm={handleGenerateConfirm}
-        title='Generate Invoice Penagihan'
-        message={
-          generateConfirmation.invoiceIds.length > 0
-            ? `Apakah Anda yakin ingin membuat Invoice Penagihan untuk ${generateConfirmation.invoiceIds.length} invoice terpilih?\n\nProses ini akan membuat 3 dokumen per invoice:\n- Invoice Penagihan\n- Kwitansi\n- Faktur Pajak`
-            : 'Apakah Anda yakin ingin membuat Invoice Penagihan?'
-        }
-        confirmText='Ya, Generate'
-        cancelText='Batal'
-        type='warning'
+        invoiceCount={generateConfirmation.invoiceIds.length}
         loading={isGenerating}
       />
     </div>

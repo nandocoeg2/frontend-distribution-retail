@@ -148,9 +148,9 @@ class InvoicePengirimanService {
     }
   }
 
-  async generateInvoicePenagihan(id) {
+  async generateInvoicePenagihan(id, dates = {}) {
     try {
-      const response = await this.api.post(`/${id}/generate-invoice-penagihan`);
+      const response = await this.api.post(`/${id}/generate-invoice-penagihan`, dates);
       return response.data;
     } catch (error) {
       console.error('Error generating invoice penagihan:', error);
