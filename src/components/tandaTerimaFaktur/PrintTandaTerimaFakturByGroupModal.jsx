@@ -41,69 +41,15 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
     }
   }, []);
 
-  // Search customers
+  // Search customers - filtered by selected group customer
   const handleSearchCustomer = useCallback(
     async (query) => {
       if (!query || !groupCustomerId) return;
       setSearchingCustomer(true);
       try {
-        const response = await customerService.searchCustomers(query, 1, 20);
+        const response = await customerService.search(query, 1, 20, { groupCustomerId });
         if (response?.data?.data) {
-          // Client-side filter if backend doesn't support query param for group in search
-          // But our backend now supports groupCustomerId in getAll/search
-          // However, searchCustomers endpoint might need update to pass groupCustomerId?
-          // Let's use getAllCustomers with options instead for safer filtering
-          // Or just rely on search if we assume we updated search to handle it
-          // Wait, searchCustomers in frontend service calls /customers/search/:query
-          // And backend controller uses params.q or query.q
-          // And service.searchCustomers uses OR filters.
-          // It doesn't seem to support groupCustomerId in searchCustomersSchema properly?
-          // Let's check backend schema again. searchCustomerSchema has query object with q and pagination.
-          // It DOES NOT have groupCustomerId.
-          // getAllCustomersSchema DOES have groupCustomerId.
-          // So we should use getAllCustomers for "searching" with filter
-
-          const response = await customerService.getAllCustomers(1, 20, {
-            groupCustomerId,
-            q: query // Accessing getAllCustomers which calls /customers with params
-            // Wait, frontend getAllCustomers params: page, limit, options
-            // options can have groupCustomerId
-            // But does it support 'q' or 'search'?
-            // Backend getAllCustomersSchema does NOT have 'q' or 'search'. 
-            // It has companyId, hasPurchaseOrder etc. 
-            // Backend searchCustomersSchema has 'q'.
-
-            // So I can't easily search AND filter by group with current backend implementation of searchCustomers.
-            // But wait, I updated getAllCustomers in backend service to support groupCustomerId.
-            // I did NOT update searchCustomers to support groupCustomerId.
-
-            // So for now, to ensure I get customers for the group, I should use getAllCustomers
-            // But getAllCustomers doesn't do name search.
-
-            // Let's check frontend service again.
-            // search: (query, page = 1, limit = 10) -> /customers/search/:query
-            // getAllCustomers: (page, limit, options) -> /customers
-
-            // The backend getAllCustomers service method does NOT perform name search.
-
-            // Issue: I can't search by name within a group easily with current backend.
-            // I should probably just fetch all customers for the group (pagination might be an issue but usually groups don't have thaaat many consumers?)
-            // Or I should request to update searchCustomers too? 
-
-            // For this task, "populate option customernya berdasarkan group customer yang dipilih".
-            // It implies listing them. Autocomplete usually implies searching.
-            // If I just load initial options based on group, that covers "populate". 
-            // If user types, it searches. If searching uses generic search, it might return customers from other groups?
-            // Yes.
-
-            // So correct approach:
-            // 1. When group is selected, fetch customers for that group (using getAllCustomers with groupCustomerId).
-            // 2. Set these as options.
-            // 3. If user searches... ideally front-end filtering if list is small, or we need backend support.
-            // Given I didn't update searchCustomers endpoint, I should probably stick to fetching by group.
-
-            // Let's implement handleFocusCustomer to fetch by group.
-          });
+          setCustomerOptions(response.data.data);
         }
       } catch (error) {
         console.error('Error searching customers:', error);
@@ -315,6 +261,7 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
               displayKey='namaCustomer'
               valueKey='id'
               required
+              onSearch={handleSearchCustomer}
               onFocus={handleFocusCustomer}
               loading={searchingCustomer}
               showId={true}
@@ -347,8 +294,8 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
                   type='button'
                   onClick={() => handleDateModeChange('all')}
                   className={`px-3 py-2 text-sm font-medium rounded-md transition ${dateMode === 'all'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                   Semua
@@ -357,8 +304,8 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
                   type='button'
                   onClick={() => handleDateModeChange('single')}
                   className={`px-3 py-2 text-sm font-medium rounded-md transition ${dateMode === 'single'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                   Tanggal Spesifik
@@ -367,8 +314,8 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
                   type='button'
                   onClick={() => handleDateModeChange('range')}
                   className={`px-3 py-2 text-sm font-medium rounded-md transition ${dateMode === 'range'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                   Range Tanggal

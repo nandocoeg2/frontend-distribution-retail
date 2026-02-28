@@ -313,7 +313,7 @@ const InvoicePengirimanTableServerSide = ({
           </div>
         ),
       }),
-      columnHelper.accessor((row) => row.purchaseOrder?.laporanPenerimaanBarang?.[0]?.no_lpb, {
+      columnHelper.accessor((row) => row.purchaseOrder?.laporanPenerimaanBarang?.no_lpb, {
         id: 'no_lpb',
         header: ({ column }) => (
           <div className='space-y-1'>

@@ -87,11 +87,12 @@ const customerService = {
   },
 
   // Search customers with company filter
-  search: (query, page = 1, limit = 10) => {
+  search: (query, page = 1, limit = 10, extraParams = {}) => {
     const companyData = authService.getCompanyData();
     const params = {
       page,
       limit,
+      ...extraParams,
     };
     if (companyData?.id) {
       params.companyId = companyData.id;
