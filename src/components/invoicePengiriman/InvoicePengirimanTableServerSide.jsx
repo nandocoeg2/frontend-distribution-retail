@@ -318,7 +318,16 @@ const InvoicePengirimanTableServerSide = ({
         header: ({ column }) => (
           <div className='space-y-1'>
             <div className='font-medium text-xs'>No LPB</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+              onClick={(e) => e.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="true">Ada LPB</option>
+              <option value="false">Tidak Ada LPB</option>
+            </select>
           </div>
         ),
         cell: (info) => (

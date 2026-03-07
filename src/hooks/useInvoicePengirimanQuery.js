@@ -38,28 +38,34 @@ export const useInvoicePengirimanQuery = ({
       // Add column filters with proper serialization
       Object.entries(filters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return;
-        
+
         // Handle date range filters
         if (key === 'tanggal' && typeof value === 'object' && (value.from || value.to)) {
           if (value.from) params.tanggal_start = value.from;
           if (value.to) params.tanggal_end = value.to;
           return;
         }
-        
+
         // Handle print date range filters
         if (key === 'print_date' && typeof value === 'object' && (value.from || value.to)) {
           if (value.from) params.print_date_start = value.from;
           if (value.to) params.print_date_end = value.to;
           return;
         }
-        
+
         // Handle grand_total range filters
         if (key === 'grand_total' && typeof value === 'object' && (value.min !== undefined || value.max !== undefined)) {
           if (value.min !== undefined && value.min !== '') params.grand_total_min = value.min;
           if (value.max !== undefined && value.max !== '') params.grand_total_max = value.max;
           return;
         }
-        
+
+        // Handle no_lpb select filter → has_lpb backend param
+        if (key === 'no_lpb' && (value === 'true' || value === 'false')) {
+          params.has_lpb = value;
+          return;
+        }
+
         // Handle array filters (customerIds, status_codes)
         if (Array.isArray(value)) {
           if (value.length > 0) {
@@ -67,7 +73,7 @@ export const useInvoicePengirimanQuery = ({
           }
           return;
         }
-        
+
         // Handle regular filters
         params[key] = value;
       });
