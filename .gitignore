@@ -99,3 +99,5 @@ out/
 plan/*
 
 docs/*
+
+.DS_Store

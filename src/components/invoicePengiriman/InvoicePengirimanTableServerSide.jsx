@@ -46,6 +46,13 @@ const PRINT_STATUS_OPTIONS = [
   { value: 'false', label: 'Belum Diprint' },
 ];
 
+// Penagihan status options
+const PENAGIHAN_STATUS_OPTIONS = [
+  { value: '', label: 'Semua' },
+  { value: 'true', label: 'Sudah Ditagih' },
+  { value: 'false', label: 'Belum Ditagih' },
+];
+
 const InvoicePengirimanTableServerSide = ({
   onView,
   onEdit,
@@ -392,6 +399,36 @@ const InvoicePengirimanTableServerSide = ({
               dot={true}
               status={isPrinted ? 'Sudah Diprint' : 'Belum Diprint'}
               variant={isPrinted ? 'success' : 'secondary'}
+              size='sm'
+            />
+          );
+        },
+        enableSorting: true,
+      }),
+      columnHelper.accessor((row) => row.invoicePenagihanId, {
+        id: 'has_penagihan',
+        header: ({ column }) => (
+          <div className='space-y-0.5'>
+            <div className='font-medium text-xs'>Tagih</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+              onClick={(e) => e.stopPropagation()}
+            >
+              {PENAGIHAN_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const hasPenagihan = !!row.original.invoicePenagihanId;
+          return (
+            <StatusBadge
+              dot={true}
+              status={hasPenagihan ? 'Sudah Ditagih' : 'Belum Ditagih'}
+              variant={hasPenagihan ? 'success' : 'secondary'}
               size='sm'
             />
           );

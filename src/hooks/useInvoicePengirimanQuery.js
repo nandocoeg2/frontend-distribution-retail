@@ -66,6 +66,12 @@ export const useInvoicePengirimanQuery = ({
           return;
         }
 
+        // Handle has_penagihan select filter
+        if (key === 'has_penagihan' && (value === 'true' || value === 'false')) {
+          params.has_penagihan = value;
+          return;
+        }
+
         // Handle array filters (customerIds, status_codes)
         if (Array.isArray(value)) {
           if (value.length > 0) {
