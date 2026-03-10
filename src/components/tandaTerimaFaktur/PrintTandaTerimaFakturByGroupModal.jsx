@@ -149,8 +149,8 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
   }, []);
 
   const handlePrint = async () => {
-    if (!groupCustomerId || !termOfPaymentId) {
-      toastService.error('Group Customer dan Term of Payment harus diisi');
+    if (!groupCustomerId) {
+      toastService.error('Group Customer harus diisi');
       return;
     }
 
@@ -276,7 +276,6 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
               onChange={(e) => setTermOfPaymentId(e.target.value)}
               displayKey='kode_top'
               valueKey='id'
-              required
               onSearch={handleSearchTermOfPayment}
               onFocus={handleFocusTermOfPayment}
               loading={searchingTermOfPayment}
@@ -378,7 +377,7 @@ const PrintTandaTerimaFakturByGroupModal = ({ isOpen = false, onClose = () => { 
           <button
             onClick={handlePrint}
             className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed'
-            disabled={isLoading || !groupCustomerId || !termOfPaymentId}
+            disabled={isLoading || !groupCustomerId}
           >
             {isLoading ? (
               <>
