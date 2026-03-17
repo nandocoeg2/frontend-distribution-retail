@@ -54,17 +54,11 @@ const PENAGIHAN_STATUS_OPTIONS = [
 ];
 
 const InvoicePengirimanTableServerSide = ({
-  onView,
-  onEdit,
-  onDelete,
   onBulkDelete,
-  deleteLoading = false,
   selectedInvoices = [],
   onSelectInvoice,
   onSelectAllInvoices,
   hasSelectedInvoices = false,
-  initialPage = 1,
-  initialLimit = 9999,
   onViewDetail,
   selectedInvoiceId,
   onExportExcel,
@@ -149,14 +143,19 @@ const InvoicePengirimanTableServerSide = ({
 
       if (result?.success) {
         const { deletedCount, failedIds } = result.data || {};
+        const failedIdList = Array.isArray(failedIds) ? failedIds : [];
+        const deletedIds = selectedInvoices.filter(
+          (invoiceId) => !failedIdList.includes(invoiceId)
+        );
+
         if (failedIds && failedIds.length > 0) {
           toastService.warning(`Berhasil menghapus ${deletedCount} invoice. ${failedIds.length} gagal dihapus.`);
         } else {
           toastService.success(`Berhasil menghapus ${deletedCount} invoice.`);
         }
-        // Trigger refresh via parent callback
+
         if (onBulkDelete) {
-          onBulkDelete(selectedInvoices);
+          await onBulkDelete({ deletedIds, failedIds: failedIdList });
         }
       } else {
         toastService.error('Gagal menghapus invoice');
@@ -364,15 +363,12 @@ const InvoicePengirimanTableServerSide = ({
         cell: (info) => <span className='text-xs truncate'>{info.row.original.purchaseOrder?.customer?.namaCustomer || '-'}</span>,
       }),
       columnHelper.accessor('grand_total', {
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: '', max: '' };
-          return (
-            <div className='space-y-0.5'>
-              <div className='font-medium text-xs'>Jumlah</div>
-              <RangeColumnFilter column={column} setPage={setPage} />
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className='space-y-0.5'>
+            <div className='font-medium text-xs'>Jumlah</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => formatCurrency(info.getValue()),
       }),
       columnHelper.accessor('is_printed', {
@@ -507,7 +503,6 @@ const InvoicePengirimanTableServerSide = ({
       selectedInvoices,
       onSelectInvoice,
       onSelectAllInvoices,
-      onView,
       setPage,
       customers,
     ]
@@ -534,7 +529,7 @@ const InvoicePengirimanTableServerSide = ({
             <button onClick={handleBulkPrintInvoice} disabled={isPrinting} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
               <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Print'}
             </button>
-            <button onClick={handleBulkDeleteInvoice} disabled={isDeleting || deleteLoading} className='inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50'>
+            <button onClick={handleBulkDeleteInvoice} disabled={isDeleting} className='inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50'>
               <TrashIcon className='h-3 w-3 mr-1' />{isDeleting ? '...' : 'Delete'}
             </button>
           </div>

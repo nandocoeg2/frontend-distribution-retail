@@ -1,46 +1,18 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
-import AddInvoicePengirimanModal from '@/components/invoicePengiriman/AddInvoicePengirimanModal';
-import ViewInvoicePengirimanModal from '@/components/invoicePengiriman/ViewInvoicePengirimanModal';
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import GenerateInvoicePenagihanDialog from '@/components/invoicePengiriman/GenerateInvoicePenagihanDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
 import toastService from '@/services/toastService';
 
-const INITIAL_TAB_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
-
 const InvoicePengirimanPage = () => {
   const queryClient = useQueryClient();
 
-  const {
-    invoicePengiriman,
-    setInvoicePengiriman,
-    pagination,
-    loading,
-    error,
-    handlePageChange,
-    handleLimitChange,
-    deleteInvoiceConfirmation,
-    handleAuthError,
-  } = useInvoicePengiriman();
+  const { handleAuthError } = useInvoicePengiriman();
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [viewingInvoice, setViewingInvoice] = useState(null);
-  const [viewingInvoiceId, setViewingInvoiceId] = useState(null);
-  const [viewModalLoading, setViewModalLoading] = useState(false);
-  const [viewModalError, setViewModalError] = useState(null);
   const [selectedInvoiceForDetail, setSelectedInvoiceForDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState([]);
@@ -75,106 +47,6 @@ const InvoicePengirimanPage = () => {
     [handleAuthError]
   );
 
-  const loadInvoiceIntoState = useCallback(
-    async (id, setInvoice, setLoadingState, setErrorState) => {
-      if (!id) {
-        return;
-      }
-      setLoadingState(true);
-      setErrorState(null);
-      try {
-        const detail = await fetchInvoiceDetail(id);
-        if (detail) {
-          setInvoice(detail);
-        }
-      } catch (err) {
-        const message =
-          err?.response?.data?.error?.message ||
-          err?.message ||
-          'Gagal memuat detail invoice pengiriman';
-        setErrorState(message);
-      } finally {
-        setLoadingState(false);
-      }
-    },
-    [fetchInvoiceDetail]
-  );
-
-  const handleTablePageChange = useCallback(
-    (page) => {
-      handlePageChange(page);
-    },
-    [handlePageChange]
-  );
-
-  const handleTableLimitChange = useCallback(
-    (limit) => {
-      handleLimitChange(limit);
-    },
-    [handleLimitChange]
-  );
-
-  const refreshActiveTab = useCallback(() => {
-    const currentPage = pagination?.currentPage || pagination?.page || 1;
-    handlePageChange(currentPage);
-  }, [handlePageChange, pagination]);
-
-  const handleInvoicePenagihanToggle = useCallback((invoice) => {
-    // Functionality removed - no longer needed
-  }, []);
-
-  const closeCreatePenagihanDialog = useCallback(() => {
-    // Functionality removed - no longer needed
-  }, []);
-
-  const confirmCreateInvoicePenagihan = useCallback(async () => {
-    // Functionality removed - no longer needed
-  }, []);
-
-  const openAddModal = () => setShowAddModal(true);
-  const closeAddModal = () => setShowAddModal(false);
-
-
-
-  const openViewModal = useCallback(
-    (invoice) => {
-      if (!invoice?.id) {
-        console.error('Invoice ID tidak ditemukan untuk modal view');
-        return;
-      }
-      setViewingInvoiceId(invoice.id);
-      setViewingInvoice(invoice);
-      setShowViewModal(true);
-      loadInvoiceIntoState(
-        invoice.id,
-        setViewingInvoice,
-        setViewModalLoading,
-        setViewModalError
-      );
-    },
-    [loadInvoiceIntoState]
-  );
-
-  const closeViewModal = useCallback(() => {
-    setViewingInvoice(null);
-    setViewingInvoiceId(null);
-    setViewModalError(null);
-    setViewModalLoading(false);
-    setShowViewModal(false);
-  }, []);
-
-  const reloadViewingInvoice = useCallback(() => {
-    if (!viewingInvoiceId) {
-      return;
-    }
-    loadInvoiceIntoState(
-      viewingInvoiceId,
-      setViewingInvoice,
-      setViewModalLoading,
-      setViewModalError
-    );
-  }, [loadInvoiceIntoState, viewingInvoiceId]);
-
   const handleViewDetail = useCallback(
     async (invoice) => {
       if (!invoice?.id) {
@@ -202,49 +74,22 @@ const InvoicePengirimanPage = () => {
     setSelectedInvoiceForDetail(null);
   }, []);
 
-  const handleModalSuccess = useCallback(() => {
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
-    refreshActiveTab();
-    closeAddModal();
-  }, [closeAddModal, refreshActiveTab, queryClient]);
+  const handleInvoiceUpdated = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
 
-  const handleInvoiceAdded = (newInvoice) => {
-    if (!newInvoice) {
+    if (!selectedInvoiceForDetail?.id) {
       return;
     }
-    setInvoicePengiriman((prev) => [...prev, newInvoice]);
-    closeAddModal();
-    handleModalSuccess();
-  };
 
-  const handleInvoiceUpdated = useCallback(() => {
-    handleModalSuccess();
-    // Update selected detail if it's the one being edited
-    if (selectedInvoiceForDetail) {
-      // We can re-fetch the detail or let the user do it. 
-      // Since we have onUpdate in DetailCard which calls this, we might want to re-fetch detail here or in DetailCard.
-      // Actually DetailCard calls onUpdate after successful save.
-      // We should probably re-fetch the selected detail here if we want it to update immediately without closing.
-      // But DetailCard handles its own form submission.
-      // Let's just refresh the list for now.
-      fetchInvoiceDetail(selectedInvoiceForDetail.id).then(updatedDetail => {
-        if (updatedDetail) {
-          setSelectedInvoiceForDetail(updatedDetail);
-        }
-      });
-    }
-  }, [handleModalSuccess, selectedInvoiceForDetail, fetchInvoiceDetail]);
-
-  const handleDeleteConfirm = useCallback(async () => {
     try {
-      await deleteInvoiceConfirmation.confirmDelete();
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
-    } finally {
-      refreshActiveTab();
+      const updatedDetail = await fetchInvoiceDetail(selectedInvoiceForDetail.id);
+      if (updatedDetail) {
+        setSelectedInvoiceForDetail(updatedDetail);
+      }
+    } catch (error) {
+      console.warn('Failed to refresh invoice detail after update:', error);
     }
-  }, [deleteInvoiceConfirmation, refreshActiveTab, queryClient]);
+  }, [fetchInvoiceDetail, queryClient, selectedInvoiceForDetail?.id]);
 
   const handleSelectInvoice = useCallback((invoiceId) => {
     setSelectedInvoices((prev) => {
@@ -264,6 +109,22 @@ const InvoicePengirimanPage = () => {
   }, [selectedInvoices.length]);
 
   const hasSelectedInvoices = selectedInvoices.length > 0;
+
+  const handleBulkDeleteSuccess = useCallback(
+    async ({ deletedIds = [], failedIds = [] } = {}) => {
+      setSelectedInvoices(failedIds);
+
+      if (
+        selectedInvoiceForDetail?.id &&
+        deletedIds.includes(selectedInvoiceForDetail.id)
+      ) {
+        setSelectedInvoiceForDetail(null);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
+    },
+    [queryClient, selectedInvoiceForDetail?.id]
+  );
 
   // Convert column filters (array format) to backend query params (object format)
   const convertFiltersToParams = useCallback((columnFilters) => {
@@ -355,7 +216,6 @@ const InvoicePengirimanPage = () => {
 
       let successCount = 0;
       let failCount = 0;
-      const failedInvoices = [];
 
       // Loop through selected invoices and generate invoice penagihan
       for (let i = 0; i < invoiceIds.length; i++) {
@@ -370,23 +230,9 @@ const InvoicePengirimanPage = () => {
             successCount++;
           } else {
             failCount++;
-            failedInvoices.push({ id: invoiceId, error: response?.error?.message || 'Unknown error' });
           }
         } catch (error) {
           failCount++;
-          let errorMessage = 'Unknown error';
-
-          if (error?.response?.status === 409) {
-            errorMessage = 'Invoice Penagihan sudah ada';
-          } else if (error?.response?.status === 404) {
-            errorMessage = 'Invoice tidak ditemukan';
-          } else if (error?.response?.status === 400) {
-            errorMessage = error?.response?.data?.error?.message || 'Data tidak valid';
-          } else {
-            errorMessage = 'Gagal membuat dokumen invoice';
-          }
-
-          failedInvoices.push({ id: invoiceId, error: errorMessage });
           console.error(`Error generating invoice penagihan for ${invoiceId}:`, error);
         }
 
@@ -405,11 +251,6 @@ const InvoicePengirimanPage = () => {
         toastService.error('❌ Gagal membuat dokumen invoice');
       }
 
-      // Log failed invoices for debugging
-      if (failedInvoices.length > 0) {
-        console.log('Failed invoices:', failedInvoices);
-      }
-
       // Clear selection and refresh data
       setSelectedInvoices([]);
       await queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
@@ -422,28 +263,6 @@ const InvoicePengirimanPage = () => {
     }
   }, [generateConfirmation.invoiceIds, closeGenerateDialog, queryClient]);
 
-  if (loading) {
-    return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='w-12 h-12 border-b-2 border-blue-600 rounded-full animate-spin'></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className='p-4 border border-red-200 rounded-lg bg-red-50'>
-        <p className='text-red-800'>Terjadi kesalahan: {error}</p>
-        <p className='mt-2 text-sm text-red-600'>
-          Halaman akan otomatis mencoba lagi. Jika masalah berlanjut, silakan
-          refresh halaman.
-        </p>
-      </div>
-    );
-  }
-
-  const resolvedPagination = pagination || INITIAL_TAB_PAGINATION;
-
   return (
     <div>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
@@ -453,15 +272,11 @@ const InvoicePengirimanPage = () => {
           </div>
 
           <InvoicePengirimanTableServerSide
-            onView={openViewModal}
-            onDelete={deleteInvoiceConfirmation.showDeleteConfirmation}
-            deleteLoading={deleteInvoiceConfirmation.loading}
+            onBulkDelete={handleBulkDeleteSuccess}
             selectedInvoices={selectedInvoices}
             onSelectInvoice={handleSelectInvoice}
             onSelectAllInvoices={handleSelectAllInvoices}
             hasSelectedInvoices={hasSelectedInvoices}
-            initialPage={resolvedPagination.currentPage}
-            initialLimit={resolvedPagination.itemsPerPage}
             onViewDetail={handleViewDetail}
             selectedInvoiceId={selectedInvoiceForDetail?.id}
             onExportExcel={handleExportExcel}
@@ -475,34 +290,6 @@ const InvoicePengirimanPage = () => {
       {selectedInvoiceForDetail && (
         <InvoicePengirimanDetailCard invoice={selectedInvoiceForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleInvoiceUpdated} />
       )}
-
-      <AddInvoicePengirimanModal
-        show={showAddModal}
-        onClose={closeAddModal}
-        onInvoiceAdded={handleInvoiceAdded}
-        handleAuthError={handleAuthError}
-      />
-
-      <ViewInvoicePengirimanModal
-        show={showViewModal}
-        onClose={closeViewModal}
-        invoice={viewingInvoice}
-        loading={viewModalLoading}
-        error={viewModalError}
-        onRetry={reloadViewingInvoice}
-      />
-
-      <ConfirmationDialog
-        show={deleteInvoiceConfirmation.showConfirm}
-        onClose={deleteInvoiceConfirmation.hideDeleteConfirmation}
-        onConfirm={handleDeleteConfirm}
-        title={deleteInvoiceConfirmation.title}
-        message={deleteInvoiceConfirmation.message}
-        type='danger'
-        confirmText='Hapus'
-        cancelText='Batal'
-        loading={deleteInvoiceConfirmation.loading}
-      />
 
       <ConfirmationDialog
         show={showExportConfirmation}

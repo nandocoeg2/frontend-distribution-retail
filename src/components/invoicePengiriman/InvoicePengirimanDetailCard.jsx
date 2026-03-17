@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import {
   DocumentTextIcon,
   ShoppingCartIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
   XMarkIcon,
-  PrinterIcon,
-  DocumentPlusIcon,
   PencilIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
@@ -18,8 +14,6 @@ import InvoicePengirimanForm from './InvoicePengirimanForm';
 
 const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('details');
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
@@ -60,83 +54,6 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
     }
   };
 
-  const handlePrintInvoice = async () => {
-    if (!invoice || loading) return;
-
-    setIsPrinting(true);
-    try {
-      const html = await invoicePengirimanService.exportInvoicePengiriman(invoice.id);
-      const printWindow = window.open('', '_blank');
-
-      if (!printWindow) {
-        toastService.error('Tidak dapat membuka jendela cetak. Periksa pengaturan pop-up browser.');
-        return;
-      }
-
-      printWindow.document.write(html);
-      printWindow.document.close();
-
-      printWindow.onload = () => {
-        printWindow.focus();
-        printWindow.print();
-      };
-
-      toastService.success('Invoice siap dicetak');
-    } catch (error) {
-      console.error('Error printing invoice:', error);
-      toastService.error('Gagal mencetak invoice pengiriman');
-    } finally {
-      setIsPrinting(false);
-    }
-  };
-
-  const handleGenerateInvoicePenagihan = async () => {
-    if (!invoice || loading) return;
-
-    setIsGenerating(true);
-    try {
-      const response = await invoicePengirimanService.generateInvoicePenagihan(invoice.id);
-
-      if (response?.success) {
-        // Extract all generated documents from the response
-        const invoicePenagihan = response.data;
-        const kwitansi = response.data?.kwitansi;
-        const fakturPajak = response.data?.fakturPajak;
-
-        // Create detailed success message showing all 3 documents
-        const successMessage = `✅ Berhasil membuat semua dokumen:\n📋 Invoice Penagihan: ${invoicePenagihan?.no_invoice_penagihan || 'N/A'}\n💰 Kwitansi: ${kwitansi?.no_kwitansi || 'N/A'}\n📄 Faktur Pajak: ${fakturPajak?.no_pajak || 'N/A'}`;
-        toastService.success(successMessage);
-
-        // Log all generated documents for debugging
-        if (invoicePenagihan?.id) {
-          console.log('Generated Documents:', {
-            invoicePenagihan: { id: invoicePenagihan.id, number: invoicePenagihan.no_invoice_penagihan },
-            kwitansi: { id: kwitansi?.id, number: kwitansi?.no_kwitansi },
-            fakturPajak: { id: fakturPajak?.id, number: fakturPajak?.no_pajak }
-          });
-        }
-      } else {
-        toastService.error(response?.error?.message || 'Gagal membuat dokumen invoice');
-      }
-    } catch (error) {
-      console.error('Error generating invoice penagihan:', error);
-
-      // Handle specific error cases
-      if (error?.response?.status === 409) {
-        toastService.error('Invoice Penagihan sudah ada untuk Invoice Pengiriman ini');
-      } else if (error?.response?.status === 404) {
-        toastService.error('Invoice Pengiriman tidak ditemukan');
-      } else if (error?.response?.status === 400) {
-        const errorMessage = error?.response?.data?.error?.message || 'Data tidak valid untuk membuat dokumen invoice';
-        toastService.error(errorMessage);
-      } else {
-        toastService.error('Gagal membuat dokumen invoice. Silakan coba lagi.');
-      }
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   if (!invoice) return null;
 
   const detailCount = invoice?.invoiceDetails?.length ?? 0;
@@ -169,12 +86,6 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
               <button onClick={handleEditClick} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-yellow-600 rounded hover:bg-yellow-700'>
                 <PencilIcon className='w-3 h-3 mr-1' />Edit
               </button>
-              {/* <button onClick={handleGenerateInvoicePenagihan} disabled={isGenerating || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50'>
-                {isGenerating ? '...' : 'Generate'}
-              </button>
-              <button onClick={handlePrintInvoice} disabled={isPrinting || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
-                {isPrinting ? '...' : 'Print'}
-              </button> */}
               {onClose && (
                 <button onClick={onClose} className='p-1 hover:bg-gray-100 rounded' title='Close'>
                   <XMarkIcon className='w-4 h-4 text-gray-500' />
