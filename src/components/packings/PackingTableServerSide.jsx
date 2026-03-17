@@ -12,7 +12,7 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable } from '../table';
-import { exportPackingSticker, exportPackingStickerBulk, exportPackingTandaTerima, exportPackingTandaTerimaBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
+import { exportPackingStickerBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
@@ -87,7 +87,6 @@ const isProcessingStatus = (packing) => {
 };
 
 const PackingTableServerSide = forwardRef(({
-  onViewById,
   onEdit,
   onDelete,
   deleteLoading = false,
@@ -99,14 +98,11 @@ const PackingTableServerSide = forwardRef(({
   isProcessing = false,
   isCompleting = false,
   hasSelectedPackings = false,
-  initialPage = 1,
-  initialLimit = 9999,
   onRowClick,
   selectedPackingId,
 }, ref) => {
   const companyId = authService.getCompanyData()?.id;
   const [isPrinting, setIsPrinting] = useState(false);
-  const [isPrintingTandaTerima, setIsPrintingTandaTerima] = useState(false);
   const [isPrintingTandaTerimaGrouped, setIsPrintingTandaTerimaGrouped] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [exportLoading, setExportLoading] = useState(false);
@@ -233,41 +229,6 @@ const PackingTableServerSide = forwardRef(({
       toastService.error(error.message || 'Gagal mencetak stiker');
     } finally {
       setIsPrinting(false);
-    }
-  };
-
-  const handleBulkPrintTandaTerima = async () => {
-    if (!selectedPackings || selectedPackings.length === 0) {
-      toastService.error('Tidak ada packing yang dipilih');
-      return;
-    }
-
-    setIsPrintingTandaTerima(true);
-    try {
-      // Get company ID from auth
-      const companyData = authService.getCompanyData();
-      if (!companyData || !companyData.id) {
-        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
-        return;
-      }
-
-      toastService.info(`Memproses ${selectedPackings.length} tanda terima...`);
-
-      // Call backend API to get Bulk HTML
-      const html = await exportPackingTandaTerimaBulk(selectedPackings, companyData.id);
-
-      // Open preview modal with HTML content
-      setPreviewHtmlContent(html);
-      setPreviewTitle(`Tanda Terima Preview (${selectedPackings.length} dokumen)`);
-      setPreviewFileName(`tanda-terima-bulk-${Date.now()}.pdf`);
-      setPdfPreviewOpen(true);
-
-      toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima`);
-    } catch (error) {
-      console.error('Error in bulk print tanda terima:', error);
-      toastService.error(error.message || 'Gagal mencetak tanda terima');
-    } finally {
-      setIsPrintingTandaTerima(false);
     }
   };
 
@@ -408,7 +369,6 @@ const PackingTableServerSide = forwardRef(({
     openExportDialog: () => {
       setShowExportConfirmation(true);
     },
-    exportLoading
   }));
 
   const columns = useMemo(
@@ -701,9 +661,6 @@ const PackingTableServerSide = forwardRef(({
               <button onClick={handleBulkPrintSticker} disabled={isPrinting || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50'>
                 <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Stiker'}
               </button>
-              {/* <button onClick={handleBulkPrintTandaTerima} disabled={isPrintingTandaTerima || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50'>
-                <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerima ? '...' : 'T.Terima'}
-              </button> */}
               <button onClick={handleBulkPrintTandaTerimaGrouped} disabled={isPrintingTandaTerimaGrouped || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50'>
                 <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima'}
               </button>

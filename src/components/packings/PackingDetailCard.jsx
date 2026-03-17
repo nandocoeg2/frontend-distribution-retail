@@ -7,13 +7,8 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import ActivityTimeline from '../common/ActivityTimeline';
-// import PackingItemsTable from './PackingItemsTable'; // Unused now
-import PackingItemDetailModal from './PackingItemDetailModal';
-import { formatDate, formatDateTime } from '../../utils/formatUtils';
+import { formatDate } from '../../utils/formatUtils';
 import { getAuditTrails } from '../../services/auditTrailService';
-import { exportPackingSticker, exportPackingTandaTerima, exportPackingTandaTerimaGrouped } from '../../services/packingService';
-import authService from '../../services/authService';
-import toastService from '../../services/toastService';
 import {
   TabContainer,
   Tab,
@@ -32,135 +27,12 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
     statusInfo: false,
     metaInfo: false,
   });
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [isItemDetailOpen, setIsItemDetailOpen] = useState(false);
 
   const toggleSection = (section) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
-  };
-
-  const handleItemClick = (item) => {
-    setSelectedItem(item);
-    setIsItemDetailOpen(true);
-  };
-
-  const closeItemDetail = () => {
-    setIsItemDetailOpen(false);
-    setSelectedItem(null);
-  };
-
-  const handleExportPDF = async () => {
-    try {
-      if (!packing || !packing.packingBoxes || packing.packingBoxes.length === 0) {
-        toastService.error('Tidak ada data box untuk dicetak');
-        return;
-      }
-
-      const companyData = authService.getCompanyData();
-      if (!companyData || !companyData.id) {
-        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
-        return;
-      }
-
-      toastService.info('Generating sticker...');
-
-      const html = await exportPackingSticker(packing.id, companyData.id);
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success('Sticker berhasil di-generate. Silakan print.');
-      } else {
-        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-      }
-    } catch (error) {
-      console.error('Error exporting sticker:', error);
-      toastService.error(error.message || 'Gagal mengekspor sticker');
-    }
-  };
-
-  const handleExportTandaTerima = async () => {
-    try {
-      if (!packing || !packing.packingBoxes || packing.packingBoxes.length === 0) {
-        toastService.error('Tidak ada data box untuk dicetak');
-        return;
-      }
-
-      const companyData = authService.getCompanyData();
-      if (!companyData || !companyData.id) {
-        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
-        return;
-      }
-
-      toastService.info('Generating tanda terima...');
-
-      const html = await exportPackingTandaTerima(packing.id, companyData.id);
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success('Tanda terima berhasil di-generate. Silakan print.');
-      } else {
-        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-      }
-    } catch (error) {
-      console.error('Error exporting tanda terima:', error);
-      toastService.error(error.message || 'Gagal mengekspor tanda terima');
-    }
-  };
-
-  const handleExportTandaTerimaGrouped = async () => {
-    try {
-      if (!packing || !packing.packingBoxes || packing.packingBoxes.length === 0) {
-        toastService.error('Tidak ada data box untuk dicetak');
-        return;
-      }
-
-      const companyData = authService.getCompanyData();
-      if (!companyData || !companyData.id) {
-        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
-        return;
-      }
-
-      toastService.info('Generating tanda terima grouped...');
-
-      const html = await exportPackingTandaTerimaGrouped(packing.id, companyData.id);
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success('Tanda terima grouped berhasil di-generate. Silakan print.');
-      } else {
-        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-      }
-    } catch (error) {
-      console.error('Error exporting tanda terima grouped:', error);
-      toastService.error(error.message || 'Gagal mengekspor tanda terima grouped');
-    }
   };
 
   const resolveStatusVariant = (status) => {
@@ -216,15 +88,6 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {/* <button type="button" onClick={handleExportPDF} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
-            Stiker
-          </button>
-          <button type="button" onClick={handleExportTandaTerima} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700">
-            T.Terima
-          </button>
-          <button type="button" onClick={handleExportTandaTerimaGrouped} className="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-teal-600 rounded hover:bg-teal-700">
-            T.Terima Grouped
-          </button> */}
           {onClose && (
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded" title="Close">
               <XMarkIcon className="w-4 h-4 text-gray-500" />
@@ -312,13 +175,6 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
           </TabContent>
         </div>
       )}
-
-      {/* Packing Item Detail Modal */}
-      {
-        isItemDetailOpen && (
-          <PackingItemDetailModal item={selectedItem} onClose={closeItemDetail} />
-        )
-      }
     </div >
   );
 };

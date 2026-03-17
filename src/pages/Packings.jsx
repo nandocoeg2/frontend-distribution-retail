@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getPackingById } from '@/services/packingService';
 import usePackingsPage from '@/hooks/usePackingsPage';
@@ -11,53 +11,29 @@ import {
   useConfirmationDialog,
   ConfirmationDialog as BaseConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
-import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-
-const INITIAL_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 const PackingsPage = () => {
   const queryClient = useQueryClient();
   const tableRef = React.useRef(null);
 
   const {
-    packings,
-    pagination,
     loading,
     error,
-    searchLoading,
-    viewingPacking,
-    isViewModalOpen,
-    searchFilters,
     selectedPackings,
     isProcessing,
     isCompleting,
     hasSelectedPackings,
     deletePacking,
     deletePackingConfirmation,
-    handlePageChange,
-    handleLimitChange,
-    openViewModal,
-    closeViewModal,
     handleProcessPackings,
     handleCompletePackings,
-    clearFilters,
     handleSelectPacking,
     handleSelectAllPackings,
-    fetchPackings,
-    searchPackingsWithFilters,
     refreshPackings,
     setSelectedPackings,
   } = usePackingsPage();
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPacking, setEditingPacking] = useState(null);
   const [selectedPackingForDetail, setSelectedPackingForDetail] = useState(null);
@@ -77,26 +53,7 @@ const PackingsPage = () => {
     ConfirmationDialog: CompleteConfirmationDialog,
   } = useConfirmationDialog();
 
-  const resolvedPagination = useMemo(
-    () => pagination || INITIAL_PAGINATION,
-    [pagination]
-  );
-
-  const packingsList = useMemo(
-    () => (Array.isArray(packings) ? packings : []),
-    [packings]
-  );
-
   const tableLoading = Boolean(loading && !error);
-
-  const openCreateModal = useCallback(() => {
-    setEditingPacking(null);
-    setIsCreateModalOpen(true);
-  }, []);
-
-  const closeCreateModal = useCallback(() => {
-    setIsCreateModalOpen(false);
-  }, []);
 
   const openEditModal = useCallback((packing) => {
     setEditingPacking(packing);
@@ -110,12 +67,10 @@ const PackingsPage = () => {
 
   const handleModalSuccess = useCallback(() => {
     setSelectedPackings([]);
-    // Invalidate queries to refresh data
     queryClient.invalidateQueries({ queryKey: ['packings'] });
     refreshPackings();
-    closeCreateModal();
     closeEditModal();
-  }, [closeCreateModal, closeEditModal, refreshPackings, setSelectedPackings, queryClient]);
+  }, [closeEditModal, refreshPackings, setSelectedPackings, queryClient]);
 
   const handleProcessSelected = useCallback(() => {
     if (!hasSelectedPackings) {
@@ -245,7 +200,6 @@ const PackingsPage = () => {
               <div className='space-y-2'>
                 <PackingTableServerSide
                   ref={tableRef}
-                  onViewById={openViewModal}
                   onEdit={openEditModal}
                   onDelete={deletePacking}
                   deleteLoading={deletePackingConfirmation.loading}
@@ -257,8 +211,6 @@ const PackingsPage = () => {
                   isProcessing={isProcessing}
                   isCompleting={isCompleting}
                   hasSelectedPackings={hasSelectedPackings}
-                  initialPage={resolvedPagination.currentPage}
-                  initialLimit={resolvedPagination.itemsPerPage}
                   onRowClick={handleViewDetail}
                   selectedPackingId={selectedPackingForDetail?.id}
                 />
@@ -273,12 +225,6 @@ const PackingsPage = () => {
       )}
 
       {/* Modals */}
-      <PackingModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateModal}
-        onSuccess={handleModalSuccess}
-      />
-
       <PackingModal
         isOpen={isEditModalOpen}
         onClose={closeEditModal}
