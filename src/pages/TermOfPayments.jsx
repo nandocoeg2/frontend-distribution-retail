@@ -5,7 +5,6 @@ import TermOfPaymentSearch from '@/components/termOfPayments/TermOfPaymentSearch
 import AddTermOfPaymentModal from '@/components/termOfPayments/AddTermOfPaymentModal';
 import TermOfPaymentDetailCard from '@/components/termOfPayments/TermOfPaymentDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import termOfPaymentService from '../services/termOfPaymentService';
 import toastService from '../services/toastService';
@@ -13,7 +12,6 @@ import toastService from '../services/toastService';
 const TermOfPayments = () => {
   const {
     termOfPayments,
-    setTermOfPayments,
     pagination,
     loading,
     error,
@@ -37,7 +35,6 @@ const TermOfPayments = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
-  const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
   const confirmExportExcel = async () => {
@@ -83,9 +80,6 @@ const TermOfPayments = () => {
       console.error('Error creating term of payment:', error);
     }
   };
-
-
-
 
   if (error) {
     return (

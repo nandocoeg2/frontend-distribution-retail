@@ -280,11 +280,9 @@ const MutasiBankTableServerSide = ({
   isUnassigning = false,
   initialPage = 1,
   initialLimit = 10,
-  onManualRefresh,
 }) => {
 
   const {
-    data: mutations,
     pagination,
     setPage,
     setLimit,
@@ -496,7 +494,6 @@ const MutasiBankTableServerSide = ({
       }),
     ];
   }, [
-    mutations,
     onValidateMutation,
     onViewMutation,
     onAssignDocument,

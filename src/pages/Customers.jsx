@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import useCustomers from '@/hooks/useCustomersPage';
 import { useModal } from '@/hooks/useModal';
 import CustomerTable from '@/components/customers/CustomerTable';
@@ -7,7 +6,6 @@ import CustomerSearch from '@/components/customers/CustomerSearch';
 import AddCustomerModal from '@/components/customers/AddCustomerModal';
 import CustomerDetailCardEditable from '@/components/customers/CustomerDetailCardEditable';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import Pagination from '@/components/common/Pagination';
 import Loading from '@/components/ui/Loading';
 import customerService from '../services/customerService';
 import toastService from '../services/toastService';
@@ -27,7 +25,6 @@ const Customers = () => {
     handleLimitChange,
     deleteCustomer,
     fetchCustomers,
-    handleAuthError
   } = useCustomers();
 
   const { modalState, openModal, closeModal } = useModal();
@@ -76,44 +73,44 @@ const Customers = () => {
       <div className="max-w-full mx-auto">
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="px-3 py-3 space-y-2">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-sm font-semibold text-gray-900">Customers</h1>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-sm font-semibold text-gray-900">Customers</h1>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={handleExportExcel}
+                  disabled={exportLoading}
+                  className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {exportLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                      Export Excel
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleAddCustomer}
+                  className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1.5" />
+                  Add Customer
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleExportExcel}
-                disabled={exportLoading}
-                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {exportLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
-                    Export Excel
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleAddCustomer}
-                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                <PlusIcon className="h-4 w-4 mr-1.5" />
-                Add Customer
-              </button>
-            </div>
-          </div>
 
-          <CustomerSearch
-            searchQuery={searchQuery}
-            handleSearchChange={handleSearchChange}
-            handleSearchSubmit={handleSearchSubmit}
-            searchLoading={searchLoading}
-          />
+            <CustomerSearch
+              searchQuery={searchQuery}
+              handleSearchChange={handleSearchChange}
+              handleSearchSubmit={handleSearchSubmit}
+              searchLoading={searchLoading}
+            />
 
             {loading ? (
               <Loading />

@@ -13,7 +13,6 @@ import toastService from '../services/toastService';
 const ParentGroupCustomers = () => {
     const {
         parentGroupCustomers,
-        setParentGroupCustomers,
         pagination,
         loading,
         error,
@@ -36,7 +35,6 @@ const ParentGroupCustomers = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
-    const openAddModal = () => setShowAddModal(true);
     const closeAddModal = () => setShowAddModal(false);
 
     const confirmExportExcel = async () => {

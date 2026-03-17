@@ -5,7 +5,6 @@ import SupplierSearch from '@/components/suppliers/SupplierSearch';
 import AddSupplierModal from '@/components/suppliers/AddSupplierModal';
 import SupplierDetailCard from '@/components/suppliers/SupplierDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import supplierService from '../services/supplierService';
 import toastService from '../services/toastService';
@@ -13,7 +12,6 @@ import toastService from '../services/toastService';
 const Suppliers = () => {
   const {
     suppliers,
-    setSuppliers,
     pagination,
     loading,
     error,
@@ -34,7 +32,6 @@ const Suppliers = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
-  const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
   const confirmExportExcel = async () => {
@@ -67,9 +64,6 @@ const Suppliers = () => {
     fetchSuppliers();
     closeAddModal();
   };
-
-
-
 
   if (error) {
     return (

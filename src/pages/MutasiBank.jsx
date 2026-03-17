@@ -224,7 +224,6 @@ const MutasiBank = () => {
             isValidating={validating}
             isAssigning={assigning}
             isUnassigning={unassigning}
-            onManualRefresh={invalidateMutations}
           />
         </div>
       </div>

@@ -6,13 +6,11 @@ import AddMasterParameterModal from '@/components/masterParameters/AddMasterPara
 import MasterParameterDetailCard from '@/components/masterParameters/MasterParameterDetailCard';
 import { createMasterParameter, updateMasterParameter } from '@/services/masterParameterService';
 import toastService from '@/services/toastService';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 const MasterParameter = () => {
   const {
     masterParameters,
-    setMasterParameters,
     pagination,
     loading,
     error,
@@ -31,7 +29,6 @@ const MasterParameter = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedParameterForDetail, setSelectedParameterForDetail] = useState(null);
 
-  const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
   const handleViewDetail = (parameter) => {

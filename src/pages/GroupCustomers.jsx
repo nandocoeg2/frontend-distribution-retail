@@ -6,7 +6,6 @@ import GroupCustomerSearch from '@/components/groupCustomers/GroupCustomerSearch
 import AddGroupCustomerModal from '@/components/groupCustomers/AddGroupCustomerModal';
 import GroupCustomerDetailCard from '@/components/groupCustomers/GroupCustomerDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { groupCustomerService } from '../services/groupCustomerService';
 import toastService from '../services/toastService';
@@ -14,7 +13,6 @@ import toastService from '../services/toastService';
 const GroupCustomers = () => {
   const {
     groupCustomers,
-    setGroupCustomers,
     pagination,
     loading,
     error,
@@ -37,7 +35,6 @@ const GroupCustomers = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
-  const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
   const confirmExportExcel = async () => {
@@ -78,9 +75,6 @@ const GroupCustomers = () => {
     fetchEntities();
     closeAddModal();
   };
-
-
-
 
   if (error) {
     return (

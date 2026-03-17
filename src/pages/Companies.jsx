@@ -6,14 +6,12 @@ import AddCompanyModal from '@/components/companies/AddCompanyModal';
 import CompanyDetailCard from '@/components/companies/CompanyDetailCard';
 import { createCompany, updateCompany, exportExcel, getCompanyById } from '@/services/companyService';
 import toastService from '@/services/toastService';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { PlusIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
 const Companies = () => {
   const {
     companies,
-    setCompanies,
     pagination,
     loading,
     error,
@@ -34,7 +32,6 @@ const Companies = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
-  const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
 
   const confirmExportExcel = async () => {
@@ -55,30 +52,20 @@ const Companies = () => {
     setShowExportConfirmation(true);
   };
 
-
-
-  // ... existing code
-
   const handleViewDetail = async (company) => {
     try {
-      // Set loading state if needed, or just set selectedCompanyForDetail after fetch
-      // To provide immediate feedback, we can set the summary data first if acceptable,
-      // but to ensure full data (like big images) we fetch.
-      // Let's fetch first.
-
       const response = await getCompanyById(company.id);
       if (response && response.success) {
         setSelectedCompanyForDetail(response.data);
       } else {
-        // Fallback to existing data if fetch fails? Or error.
         console.error("Failed to fetch company details");
-        setSelectedCompanyForDetail(company); // Fallback
+        setSelectedCompanyForDetail(company);
         toastService.error("Could not fetch latest details, showing cached data.");
       }
     } catch (error) {
       console.error("Error fetching company details:", error);
       toastService.error("Failed to fetch company details.");
-      setSelectedCompanyForDetail(company); // Fallback
+      setSelectedCompanyForDetail(company);
     }
   };
 
