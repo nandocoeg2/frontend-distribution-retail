@@ -4,13 +4,14 @@ import { PencilIcon, EyeIcon, XCircleIcon, TrashIcon } from '@heroicons/react/24
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useScheduledPricesQuery } from '../../hooks/useScheduledPricesQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import { useConfirmationDialog } from '../ui';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import customerService from '../../services/customerService';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
+import Pagination from '../common/Pagination';
 
 const columnHelper = createColumnHelper();
 
@@ -118,6 +119,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
         data: schedules,
         pagination,
         setPage,
+        setLimit,
         hasActiveFilters,
         isLoading,
         isFetching,
@@ -470,13 +472,14 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
             />
 
-            {/* Pagination */}
-            {!isLoading && !isFetching && !error && (
-                <DataTablePagination
-                    table={table}
+            {!error && (
+                <Pagination
                     pagination={pagination}
-                    itemLabel="schedule"
-                    pageSizeOptions={[5, 10, 20, 50, 100]}
+                    onPageChange={setPage}
+                    onLimitChange={(nextLimit) => {
+                        setPage(1);
+                        setLimit(nextLimit);
+                    }}
                 />
             )}
 

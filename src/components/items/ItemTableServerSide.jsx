@@ -4,11 +4,12 @@ import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../../utils/formatUtils';
 import { useItemsQuery } from '../../hooks/useItemsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
 import { useConfirmationDialog } from '../ui';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { getCompanies } from '../../services/companyService';
 import DateFilter from '../common/DateFilter';
+import Pagination from '../common/Pagination';
 
 import TextColumnFilter from '../common/TextColumnFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
@@ -98,6 +99,7 @@ const ItemTableServerSide = forwardRef(({
         data: items,
         pagination,
         setPage,
+        setLimit,
         hasActiveFilters,
         isLoading,
         isFetching,
@@ -392,12 +394,14 @@ const ItemTableServerSide = forwardRef(({
                 onRowClick={onViewDetail}
             />
 
-            {!loading && !error && (
-                <DataTablePagination
-                    table={table}
+            {!error && (
+                <Pagination
                     pagination={pagination}
-                    itemLabel="item"
-                    pageSizeOptions={[5, 10, 20, 50, 100]}
+                    onPageChange={setPage}
+                    onLimitChange={(nextLimit) => {
+                        setPage(1);
+                        setLimit(nextLimit);
+                    }}
                 />
             )}
 

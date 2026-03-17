@@ -1,6 +1,7 @@
 import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { useConfirmationDialog } from '../ui';
+import Pagination from '../common/Pagination';
 
 const MasterParameterTable = ({
   masterParameters,
@@ -38,7 +39,7 @@ const MasterParameterTable = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 text-xs table-fixed">
           <colgroup>
@@ -108,38 +109,11 @@ const MasterParameterTable = ({
         </table>
       </div>
 
-      <div className="flex justify-between items-center">
-        <div className="text-xs text-gray-700">
-          Showing <span className="font-medium">{(pagination.totalItems || 0) === 0 ? 0 : ((pagination.currentPage || 1) - 1) * (pagination.itemsPerPage || 10) + 1}</span> to <span className="font-medium">{Math.min((pagination.currentPage || 1) * (pagination.itemsPerPage || 10), pagination.totalItems || 0)}</span> of <span className="font-medium">{pagination.totalItems || 0}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <select
-            value={pagination.itemsPerPage || 10}
-            onChange={(e) => onLimitChange && onLimitChange(Number(e.target.value))}
-            className="border border-gray-300 rounded px-1.5 py-0.5 text-xs"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-          <nav className="flex space-x-1">
-            <button
-              onClick={() => onPageChange && onPageChange((pagination.currentPage || 1) - 1)}
-              disabled={(pagination.currentPage || 1) === 1}
-              className="px-2 py-0.5 rounded text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Prev
-            </button>
-            <button
-              onClick={() => onPageChange && onPageChange((pagination.currentPage || 1) + 1)}
-              disabled={(pagination.currentPage || 1) === (pagination.totalPages || 1)}
-              className="px-2 py-0.5 rounded text-xs font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </nav>
-        </div>
-      </div>
+      <Pagination
+        pagination={pagination}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+      />
 
       <ConfirmationDialog
         onConfirm={handleConfirmDelete}
