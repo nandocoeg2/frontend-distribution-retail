@@ -4,7 +4,6 @@ import authService from '../../services/authService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import PurchaseOrderDetailsForm from './PurchaseOrderDetailsForm.jsx';
 import { toast } from 'react-toastify';
-import useStatuses from '../../hooks/useStatuses';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
 import HeroIcon from '../atoms/HeroIcon.jsx';
 import { useNavigate } from 'react-router-dom';
@@ -46,19 +45,6 @@ const AddPurchaseOrderModal = ({
   const bulkFileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
-  // Get purchase order statuses using hook
-  const {
-    purchaseOrderStatuses,
-    loading: statusLoading,
-    error: statusError,
-    fetchPurchaseOrderStatuses,
-  } = useStatuses();
-
-  // Fetch purchase order statuses on component mount
-  useEffect(() => {
-    fetchPurchaseOrderStatuses();
-  }, [fetchPurchaseOrderStatuses]);
-
   useEffect(() => {
     if (isOpen) {
       // Reset everything when modal opens
@@ -76,7 +62,6 @@ const AddPurchaseOrderModal = ({
   // Additional effect to ensure state is cleared when tab changes
   useEffect(() => {
     if (isOpen) {
-      console.log(`Active tab changed to: ${activeTab}`);
       // Force clear selected file when tab changes to prevent cross-tab contamination
       setSelectedFile(null);
       setUploadMode('files');
@@ -258,8 +243,6 @@ const AddPurchaseOrderModal = ({
   };
 
   const resetForm = () => {
-    console.log('Resetting form and clearing all states...');
-
     // Reset form data to initial values
     setFormData({
       customerId: '',
@@ -287,19 +270,14 @@ const AddPurchaseOrderModal = ({
     // Clear file input elements using refs to ensure UI is also cleared
     if (manualFileInputRef.current) {
       manualFileInputRef.current.value = '';
-      console.log('Cleared manual file input');
     }
     if (bulkFileInputRef.current) {
       bulkFileInputRef.current.value = '';
-      console.log('Cleared bulk file input');
     }
     if (folderInputRef.current) {
       folderInputRef.current.value = '';
-      console.log('Cleared folder input');
     }
     setUploadMode('files');
-
-    console.log('Form reset completed');
   };
 
   const generatePONumber = () => {
@@ -352,7 +330,6 @@ const AddPurchaseOrderModal = ({
         <TabContainer
           activeTab={activeTab}
           onTabChange={(tabId) => {
-            console.log(`Switching from ${activeTab} to ${tabId}`);
             setActiveTab(tabId);
             resetForm();
           }}

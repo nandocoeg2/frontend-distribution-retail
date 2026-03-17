@@ -14,32 +14,6 @@ import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
 
-const isEditDisabled = (order) => {
-  if (!order?.status) {
-    return false;
-  }
-
-  const normalize = (value) => {
-    if (!value) {
-      return '';
-    }
-    return value.toString().trim().toLowerCase().replace(/_/g, ' ');
-  };
-
-  const normalizedName = normalize(order.status.status_name);
-  const normalizedCode = normalize(order.status.status_code);
-  return (
-    normalizedName === 'processing purchase order' ||
-    normalizedCode === 'processing purchase order' ||
-    normalizedName === 'failed purchase order' ||
-    normalizedCode === 'failed purchase order' ||
-    normalizedName === 'processed purchase order' ||
-    normalizedCode === 'processed purchase order' ||
-    normalizedName === 'completed purchase order' ||
-    normalizedCode === 'completed purchase order'
-  );
-};
-
 const TextColumnFilter = ({ column, placeholder = "..." }) => {
   const filterValue = column.getFilterValue();
   const [value, setValue] = useState(filterValue ?? '');
@@ -69,10 +43,8 @@ const TextColumnFilter = ({ column, placeholder = "..." }) => {
 
 const PurchaseOrderTableServerSide = forwardRef(({
   onViewDetail,
-  onEdit,
   selectedOrders = [],
   onSelectionChange,
-  onSelectAll,
   onBulkProcess,
   onBulkCancel,
   onBulkDelete,
@@ -80,8 +52,6 @@ const PurchaseOrderTableServerSide = forwardRef(({
   isCancelling = false,
   isDeleting = false,
   hasSelectedOrders = false,
-  initialPage = 1,
-  initialLimit = 9999,
   selectedOrderId = null,
 }, ref) => {
   const globalFilterConfig = useMemo(

@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
-  ArchiveBoxIcon,
   ClockIcon,
   DocumentTextIcon,
   FolderIcon,
   ListBulletIcon,
   ShoppingCartIcon,
-  TruckIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
@@ -125,7 +123,6 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
 
       // NOTE: Purchase Order export will be handled by backend API in the future
       // For now, we only mark it as printed without generating the document
-      console.info('Purchase Order will be marked as printed (export handled by backend)');
     }
 
     if (selectedDocuments.PACKING && order?.packing) {

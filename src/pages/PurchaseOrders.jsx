@@ -1,11 +1,9 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import {
   PurchaseOrderTableServerSide,
-  PurchaseOrderSearch,
   AddPurchaseOrderModal,
-  EditPurchaseOrderModal,
   PurchaseOrderDetailCard,
 } from '../components/purchaseOrders';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
@@ -15,8 +13,6 @@ import purchaseOrderService from '../services/purchaseOrderService';
 import usePurchaseOrders from '../hooks/usePurchaseOrders';
 
 const PROCESS_STATUS_CODE = 'PROCESSING PURCHASE ORDER';
-const FAILED_STATUS_CODE = 'FAILED PURCHASE ORDER';
-const CANCELED_STATUS_CODE = 'CANCELED PURCHASE ORDER';
 
 
 const extractDuplicateGroups = (failedItems = []) => {
@@ -68,40 +64,18 @@ const formatDuplicateMessage = (groups = []) => {
   return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin menandai duplikat sebagai FAILED (menyisakan data paling awal) lalu melanjutkan proses?`;
 };
 
-const resolveCreatedAtValue = (source) => {
-  if (!source) {
-    return null;
-  }
-
-  if (source.createdAt) {
-    return source.createdAt;
-  }
-
-  if (source.created_at) {
-    return source.created_at;
-  }
-
-  const fallbackKey = Object.keys(source).find((key) => {
-    return typeof key === 'string' && key.toLowerCase() === 'createdat';
-  });
-
-  return fallbackKey ? source[fallbackKey] : null;
-};
-
 const PurchaseOrders = () => {
   const queryClient = useQueryClient();
-const {
-    purchaseOrders,
+  const {
+    createPurchaseOrder,
     getPurchaseOrder,
   } = usePurchaseOrders();
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
-  const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const tableRef = useRef(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
-const [selectedOrders, setSelectedOrders] = useState([]);
+  const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [bulkCancelling, setBulkCancelling] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -123,19 +97,6 @@ const [selectedOrders, setSelectedOrders] = useState([]);
     await queryClient.refetchQueries({ queryKey: ['purchaseOrders'] });
   };
 
-  const handleEditOrder = async (id, formData) => {
-    try {
-      await purchaseOrderService.updatePurchaseOrder(id, formData);
-      setEditModalOpen(false);
-      setSelectedOrder(null);
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-      showSuccess('Purchase order updated successfully');
-    } catch (error) {
-      showError(`Gagal mengupdate purchase order: ${error.message}`);
-    }
-  };
-
   const handleViewDetail = async (order) => {
     if (selectedOrderForDetail?.id === order.id) {
       // If clicking the same row, close the detail card
@@ -149,12 +110,6 @@ const [selectedOrders, setSelectedOrders] = useState([]);
 
   const handleCloseDetail = () => {
     setSelectedOrderForDetail(null);
-  };
-
-const handleEditModalOpen = async (order) => {
-    setEditModalOpen(true);
-    const orderData = await getPurchaseOrder(order.id);
-    setSelectedOrder(orderData);
   };
 
   // Bulk Cancel handler
@@ -285,16 +240,6 @@ const handleEditModalOpen = async (order) => {
       setSelectedOrders(prev => prev.filter(id => id !== orderId));
     }
   };
-
-  const handleSelectAll = useCallback((checked) => {
-    if (checked) {
-      // We'll get all order IDs from the current table view
-      // The table component will handle this
-      setSelectedOrders([]);
-    } else {
-      setSelectedOrders([]);
-    }
-  }, []);
 
   // Validasi harga item - calls backend endpoint for efficient validation
   const validateItemPrices = async (purchaseOrderIds) => {
@@ -522,10 +467,8 @@ const handleEditModalOpen = async (order) => {
           <PurchaseOrderTableServerSide
             ref={tableRef}
             onViewDetail={handleViewDetail}
-            onEdit={handleEditModalOpen}
             selectedOrders={selectedOrders}
             onSelectionChange={handleSelectionChange}
-            onSelectAll={handleSelectAll}
             onBulkProcess={handleBulkProcess}
             onBulkCancel={handleBulkCancel}
             onBulkDelete={handleBulkDelete}
@@ -533,8 +476,6 @@ const handleEditModalOpen = async (order) => {
             isCancelling={bulkCancelling}
             isDeleting={bulkDeleting}
             hasSelectedOrders={selectedOrders.length > 0}
-            initialPage={1}
-            initialLimit={10}
             selectedOrderId={selectedOrderForDetail?.id}
           />
         </div>
@@ -553,18 +494,7 @@ const handleEditModalOpen = async (order) => {
           isOpen={isAddModalOpen}
           onClose={() => setAddModalOpen(false)}
           onFinished={handleAddFinished}
-        />
-      )}
-
-      {selectedOrder && isEditModalOpen && (
-        <EditPurchaseOrderModal
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedOrder(null);
-          }}
-          onSubmit={handleEditOrder}
-          order={selectedOrder}
+          createPurchaseOrder={createPurchaseOrder}
         />
       )}
 
