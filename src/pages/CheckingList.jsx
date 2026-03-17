@@ -1,9 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useCheckingListPage from '@/hooks/useCheckingListPage';
 import {
   CheckingListTableServerSide,
-  CheckingListModal,
   CheckingListDetailCard,
 } from '@/components/checkingList';
 import { useConfirmationDialog } from '@/components/ui/ConfirmationDialog';
@@ -26,16 +25,12 @@ const CheckingList = () => {
   const queryClient = useQueryClient();
 
   const {
-    pagination,
     error,
-    createChecklist,
-    updateChecklist,
     bulkDeleteChecklists,
     fetchChecklistById,
     handleRetryFetch,
   } = useCheckingListPage();
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedChecklist, setSelectedChecklist] = useState(null);
   const [selectedChecklists, setSelectedChecklists] = useState([]);
@@ -47,15 +42,6 @@ const CheckingList = () => {
     setLoading: setDeleteDialogLoading,
     ConfirmationDialog: DeleteConfirmationDialog,
   } = useConfirmationDialog();
-
-  const pageTitle = useMemo(
-    () => 'Manajemen Checklist Surat Jalan',
-    []
-  );
-
-  const closeCreateModal = () => {
-    setIsCreateModalOpen(false);
-  };
 
   const handleViewDetail = useCallback(
     async (checklist) => {
@@ -84,15 +70,6 @@ const CheckingList = () => {
     setSelectedChecklist(null);
     setDetailLoading(false);
   };
-
-  const handleCreateSubmit = useCallback(
-    async (payload) => {
-      await createChecklist(payload);
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
-    },
-    [createChecklist, queryClient]
-  );
 
   const handleChecklistUpdated = useCallback(async () => {
     // Refresh data after update from Detail Card
@@ -171,15 +148,7 @@ const CheckingList = () => {
       <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-3 py-3 space-y-2'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <h3 className='text-sm font-semibold text-gray-900'>{pageTitle}</h3>
-            {/* <button
-              type='button'
-              onClick={openCreateModal}
-              className='inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded shadow-sm hover:bg-blue-700'
-            >
-              <HeroIcon name='plus' className='w-4 h-4 mr-1' />
-              Tambah Checklist
-            </button> */}
+            <h3 className='text-sm font-semibold text-gray-900'>Manajemen Checklist Surat Jalan</h3>
           </div>
 
           {error ? (
@@ -199,8 +168,6 @@ const CheckingList = () => {
             <CheckingListTableServerSide
               onViewDetail={handleViewDetail}
               selectedChecklistId={selectedChecklist?.id}
-              initialPage={pagination?.currentPage || 1}
-              initialLimit={pagination?.itemsPerPage || 10}
               selectedChecklists={selectedChecklists}
               onSelectChecklist={handleSelectChecklist}
               onDeleteSelected={handleDeleteSelected}
@@ -210,13 +177,6 @@ const CheckingList = () => {
           )}
         </div>
       </div>
-
-      <CheckingListModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateModal}
-        onSubmit={handleCreateSubmit}
-        isEdit={false}
-      />
 
       {selectedChecklist && (
         <CheckingListDetailCard

@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { TrashIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
-import { StatusBadge } from '../ui/Badge';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
 import { formatDateTime } from '../../utils/formatUtils';
 import checkingListService from '../../services/checkingListService';
@@ -74,8 +73,6 @@ const resolveStatusText = (status) => {
 const CheckingListTableServerSide = ({
   onViewDetail,
   selectedChecklistId = null,
-  initialPage = 1,
-  initialLimit = 9999,
   selectedChecklists = [],
   onSelectChecklist,
   onDeleteSelected,
@@ -429,76 +426,52 @@ const CheckingListTableServerSide = ({
         </div>
       )}
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="flex items-center justify-center p-8 text-gray-500">
-          <div className="w-8 h-8 mr-3 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-          <span>Memuat data checklist surat jalan...</span>
-        </div>
-      )}
+      <DataTable
+        table={table}
+        isLoading={isLoading}
+        error={error}
+        hasActiveFilters={hasActiveFilters}
+        loadingMessage="Memuat data checklist surat jalan..."
+        emptyMessage="Belum ada checklist surat jalan."
+        emptyFilteredMessage="Tidak ada checklist surat jalan yang cocok dengan pencarian."
+        wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
+        headerRowClassName="bg-gray-50"
+        headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        bodyClassName="divide-y divide-gray-100 bg-white"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-8"
+        getRowClassName={({ row }) => {
+          const checklistId = resolveChecklistId(row.original);
 
-      {/* Error State */}
-      {error && (
-        <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-          <p className="text-sm text-red-800">
-            Terjadi kesalahan: {error.message}
-          </p>
-        </div>
-      )}
+          if (checklistId === selectedChecklistId) {
+            return 'bg-blue-50 border-l-4 border-blue-500';
+          }
 
-      {/* Table */}
-      {!isLoading && !error && (
-        <>
-          <DataTable
-            table={table}
-            isLoading={isLoading}
-            error={error}
-            hasActiveFilters={hasActiveFilters}
-            loadingMessage="Memuat data checklist surat jalan..."
-            emptyMessage="Belum ada checklist surat jalan."
-            emptyFilteredMessage="Tidak ada checklist surat jalan yang cocok dengan pencarian."
-            wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
-            tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
-            headerRowClassName="bg-gray-50"
-            headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            bodyClassName="divide-y divide-gray-100 bg-white"
-            rowClassName="hover:bg-gray-50 cursor-pointer h-8"
-            getRowClassName={({ row }) => {
-              const checklistId = resolveChecklistId(row.original);
+          if (checklistId && selectedChecklists.includes(checklistId)) {
+            return 'bg-blue-50';
+          }
 
-              if (checklistId === selectedChecklistId) {
-                return 'bg-blue-50 border-l-4 border-blue-500';
-              }
-
-              if (checklistId && selectedChecklists.includes(checklistId)) {
-                return 'bg-blue-50';
-              }
-
-              return undefined;
-            }}
-            cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
-            onRowClick={(checklist) => {
-              onViewDetail && onViewDetail(checklist);
-            }}
-            emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
-            footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
-            footerContent={
-              <tr>
-                {table.getVisibleLeafColumns().map((column) => (
-                  <td
-                    key={column.id}
-                    className="px-2 py-1 text-xs border-t border-gray-300 text-center"
-                  >
-                    {pagination?.totalItems || 0}
-                  </td>
-                ))}
-              </tr>
-            }
-          />
-
-
-        </>
-      )}
+          return undefined;
+        }}
+        cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
+        onRowClick={(checklist) => {
+          onViewDetail && onViewDetail(checklist);
+        }}
+        emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
+        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-2 py-1 text-xs border-t border-gray-300 text-center"
+              >
+                {pagination?.totalItems || 0}
+              </td>
+            ))}
+          </tr>
+        }
+      />
 
       {/* PDF Preview Modal */}
       <PdfPreviewModal
@@ -516,4 +489,3 @@ const CheckingListTableServerSide = ({
 };
 
 export default CheckingListTableServerSide;
-
