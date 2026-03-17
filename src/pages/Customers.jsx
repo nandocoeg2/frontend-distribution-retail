@@ -74,16 +74,17 @@ const Customers = () => {
   return (
     <div>
       <div className="max-w-full mx-auto">
-        <div className="bg-white shadow-md rounded-lg p-3">
-          <div className="flex justify-between items-center mb-2">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="px-3 py-3 space-y-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-sm font-semibold text-gray-900">Customers</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {exportLoading ? (
                   <>
@@ -99,7 +100,7 @@ const Customers = () => {
               </button>
               <button
                 onClick={handleAddCustomer}
-                className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 <PlusIcon className="h-4 w-4 mr-1.5" />
                 Add Customer
@@ -114,10 +115,9 @@ const Customers = () => {
             searchLoading={searchLoading}
           />
 
-          {loading ? (
-            <Loading />
-          ) : (
-            <>
+            {loading ? (
+              <Loading />
+            ) : (
               <CustomerTable
                 customers={customers}
                 pagination={pagination}
@@ -128,8 +128,8 @@ const Customers = () => {
                 selectedCustomerId={selectedCustomerForDetail?.id}
                 searchQuery={activeSearchQuery}
               />
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

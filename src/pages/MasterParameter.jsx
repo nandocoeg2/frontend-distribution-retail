@@ -80,12 +80,12 @@ const MasterParameter = () => {
   return (
     <div>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='p-3'>
-          <div className='mb-2 flex justify-between items-center'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Master Parameters</h3>
             <button
               onClick={() => setShowAddModal(true)}
-              className='inline-flex items-center px-2.5 py-1.5 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700'
+              className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
             >
               <PlusIcon className='h-4 w-4 mr-1.5' />
               Add Master Parameter

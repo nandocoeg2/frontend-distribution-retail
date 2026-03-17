@@ -40,80 +40,83 @@ const MasterParameterTable = ({
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 text-xs table-fixed">
-          <colgroup>
-            <col style={{ width: '150px' }} />
-            <col style={{ width: '200px' }} />
-            <col style={{ width: '250px' }} />
-            <col style={{ width: '60px' }} />
-          </colgroup>
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key</th>
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-              <th className="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {loading ? (
+      <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
+        <div className="overflow-x-auto">
+          <table className="min-w-full w-full divide-y divide-gray-200 text-xs table-fixed">
+            <colgroup>
+              <col style={{ width: '150px' }} />
+              <col style={{ width: '200px' }} />
+              <col style={{ width: '250px' }} />
+              <col style={{ width: '60px' }} />
+            </colgroup>
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan="4" className="px-2 py-1 text-center">
-                  <div className="w-6 h-6 mx-auto border-b-2 border-blue-600 rounded-full animate-spin"></div>
-                </td>
+                <th className="px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500">Key</th>
+                <th className="px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500">Value</th>
+                <th className="px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500">Description</th>
+                <th className="px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500">Actions</th>
               </tr>
-            ) : parametersArray.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="px-2 py-1 text-center text-gray-500 text-xs">
-                  {searchQuery ? 'No parameters found matching your search.' : 'No parameters available.'}
-                </td>
-              </tr>
-            ) : (
-              parametersArray.map((parameter) => (
-                <tr
-                  key={parameter.id}
-                  onClick={() => onViewDetail(parameter)}
-                  className={`cursor-pointer transition-colors h-8 ${selectedParameterId === parameter.id
-                      ? 'bg-blue-50 border-l-4 border-blue-500'
-                      : 'hover:bg-gray-50'
-                    }`}
-                >
-                  <td className="px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900">
-                    {parameter.key}
-                  </td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-900 truncate" title={parameter.value}>
-                    {parameter.value}
-                  </td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs text-gray-600 truncate" title={parameter.description}>
-                    {parameter.description || '—'}
-                  </td>
-                  <td className="px-2 py-1 whitespace-nowrap text-xs">
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(parameter.id);
-                        }}
-                        className="p-0.5 text-red-600 hover:text-red-900"
-                        title="Delete"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {loading ? (
+                <tr>
+                  <td colSpan="4" className="px-3 py-6 text-center">
+                    <div className="mx-auto h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : parametersArray.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-3 py-6 text-center text-xs text-gray-500">
+                    {searchQuery ? 'No parameters found matching your search.' : 'No parameters available.'}
+                  </td>
+                </tr>
+              ) : (
+                parametersArray.map((parameter) => (
+                  <tr
+                    key={parameter.id}
+                    onClick={() => onViewDetail(parameter)}
+                    className={`cursor-pointer transition-colors ${selectedParameterId === parameter.id
+                        ? 'bg-blue-50 border-l-4 border-blue-500'
+                        : 'hover:bg-gray-50'
+                      }`}
+                  >
+                    <td className="px-2.5 py-1.5 whitespace-nowrap text-xs font-medium text-gray-900">
+                      {parameter.key}
+                    </td>
+                    <td className="px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900 truncate" title={parameter.value}>
+                      {parameter.value}
+                    </td>
+                    <td className="px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-600 truncate" title={parameter.description}>
+                      {parameter.description || '—'}
+                    </td>
+                    <td className="px-2.5 py-1.5 whitespace-nowrap text-right text-xs">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(parameter.id);
+                          }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded border border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <TrashIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      <Pagination
-        pagination={pagination}
-        onPageChange={onPageChange}
-        onLimitChange={onLimitChange}
-      />
+        <Pagination
+          compact
+          pagination={pagination}
+          onPageChange={onPageChange}
+          onLimitChange={onLimitChange}
+        />
+      </div>
 
       <ConfirmationDialog
         onConfirm={handleConfirmDelete}
