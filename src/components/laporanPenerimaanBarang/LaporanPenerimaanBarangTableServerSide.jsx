@@ -70,14 +70,11 @@ const LaporanPenerimaanBarangTableServerSide = ({
   onEdit,
   selectedReports = [],
   onSelectReport,
-  onSelectAllReports,
   onCompleteSelected,
   onDeleteSelected,
   isCompleting = false,
   isDeleting = false,
   hasSelectedReports = false,
-  initialPage = 1,
-  initialLimit = 9999,
   selectedReportId = null,
   onFiltersChange,
 }) => {
@@ -142,7 +139,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
     isLoading,
     error,
     tableOptions,
-    refetch,
     filters,
   } = useServerSideTable({
     queryHook: useLaporanPenerimaanBarangQuery,

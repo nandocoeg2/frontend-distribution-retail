@@ -13,16 +13,14 @@ const AssignPurchaseOrderModal = ({
   const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState('');
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [isLoadingPurchaseOrders, setIsLoadingPurchaseOrders] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Load purchase orders when modal opens or search query changes
+  // Load purchase orders when modal opens
   useEffect(() => {
     if (show) {
       loadPurchaseOrders();
     } else {
       // Reset state when modal closes
       setSelectedPurchaseOrderId('');
-      setSearchQuery('');
     }
   }, [show]);
 
@@ -67,7 +65,6 @@ const AssignPurchaseOrderModal = ({
 
   const handleSearch = useCallback(
     async (query) => {
-      setSearchQuery(query);
       await loadPurchaseOrders(query);
     },
     [loadPurchaseOrders]
@@ -224,4 +221,3 @@ const AssignPurchaseOrderModal = ({
 };
 
 export default AssignPurchaseOrderModal;
-

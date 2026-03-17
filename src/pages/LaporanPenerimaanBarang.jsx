@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useLaporanPenerimaanBarangPage from '@/hooks/useLaporanPenerimaanBarangPage';
 import {
@@ -13,26 +13,13 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
 import toastService from '@/services/toastService';
 
-const INITIAL_PAGINATION = {
-  currentPage: 1,
-  totalPages: 1,
-  totalItems: 0,
-  itemsPerPage: 10,
-  page: 1,
-  limit: 10,
-  total: 0,
-};
-
 const LaporanPenerimaanBarang = () => {
   const queryClient = useQueryClient();
 
   const {
     createReport,
-    createReportFromFile,
     uploadBulkReports,
     uploadBulkReportsTextExtraction,
-    fetchBulkStatus,
-    fetchBulkFiles,
     updateReport,
     bulkDeleteReports,
     fetchReportById,
@@ -93,10 +80,6 @@ const LaporanPenerimaanBarang = () => {
       }
       return Array.from(next);
     });
-  }, []);
-
-  const handleSelectAllReports = useCallback(() => {
-    setSelectedReportIds((prev) => (prev.length > 0 ? [] : []));
   }, []);
 
   const refreshData = useCallback(() => {
@@ -202,7 +185,7 @@ const LaporanPenerimaanBarang = () => {
 
       if (result && Array.isArray(result.failed)) {
         const failedIds = result.failed
-          .map((item) => item.id)
+          .map((item) => resolveReportId(item))
           .filter(Boolean);
 
         setSelectedReportIds(Array.from(new Set(failedIds)));
@@ -218,7 +201,7 @@ const LaporanPenerimaanBarang = () => {
       setDeleteDialogLoading(false);
       setIsDeleting(false);
     }
-  }, [bulkDeleteReports, selectedReportIds, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
+  }, [bulkDeleteReports, selectedReportIds, resolveReportId, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
 
   const openCreateModal = useCallback(() => {
     setSelectedReport(null);
@@ -250,7 +233,7 @@ const LaporanPenerimaanBarang = () => {
 
     try {
       const detail = await fetchReportById(report.id);
-      setSelectedReportForDetail(detail?.data || detail || null);
+      setSelectedReportForDetail(detail || null);
     } catch (error) {
       console.error('Failed to fetch laporan penerimaan barang detail:', error);
       setSelectedReportForDetail(report);
@@ -305,14 +288,11 @@ const LaporanPenerimaanBarang = () => {
             onEdit={openEditModal}
             selectedReports={selectedReportIds}
             onSelectReport={handleSelectReport}
-            onSelectAllReports={handleSelectAllReports}
             onCompleteSelected={handleCompleteSelected}
             onDeleteSelected={handleDeleteSelected}
             isCompleting={isCompletingReports}
             isDeleting={isDeleting}
             hasSelectedReports={hasSelectedReports}
-            initialPage={1}
-            initialLimit={10}
             selectedReportId={selectedReportForDetail?.id}
             onFiltersChange={handleFiltersChange}
           />
