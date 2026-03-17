@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ArchiveBoxIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ClipboardDocumentCheckIcon,
@@ -16,7 +15,6 @@ import { resolveStatusVariant } from '../../utils/modalUtils';
 import { AccordionItem, StatusBadge, InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 import { formatDateTime, formatDate } from '../../utils/formatUtils';
 import ActivityTimeline from '../common/ActivityTimeline';
-import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
 import { getPackingBoxes, getTotals } from '../../utils/suratJalanHelpers';
@@ -26,8 +24,6 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
   const [isEditMode, setIsEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-  const [exportLoading, setExportLoading] = useState(false);
-  const [exportPaketLoading, setExportPaketLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     invoiceInfo: false,
@@ -119,90 +115,6 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
     }
   };
 
-  const handleExportPDF = async () => {
-    try {
-      const packingBoxes = getPackingBoxes(suratJalan);
-
-      if (!suratJalan || packingBoxes.length === 0) {
-        toastService.error('Tidak ada packing boxes untuk dicetak. Pastikan purchase order memiliki packing data.');
-        return;
-      }
-
-      const companyData = authService.getCompanyData();
-      if (!companyData || !companyData.id) {
-        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
-        return;
-      }
-
-      setExportLoading(true);
-      toastService.info('Generating surat jalan...');
-
-      const html = await suratJalanService.exportSuratJalan(suratJalan.id, companyData.id);
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success('Surat jalan berhasil di-generate. Silakan print.');
-      } else {
-        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-      }
-    } catch (error) {
-      console.error('Error exporting surat jalan:', error);
-      toastService.error(error.message || 'Gagal mengekspor surat jalan');
-    } finally {
-      setExportLoading(false);
-    }
-  };
-
-  const handleExportPaket = async () => {
-    try {
-      const packingBoxes = getPackingBoxes(suratJalan);
-
-      if (!suratJalan || packingBoxes.length === 0) {
-        toastService.error('Tidak ada packing boxes untuk dicetak. Pastikan purchase order memiliki packing data.');
-        return;
-      }
-
-      const companyData = authService.getCompanyData();
-      if (!companyData || !companyData.id) {
-        toastService.error('Company ID tidak ditemukan. Silakan login ulang.');
-        return;
-      }
-
-      setExportPaketLoading(true);
-      toastService.info('Generating paket dokumen (Invoice Pengiriman + Surat Jalan + Purchase Order)...');
-
-      const html = await suratJalanService.exportSuratJalanPaket(suratJalan.id, companyData.id);
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(html);
-        printWindow.document.close();
-
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
-
-        toastService.success('Dokumen paket berhasil di-generate. Silakan print.');
-      } else {
-        toastService.error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
-      }
-    } catch (error) {
-      console.error('Error exporting surat jalan paket:', error);
-      toastService.error(error.message || 'Gagal mengekspor surat jalan paket');
-    } finally {
-      setExportPaketLoading(false);
-    }
-  };
-
   const checklistData = suratJalan?.checklistSuratJalan;
   const normalizedChecklist = Array.isArray(checklistData)
     ? checklistData
@@ -257,12 +169,6 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
       ? statusData
       : statusData?.status_name || statusData?.status_code
   );
-  const statusCode =
-    typeof statusData === 'string'
-      ? statusData
-      : statusData?.status_code || statusData?.status_name;
-  const statusCategory =
-    typeof statusData === 'string' ? null : statusData?.category;
 
   const packingBoxes = getPackingBoxes(suratJalan);
   const { totalBoxes, totalQuantity } = getTotals(suratJalan);
@@ -282,12 +188,6 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
         <div className='flex items-center gap-1'>
           {!isEditMode ? (
             <>
-              {/* <button type='button' onClick={handleExportPDF} disabled={exportLoading || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50'>
-                {exportLoading ? '...' : 'Print'}
-              </button>
-              <button type='button' onClick={handleExportPaket} disabled={exportPaketLoading || loading} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 disabled:opacity-50'>
-                {exportPaketLoading ? '...' : 'Paket'}
-              </button> */}
               <button onClick={handleEditClick} className='inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50'>
                 <PencilIcon className='w-3 h-3 mr-1' />Edit
               </button>

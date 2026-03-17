@@ -2,7 +2,6 @@ import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { SuratJalanTableServerSide } from '@/components/suratJalan';
 import {
-  ConfirmationDialog as BaseConfirmationDialog,
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
@@ -20,7 +19,6 @@ const SuratJalan = () => {
   const [selectedSuratJalan, setSelectedSuratJalan] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUnprocessing, setIsUnprocessing] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -415,7 +413,6 @@ const SuratJalan = () => {
           <SuratJalanTableServerSide
             onDelete={handleDelete}
             onCancel={handleCancel}
-            deleteLoading={deleteLoading}
             cancelLoading={cancelLoading}
             selectedSuratJalan={selectedSuratJalan}
             onSelectSuratJalan={handleSelectSuratJalan}

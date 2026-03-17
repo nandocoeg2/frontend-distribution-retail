@@ -60,11 +60,8 @@ const isCancelAllowed = (suratJalan) => {
 };
 
 const SuratJalanTableServerSide = ({
-  onView,
-
   onDelete,
   onCancel,
-  deleteLoading = false,
   cancelLoading = false,
   selectedSuratJalan = [],
   onSelectSuratJalan,
@@ -74,8 +71,6 @@ const SuratJalanTableServerSide = ({
   isProcessing = false,
   isUnprocessing = false,
   hasSelectedSuratJalan = false,
-  initialPage = 1,
-  initialLimit = 9999,
   onRowClick,
   selectedSuratJalanId,
   onFiltersChange,
@@ -211,15 +206,6 @@ const SuratJalanTableServerSide = ({
     }
   };
 
-  const globalFilterConfig = useMemo(
-    () => ({
-      enabled: true,
-      initialValue: '',
-      debounceMs: 500,
-    }),
-    []
-  );
-
   const companyId = authService.getCompanyData()?.id;
 
   const [poSearch, setPoSearch] = useState('');
@@ -322,7 +308,6 @@ const SuratJalanTableServerSide = ({
         },
         cell: ({ row }) => {
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
-          const isProcessed = Boolean(row.original.checklistSuratJalanId);
           const isInSelection = selectedIds.includes(row.original.id);
           // Only check if it is in user selection
           const isChecked = isInSelection;
@@ -517,8 +502,7 @@ const SuratJalanTableServerSide = ({
                   e.stopPropagation();
                   onDelete(suratJalanItem.id);
                 }}
-                disabled={deleteLoading}
-                className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-red-600 hover:text-red-900"
                 title="Delete"
               >
                 <TrashIcon className="h-4 w-4" />
@@ -537,7 +521,6 @@ const SuratJalanTableServerSide = ({
       handleCheckboxChange,
       onDelete,
       onCancel,
-      deleteLoading,
       cancelLoading,
       setPage,
     ]
