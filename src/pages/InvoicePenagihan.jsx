@@ -208,18 +208,18 @@ const InvoicePenagihanPage = () => {
   }, [confirmCancel, refreshData, viewingInvoice]);
 
   return (
-    <div className='p-3 space-y-3'>
+    <div>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-3 py-3'>
-          <div className='mb-2 flex justify-between items-center'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>
               Invoice Penagihan
             </h3>
-            <div className='flex gap-2'>
+            <div className='flex flex-wrap gap-2'>
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                className='inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {exportLoading ? (
                   <>
@@ -309,4 +309,3 @@ const InvoicePenagihanPage = () => {
 };
 
 export default InvoicePenagihanPage;
-

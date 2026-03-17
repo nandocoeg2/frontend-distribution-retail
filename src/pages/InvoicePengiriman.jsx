@@ -445,10 +445,10 @@ const InvoicePengirimanPage = () => {
   const resolvedPagination = pagination || INITIAL_TAB_PAGINATION;
 
   return (
-    <div className='p-3 space-y-3'>
+    <div>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3'>
-          <div className='flex items-center justify-between mb-2'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Invoice Pengiriman</h3>
           </div>
 

@@ -7,7 +7,6 @@ import {
   PackingModal,
   PackingDetailCard,
 } from '@/components/packings';
-import Pagination from '@/components/common/Pagination';
 import {
   useConfirmationDialog,
   ConfirmationDialog as BaseConfirmationDialog,
@@ -217,14 +216,14 @@ const PackingsPage = () => {
   }, []);
 
   return (
-    <div className='p-3 space-y-3'>
+    <div>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3'>
-          <div className='flex items-center justify-between mb-2'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Packing</h3>
             <button
               onClick={handleExportExcel}
-              className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-600 text-white font-medium rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700"
             >
               <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
               Export Excel

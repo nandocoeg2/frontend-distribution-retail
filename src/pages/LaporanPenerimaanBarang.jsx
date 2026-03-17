@@ -280,22 +280,22 @@ const LaporanPenerimaanBarang = () => {
   }, [selectedReport?.id, updateReport, refreshData, closeEditModal]);
 
   return (
-    <div className='p-3 space-y-3'>
+    <div>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3'>
-          <div className='flex items-center justify-between mb-2'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
-            <div className='flex items-center gap-1'>
+            <div className='flex flex-wrap gap-2'>
               <button
                 onClick={handleExportClick}
                 disabled={isExporting}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                <HeroIcon name='document-arrow-down' className='w-3 h-3 mr-1' />
+                <HeroIcon name='document-arrow-down' className='w-4 h-4 mr-1.5' />
                 {isExporting ? 'Exporting...' : 'Export Excel'}
               </button>
-              <button onClick={openCreateModal} className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'>
-                <HeroIcon name='plus' className='w-3 h-3 mr-1' />Tambah
+              <button onClick={openCreateModal} className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'>
+                <HeroIcon name='plus' className='w-4 h-4 mr-1.5' />Tambah
               </button>
             </div>
           </div>

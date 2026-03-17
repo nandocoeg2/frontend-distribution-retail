@@ -79,46 +79,44 @@ const TandaTerimaFakturGroupedPage = () => {
   }, [filterMode, tanggal, tanggalStart, tanggalEnd]);
 
   return (
-    <div className='p-6'>
+    <div>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-4 py-5 sm:p-6'>
-          {/* Header */}
-          <div className='flex flex-col gap-4 mb-6 md:flex-row md:items-center md:justify-between'>
+        <div className='px-3 py-3 space-y-3'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <div className='space-y-1'>
-              <h3 className='text-lg font-medium text-gray-900'>
+              <h3 className='text-sm font-semibold text-gray-900'>
                 Tanda Terima Faktur - Ringkasan per Group Customer
               </h3>
             </div>
           </div>
 
-          {/* Filter Section */}
-          <div className='mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200'>
-            <div className='mb-4'>
-              <div className='flex items-center justify-between mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
+          <div className='p-3 space-y-3 bg-gray-50 border border-gray-200 rounded-md'>
+            <div className='space-y-3'>
+              <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
+                <label className='block text-xs font-medium text-gray-700'>
                   Mode Filter
                 </label>
-                <div className='flex items-center gap-3'>
+                <div className='flex flex-wrap gap-2'>
                   <button
                     onClick={handleOpenUploadModal}
-                    className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition'
+                    className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700'
                   >
-                    <HeroIcon name='arrow-up-tray' className='w-5 h-5' />
+                    <HeroIcon name='arrow-up-tray' className='w-4 h-4 mr-1.5' />
                     Upload TTF 2
                   </button>
                   <button
                     onClick={handleOpenPrintModal}
-                    className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition'
+                    className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'
                   >
-                    <PrinterIcon className='w-5 h-5' />
+                    <PrinterIcon className='w-4 h-4 mr-1.5' />
                     Print TTF 1
                   </button>
                 </div>
               </div>
-              <div className='flex gap-2'>
+              <div className='flex flex-wrap gap-2'>
                 <button
                   onClick={() => handleFilterModeChange('all')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${
                     filterMode === 'all'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -128,7 +126,7 @@ const TandaTerimaFakturGroupedPage = () => {
                 </button>
                 <button
                   onClick={() => handleFilterModeChange('single')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${
                     filterMode === 'single'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -138,7 +136,7 @@ const TandaTerimaFakturGroupedPage = () => {
                 </button>
                 <button
                   onClick={() => handleFilterModeChange('range')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${
                     filterMode === 'range'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -152,47 +150,46 @@ const TandaTerimaFakturGroupedPage = () => {
             {/* Filter Controls */}
             {filterMode === 'single' && (
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block mb-2 text-xs font-medium text-gray-700'>
                   Tanggal
                 </label>
                 <input
                   type='date'
                   value={tanggal || ''}
                   onChange={(e) => setTanggal(e.target.value)}
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+                  className='w-full px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500'
                 />
               </div>
             )}
 
             {filterMode === 'range' && (
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid gap-3 sm:grid-cols-2'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block mb-2 text-xs font-medium text-gray-700'>
                     Tanggal Mulai
                   </label>
                   <input
                     type='date'
                     value={tanggalStart || ''}
                     onChange={(e) => setTanggalStart(e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+                    className='w-full px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500'
                   />
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block mb-2 text-xs font-medium text-gray-700'>
                     Tanggal Akhir
                   </label>
                   <input
                     type='date'
                     value={tanggalEnd || ''}
                     onChange={(e) => setTanggalEnd(e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+                    className='w-full px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500'
                   />
                 </div>
               </div>
             )}
           </div>
 
-          {/* Table */}
           <TandaTerimaFakturGroupedTable
             onViewDetail={handleOpenDetail}
             tanggal={filterParams.tanggal}
@@ -202,21 +199,18 @@ const TandaTerimaFakturGroupedPage = () => {
         </div>
       </div>
 
-      {/* Detail Modal */}
       <TandaTerimaFakturGroupedDetailModal
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetail}
         groupedItem={selectedGroupedItem}
       />
 
-      {/* Upload TTF 2 Modal */}
       <UploadTTF2Modal
         isOpen={isUploadTTF2ModalOpen}
         onClose={handleCloseUploadModal}
         onSuccess={handleUploadSuccess}
       />
 
-      {/* Print Modal */}
       <PrintTandaTerimaFakturByGroupModal
         isOpen={isPrintModalOpen}
         onClose={handleClosePrintModal}

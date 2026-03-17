@@ -191,7 +191,7 @@ const MutasiBank = () => {
   );
 
   return (
-    <div className='p-3 space-y-3'>
+    <div>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
         <div className='px-3 py-3 space-y-2'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>

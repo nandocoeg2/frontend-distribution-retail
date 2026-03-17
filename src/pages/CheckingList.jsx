@@ -7,7 +7,6 @@ import {
   CheckingListDetailCard,
 } from '@/components/checkingList';
 import { useConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import HeroIcon from '../components/atoms/HeroIcon.jsx';
 
 const resolveChecklistId = (checklist) => {
   if (!checklist || typeof checklist !== 'object') {
@@ -53,10 +52,6 @@ const CheckingList = () => {
     () => 'Manajemen Checklist Surat Jalan',
     []
   );
-
-  const openCreateModal = () => {
-    setIsCreateModalOpen(true);
-  };
 
   const closeCreateModal = () => {
     setIsCreateModalOpen(false);
@@ -172,11 +167,11 @@ const CheckingList = () => {
   }, [bulkDeleteChecklists, selectedChecklists, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
 
   return (
-    <div className='p-2'>
-      <div className='overflow-hidden bg-white rounded-md shadow-sm'>
-        <div className='px-3 py-2'>
-          <div className='flex items-center justify-between mb-2'>
-            <h3 className='text-base font-medium text-gray-900'>{pageTitle}</h3>
+    <div>
+      <div className='overflow-hidden bg-white rounded-lg shadow'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <h3 className='text-sm font-semibold text-gray-900'>{pageTitle}</h3>
             {/* <button
               type='button'
               onClick={openCreateModal}
