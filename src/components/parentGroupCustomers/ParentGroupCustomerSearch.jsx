@@ -1,15 +1,20 @@
 import React from 'react';
 
-const ParentGroupCustomerSearch = ({ searchQuery, handleSearchChange, searchLoading }) => {
+const ParentGroupCustomerSearch = ({ searchQuery, handleSearchChange, handleSearchSubmit, searchLoading }) => {
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        handleSearchSubmit?.();
+    };
+
     return (
-        <div className='mb-2'>
+        <form onSubmit={handleSubmit} className='mb-2'>
             <div className='relative'>
                 <input
                     type='text'
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className='w-full px-3 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                    placeholder='Cari berdasarkan kode atau nama parent group...'
+                    placeholder='Cari berdasarkan kode atau nama parent group, lalu tekan Enter'
                 />
                 {searchLoading && (
                     <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
@@ -17,7 +22,7 @@ const ParentGroupCustomerSearch = ({ searchQuery, handleSearchChange, searchLoad
                     </div>
                 )}
             </div>
-        </div>
+        </form>
     );
 };
 

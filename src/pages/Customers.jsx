@@ -19,8 +19,10 @@ const Customers = () => {
     pagination,
     loading,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteCustomer,
@@ -41,7 +43,7 @@ const Customers = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await customerService.exportExcel(searchQuery);
+      await customerService.exportExcel(activeSearchQuery);
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -108,7 +110,8 @@ const Customers = () => {
           <CustomerSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
-            isLoading={searchLoading}
+            handleSearchSubmit={handleSearchSubmit}
+            searchLoading={searchLoading}
           />
 
           {loading ? (
@@ -123,7 +126,7 @@ const Customers = () => {
                 onDelete={deleteCustomer}
                 onViewDetail={handleViewDetail}
                 selectedCustomerId={selectedCustomerForDetail?.id}
-                searchQuery={searchQuery}
+                searchQuery={activeSearchQuery}
               />
             </>
           )}

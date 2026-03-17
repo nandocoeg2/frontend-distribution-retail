@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '../services/toastService';
 import { getCompanies, searchCompanies, deleteCompany } from '../services/companyService';
@@ -57,8 +57,7 @@ const useCompaniesPage = () => {
   }, [navigate]);
 
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
+    input: activeSearchQuery,
     searchResults: companies,
     setSearchResults: setCompanies,
     pagination,
@@ -67,7 +66,6 @@ const useCompaniesPage = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleAuthError: authHandler,
@@ -86,29 +84,40 @@ const useCompaniesPage = () => {
     onAuthError: handleAuthRedirect
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setSearchQuery(activeSearchQuery || '');
+  }, [activeSearchQuery]);
+
   const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
+    if (typeof activeSearchQuery !== 'string') {
       return false;
     }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+    return loading && Boolean(activeSearchQuery.trim());
+  }, [activeSearchQuery, loading]);
 
   const fetchCompanies = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
-  }, [performSearch, resolveLimit]);
+    const query = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
+    return performSearch(query, page, limit);
+  }, [activeSearchQuery, performSearch, resolveLimit]);
 
   const handleSearchChange = useCallback((event) => {
     const query = event?.target ? event.target.value : event;
     setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    const query = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    return performSearch(query, 1, resolveLimit());
+  }, [performSearch, resolveLimit, searchQuery]);
 
   const handleDeleteCompany = useCallback(async (id) => {
     try {
       await deleteCompany(id);
       toastService.success('Company deleted successfully');
 
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const trimmedQuery = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
       const itemsPerPage = resolveLimit();
       const currentPage = pagination.currentPage || pagination.page || 1;
       const totalItems = pagination.totalItems || pagination.total || companies.length;
@@ -126,11 +135,11 @@ const useCompaniesPage = () => {
       setError(message);
       toastService.error(message);
     }
-  }, [authHandler, companies.length, pagination, performSearch, resolveLimit, searchQuery, setError]);
+  }, [activeSearchQuery, authHandler, companies.length, pagination, performSearch, resolveLimit, setError]);
 
   useEffect(() => {
-    fetchCompanies(1, INITIAL_PAGINATION.itemsPerPage);
-  }, [fetchCompanies]);
+    performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
+  }, [performSearch]);
 
   return {
     companies,
@@ -140,8 +149,10 @@ const useCompaniesPage = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     deleteCompany: handleDeleteCompany,

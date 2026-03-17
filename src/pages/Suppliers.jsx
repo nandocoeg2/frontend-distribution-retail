@@ -18,8 +18,10 @@ const Suppliers = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteSupplierConfirmation,
@@ -39,7 +41,7 @@ const Suppliers = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await supplierService.exportExcel(searchQuery);
+      await supplierService.exportExcel(activeSearchQuery);
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -120,6 +122,7 @@ const Suppliers = () => {
           <SupplierSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
+            handleSearchSubmit={handleSearchSubmit}
             searchLoading={searchLoading}
           />
 
@@ -136,7 +139,7 @@ const Suppliers = () => {
               onDelete={deleteSupplierConfirmation.showDeleteConfirmation}
               onViewDetail={handleViewDetail}
               selectedSupplierId={selectedSupplierForDetail?.id}
-              searchQuery={searchQuery}
+              searchQuery={activeSearchQuery}
             />
           )}
         </div>

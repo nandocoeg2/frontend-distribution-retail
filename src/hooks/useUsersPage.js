@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import userService from '../services/userService';
 import toastService from '../services/toastService';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
@@ -43,8 +43,7 @@ const resolveUserError = (error) => {
 
 const useUsers = () => {
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
+    input: activeSearchQuery,
     searchResults: users,
     setSearchResults: setUsers,
     pagination,
@@ -53,7 +52,6 @@ const useUsers = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange,
     handleLimitChange,
     clearSearch,
@@ -74,33 +72,44 @@ const useUsers = () => {
     requireInput: false
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
   }, [performSearch]);
 
+  useEffect(() => {
+    setSearchQuery(activeSearchQuery || '');
+  }, [activeSearchQuery]);
+
   const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
+    if (typeof activeSearchQuery !== 'string') {
       return false;
     }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+    return loading && Boolean(activeSearchQuery.trim());
+  }, [activeSearchQuery, loading]);
 
   const handleSearchChange = useCallback((event) => {
     const query = event?.target ? event.target.value : event;
     setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    const query = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    return performSearch(query, 1, resolveLimit());
+  }, [performSearch, resolveLimit, searchQuery]);
 
   const fetchUsers = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
-  }, [performSearch, resolveLimit]);
+    const query = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
+    return performSearch(query, page, limit);
+  }, [activeSearchQuery, performSearch, resolveLimit]);
 
   const deleteUserFunction = useCallback(async (id) => {
     try {
       await userService.deleteUser(id);
       toastService.success('User berhasil dihapus');
 
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const trimmedQuery = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
       const itemsPerPage = resolveLimit();
       const currentPage = pagination.currentPage || pagination.page || 1;
       const totalItems = pagination.totalItems || pagination.total || users.length;
@@ -117,7 +126,7 @@ const useUsers = () => {
       const message = err.message || 'Gagal menghapus user';
       toastService.error(message);
     }
-  }, [handleAuthError, pagination, performSearch, resolveLimit, searchQuery, users.length]);
+  }, [activeSearchQuery, handleAuthError, pagination, performSearch, resolveLimit, users.length]);
 
   const deleteUserConfirmation = useDeleteConfirmation(
     deleteUserFunction,
@@ -126,6 +135,7 @@ const useUsers = () => {
   );
 
   const clearSearchState = useCallback(() => {
+    setSearchQuery('');
     clearSearch();
   }, [clearSearch]);
 
@@ -138,8 +148,10 @@ const useUsers = () => {
     error,
     setError,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteUser: deleteUserConfirmation.showDeleteConfirmation,

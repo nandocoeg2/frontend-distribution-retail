@@ -19,8 +19,10 @@ const GroupCustomers = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteGroupCustomerConfirmation,
@@ -42,7 +44,7 @@ const GroupCustomers = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await groupCustomerService.exportExcel(searchQuery);
+      await groupCustomerService.exportExcel(activeSearchQuery);
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -131,6 +133,7 @@ const GroupCustomers = () => {
           <GroupCustomerSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
+            handleSearchSubmit={handleSearchSubmit}
             searchLoading={searchLoading}
           />
 
@@ -147,7 +150,7 @@ const GroupCustomers = () => {
               onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation}
               onViewDetail={handleViewDetail}
               selectedGroupCustomerId={selectedGroupCustomerForDetail?.id}
-              searchQuery={searchQuery}
+              searchQuery={activeSearchQuery}
             />
           )}
         </div>
@@ -203,4 +206,3 @@ const GroupCustomers = () => {
 };
 
 export default GroupCustomers;
-

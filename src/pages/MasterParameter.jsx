@@ -17,8 +17,10 @@ const MasterParameter = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteMasterParameter,
@@ -53,7 +55,7 @@ const MasterParameter = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !searchLoading) {
     return (
       <div className='flex justify-center items-center h-64'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
@@ -93,6 +95,7 @@ const MasterParameter = () => {
           <MasterParameterSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
+            handleSearchSubmit={handleSearchSubmit}
             searchLoading={searchLoading}
           />
 
@@ -104,7 +107,7 @@ const MasterParameter = () => {
             onDelete={deleteMasterParameter}
             onViewDetail={handleViewDetail}
             selectedParameterId={selectedParameterForDetail?.id}
-            searchQuery={searchQuery}
+            searchQuery={activeSearchQuery}
             loading={loading}
           />
         </div>

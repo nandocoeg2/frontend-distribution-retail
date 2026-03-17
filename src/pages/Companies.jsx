@@ -18,8 +18,10 @@ const Companies = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteCompany,
@@ -39,7 +41,7 @@ const Companies = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await exportExcel(searchQuery);
+      await exportExcel(activeSearchQuery);
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -98,7 +100,7 @@ const Companies = () => {
   };
 
 
-  if (loading) {
+  if (loading && !searchLoading) {
     return (
       <div className='flex justify-center items-center h-64'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
@@ -157,6 +159,7 @@ const Companies = () => {
           <CompanySearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
+            handleSearchSubmit={handleSearchSubmit}
             searchLoading={searchLoading}
           />
 
@@ -168,7 +171,7 @@ const Companies = () => {
             onDelete={deleteCompany}
             onViewDetail={handleViewDetail}
             selectedCompanyId={selectedCompanyForDetail?.id}
-            searchQuery={searchQuery}
+            searchQuery={activeSearchQuery}
             loading={loading}
           />
         </div>
@@ -214,4 +217,3 @@ const Companies = () => {
 };
 
 export default Companies;
-

@@ -15,8 +15,10 @@ const Users = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteUser,
@@ -85,14 +87,16 @@ const Users = () => {
   }
 
   return (
-    <div className='p-3'>
+    <div className='p-3 space-y-3'>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='p-3'>
-          <div className='mb-2 flex justify-between items-center'>
-            <h3 className='text-sm font-semibold text-gray-900'>User List</h3>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+            <div>
+              <h3 className='text-sm font-semibold text-gray-900'>User List</h3>
+            </div>
             <button
               onClick={openAddModal}
-              className='inline-flex items-center px-2.5 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs'
+              className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
             >
               <HeroIcon name='plus' className='w-4 h-4 mr-1.5' />
               Add User
@@ -102,6 +106,7 @@ const Users = () => {
           <UserSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
+            handleSearchSubmit={handleSearchSubmit}
             searchLoading={searchLoading}
           />
 
@@ -113,7 +118,7 @@ const Users = () => {
             onEdit={openEditModal}
             onDelete={deleteUser}
             onView={openViewModal}
-            searchQuery={searchQuery}
+            searchQuery={activeSearchQuery}
           />
         </div>
       </div>

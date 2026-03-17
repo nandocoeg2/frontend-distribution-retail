@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toastService from '@/services/toastService';
 import supplierService from '@/services/supplierService';
@@ -54,8 +54,7 @@ const useSuppliers = () => {
   }, [navigate]);
 
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
+    input: activeSearchQuery,
     searchResults: suppliers,
     setSearchResults: setSuppliers,
     pagination,
@@ -64,7 +63,6 @@ const useSuppliers = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     handleAuthError: authHandler,
@@ -83,29 +81,40 @@ const useSuppliers = () => {
     onAuthError: handleAuthRedirect
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setSearchQuery(activeSearchQuery || '');
+  }, [activeSearchQuery]);
+
   const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
+    if (typeof activeSearchQuery !== 'string') {
       return false;
     }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+    return loading && Boolean(activeSearchQuery.trim());
+  }, [activeSearchQuery, loading]);
 
   const fetchSuppliers = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
-  }, [performSearch, resolveLimit]);
+    const query = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
+    return performSearch(query, page, limit);
+  }, [activeSearchQuery, performSearch, resolveLimit]);
 
   const handleSearchChange = useCallback((event) => {
     const query = event?.target ? event.target.value : event;
     setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    const query = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    return performSearch(query, 1, resolveLimit());
+  }, [performSearch, resolveLimit, searchQuery]);
 
   const refreshAfterMutation = useCallback(async () => {
-    const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    const trimmedQuery = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
     const itemsPerPage = resolveLimit();
     const currentPage = pagination.currentPage || pagination.page || 1;
     await performSearch(trimmedQuery, currentPage, itemsPerPage);
-  }, [pagination, performSearch, resolveLimit, searchQuery]);
+  }, [activeSearchQuery, pagination, performSearch, resolveLimit]);
 
   const deleteSupplierFunction = useCallback(async (id) => {
     try {
@@ -121,7 +130,7 @@ const useSuppliers = () => {
       const newTotalItems = Math.max(totalItems - 1, 0);
       const newTotalPages = Math.max(Math.ceil(newTotalItems / itemsPerPage), 1);
       const nextPage = Math.min(currentPage, newTotalPages);
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const trimmedQuery = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
 
       await performSearch(trimmedQuery, nextPage, itemsPerPage);
     } catch (err) {
@@ -133,7 +142,7 @@ const useSuppliers = () => {
       setError(message);
       toastService.error(message);
     }
-  }, [authHandler, pagination, performSearch, resolveLimit, searchQuery, setError, suppliers.length]);
+  }, [activeSearchQuery, authHandler, pagination, performSearch, resolveLimit, setError, suppliers.length]);
 
   const deleteSupplierConfirmation = useDeleteConfirmation(
     deleteSupplierFunction,
@@ -211,8 +220,10 @@ const useSuppliers = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange: handlePageChangeInternal,
     handleLimitChange: handleLimitChangeInternal,
     deleteSupplier: deleteSupplierConfirmation.showDeleteConfirmation,

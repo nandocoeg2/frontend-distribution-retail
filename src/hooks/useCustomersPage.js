@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toastService from '../services/toastService';
 import customerService from '../services/customerService';
 import usePaginatedSearch from './usePaginatedSearch';
@@ -46,8 +46,7 @@ const resolveCustomerError = (error) => {
 
 const useCustomersPage = () => {
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
+    input: activeSearchQuery,
     searchResults: customers,
     setSearchResults: setCustomers,
     pagination,
@@ -56,7 +55,6 @@ const useCustomersPage = () => {
     error,
     setError,
     performSearch,
-    debouncedSearch,
     handlePageChange,
     handleLimitChange,
     clearSearch,
@@ -77,26 +75,37 @@ const useCustomersPage = () => {
     requireInput: false
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
   }, [performSearch]);
 
+  useEffect(() => {
+    setSearchQuery(activeSearchQuery || '');
+  }, [activeSearchQuery]);
+
   const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
+    if (typeof activeSearchQuery !== 'string') {
       return false;
     }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+    return loading && Boolean(activeSearchQuery.trim());
+  }, [activeSearchQuery, loading]);
 
   const handleSearchChange = useCallback((event) => {
     const query = event?.target ? event.target.value : event;
     setSearchQuery(query);
-    debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+  }, []);
+
+  const handleSearchSubmit = useCallback(() => {
+    const query = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+    return performSearch(query, 1, resolveLimit());
+  }, [performSearch, resolveLimit, searchQuery]);
 
   const fetchCustomers = useCallback((page = 1, limit = resolveLimit()) => {
-    return performSearch('', page, limit);
-  }, [performSearch, resolveLimit]);
+    const query = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
+    return performSearch(query, page, limit);
+  }, [activeSearchQuery, performSearch, resolveLimit]);
 
   const searchCustomers = useCallback((query, page = 1, limit = resolveLimit()) => {
     return performSearch(query, page, limit);
@@ -107,7 +116,7 @@ const useCustomersPage = () => {
       await customerService.deleteCustomer(id);
       toastService.success('Customer deleted successfully');
 
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const trimmedQuery = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
       const itemsPerPage = resolveLimit();
       const currentPage = pagination.currentPage || pagination.page || 1;
       const totalItems = pagination.totalItems || pagination.total || customers.length;
@@ -125,9 +134,10 @@ const useCustomersPage = () => {
         toastService.error(message);
       }
     }
-  }, [customers.length, handleAuthError, pagination, performSearch, resolveLimit, searchQuery, setError]);
+  }, [activeSearchQuery, customers.length, handleAuthError, pagination, performSearch, resolveLimit, setError]);
 
   const clearSearchState = useCallback(() => {
+    setSearchQuery('');
     clearSearch();
   }, [clearSearch]);
 
@@ -139,8 +149,10 @@ const useCustomersPage = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     deleteCustomer: handleDeleteCustomer,

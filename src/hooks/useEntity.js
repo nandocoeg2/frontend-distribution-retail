@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toastService from '../services/toastService';
 import usePaginatedSearch from './usePaginatedSearch';
 import { useDeleteConfirmation } from './useDeleteConfirmation';
@@ -62,10 +62,11 @@ const useEntity = ({
   deleteService,
   createService,
   updateService,
+  searchMode = 'debounce',
 }) => {
   const {
-    input: searchQuery,
-    setInput: setSearchQuery,
+    input: activeSearchQuery,
+    setInput: setActiveSearchQuery,
     searchResults: entities,
     setSearchResults: setEntities,
     pagination,
@@ -95,22 +96,45 @@ const useEntity = ({
     requireInput: false
   });
 
+  const isSubmitSearchMode = searchMode === 'submit';
+  const [searchDraft, setSearchDraft] = useState('');
+
   useEffect(() => {
     performSearch('', 1, INITIAL_PAGINATION.itemsPerPage);
   }, [performSearch]);
 
+  useEffect(() => {
+    if (!isSubmitSearchMode) {
+      return;
+    }
+
+    setSearchDraft(activeSearchQuery || '');
+  }, [activeSearchQuery, isSubmitSearchMode]);
+
   const searchLoading = useMemo(() => {
-    if (typeof searchQuery !== 'string') {
+    if (typeof activeSearchQuery !== 'string') {
       return false;
     }
-    return loading && Boolean(searchQuery.trim());
-  }, [loading, searchQuery]);
+    return loading && Boolean(activeSearchQuery.trim());
+  }, [activeSearchQuery, loading]);
 
   const handleSearchChange = useCallback((event) => {
     const query = event?.target ? event.target.value : event;
-    setSearchQuery(query);
+    if (isSubmitSearchMode) {
+      setSearchDraft(query);
+      return;
+    }
+
+    setActiveSearchQuery(query);
     debouncedSearch(query, 1, resolveLimit());
-  }, [debouncedSearch, resolveLimit, setSearchQuery]);
+  }, [debouncedSearch, isSubmitSearchMode, resolveLimit, setActiveSearchQuery]);
+
+  const handleSearchSubmit = useCallback(() => {
+    const querySource = isSubmitSearchMode ? searchDraft : activeSearchQuery;
+    const query = typeof querySource === 'string' ? querySource.trim() : '';
+
+    return performSearch(query, 1, resolveLimit());
+  }, [activeSearchQuery, isSubmitSearchMode, performSearch, resolveLimit, searchDraft]);
 
   const fetchEntities = useCallback((page = 1, limit = resolveLimit()) => {
     return performSearch('', page, limit);
@@ -174,7 +198,7 @@ const useEntity = ({
 
       toastService.success(`${entityName} berhasil dihapus`);
 
-      const trimmedQuery = typeof searchQuery === 'string' ? searchQuery.trim() : '';
+      const trimmedQuery = typeof activeSearchQuery === 'string' ? activeSearchQuery.trim() : '';
       const itemsPerPage = resolveLimit();
       const currentPage = pagination.currentPage || pagination.page || 1;
       const totalItems = pagination.totalItems || pagination.total || entities.length;
@@ -191,7 +215,7 @@ const useEntity = ({
       const message = err.message || `Failed to delete ${entityName}`;
       toastService.error(message);
     }
-  }, [deleteService, entities.length, entityName, handleAuthError, pagination, performSearch, resolveLimit, searchQuery]);
+  }, [activeSearchQuery, deleteService, entities.length, entityName, handleAuthError, pagination, performSearch, resolveLimit]);
 
   const deleteConfirmation = useDeleteConfirmation(
     deleteEntityFunction,
@@ -208,8 +232,13 @@ const useEntity = ({
   }, [handleLimitChangeInternal]);
 
   const clearSearchState = useCallback(() => {
+    if (isSubmitSearchMode) {
+      setSearchDraft('');
+    }
     clearSearch();
-  }, [clearSearch]);
+  }, [clearSearch, isSubmitSearchMode]);
+
+  const searchQuery = isSubmitSearchMode ? searchDraft : activeSearchQuery;
 
   return {
     entities,
@@ -220,8 +249,10 @@ const useEntity = ({
     error,
     setError,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     createEntity,

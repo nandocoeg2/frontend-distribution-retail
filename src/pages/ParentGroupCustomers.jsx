@@ -18,8 +18,10 @@ const ParentGroupCustomers = () => {
         loading,
         error,
         searchQuery,
+        activeSearchQuery,
         searchLoading,
         handleSearchChange,
+        handleSearchSubmit,
         handlePageChange,
         handleLimitChange,
         deleteParentGroupCustomerConfirmation,
@@ -41,7 +43,7 @@ const ParentGroupCustomers = () => {
         try {
             setShowExportConfirmation(false);
             setExportLoading(true);
-            await parentGroupCustomerService.exportExcel(searchQuery);
+            await parentGroupCustomerService.exportExcel(activeSearchQuery);
             toastService.success('Data berhasil diexport ke Excel');
         } catch (err) {
             console.error('Export failed:', err);
@@ -127,6 +129,7 @@ const ParentGroupCustomers = () => {
                     <ParentGroupCustomerSearch
                         searchQuery={searchQuery}
                         handleSearchChange={handleSearchChange}
+                        handleSearchSubmit={handleSearchSubmit}
                         searchLoading={searchLoading}
                     />
 
@@ -143,7 +146,7 @@ const ParentGroupCustomers = () => {
                             onDelete={deleteParentGroupCustomerConfirmation.showDeleteConfirmation}
                             onViewDetail={handleViewDetail}
                             selectedParentGroupCustomerId={selectedParentGroupCustomerForDetail?.id}
-                            searchQuery={searchQuery}
+                            searchQuery={activeSearchQuery}
                         />
                     )}
                 </div>

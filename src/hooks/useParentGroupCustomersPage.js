@@ -14,6 +14,7 @@ const useParentGroupCustomersPage = () => {
         getAllService: parentGroupCustomerService.getAll,
         searchService: parentGroupCustomerService.search,
         deleteService: parentGroupCustomerService.delete,
+        searchMode: 'submit',
     });
 
     return {

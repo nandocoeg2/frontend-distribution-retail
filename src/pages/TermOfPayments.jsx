@@ -18,8 +18,10 @@ const TermOfPayments = () => {
     loading,
     error,
     searchQuery,
+    activeSearchQuery,
     searchLoading,
     handleSearchChange,
+    handleSearchSubmit,
     handlePageChange,
     handleLimitChange,
     createTermOfPayment,
@@ -42,7 +44,7 @@ const TermOfPayments = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await termOfPaymentService.exportExcel(searchQuery);
+      await termOfPaymentService.exportExcel(activeSearchQuery);
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -136,6 +138,7 @@ const TermOfPayments = () => {
           <TermOfPaymentSearch
             searchQuery={searchQuery}
             handleSearchChange={handleSearchChange}
+            handleSearchSubmit={handleSearchSubmit}
             searchLoading={searchLoading}
           />
 
@@ -152,7 +155,7 @@ const TermOfPayments = () => {
               onDelete={deleteTermOfPaymentConfirmation.showDeleteConfirmation}
               onViewDetail={handleViewDetail}
               selectedTermOfPaymentId={selectedTermOfPaymentForDetail?.id}
-              searchQuery={searchQuery}
+              searchQuery={activeSearchQuery}
             />
           )}
         </div>

@@ -1,21 +1,16 @@
 import React from 'react';
 
-const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
+const Pagination = ({ pagination, onPageChange, onLimitChange, compact = false }) => {
   // Normalize pagination prop - handle both string and number values from API
-  const {
-    page: currentPage = 1,
-    totalPages = 1,
-    total: totalItems = 0,
-    limit: itemsPerPage = 9999
-  } = {
-    page: parseInt(pagination?.page || pagination?.currentPage || 1),
-    totalPages: parseInt(pagination?.totalPages || 1),
-    total: parseInt(pagination?.total || pagination?.totalItems || 0),
-    limit: parseInt(pagination?.limit || pagination?.itemsPerPage || 9999),
-    ...pagination
-  };
+  const currentPage = parseInt(pagination?.page || pagination?.currentPage || 1, 10);
+  const totalPages = parseInt(pagination?.totalPages || 1, 10);
+  const totalItems = parseInt(pagination?.total || pagination?.totalItems || 0, 10);
+  const itemsPerPage = parseInt(pagination?.limit || pagination?.itemsPerPage || 9999, 10);
 
   const limitOptions = [5, 10, 20, 50, 100];
+  const hasItems = totalItems > 0;
+  const startItem = hasItems ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const endItem = hasItems ? Math.min(currentPage * itemsPerPage, totalItems) : 0;
 
   const getPageNumbers = () => {
     const pages = [];
@@ -55,14 +50,44 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
   };
 
   const pageNumbers = getPageNumbers();
+  const containerClass = compact
+    ? 'flex items-center justify-between border-t border-gray-200 bg-white px-2.5 py-1.5'
+    : 'flex items-center justify-between border-t border-gray-200 bg-white px-3 py-2';
+  const mobileButtonClass = compact
+    ? 'relative inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium'
+    : 'relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium';
+  const summaryClass = compact
+    ? 'text-[11px] text-gray-700 mr-3'
+    : 'text-xs text-gray-700 mr-3';
+  const labelClass = compact
+    ? 'mr-2 text-[11px] text-gray-700'
+    : 'mr-2 text-xs text-gray-700';
+  const selectClass = compact
+    ? 'rounded-md border border-gray-300 bg-white py-0 pl-2 pr-5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500'
+    : 'rounded-md border border-gray-300 bg-white py-0.5 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500';
+  const navClass = compact
+    ? 'isolate inline-flex -space-x-px rounded-md'
+    : 'isolate inline-flex -space-x-px rounded-md shadow-sm';
+  const edgeButtonClass = compact
+    ? 'relative inline-flex items-center rounded-l-md px-1 py-0.5 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+    : 'relative inline-flex items-center rounded-l-md px-1.5 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0';
+  const pageButtonClass = compact
+    ? 'relative inline-flex items-center px-2 py-0.5 text-[11px] font-semibold'
+    : 'relative inline-flex items-center px-3 py-1 text-xs font-semibold';
+  const ellipsisClass = compact
+    ? 'relative inline-flex items-center px-2 py-0.5 text-[11px] font-semibold text-gray-700 ring-1 ring-inset ring-gray-300'
+    : 'relative inline-flex items-center px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-300';
+  const rightEdgeButtonClass = compact
+    ? 'relative inline-flex items-center rounded-r-md px-1 py-0.5 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+    : 'relative inline-flex items-center rounded-r-md px-1.5 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0';
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-3 py-2">
+    <div className={containerClass}>
       <div className="flex flex-1 justify-between sm:hidden">
         <button
           onClick={handlePrevious}
           disabled={currentPage === 1}
-          className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${currentPage === 1
+          className={`${mobileButtonClass} ${currentPage === 1
             ? 'text-gray-300 cursor-not-allowed'
             : 'text-gray-700 hover:bg-gray-50'
             }`}
@@ -72,7 +97,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages}
-          className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${currentPage === totalPages
+          className={`${mobileButtonClass} ml-3 ${currentPage === totalPages
             ? 'text-gray-300 cursor-not-allowed'
             : 'text-gray-700 hover:bg-gray-50'
             }`}
@@ -82,20 +107,20 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
       </div>
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div className="flex items-center">
-          <p className="text-xs text-gray-700 mr-3">
-            Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-            <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{' '}
+          <p className={summaryClass}>
+            Showing <span className="font-medium">{startItem}</span> to{' '}
+            <span className="font-medium">{endItem}</span> of{' '}
             <span className="font-medium">{totalItems}</span> results
           </p>
           <div className="flex items-center">
-            <label htmlFor="items-per-page" className="mr-2 text-xs text-gray-700">
+            <label htmlFor="items-per-page" className={labelClass}>
               Items per page:
             </label>
             <select
               id="items-per-page"
               value={itemsPerPage}
               onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="rounded-md border border-gray-300 bg-white py-0.5 pl-2 pr-6 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={selectClass}
             >
               {limitOptions.map((limit) => (
                 <option key={limit} value={limit}>
@@ -106,11 +131,11 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
           </div>
         </div>
         <div>
-          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <nav className={navClass} aria-label="Pagination">
             <button
               onClick={handlePrevious}
               disabled={currentPage === 1}
-              className={`relative inline-flex items-center rounded-l-md px-1.5 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${currentPage === 1 ? 'cursor-not-allowed' : ''
+              className={`${edgeButtonClass} ${currentPage === 1 ? 'cursor-not-allowed' : ''
                 }`}
             >
               <span className="sr-only">Previous</span>
@@ -123,12 +148,12 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
               <>
                 <button
                   onClick={() => onPageChange(1)}
-                  className="relative inline-flex items-center px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  className={`${pageButtonClass} text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0`}
                 >
                   1
                 </button>
                 {pageNumbers[0] > 2 && (
-                  <span className="relative inline-flex items-center px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
+                  <span className={ellipsisClass}>
                     ...
                   </span>
                 )}
@@ -139,7 +164,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
               <button
                 key={page}
                 onClick={() => onPageChange(page)}
-                className={`relative inline-flex items-center px-3 py-1 text-xs font-semibold ${currentPage === page
+                className={`${pageButtonClass} ${currentPage === page
                   ? 'z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
                   : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
                   } ${page === pageNumbers[0] ? '' : 'ml-0'} focus:z-20 focus:outline-offset-0`}
@@ -151,13 +176,13 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
             {pageNumbers[pageNumbers.length - 1] < totalPages && (
               <>
                 {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
-                  <span className="relative inline-flex items-center px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">
+                  <span className={ellipsisClass}>
                     ...
                   </span>
                 )}
                 <button
                   onClick={() => onPageChange(totalPages)}
-                  className="relative inline-flex items-center px-3 py-1 text-xs font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  className={`${pageButtonClass} text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0`}
                 >
                   {totalPages}
                 </button>
@@ -167,7 +192,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
             <button
               onClick={handleNext}
               disabled={currentPage === totalPages}
-              className={`relative inline-flex items-center rounded-r-md px-1.5 py-1 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${currentPage === totalPages ? 'cursor-not-allowed' : ''
+              className={`${rightEdgeButtonClass} ${currentPage === totalPages ? 'cursor-not-allowed' : ''
                 }`}
             >
               <span className="sr-only">Next</span>
