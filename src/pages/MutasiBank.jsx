@@ -193,24 +193,24 @@ const MutasiBank = () => {
   return (
     <div className='p-3 space-y-3'>
       <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-3 py-3'>
-          <div className='mb-2 flex justify-between items-center'>
+        <div className='px-3 py-3 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Mutasi Bank</h3>
-            <div className='flex items-center gap-1'>
+            <div className='flex flex-wrap items-center gap-2'>
               <button
                 type='button'
                 onClick={() => setUploadModalOpen(true)}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
               >
-                <PlusIcon className='w-3.5 h-3.5 mr-1' />
+                <PlusIcon className='w-4 h-4 mr-1.5' />
                 Upload
               </button>
               <button
                 type='button'
                 onClick={invalidateMutations}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs border border-gray-200 bg-white text-gray-600 rounded hover:border-gray-300 hover:bg-gray-50'
               >
-                <ArrowPathIcon className='w-3.5 h-3.5 mr-1' />
+                <ArrowPathIcon className='w-4 h-4 mr-1.5' />
                 Refresh
               </button>
             </div>

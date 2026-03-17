@@ -9,7 +9,8 @@ import {
 import { StatusBadge } from '../ui/Badge';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { useMutasiBankQuery } from '../../hooks/useMutasiBankQuery';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable } from '../table';
+import Pagination from '../common/Pagination';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
@@ -285,6 +286,8 @@ const MutasiBankTableServerSide = ({
   const {
     data: mutations,
     pagination,
+    setPage,
+    setLimit,
     hasActiveFilters,
     isLoading,
     error,
@@ -387,7 +390,7 @@ const MutasiBankTableServerSide = ({
               'status',
             ]) || '-';
           return (
-            <StatusBadge status={status} variant={resolveStatusVariant(status)} />
+            <StatusBadge status={status} variant={resolveStatusVariant(status)} size='xs' />
           );
         },
       }),
@@ -425,7 +428,7 @@ const MutasiBankTableServerSide = ({
           const hasDocument = hasAssignedDocument(mutation);
 
           return (
-            <div className='flex items-center space-x-2'>
+            <div className='flex items-center justify-end gap-1'>
               <button
                 type='button'
                 onClick={() => {
@@ -433,7 +436,8 @@ const MutasiBankTableServerSide = ({
                     onViewMutation(mutation, mutationId);
                   }
                 }}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800'
+                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600'
+                title='Detail'
               >
                 <EyeIcon className='w-3.5 h-3.5 mr-0.5' />
                 Detail
@@ -447,7 +451,7 @@ const MutasiBankTableServerSide = ({
                   }
                 }}
                 disabled={isAssigning}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-emerald-600 hover:text-emerald-800 disabled:opacity-40'
+                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-40'
                 title='Kaitkan dokumen ke mutasi'
               >
                 <LinkIcon className='w-3.5 h-3.5 mr-0.5' />
@@ -462,7 +466,7 @@ const MutasiBankTableServerSide = ({
                   }
                 }}
                 disabled={!hasDocument || isUnassigning}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-amber-600 hover:text-amber-800 disabled:opacity-40'
+                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600 disabled:opacity-40'
                 title={hasDocument ? 'Lepas kaitan dokumen' : 'Tidak ada dokumen terhubung'}
               >
                 <XMarkIcon className='w-3.5 h-3.5 mr-0.5' />
@@ -477,7 +481,8 @@ const MutasiBankTableServerSide = ({
                   }
                 }}
                 disabled={isValidating}
-                className='inline-flex items-center px-2 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-40'
+                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40'
+                title='Validasi'
               >
                 <CheckBadgeIcon className='w-3.5 h-3.5 mr-0.5' />
                 Validasi
@@ -549,23 +554,36 @@ const MutasiBankTableServerSide = ({
         );
       })() : null}
 
-      <DataTable
-        table={table}
-        isLoading={isLoading}
-        error={error}
-        hasActiveFilters={hasActiveFilters}
-        emptyMessage='Belum ada mutasi bank.'
-        emptyFilteredMessage='Tidak ditemukan mutasi sesuai filter.'
-        tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
-        headerRowClassName='bg-gray-50'
-        headerCellClassName='px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
-        bodyClassName='bg-white divide-y divide-gray-100'
-        rowClassName='hover:bg-gray-50 cursor-pointer h-8'
-        cellClassName='px-2 py-1 whitespace-nowrap text-xs text-gray-900'
-        emptyCellClassName='px-2 py-1 text-center text-xs text-gray-500'
-      />
+      <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
+        <DataTable
+          table={table}
+          isLoading={isLoading}
+          error={error}
+          hasActiveFilters={hasActiveFilters}
+          emptyMessage='Belum ada mutasi bank.'
+          emptyFilteredMessage='Tidak ditemukan mutasi sesuai filter.'
+          wrapperClassName='overflow-x-auto'
+          tableClassName='min-w-[1180px] w-full divide-y divide-gray-200 text-xs table-fixed'
+          headerRowClassName='bg-gray-50'
+          headerCellClassName='px-2.5 py-1.5 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider'
+          bodyClassName='divide-y divide-gray-100 bg-white'
+          rowClassName='hover:bg-gray-50 transition-colors'
+          cellClassName='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900'
+          emptyCellClassName='px-3 py-6 text-center text-xs text-gray-500'
+        />
 
-      <DataTablePagination table={table} pagination={pagination} itemLabel='mutasi' />
+        {!error && (
+          <Pagination
+            compact
+            pagination={pagination}
+            onPageChange={setPage}
+            onLimitChange={(nextLimit) => {
+              setPage(1);
+              setLimit(nextLimit);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };
