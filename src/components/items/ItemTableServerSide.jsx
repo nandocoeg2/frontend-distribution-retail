@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useMemo, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../../utils/formatUtils';
@@ -6,8 +6,7 @@ import { useItemsQuery } from '../../hooks/useItemsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable } from '../table';
 import { useConfirmationDialog } from '../ui';
-import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
-import { getCompanies } from '../../services/companyService';
+
 import DateFilter from '../common/DateFilter';
 import Pagination from '../common/Pagination';
 
@@ -24,35 +23,11 @@ const ItemTableServerSide = forwardRef(({
     onRefresh,
 }, ref) => {
     const [deleteId, setDeleteId] = useState(null);
-    const [companies, setCompanies] = useState([]);
     const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
-
-    // Fetch companies for filter dropdown
-    useEffect(() => {
-        const fetchCompanies = async () => {
-            try {
-                const response = await getCompanies(1, 100);
-                const data = response?.data?.data || response?.data || [];
-                setCompanies(Array.isArray(data) ? data : []);
-            } catch (error) {
-                console.error('Failed to fetch companies:', error);
-                setCompanies([]);
-            }
-        };
-        fetchCompanies();
-    }, []);
 
     const getQueryParams = useMemo(
         () => ({ filters, ...rest }) => {
             const mappedFilters = { ...filters };
-
-            // Map company filter to companyIds array
-            if (mappedFilters.company) {
-                if (Array.isArray(mappedFilters.company) && mappedFilters.company.length > 0) {
-                    mappedFilters.companyIds = mappedFilters.company;
-                }
-                delete mappedFilters.company;
-            }
 
             // Map basePrice range filter
             if (mappedFilters.basePrice && typeof mappedFilters.basePrice === 'object') {
@@ -140,30 +115,6 @@ const ItemTableServerSide = forwardRef(({
 
     const columns = useMemo(
         () => [
-            columnHelper.accessor('company.kode_company', {
-                id: 'company',
-                size: 50,
-                header: ({ column }) => (
-                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="font-medium text-xs">Company</div>
-                        <AutocompleteCheckboxLimitTag
-                            options={companies}
-                            value={column.getFilterValue() ?? []}
-                            onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-                            placeholder="All"
-                            displayKey="kode_company"
-                            valueKey="id"
-                            limitTags={1}
-                            size="small"
-                            sx={{ width: '100%' }}
-                            fetchOnClose
-                        />
-                    </div>
-                ),
-                cell: (info) => (
-                    <span className="text-xs font-medium">{info.row.original.company?.kode_company || '-'}</span>
-                ),
-            }),
             columnHelper.accessor('nama_barang', {
                 size: 140,
                 header: ({ column }) => (
