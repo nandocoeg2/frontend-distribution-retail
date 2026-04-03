@@ -260,7 +260,6 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
                 <Input value={form.no_faktur_pajak} onChange={(e) => set('no_faktur_pajak', e.target.value)} placeholder='010.000-26.00000001' />
               </div>
             </div>
-            </div>
             <div className='mt-2 grid gap-2 sm:grid-cols-4'>
               <div>
                 <Label>Tgl Faktur Pajak</Label>
