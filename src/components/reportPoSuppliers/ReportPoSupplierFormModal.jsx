@@ -176,8 +176,8 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
           {/* === GRUP PO === */}
           <div className='border-b border-blue-200 px-5 py-3'>
             <GroupHeader label='PO' color='blue' />
-            <div className='grid gap-2 sm:grid-cols-3'>
-              <div>
+            <div className='grid gap-2 sm:grid-cols-4'>
+              <div className='sm:col-span-2'>
                 <Label required>Nama Supplier</Label>
                 <Autocomplete name='supplierId' options={supplierOptions}
                   value={form.supplierId} onChange={(e) => set('supplierId', e.target.value)}
@@ -216,6 +216,7 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
                 <Label>Total</Label>
                 <Computed value={total.toLocaleString('id-ID')} />
               </div>
+              <div />
             </div>
           </div>
 
@@ -245,7 +246,7 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
           {/* === GRUP TAGIHAN === */}
           <div className='border-b border-amber-200 px-5 py-3'>
             <GroupHeader label='Tagihan' color='amber' />
-            <div className='grid gap-2 sm:grid-cols-3'>
+            <div className='grid gap-2 sm:grid-cols-4'>
               <div>
                 <Label>No Kwitansi</Label>
                 <Input value={form.no_kwitansi} onChange={(e) => set('no_kwitansi', e.target.value)} placeholder='KW-2026-001' />
@@ -254,10 +255,11 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
                 <Label>No Invoice</Label>
                 <Input value={form.no_invoice} onChange={(e) => set('no_invoice', e.target.value)} placeholder='INV-2026-001' />
               </div>
-              <div>
+              <div className='sm:col-span-2'>
                 <Label>No Faktur Pajak</Label>
                 <Input value={form.no_faktur_pajak} onChange={(e) => set('no_faktur_pajak', e.target.value)} placeholder='010.000-26.00000001' />
               </div>
+            </div>
             </div>
             <div className='mt-2 grid gap-2 sm:grid-cols-4'>
               <div>
@@ -295,7 +297,7 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
                 <Input type='date' value={form.tanggal_dibayar} onChange={(e) => set('tanggal_dibayar', e.target.value)} />
               </div>
             </div>
-            <div className='mt-2 grid gap-2 sm:grid-cols-3'>
+            <div className='mt-2 grid gap-2 sm:grid-cols-4'>
               <div>
                 <Label>Total Dibayar</Label>
                 <Input value={form.total_dibayar} onChange={(e) => setNum('total_dibayar', e.target.value)} placeholder='8325000' inputMode='decimal' />
@@ -304,6 +306,8 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
                 <Label>Selisih</Label>
                 <Computed value={selisih.toLocaleString('id-ID')} />
               </div>
+              <div />
+              <div />
             </div>
           </div>
 
