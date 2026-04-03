@@ -26,6 +26,9 @@ const DEFAULT_FORM_STATE = {
   stok_quantity: '0',
   min_stok: '0',
   qty_per_carton: '0',
+  lastSnapshotStock: '',
+  lastSnapshotDate: '',
+  stockAdjustment: '',
   harga: '0',
   pot1: '0',
   harga1: '0',
@@ -260,6 +263,13 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
       stok_quantity: getStockValue(memoizedInitialData, 'stok_quantity'),
       min_stok: getStockValue(memoizedInitialData, 'min_stok'),
       qty_per_carton: getStockValue(memoizedInitialData, 'qty_per_carton'),
+      lastSnapshotStock: getStockValue(memoizedInitialData, 'lastSnapshotStock') === '0' ? '' : getStockValue(memoizedInitialData, 'lastSnapshotStock'),
+      lastSnapshotDate: (() => {
+        const raw = memoizedInitialData?.itemStock?.lastSnapshotDate;
+        if (!raw) return '';
+        try { return new Date(raw).toISOString().slice(0, 10); } catch { return ''; }
+      })(),
+      stockAdjustment: getStockValue(memoizedInitialData, 'stockAdjustment') === '0' ? '' : getStockValue(memoizedInitialData, 'stockAdjustment'),
       harga: harga,
       pot1: pot1,
       harga1: calculated.harga1,  // Auto-calculated
@@ -335,7 +345,10 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
     dataToSubmit.itemStock = {
       stok_quantity: parseInteger(formData.stok_quantity),
       min_stok: parseInteger(formData.min_stok),
-      qty_per_carton: parseInteger(formData.qty_per_carton)
+      qty_per_carton: parseInteger(formData.qty_per_carton),
+      lastSnapshotStock: formData.lastSnapshotStock !== '' ? parseInteger(formData.lastSnapshotStock) : null,
+      lastSnapshotDate: formData.lastSnapshotDate || null,
+      stockAdjustment: formData.stockAdjustment !== '' ? parseInteger(formData.stockAdjustment) : null,
     };
 
     const dimensiKartonPayload = {
@@ -631,6 +644,35 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           min={0}
           step={1}
           inputMode="numeric"
+        />
+        <FormField
+          label="Snapshot Stok (akhir bulan)"
+          name="lastSnapshotStock"
+          type="number"
+          value={formData.lastSnapshotStock}
+          onChange={handleChange}
+          min={0}
+          step={1}
+          inputMode="numeric"
+          placeholder="Opsional"
+        />
+        <FormField
+          label="Tanggal Snapshot"
+          name="lastSnapshotDate"
+          type="date"
+          value={formData.lastSnapshotDate}
+          onChange={handleChange}
+        />
+        <FormField
+          label="Stok Adjustment (gudang)"
+          name="stockAdjustment"
+          type="number"
+          value={formData.stockAdjustment}
+          onChange={handleChange}
+          min={0}
+          step={1}
+          inputMode="numeric"
+          placeholder="Stok aktual di gudang"
         />
       </FormSection>
 

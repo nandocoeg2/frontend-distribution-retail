@@ -204,6 +204,66 @@ const ItemTableServerSide = forwardRef(({
                     </span>
                 ),
             }),
+            columnHelper.accessor('itemStock.lastSnapshotStock', {
+                id: 'lastSnapshotStock',
+                size: 90,
+                enableColumnFilter: false,
+                enableSorting: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">Snapshot Stok</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemStock?.lastSnapshotStock;
+                    return (
+                        <span className="text-xs text-right block">
+                            {val != null ? formatNumber(val) : '-'}
+                        </span>
+                    );
+                },
+            }),
+            columnHelper.accessor('itemStock.lastSnapshotDate', {
+                id: 'lastSnapshotDate',
+                size: 80,
+                enableColumnFilter: false,
+                enableSorting: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">Tgl Snapshot</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemStock?.lastSnapshotDate;
+                    return (
+                        <span className="text-xs text-gray-600">
+                            {val ? formatDate(val) : '-'}
+                        </span>
+                    );
+                },
+            }),
+            columnHelper.accessor('itemStock.stockAdjustment', {
+                id: 'stockAdjustment',
+                size: 90,
+                enableColumnFilter: false,
+                enableSorting: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">Stok Adjustment</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemStock?.stockAdjustment;
+                    return (
+                        <span className="text-xs text-right block">
+                            {val != null ? formatNumber(val) : '-'}
+                        </span>
+                    );
+                },
+            }),
             columnHelper.accessor('updatedAt', {
                 size: 65,
                 enableColumnFilter: true,
