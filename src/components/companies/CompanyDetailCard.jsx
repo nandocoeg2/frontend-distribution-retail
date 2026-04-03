@@ -16,52 +16,36 @@ import { InfoTable } from '../ui';
 import toastService from '@/services/toastService';
 import CompanyForm from './CompanyForm';
 
+const getFormDataFromCompany = (company = {}) => ({
+  kode_company: company.kode_company || '',
+  kode_company_surat: company.kode_company_surat || '',
+  nama_perusahaan: company.nama_perusahaan || '',
+  alamat: company.alamat || '',
+  no_rekening: company.no_rekening || '',
+  bank: company.bank || '',
+  bank_account_name: company.bank_account_name || '',
+  bank_cabang: company.bank_cabang || '',
+  telp: company.telp || '',
+  fax: company.fax || '',
+  email: company.email || '',
+  direktur_utama: company.direktur_utama || '',
+  npwp: company.npwp || '',
+  id_tku: company.id_tku || '',
+  logo: company.logo || null,
+  signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
+  signature_surat_jalan_image: company.signature_surat_jalan_image || null,
+  signature_invoice_nama: company.signature_invoice_nama || '',
+  signature_invoice_image: company.signature_invoice_image || null,
+});
+
 const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState({
-    kode_company: '',
-    kode_company_surat: '',
-    nama_perusahaan: '',
-    alamat: '',
-    no_rekening: '',
-    bank: '',
-    bank_account_name: '',
-    bank_cabang: '',
-    telp: '',
-    fax: '',
-    email: '',
-    direktur_utama: '',
-    npwp: '',
-    id_tku: '',
-    id_tku: '',
-    logo: null,
-    signature_surat_jalan_nama: '',
-    signature_surat_jalan_image: null,
-  });
+  const [formData, setFormData] = useState(() => getFormDataFromCompany());
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (company) {
-      setFormData({
-        kode_company: company.kode_company || '',
-        kode_company_surat: company.kode_company_surat || '',
-        nama_perusahaan: company.nama_perusahaan || '',
-        alamat: company.alamat || '',
-        no_rekening: company.no_rekening || '',
-        bank: company.bank || '',
-        bank_account_name: company.bank_account_name || '',
-        bank_cabang: company.bank_cabang || '',
-        telp: company.telp || '',
-        fax: company.fax || '',
-        email: company.email || '',
-        direktur_utama: company.direktur_utama || '',
-        npwp: company.npwp || '',
-        id_tku: company.id_tku || '',
-        id_tku: company.id_tku || '',
-        logo: company.logo || null,
-        signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
-        signature_surat_jalan_image: company.signature_surat_jalan_image || null,
-      });
+      setFormData(getFormDataFromCompany(company));
     }
   }, [company]);
 
@@ -73,26 +57,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
     setIsEditMode(false);
     // Reset to original values
     if (company) {
-      setFormData({
-        kode_company: company.kode_company || '',
-        kode_company_surat: company.kode_company_surat || '',
-        nama_perusahaan: company.nama_perusahaan || '',
-        alamat: company.alamat || '',
-        no_rekening: company.no_rekening || '',
-        bank: company.bank || '',
-        bank_account_name: company.bank_account_name || '',
-        bank_cabang: company.bank_cabang || '',
-        telp: company.telp || '',
-        fax: company.fax || '',
-        email: company.email || '',
-        direktur_utama: company.direktur_utama || '',
-        npwp: company.npwp || '',
-        id_tku: company.id_tku || '',
-        id_tku: company.id_tku || '',
-        logo: company.logo || null,
-        signature_surat_jalan_nama: company.signature_surat_jalan_nama || '',
-        signature_surat_jalan_image: company.signature_surat_jalan_image || null,
-      });
+      setFormData(getFormDataFromCompany(company));
     }
   };
 

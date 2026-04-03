@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
 import CompanyForm from '@/components/companies/CompanyForm';
 
+const createInitialFormData = () => ({
+  kode_company: '',
+  kode_company_surat: '',
+  nama_perusahaan: '',
+  alamat: '',
+  no_rekening: '',
+  bank: '',
+  bank_account_name: '',
+  bank_cabang: '',
+  telp: '',
+  fax: '',
+  email: '',
+  direktur_utama: '',
+  npwp: '',
+  id_tku: '',
+  logo: null,
+  signature_surat_jalan_nama: '',
+  signature_surat_jalan_image: null,
+  signature_invoice_nama: '',
+  signature_invoice_image: null,
+});
+
 const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => {
-  const [formData, setFormData] = useState({
-    kode_company: '',
-    nama_perusahaan: '',
-    alamat: '',
-    no_rekening: '',
-    bank: '',
-    bank_account_name: '',
-    bank_cabang: '',
-    telp: '',
-    fax: '',
-    email: '',
-    direktur_utama: '',
-    npwp: '',
-    direktur_utama: '',
-    npwp: '',
-    logo: null,
-    signature_surat_jalan_nama: '',
-    signature_surat_jalan_image: null,
-    signature_invoice_nama: '',
-    signature_invoice_image: null,
-  });
+  const [formData, setFormData] = useState(createInitialFormData);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -92,26 +94,7 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
 
   const handleClose = () => {
     // Reset form data when closing
-    setFormData({
-      kode_company: '',
-      nama_perusahaan: '',
-      alamat: '',
-      no_rekening: '',
-      bank: '',
-      bank_account_name: '',
-      bank_cabang: '',
-      telp: '',
-      fax: '',
-      email: '',
-      direktur_utama: '',
-      npwp: '',
-      npwp: '',
-      logo: null,
-      signature_surat_jalan_nama: '',
-      signature_surat_jalan_image: null,
-      signature_invoice_nama: '',
-      signature_invoice_image: null,
-    });
+    setFormData(createInitialFormData());
     onClose();
   };
 
@@ -146,4 +129,3 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
 };
 
 export default AddCompanyModal;
-
