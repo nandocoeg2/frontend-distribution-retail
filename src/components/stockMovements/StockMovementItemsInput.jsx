@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 
@@ -11,175 +11,125 @@ const StockMovementItemsInput = ({
   loading = false,
 }) => {
   const itemOptions = useMemo(() => {
-    if (!Array.isArray(itemCatalog)) {
-      return [];
-    }
-
+    if (!Array.isArray(itemCatalog)) return [];
     return itemCatalog
       .map((item) => ({
         id: item?.id || '',
         label:
-          item?.nama_barang ||
-          item?.name ||
-          item?.inventoryName ||
-          item?.inventory_name ||
-          item?.sku ||
-          item?.plu ||
-          item?.id ||
-          '',
+          item?.nama_barang || item?.name || item?.inventoryName ||
+          item?.inventory_name || item?.sku || item?.plu || item?.id || '',
       }))
-      .filter((option) => option.id && option.label);
+      .filter((o) => o.id && o.label);
   }, [itemCatalog]);
 
-  const handleItemChange = (index, field, value) => {
-    const nextItems = items.map((item, currentIndex) =>
-      currentIndex === index ? { ...item, [field]: value } : item
-    );
-    onChange(nextItems);
+  // Block non-numeric keys on quantity fields
+  const handleQuantityKeyDown = (e) => {
+    // Allow: backspace, delete, tab, escape, enter, arrows, home, end
+    const allowed = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+      'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (allowed.includes(e.key)) return;
+    // Block anything that's not a digit
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
   };
 
-  const handleAddItem = () => {
-    onChange([...items, { ...defaultItem }]);
+  const handleItemChange = (index, field, value) => {
+    let sanitized = value;
+    if (field === 'quantity') {
+      // Strip anything non-digit, cap at max int (2147483647)
+      sanitized = value.replace(/\D/g, '');
+      if (sanitized && Number(sanitized) > 2147483647) {
+        sanitized = '2147483647';
+      }
+    }
+    const next = items.map((item, i) =>
+      i === index ? { ...item, [field]: sanitized } : item
+    );
+    onChange(next);
   };
+
+  const handleAddItem = () => onChange([...items, { ...defaultItem }]);
 
   const handleRemoveItem = (index) => {
-    if (items.length === 1) {
-      return;
-    }
-
-    const nextItems = items.filter((_, currentIndex) => currentIndex !== index);
-    onChange(nextItems);
+    if (items.length === 1) return;
+    onChange(items.filter((_, i) => i !== index));
   };
 
   return (
-    <section className='space-y-5'>
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
-        <div>
-          <h2 className='text-sm font-semibold text-gray-900'>
+    <div className='space-y-3'>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <h3 className='text-xs font-semibold uppercase tracking-wide text-gray-500'>
             Detail Item
-          </h2>
-          <p className='text-xs text-gray-500'>
-            Pilih item dan isi quantity sesuai barang yang bergerak. Kamu bisa menambahkan lebih
-            dari satu item sekaligus.
-          </p>
+          </h3>
+          <span className='rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600'>
+            {items.length} item · {items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)} pcs
+          </span>
         </div>
         <button
           type='button'
           onClick={handleAddItem}
-          className='inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+          className='inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500'
         >
-          <PlusIcon className='mr-1 h-4 w-4' aria-hidden='true' />
-          Tambah Item
+          <PlusIcon className='h-3.5 w-3.5' aria-hidden='true' />
+          Tambah
         </button>
       </div>
 
       {loading && (
-        <div className='flex items-center gap-2 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/60 px-3 py-2 text-xs text-indigo-700'>
+        <div className='flex items-center gap-2 rounded border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500'>
           <span className='inline-flex h-2 w-2 animate-pulse rounded-full bg-indigo-500' />
-          Memuat data item terbaru...
+          Memuat data item...
         </div>
       )}
 
-      <div className='space-y-4'>
-        {items.map((item, index) => {
-          const itemIndex = index + 1;
-          return (
-            <div
-              key={`movement-item-${index}`}
-              className='rounded-xl border border-gray-200 bg-gray-50/60 p-4 shadow-sm'
-            >
-              <div className='mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                <div>
-                  <span className='inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 shadow'>
-                    Item #{itemIndex}
-                  </span>
-                  <p className='mt-2 text-xs text-gray-500'>
-                    Masukkan ID item dan quantity sesuai dokumen sumber.
-                  </p>
-                </div>
-                {items.length > 1 && (
-                  <button
-                    type='button'
-                    onClick={() => handleRemoveItem(index)}
-                    className='inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2'
-                    aria-label={`Hapus item ${itemIndex}`}
-                  >
-                    <TrashIcon className='mr-1 h-4 w-4' aria-hidden='true' />
-                    Hapus
-                  </button>
-                )}
-              </div>
-
-              <div className='grid gap-4 sm:grid-cols-2'>
-                <div>
-                  <label
-                    htmlFor={`item-id-${index}`}
-                    className='block text-sm font-medium text-gray-700'
-                  >
-                    Item
-                  </label>
-                  <Autocomplete
-                    label=''
-                    name={`itemId-${index}`}
-                    options={itemOptions}
-                    value={item.itemId ? String(item.itemId) : ''}
-                    onChange={(event) =>
-                      handleItemChange(index, 'itemId', event.target.value)
-                    }
-                    placeholder='Cari nama barang atau ID item'
-                    displayKey='label'
-                    valueKey='id'
-                    loading={loading}
-                    showId
-                    className='mt-1'
-                    inputClassName='rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500'
-                  />
-                  <p
-                    id={`item-helper-${index}`}
-                    className='mt-1 text-xs text-gray-500'
-                  >
-                    Ketik untuk mencari item, lalu pilih dari daftar yang muncul.
-                  </p>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`item-quantity-${index}`}
-                    className='block text-sm font-medium text-gray-700'
-                  >
-                    Quantity
-                  </label>
-                  <div className='mt-1 flex rounded-lg border border-gray-300 bg-white shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500'>
-                    <input
-                      id={`item-quantity-${index}`}
-                      name={`quantity-${index}`}
-                      type='number'
-                      min='1'
-                      value={item.quantity}
-                      onChange={(event) =>
-                        handleItemChange(index, 'quantity', event.target.value)
-                      }
-                      placeholder='cth. 100'
-                      className='w-full rounded-lg px-3 py-2 text-sm focus:outline-none'
-                      aria-describedby={`quantity-helper-${index}`}
-                    />
-                    <span className='inline-flex items-center px-3 text-xs font-medium text-gray-500'>
-                      pcs
-                    </span>
-                  </div>
-                  <p
-                    id={`quantity-helper-${index}`}
-                    className='mt-1 text-xs text-gray-500'
-                  >
-                    Masukkan jumlah unit yang bergerak. Gunakan angka positif.
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* Table-like header */}
+      <div className='hidden sm:grid sm:grid-cols-[1fr_120px_40px] gap-2 px-1 text-xs font-medium uppercase tracking-wide text-gray-400'>
+        <span>Item</span>
+        <span>Qty</span>
+        <span />
       </div>
-    </section>
+
+      <div className='space-y-2'>
+        {items.map((item, index) => (
+          <div
+            key={`movement-item-${index}`}
+            className='grid grid-cols-1 gap-2 rounded-md border border-gray-200 bg-white p-2.5 sm:grid-cols-[1fr_120px_40px] sm:items-center'
+          >
+            <Autocomplete
+              label='' name={`itemId-${index}`} options={itemOptions}
+              value={item.itemId ? String(item.itemId) : ''}
+              onChange={(e) => handleItemChange(index, 'itemId', e.target.value)}
+              placeholder='Cari item...'
+              displayKey='label' valueKey='id' loading={loading} showId
+            />
+            <input
+              id={`item-quantity-${index}`}
+              type='text' inputMode='numeric' pattern='[0-9]*'
+              value={item.quantity}
+              onKeyDown={handleQuantityKeyDown}
+              onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData('text');
+                if (!/^\d+$/.test(pasted)) e.preventDefault();
+              }}
+              placeholder='Qty'
+              className='w-full rounded-md border border-gray-300 px-2.5 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500'
+            />
+            <button
+              type='button'
+              onClick={() => handleRemoveItem(index)}
+              disabled={items.length === 1}
+              className='flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 disabled:invisible'
+              aria-label={`Hapus item ${index + 1}`}
+            >
+              <TrashIcon className='h-4 w-4' aria-hidden='true' />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
