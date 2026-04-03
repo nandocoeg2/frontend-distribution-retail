@@ -11,6 +11,8 @@ import CreateStockOutModal from '../components/stockMovements/CreateStockOutModa
 import { getItems } from '../services/itemService';
 import supplierService from '../services/supplierService';
 import toastService from '../services/toastService';
+import { exportExcel } from '@/services/stockMovementService';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 
 const StockMovements = () => {
   const {
@@ -32,6 +34,8 @@ const StockMovements = () => {
 
   const [showStockInModal, setShowStockInModal] = useState(false);
   const [showStockOutModal, setShowStockOutModal] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const [itemOptions, setItemOptions] = useState([]);
   const [editingMovement, setEditingMovement] = useState(null);
   const [editNotesValue, setEditNotesValue] = useState('');
@@ -141,6 +145,24 @@ const StockMovements = () => {
     }
   }, [editingMovement, editNotesValue, updateMovementNotes, handleCloseEditNotes]);
 
+  const handleExportExcel = () => {
+    setShowExportConfirmation(true);
+  };
+
+  const confirmExportExcel = async () => {
+    try {
+      setShowExportConfirmation(false);
+      setExportLoading(true);
+      await exportExcel(filters?.search || '');
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
 
 
   return (
@@ -151,6 +173,24 @@ const StockMovements = () => {
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h1 className='text-sm font-semibold text-gray-900'>Inventory</h1>
             <div className='flex gap-2'>
+              <button
+                type='button'
+                onClick={handleExportExcel}
+                disabled={exportLoading}
+                className='inline-flex items-center justify-center rounded bg-green-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors'
+              >
+                {exportLoading ? (
+                  <>
+                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowDownTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
+                    Export Excel
+                  </>
+                )}
+              </button>
               <button
                 type='button'
                 onClick={() => setShowStockOutModal(true)}
@@ -265,6 +305,19 @@ const StockMovements = () => {
           </div>
         </div>
       )}
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={confirmExportExcel}
+        title="Konfirmasi Export"
+        message="Apakah Anda yakin ingin mengexport data ini ke Excel?"
+        type="info"
+        confirmText="Ya, Export"
+        cancelText="Batal"
+        loading={exportLoading}
+      />
     </div>
   );
 };
