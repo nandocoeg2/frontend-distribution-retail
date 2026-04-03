@@ -98,7 +98,7 @@ const ReportPoSuppliersTable = ({ data = [], loading = false, selectedId, onSele
             return (
               <tr key={rk} className={sel ? 'bg-indigo-50' : 'hover:bg-gray-50'}>
                 <td className='border border-gray-200 px-2 py-1.5 text-center'>
-                  <input type='radio' name='rps' checked={sel}
+                  <input type='checkbox' checked={sel}
                     onChange={() => onSelect?.(sel ? null : row)}
                     className='h-3.5 w-3.5 cursor-pointer accent-indigo-600'
                     aria-label={`Pilih ${row.supplier?.name || ''}`} />
