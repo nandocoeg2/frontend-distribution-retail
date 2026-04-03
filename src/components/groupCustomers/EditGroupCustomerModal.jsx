@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import toastService from '@/services/toastService';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -70,14 +70,14 @@ const EditGroupCustomerModal = ({ show, onClose, groupCustomer, onGroupCustomerU
 
   return (
     <div
-      className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'
       onClick={onClose}
     >
       <div
-        className='bg-white rounded-lg p-6 w-full max-w-md mx-4'
+        className='w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex justify-between items-center mb-4'>
+        <div className='flex justify-between items-center px-5 py-3 border-b border-gray-200'>
           <h3 className='text-lg font-medium text-gray-900'>
             Edit Group Customer
           </h3>

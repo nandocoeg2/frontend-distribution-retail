@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import ItemForm from './ItemForm';
 import { useItemOperations } from '../../hooks/useItem';
 import { getItemById } from '../../services/itemService';
@@ -12,52 +13,27 @@ const EditItemModal = ({ item, onClose }) => {
     clearError,
     validateItemData
   } = useItemOperations();
+
   const normalizeItemPayload = useCallback((payload = {}) => {
     const dimensiValue = (() => {
-      if (
-        payload.dimensiBarang &&
-        typeof payload.dimensiBarang === 'object' &&
-        !Array.isArray(payload.dimensiBarang)
-      ) {
-        return payload.dimensiBarang;
-      }
-      if (Array.isArray(payload.dimensiBarang) && payload.dimensiBarang.length > 0) {
-        return payload.dimensiBarang[0];
-      }
-      if (payload.dimensi && typeof payload.dimensi === 'object') {
-        return payload.dimensi;
-      }
+      if (payload.dimensiBarang && typeof payload.dimensiBarang === 'object' && !Array.isArray(payload.dimensiBarang)) return payload.dimensiBarang;
+      if (Array.isArray(payload.dimensiBarang) && payload.dimensiBarang.length > 0) return payload.dimensiBarang[0];
+      if (payload.dimensi && typeof payload.dimensi === 'object') return payload.dimensi;
       return {};
     })();
 
     const dimensiKarton = (() => {
-      if (
-        payload.dimensiKarton &&
-        typeof payload.dimensiKarton === 'object' &&
-        !Array.isArray(payload.dimensiKarton)
-      ) {
-        return payload.dimensiKarton;
-      }
-      if (Array.isArray(payload.dimensiKarton) && payload.dimensiKarton.length > 0) {
-        return payload.dimensiKarton[0];
-      }
-      if (payload.cartonDimension && typeof payload.cartonDimension === 'object') {
-        return payload.cartonDimension;
-      }
+      if (payload.dimensiKarton && typeof payload.dimensiKarton === 'object' && !Array.isArray(payload.dimensiKarton)) return payload.dimensiKarton;
+      if (Array.isArray(payload.dimensiKarton) && payload.dimensiKarton.length > 0) return payload.dimensiKarton[0];
+      if (payload.cartonDimension && typeof payload.cartonDimension === 'object') return payload.cartonDimension;
       return null;
     })();
 
     const itemStock = payload.itemStock || payload.itemStocks || payload.item_stock || {};
     const itemPrice = (() => {
-      if (payload.itemPrice && typeof payload.itemPrice === 'object') {
-        return payload.itemPrice;
-      }
-      if (Array.isArray(payload.itemPrices) && payload.itemPrices.length > 0) {
-        return payload.itemPrices[0];
-      }
-      if (payload.item_price && typeof payload.item_price === 'object') {
-        return payload.item_price;
-      }
+      if (payload.itemPrice && typeof payload.itemPrice === 'object') return payload.itemPrice;
+      if (Array.isArray(payload.itemPrices) && payload.itemPrices.length > 0) return payload.itemPrices[0];
+      if (payload.item_price && typeof payload.item_price === 'object') return payload.item_price;
       return {};
     })();
 
@@ -76,46 +52,31 @@ const EditItemModal = ({ item, onClose }) => {
       tinggi: payload.tinggi ?? dimensiValue?.tinggi ?? 0
     };
   }, []);
+
   const [initialData, setInitialData] = useState(() => normalizeItemPayload(item));
   const [detailLoading, setDetailLoading] = useState(false);
 
-  useEffect(() => {
-    clearError();
-  }, [clearError]);
+  useEffect(() => { clearError(); }, [clearError]);
 
   useEffect(() => {
     setInitialData(normalizeItemPayload(item));
+    if (!item?.id) return;
 
-    if (!item?.id) {
-      return;
-    }
-
-    const hasDimensiObject =
-      item.dimensiBarang &&
-      typeof item.dimensiBarang === 'object' &&
-      !Array.isArray(item.dimensiBarang);
+    const hasDimensiObject = item.dimensiBarang && typeof item.dimensiBarang === 'object' && !Array.isArray(item.dimensiBarang);
     const hasItemStock = Boolean(item.itemStock || item.itemStocks);
-
-    const shouldFetchDetail = !hasDimensiObject || !hasItemStock;
-    if (!shouldFetchDetail) {
-      return;
-    }
+    if (hasDimensiObject && hasItemStock) return;
 
     const loadDetail = async () => {
       try {
         setDetailLoading(true);
         const response = await getItemById(item.id);
-        if (response.success) {
-          const detail = normalizeItemPayload(response.data || {});
-          setInitialData(detail);
-        }
+        if (response.success) setInitialData(normalizeItemPayload(response.data || {}));
       } catch (err) {
         console.error('Failed to fetch item detail:', err);
       } finally {
         setDetailLoading(false);
       }
     };
-
     loadDetail();
   }, [item, normalizeItemPayload]);
 
@@ -126,7 +87,6 @@ const EditItemModal = ({ item, onClose }) => {
       setError(firstErrorMessage);
       return;
     }
-
     try {
       await updateItemData(item.id, formData);
       onClose();
@@ -136,22 +96,17 @@ const EditItemModal = ({ item, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Edit Item</h2>
-            <p className="text-sm text-gray-600">Perbarui data barang dan pastikan konsisten dengan API.</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 text-gray-500 transition hover:bg-white hover:text-gray-700"
-            aria-label="Tutup"
-          >
-            ×
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
+      <div className='w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'>
+        {/* Header */}
+        <div className='flex items-center justify-between border-b border-gray-200 bg-amber-600 px-5 py-3 text-white'>
+          <h2 className='text-base font-semibold'>Edit Item</h2>
+          <button onClick={onClose} className='rounded p-1 hover:bg-white/20 focus:outline-none' aria-label='Tutup'>
+            <XMarkIcon className='h-5 w-5' aria-hidden='true' />
           </button>
         </div>
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
+
+        <div className='max-h-[80vh] overflow-y-auto px-5 py-4'>
           <ItemForm
             onSubmit={handleSubmit}
             onClose={onClose}

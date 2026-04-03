@@ -1,4 +1,3 @@
-import React from 'react';
 import ImageUpload from '@/components/common/ImageUpload';
 
 const CompanyForm = ({
@@ -78,7 +77,7 @@ const CompanyForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., ABC (max 5 chars)"
           />
-          <p className="text-xs text-gray-500 mt-1">Kode singkat untuk surat jalan (maksimal 5 karakter)</p>
+
         </div>
 
         <div>
@@ -91,7 +90,6 @@ const CompanyForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Mayang (Default)"
           />
-          <p className="text-xs text-gray-500 mt-1">Nama yang muncul di tanda tangan surat jalan</p>
         </div>
 
         <div>
@@ -104,7 +102,6 @@ const CompanyForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Director Name"
           />
-          <p className="text-xs text-gray-500 mt-1">Nama yang muncul di tanda tangan Invoice</p>
         </div>
 
         <div>
@@ -122,14 +119,14 @@ const CompanyForm = ({
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-          <textarea
+          <input
+            type="text"
             name="alamat"
             value={formData.alamat}
             onChange={handleInputChange}
-            rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Jl. Contoh No. 123"
-          ></textarea>
+          />
         </div>
 
         <div>
@@ -250,7 +247,7 @@ const CompanyForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., TKU12345"
           />
-          <p className="text-xs text-gray-500 mt-1">ID Tempat Kegiatan Usaha</p>
+
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import BulkUploadGroupCustomer from '@/components/groupCustomers/BulkUploadGroupCustomer';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -19,14 +19,14 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
 
   return (
     <div
-      className='fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50'
+      className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'
       onClick={onClose}
     >
       <div
-        className='bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto'
+        className='w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className='flex justify-between items-center mb-6'>
+        <div className='flex justify-between items-center px-5 py-3 border-b border-gray-200'>
           <h3 className='text-lg font-medium text-gray-900'>
             Add Group Customer
           </h3>
@@ -39,7 +39,7 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
         </div>
 
         {/* Tab Navigation */}
-        <div className='flex space-x-1 border-b border-gray-200 mb-6'>
+        <div className='flex space-x-1 border-b border-gray-200 px-5'>
           <button
             onClick={() => setActiveTab('single')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'single'
@@ -61,6 +61,7 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
         </div>
 
         {/* Tab Content */}
+        <div className='px-5 py-4 overflow-y-auto max-h-[calc(85vh-120px)]'>
         {activeTab === 'single' && (
           <GroupCustomerForm
             onSubmit={handleSubmit}
@@ -71,6 +72,7 @@ const AddGroupCustomerModal = ({ show, onClose, onGroupCustomerAdded }) => {
         {activeTab === 'bulk' && (
           <BulkUploadGroupCustomer onClose={onClose} />
         )}
+        </div>
       </div>
     </div>
   );

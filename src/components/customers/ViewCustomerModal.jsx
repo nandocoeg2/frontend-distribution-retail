@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import customerService from '@/services/customerService';
 import groupCustomerService from '@/services/groupCustomerService';
 import toastService from '@/services/toastService';
@@ -81,13 +81,12 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
-            <p className="text-sm text-gray-600">{customer?.namaCustomer}</p>
           </div>
           <button 
             onClick={onClose} 
@@ -98,7 +97,7 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50">
           {loading ? (
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -269,7 +268,6 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                       <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
                         <UserCircleIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-600 font-medium">No PICs Available</p>
-                        <p className="text-sm text-gray-400 mt-2">No person in charge has been added to this customer</p>
                       </div>
                     )}
                   </div>
@@ -338,7 +336,6 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                       <div className="text-center py-10">
                         <UserGroupIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">No group customer data available</p>
-                        <p className="text-sm text-gray-400 mt-2">This customer is not assigned to any group</p>
                       </div>
                     )}
                   </div>
@@ -353,7 +350,7 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4 bg-white">
+        <div className="border-t border-gray-200 px-5 py-3 bg-white">
           <div className="flex justify-end">
             <button
               onClick={onClose}

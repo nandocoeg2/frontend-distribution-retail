@@ -1,5 +1,3 @@
-import React from 'react';
-
 const TermOfPaymentForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false }) => {
   return (
     <form onSubmit={handleSubmit}>

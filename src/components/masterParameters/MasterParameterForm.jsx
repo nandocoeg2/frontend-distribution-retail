@@ -1,5 +1,3 @@
-import React from 'react';
-
 const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false }) => {
   return (
     <form onSubmit={handleSubmit}>
@@ -20,9 +18,7 @@ const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeM
             className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed font-mono'
             placeholder='UPPER_SNAKE_CASE'
           />
-          <p className='mt-1 text-xs text-gray-500'>
-            Use UPPER_SNAKE_CASE format (e.g., GOOGLE_API_KEY). Cannot be changed after creation.
-          </p>
+
         </div>
 
         {/* Value Field */}
@@ -30,13 +26,13 @@ const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeM
           <label htmlFor='value' className='block text-sm font-medium text-gray-700'>
             Value <span className='text-red-500'>*</span>
           </label>
-          <textarea
+          <input
+            type='text'
             id='value'
             name='value'
             value={formData.value}
             onChange={handleInputChange}
             required
-            rows={3}
             className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
             placeholder='Enter parameter value'
           />
@@ -47,12 +43,12 @@ const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeM
           <label htmlFor='description' className='block text-sm font-medium text-gray-700'>
             Description
           </label>
-          <textarea
+          <input
+            type='text'
             id='description'
             name='description'
             value={formData.description}
             onChange={handleInputChange}
-            rows={3}
             className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
             placeholder='Describe the purpose of this parameter'
           />

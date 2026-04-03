@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AccordionItem, InfoCard, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';
 import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
@@ -23,10 +23,10 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
   };
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50'>
-      <div className='bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
+      <div className='w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col'>
         {/* Header */}
-        <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50'>
+        <div className='flex items-center justify-between p-6 border-b border-gray-200'>
           <div className='flex items-center space-x-4'>
             <div className='p-2 bg-purple-100 rounded-lg'>
               <span className='text-2xl'>
@@ -34,10 +34,9 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               </span>
             </div>
             <div>
-              <h2 className='text-2xl font-bold text-gray-900'>
+              <h2 className="text-xl font-bold text-gray-900">
                 Detail Supplier
               </h2>
-              <p className='text-sm text-gray-600'>{supplier.name}</p>
             </div>
           </div>
           <button

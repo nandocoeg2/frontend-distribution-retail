@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { XMarkIcon, UserGroupIcon, MapPinIcon, ClockIcon, TagIcon, UsersIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable, StatusBadge, TabContainer, Tab, TabContent, TabPanel } from '../ui';
@@ -17,15 +17,14 @@ const ViewGroupCustomerModal = ({ show, onClose, groupCustomer, loading = false 
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-          <div className="flex justify-between items-center p-6 border-b border-gray-200">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
+          <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Group Customer Details</h2>
-              <p className="text-sm text-gray-600">Loading...</p>
             </div>
           </div>
-          <div className="flex-1 flex items-center justify-center p-6 bg-gray-50">
+          <div className="flex-1 flex items-center justify-center px-5 py-4 bg-gray-50">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         </div>
@@ -34,16 +33,12 @@ const ViewGroupCustomerModal = ({ show, onClose, groupCustomer, loading = false 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Group Customer Details</h2>
-            <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-              <TagIcon className="h-4 w-4 text-gray-400" />
-              {groupCustomer?.kode_group || 'No group code available'}
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -56,7 +51,7 @@ const ViewGroupCustomerModal = ({ show, onClose, groupCustomer, loading = false 
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-gray-50">
           {groupCustomer ? (
-            <div className="p-6">
+            <div className="px-5 py-4">
               {/* Tab Navigation */}
               <TabContainer
                 activeTab={activeTab}

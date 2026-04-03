@@ -1,4 +1,3 @@
-import React from 'react';
 import useGroupCustomerForm from '../../hooks/useGroupCustomerForm';
 
 const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = false }) => {
@@ -102,12 +101,12 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Alamat
         </label>
-        <textarea
+        <input
+          type="text"
           name="alamat"
           value={formData.alamat}
           onChange={handleInputChange}
           disabled={loading}
-          rows={3}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
             errors.alamat ? 'border-red-500' : 'border-gray-300'
           }`}

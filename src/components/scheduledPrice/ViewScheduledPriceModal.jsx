@@ -1,4 +1,3 @@
-import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { formatDateTime, formatCurrency } from '../../utils/formatUtils';
 
@@ -27,14 +26,11 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Schedule Details</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              View price schedule information
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -44,7 +40,7 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="space-y-6">
             {/* Status */}
             <div>
@@ -241,7 +237,7 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200">
+        <div className="px-5 py-3 border-t border-gray-200">
           <button
             onClick={onClose}
             className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"

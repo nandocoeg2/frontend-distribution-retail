@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   XMarkIcon,
   BuildingOfficeIcon,
@@ -20,16 +19,12 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
   const logoUrl = company?.logo || null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Company Details</h2>
-            <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-              <BuildingOfficeIcon className="h-4 w-4 text-gray-400" />
-              {company?.nama_perusahaan || 'No company name available'}
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -40,7 +35,7 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50">
           {company ? (
             <div className="space-y-6">
               {/* Company Logo */}

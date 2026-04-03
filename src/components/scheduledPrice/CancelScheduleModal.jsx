@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
 
@@ -19,14 +19,11 @@ const CancelScheduleModal = ({ schedule, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Cancel Schedule</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              This action cannot be undone
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -36,7 +33,7 @@ const CancelScheduleModal = ({ schedule, onClose, onSuccess }) => {
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="px-5 py-4">
           <div className="mb-4">
             <p className="text-gray-700">
               Are you sure you want to cancel this price schedule?
@@ -59,11 +56,11 @@ const CancelScheduleModal = ({ schedule, onClose, onSuccess }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Reason for Cancellation (Optional)
               </label>
-              <textarea
+              <input
+                type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Enter reason for cancellation..."
-                rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

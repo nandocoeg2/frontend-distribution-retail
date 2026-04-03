@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import ItemForm from './ItemForm';
 import BulkUploadItem from './BulkUploadItem';
 import { useItemOperations } from '../../hooks/useItem';
@@ -25,7 +26,6 @@ const AddItemModal = ({ onClose }) => {
       setError(firstErrorMessage);
       return;
     }
-
     try {
       await createItemData(formData);
       onClose();
@@ -35,71 +35,38 @@ const AddItemModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Tambah Item</h2>
-            <p className="text-sm text-gray-600">
-              {activeTab === 'manual' 
-                ? 'Lengkapi detail barang sesuai dokumentasi API terbaru.' 
-                : 'Upload file Excel untuk menambahkan item secara massal.'}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 text-gray-500 transition hover:bg-white hover:text-gray-700"
-            aria-label="Tutup"
-          >
-            ×
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
+      <div className='w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'>
+        {/* Header */}
+        <div className='flex items-center justify-between border-b border-gray-200 bg-blue-600 px-5 py-3 text-white'>
+          <h2 className='text-base font-semibold'>Tambah Item</h2>
+          <button onClick={onClose} className='rounded p-1 hover:bg-white/20 focus:outline-none' aria-label='Tutup'>
+            <XMarkIcon className='h-5 w-5' aria-hidden='true' />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 bg-white px-6">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <div className='border-b border-gray-200 bg-white px-5'>
+          <nav className='-mb-px flex gap-6' aria-label='Tabs'>
             <button
               onClick={() => setActiveTab('manual')}
-              className={`${
-                activeTab === 'manual'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              className={`${activeTab === 'manual' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-2.5 border-b-2 text-sm font-medium transition-colors`}
             >
-              <div className="flex items-center space-x-2">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                <span>Manual</span>
-              </div>
+              Manual
             </button>
             <button
               onClick={() => setActiveTab('bulk')}
-              className={`${
-                activeTab === 'bulk'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              className={`${activeTab === 'bulk' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-2.5 border-b-2 text-sm font-medium transition-colors`}
             >
-              <div className="flex items-center space-x-2">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <span>Bulk Upload</span>
-              </div>
+              Bulk Upload
             </button>
           </nav>
         </div>
 
-        {/* Tab Content */}
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
+        {/* Content */}
+        <div className='max-h-[80vh] overflow-y-auto px-5 py-4'>
           {activeTab === 'manual' ? (
-            <ItemForm
-              onSubmit={handleSubmit}
-              onClose={onClose}
-              loading={loading}
-              error={error}
-            />
+            <ItemForm onSubmit={handleSubmit} onClose={onClose} loading={loading} error={error} />
           ) : (
             <BulkUploadItem onClose={onClose} />
           )}

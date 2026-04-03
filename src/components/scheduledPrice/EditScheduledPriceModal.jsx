@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
 
@@ -103,14 +103,11 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Edit Price Schedule</h2>
-            <p className="text-sm text-gray-600">
-              {schedule.itemPrice?.inventory?.nama_barang || 'Unknown Item'}
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -120,7 +117,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {errors.general && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
               <p className="text-red-600">{errors.general}</p>
@@ -294,11 +291,11 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Notes
               </label>
-              <textarea
+              <input
+                type="text"
                 value={formData.notes}
                 onChange={(e) => handleChange('notes', e.target.value)}
                 placeholder="Optional notes about this price change..."
-                rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
 import { parseErrorMessage } from '../../utils/errorUtils';
@@ -206,12 +206,11 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Create Price Schedule</h2>
-            <p className="text-sm text-gray-600">Set a scheduled price for an item</p>
           </div>
           <button
             onClick={onClose}
@@ -222,7 +221,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-1 border-b border-gray-200 px-6">
+        <div className="flex space-x-1 border-b border-gray-200 px-5">
           <button
             onClick={() => setActiveTab('single')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'single'
@@ -243,7 +242,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-5 py-4">
           {/* Bulk Upload Tab */}
           {activeTab === 'bulk' && (
             <BulkUploadScheduledPrice onClose={onClose} onSuccess={onSuccess} />
@@ -316,11 +315,6 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                 {selectedCustomer && (
                   <p className="text-sm text-gray-600 mt-1">
                     Harga ini hanya berlaku untuk: {selectedCustomer.namaCustomer}
-                  </p>
-                )}
-                {!formData.customerId && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Jika tidak dipilih, harga berlaku untuk semua customer
                   </p>
                 )}
               </div>
@@ -445,11 +439,11 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Notes
                 </label>
-                <textarea
+                <input
+                  type="text"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Optional notes about this price change..."
-                  rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

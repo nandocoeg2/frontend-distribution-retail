@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { groupCustomerService } from '@/services/groupCustomerService';
 import toastService from '@/services/toastService';
 import Autocomplete from '@/components/common/Autocomplete';
@@ -198,12 +198,12 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             Shipping Address
           </label>
-          <textarea
+          <input
+            type='text'
             name='alamatPengiriman'
             value={formData.alamatPengiriman}
             onChange={handleChange}
             disabled={isLoading}
-            rows='2'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
         </div>
@@ -243,12 +243,12 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             NPWP Address
           </label>
-          <textarea
+          <input
+            type='text'
             name='alamatNPWP'
             value={formData.alamatNPWP}
             onChange={handleChange}
             disabled={isLoading}
-            rows='1'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
         </div>

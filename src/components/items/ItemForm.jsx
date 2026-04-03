@@ -395,7 +395,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
 
       <FormSection
         title="Informasi Dasar"
-        description="Lengkapi identitas utama item. PLU tidak dapat diubah setelah data dibuat."
       >
         <div className="mb-4">
           <label htmlFor="companyId" className="block text-sm font-medium text-gray-700 mb-1">
@@ -417,9 +416,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-500">
-            Item akan terdaftar di company yang dipilih.
-          </p>
         </div>
         <FormField
           label="PLU (Price Look-Up)"
@@ -460,7 +456,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           onChange={handleChange}
           required
           placeholder="Contoh: PCS"
-          helperText="Nilai disimpan dalam huruf besar."
         />
         <div className="flex items-start gap-2 pt-2">
           <input
@@ -475,9 +470,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
             <label htmlFor="allow_mixed_carton" className="text-sm font-medium text-gray-700">
               Perbolehkan Mixed Carton
             </label>
-            <p className="text-xs text-gray-500">
-              Centang jika barang boleh dicampur dalam mixed carton (default: aktif).
-            </p>
           </div>
         </div>
 
@@ -495,7 +487,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
               placeholder="Pilih item yang boleh dicampur dengan item ini..."
               loading={loadingMixableItems}
               disabled={loading}
-              helperText="Pilih item mana saja yang boleh dicampur dalam satu karton dengan item ini. Hanya item dengan 'Allow Mixed Carton' yang ditampilkan."
             />
 
             {/* Display current relationships if editing */}
@@ -520,7 +511,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
 
       <FormSection
         title="Dimensi Karton (Opsional)"
-        description="Isi jika dimensi karton berbeda dengan dimensi produk."
       >
         <FormField
           label="Berat Karton (kg)"
@@ -566,7 +556,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
 
       <FormSection
         title="Dimensi Unit"
-        description="Isi detail dimensi unit barang."
       >
         <FormField
           label="Berat (kg)"
@@ -612,7 +601,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
 
       <FormSection
         title="Stok"
-        description="Masukkan data stok dalam itemStock (opsional)."
       >
         <FormField
           label="Stok Quantity (pcs)"
@@ -643,13 +631,11 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           min={0}
           step={1}
           inputMode="numeric"
-          helperText="Digunakan untuk menghitung estimasi stok karton."
         />
       </FormSection>
 
       <FormSection
         title="Harga"
-        description="Konfigurasi itemPrice. Harga Setelah Potongan dihitung otomatis."
       >
         {/* Row 1: Harga Dasar | PPN */}
         <FormField
@@ -690,7 +676,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           type="number"
           value={formData.harga1}
           disabled={true}
-          helperText="Dihitung otomatis: Harga Dasar - (Harga Dasar × Potongan A%)"
         />
 
         {/* Row 3: Potongan B | Harga Setelah Potongan B */}
@@ -710,7 +695,6 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           type="number"
           value={formData.harga2}
           disabled={true}
-          helperText="Dihitung otomatis: Harga Setelah Potongan A - (Harga Setelah Potongan A × Potongan B%)"
         />
       </FormSection>
 

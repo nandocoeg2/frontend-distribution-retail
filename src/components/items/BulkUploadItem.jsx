@@ -178,10 +178,7 @@ const BulkUploadItem = ({ onClose, onSuccess }) => {
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-blue-900">Langkah 1: Download Template</h3>
-            <p className="mt-1 text-sm text-blue-700">
-              Download template Excel terlebih dahulu, isi data item sesuai format yang tersedia.
-            </p>
+            <h3 className="text-sm font-medium text-blue-900">1. Download Template</h3>
             <button
               type="button"
               onClick={handleDownloadTemplate}
@@ -218,12 +215,9 @@ const BulkUploadItem = ({ onClose, onSuccess }) => {
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-green-900">Langkah 2: Upload File</h3>
-            <p className="mt-1 text-sm text-green-700">
-              Pilih file Excel yang sudah diisi untuk diupload.
-            </p>
+            <h3 className="text-sm font-medium text-green-900">2. Upload File</h3>
 
-            <div className="mt-3 space-y-3">
+            <div className="mt-2 space-y-3">
               <div className="flex items-center space-x-3">
                 <input
                   ref={fileInputRef}

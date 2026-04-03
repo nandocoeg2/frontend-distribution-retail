@@ -1,5 +1,4 @@
-import React from 'react';
-import { PlusIcon, TrashIcon, UserIcon, PhoneIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, UserIcon } from '@heroicons/react/24/outline';
 
 const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {
   const ensureOneDefault = (updatedPics) => {
@@ -64,7 +63,7 @@ const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {
         <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">No PICs added yet</p>
-          <p className="text-xs text-gray-400 mt-1">Click "Add PIC" to add a person in charge</p>
+
         </div>
       ) : (
         <div className="space-y-3">
@@ -168,11 +167,7 @@ const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {
         </div>
       )}
 
-      {pics.length > 0 && (
-        <p className="text-xs text-gray-500 italic">
-          * The default PIC will be used as the primary contact for this customer
-        </p>
-      )}
+
     </div>
   );
 };
