@@ -50,6 +50,26 @@ const groupColors = {
   amber: { border: 'border-amber-200', bg: 'bg-amber-50', text: 'text-amber-700' },
 };
 
+// Defined outside component to prevent remount on every render
+const Label = ({ children, required: req }) => (
+  <label className='block text-[11px] font-medium text-gray-500 mb-0.5'>
+    {children}{req && <span className='text-red-500'> *</span>}
+  </label>
+);
+const Input = ({ value, onChange, placeholder, type = 'text', disabled = false, inputMode }) => (
+  <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
+    inputMode={inputMode}
+    className={`w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${disabled ? 'bg-gray-100 text-gray-500' : ''}`} />
+);
+const Computed = ({ value }) => (
+  <input type='text' value={value} readOnly
+    className='w-full rounded-md border border-gray-200 bg-gray-100 px-2.5 py-1.5 text-sm text-gray-600' />
+);
+const GroupHeader = ({ label, color }) => {
+  const c = groupColors[color];
+  return <div className={`mb-2 inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${c.bg} ${c.text}`}>{label}</div>;
+};
+
 const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null }) => {
   const isEdit = !!editData;
   const [form, setForm] = useState(() => buildForm(editData));
@@ -141,25 +161,6 @@ const ReportPoSupplierFormModal = ({ show, onClose, onSubmit, editData = null })
   };
 
   if (!show) return null;
-
-  const Label = ({ children, required: req }) => (
-    <label className='block text-[11px] font-medium text-gray-500 mb-0.5'>
-      {children}{req && <span className='text-red-500'> *</span>}
-    </label>
-  );
-  const Input = ({ value, onChange, placeholder, type = 'text', disabled = false, inputMode }) => (
-    <input type={type} value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
-      inputMode={inputMode}
-      className={`w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${disabled ? 'bg-gray-100 text-gray-500' : ''}`} />
-  );
-  const Computed = ({ value }) => (
-    <input type='text' value={value} disabled
-      className='w-full rounded-md border border-gray-200 bg-gray-100 px-2.5 py-1.5 text-sm text-gray-600' />
-  );
-  const GroupHeader = ({ label, color }) => {
-    const c = groupColors[color];
-    return <div className={`mb-2 inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${c.bg} ${c.text}`}>{label}</div>;
-  };
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
