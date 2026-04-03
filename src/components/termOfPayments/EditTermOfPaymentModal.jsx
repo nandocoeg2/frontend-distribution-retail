@@ -36,9 +36,9 @@ const EditTermOfPaymentModal = ({ show, onClose, termOfPayment, onTermOfPaymentU
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
       <div className='w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'>
-        <h3 className='text-lg font-medium text-gray-900 px-5 py-3 border-b border-gray-200'>
-          Edit Term of Payment
-        </h3>
+        <div className='flex items-center justify-between border-b border-gray-200 bg-amber-600 px-5 py-3 text-white'>
+          <h3 className='text-base font-semibold'>Edit Term of Payment</h3>
+        </div>
         <TermOfPaymentForm 
           formData={formData} 
           handleInputChange={handleInputChange} 

@@ -100,73 +100,76 @@ const AddParentGroupCustomerModal = ({ show, onClose, onParentGroupCustomerAdded
                 className='w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className='flex justify-between items-center px-5 py-3 border-b border-gray-200'>
-                    <h3 className='text-lg font-medium text-gray-900'>
-                        Add Parent Group Customer
+                <div className='flex items-center justify-between border-b border-gray-200 bg-blue-600 px-5 py-3 text-white'>
+                    <h3 className='text-base font-semibold'>
+                        Parent Group Customer
                     </h3>
                     <button
                         onClick={onClose}
-                        className='text-gray-400 hover:text-gray-500'
+                        className='rounded p-1 hover:bg-white/20 focus:outline-none'
+                        aria-label='Tutup'
                     >
                         <XMarkIcon className='h-5 w-5' />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Kode Parent Group */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Kode Parent Group *
-                        </label>
-                        <input
-                            type="text"
-                            name="kode_parent"
-                            value={formData.kode_parent}
-                            onChange={handleInputChange}
-                            disabled={loading}
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${errors.kode_parent ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            placeholder="Masukkan kode parent group (contoh: PG001)"
-                        />
-                        {errors.kode_parent && (
-                            <p className="mt-1 text-sm text-red-600">{errors.kode_parent}</p>
-                        )}
+                <form onSubmit={handleSubmit}>
+                    <div className="px-5 py-4 space-y-4">
+                        {/* Kode Parent Group */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Kode Parent Group *
+                            </label>
+                            <input
+                                type="text"
+                                name="kode_parent"
+                                value={formData.kode_parent}
+                                onChange={handleInputChange}
+                                required
+                                disabled={loading}
+                                className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 ${errors.kode_parent ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="cth. PGC001"
+                            />
+                            {errors.kode_parent && (
+                                <p className="mt-1 text-xs text-red-600">{errors.kode_parent}</p>
+                            )}
+                        </div>
+
+                        {/* Nama Parent Group */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Nama Parent Group *
+                            </label>
+                            <input
+                                type="text"
+                                name="nama_parent"
+                                value={formData.nama_parent}
+                                onChange={handleInputChange}
+                                required
+                                disabled={loading}
+                                className={`w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 ${errors.nama_parent ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="cth. Induk Group Nasional"
+                            />
+                            {errors.nama_parent && (
+                                <p className="mt-1 text-xs text-red-600">{errors.nama_parent}</p>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Nama Parent Group */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nama Parent Group *
-                        </label>
-                        <input
-                            type="text"
-                            name="nama_parent"
-                            value={formData.nama_parent}
-                            onChange={handleInputChange}
-                            disabled={loading}
-                            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${errors.nama_parent ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            placeholder="Masukkan nama parent group"
-                        />
-                        {errors.nama_parent && (
-                            <p className="mt-1 text-sm text-red-600">{errors.nama_parent}</p>
-                        )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-3 pt-4">
+                    {/* Footer */}
+                    <div className="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-3">
                         <button
                             type="button"
                             onClick={onClose}
                             disabled={loading}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         >
                             {loading ? 'Menyimpan...' : 'Simpan'}
                         </button>

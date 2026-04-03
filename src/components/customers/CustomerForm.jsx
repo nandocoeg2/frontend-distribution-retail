@@ -127,6 +127,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             required
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. Toko Sejahtera'
           />
         </div>
 
@@ -143,6 +144,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             required
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. CUST001'
           />
         </div>
 
@@ -156,8 +158,11 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             name='phoneNumber'
             value={formData.phoneNumber}
             onChange={handleChange}
+            required
             disabled={isLoading}
+            inputMode='tel'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. 08123456789'
           />
         </div>
 
@@ -188,7 +193,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             value={formData.region}
             onChange={handleChange}
             disabled={isLoading}
-            placeholder='Enter region'
+            placeholder='cth. Jakarta Selatan'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
           />
         </div>
@@ -203,8 +208,10 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             name='alamatPengiriman'
             value={formData.alamatPengiriman}
             onChange={handleChange}
+            required
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. Jl. Kirim No. 5, Bandung'
           />
         </div>
 
@@ -220,6 +227,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             onChange={handleChange}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. toko@email.com'
           />
         </div>
 
@@ -235,6 +243,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             onChange={handleChange}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. 01.234.567.8-901.000'
           />
         </div>
 
@@ -250,6 +259,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             onChange={handleChange}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
+            placeholder='cth. Jl. Pajak No. 10, Jakarta'
           />
         </div>
 

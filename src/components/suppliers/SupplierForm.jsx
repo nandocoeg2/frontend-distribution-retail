@@ -13,6 +13,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             onChange={handleInputChange}
             required
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='cth. PT Sumber Makmur'
           />
         </div>
 
@@ -26,7 +27,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             value={formData.code}
             onChange={handleInputChange}
             required
-            placeholder='e.g., 2PZ1.J.0400.1.F'
+            placeholder='cth. SUP001'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
@@ -41,7 +42,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             value={formData.supplier_code_letter}
             onChange={handleInputChange}
             maxLength={5}
-            placeholder='e.g., DVT (max 5 characters)'
+            placeholder='cth. ABCDE'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
 
@@ -56,7 +57,10 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             name='phoneNumber'
             value={formData.phoneNumber}
             onChange={handleInputChange}
+            required
+            inputMode='tel'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            placeholder='cth. 08123456789'
           />
         </div>
 
@@ -69,7 +73,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             name='address'
             value={formData.address}
             onChange={handleInputChange}
-            placeholder='e.g., JAKARTA BARAT'
+            placeholder='cth. Jl. Industri No. 5, Surabaya'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
@@ -83,7 +87,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             name='description'
             value={formData.description || ''}
             onChange={handleInputChange}
-            placeholder='e.g., Supplier terpercaya untuk produk berkualitas'
+            placeholder='cth. Supplier bahan baku utama'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
@@ -97,7 +101,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             name='email'
             value={formData.email || ''}
             onChange={handleInputChange}
-            placeholder='e.g., supplier@example.com'
+            placeholder='cth. supplier@email.com'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
@@ -111,7 +115,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
             name='fax'
             value={formData.fax || ''}
             onChange={handleInputChange}
-            placeholder='e.g., 021-1234567'
+            placeholder='cth. 031-5551234'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         </div>
@@ -130,7 +134,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
                 name='direktur'
                 value={formData.direktur || ''}
                 onChange={handleInputChange}
-                placeholder='e.g., Budi Santoso'
+                placeholder='cth. Andi Wijaya'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
             </div>
@@ -158,7 +162,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
                 name='id_tku'
                 value={formData.id_tku || ''}
                 onChange={handleInputChange}
-                placeholder='e.g., TKU001'
+                placeholder='cth. 0000000000000000'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
             </div>
@@ -215,7 +219,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
                 name='bank.name'
                 value={formData.bank?.name || ''}
                 onChange={handleInputChange}
-                placeholder='e.g., BCA'
+                placeholder='cth. BCA'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
             </div>
@@ -229,7 +233,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
                 name='bank.account'
                 value={formData.bank?.account || ''}
                 onChange={handleInputChange}
-                placeholder='e.g., 123456789'
+                placeholder='cth. 1234567890'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
             </div>
@@ -243,7 +247,7 @@ const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, i
                 name='bank.holder'
                 value={formData.bank?.holder || ''}
                 onChange={handleInputChange}
-                placeholder='e.g., EFG PT'
+                placeholder='cth. PT Sumber Makmur'
                 className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
               />
             </div>

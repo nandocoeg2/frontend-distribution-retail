@@ -35,11 +35,12 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
           name="kode_group"
           value={formData.kode_group}
           onChange={handleInputChange}
+          required
           disabled={loading}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
             errors.kode_group ? 'border-red-500' : 'border-gray-300'
           }`}
-          placeholder="Masukkan kode group customer"
+          placeholder="cth. GRP001"
         />
         {errors.kode_group && (
           <p className="mt-1 text-sm text-red-600">{errors.kode_group}</p>
@@ -56,11 +57,12 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
           name="nama_group"
           value={formData.nama_group}
           onChange={handleInputChange}
+          required
           disabled={loading}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
             errors.nama_group ? 'border-red-500' : 'border-gray-300'
           }`}
-          placeholder="Masukkan nama group customer"
+          placeholder="cth. Group Retail Jakarta"
         />
         {errors.nama_group && (
           <p className="mt-1 text-sm text-red-600">{errors.nama_group}</p>
@@ -110,7 +112,7 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
             errors.alamat ? 'border-red-500' : 'border-gray-300'
           }`}
-          placeholder="Masukkan alamat group customer"
+          placeholder="cth. Jl. Raya No. 1, Jakarta"
         />
         {errors.alamat && (
           <p className="mt-1 text-sm text-red-600">{errors.alamat}</p>
@@ -131,7 +133,7 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
             errors.npwp ? 'border-red-500' : 'border-gray-300'
           }`}
-          placeholder="Masukkan NPWP (15 digit)"
+          placeholder="cth. 01.234.567.8-901.000"
         />
         {errors.npwp && (
           <p className="mt-1 text-sm text-red-600">{errors.npwp}</p>

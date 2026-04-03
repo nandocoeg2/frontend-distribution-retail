@@ -346,7 +346,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                     min={0}
                     value={formData.harga}
                     onChange={(e) => handleChange('harga', e.target.value)}
-                    placeholder="12000"
+                    placeholder="cth. 12000"
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -365,7 +365,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                     max={100}
                     value={formData.ppn}
                     onChange={(e) => handleChange('ppn', e.target.value)}
-                    placeholder="11"
+                    placeholder="cth. 11"
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -384,7 +384,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                     max={100}
                     value={formData.pot1}
                     onChange={(e) => handleChange('pot1', e.target.value)}
-                    placeholder="5"
+                    placeholder="cth. 5"
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -414,7 +414,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                     max={100}
                     value={formData.pot2}
                     onChange={(e) => handleChange('pot2', e.target.value)}
-                    placeholder="2"
+                    placeholder="cth. 2"
                     step="0.01"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -443,7 +443,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                   type="text"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
-                  placeholder="Optional notes about this price change..."
+                  placeholder="cth. Kenaikan harga Q2 2026"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

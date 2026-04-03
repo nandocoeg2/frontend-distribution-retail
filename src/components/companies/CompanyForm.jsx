@@ -75,7 +75,7 @@ const CompanyForm = ({
             onChange={handleInputChange}
             maxLength={5}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., ABC (max 5 chars)"
+            placeholder="cth. ABCDE"
           />
 
         </div>
@@ -88,7 +88,7 @@ const CompanyForm = ({
             value={formData.signature_surat_jalan_nama || ''}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Mayang (Default)"
+            placeholder="cth. Ahmad Fauzi"
           />
         </div>
 
@@ -100,7 +100,7 @@ const CompanyForm = ({
             value={formData.signature_invoice_nama || ''}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Director Name"
+            placeholder="cth. Siti Rahayu"
           />
         </div>
 
@@ -113,7 +113,7 @@ const CompanyForm = ({
             onChange={handleInputChange}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., PT. Contoh Jaya"
+            placeholder="cth. PT Distribusi Nusantara"
           />
         </div>
 
@@ -125,7 +125,7 @@ const CompanyForm = ({
             value={formData.alamat}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Jl. Contoh No. 123"
+            placeholder="cth. Jl. Sudirman No. 1, Jakarta"
           />
         </div>
 
@@ -137,7 +137,7 @@ const CompanyForm = ({
             value={formData.no_rekening}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., 1234567890"
+            placeholder="cth. 1234567890"
           />
         </div>
 
@@ -149,7 +149,7 @@ const CompanyForm = ({
             value={formData.bank}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., BCA"
+            placeholder="cth. BCA"
           />
         </div>
 
@@ -161,7 +161,7 @@ const CompanyForm = ({
             value={formData.bank_account_name}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., PT. Contoh Jaya"
+            placeholder="cth. PT Distribusi Nusantara"
           />
         </div>
 
@@ -173,7 +173,7 @@ const CompanyForm = ({
             value={formData.bank_cabang}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Jakarta Pusat"
+            placeholder="cth. KCP Sudirman"
           />
         </div>
 
@@ -184,8 +184,9 @@ const CompanyForm = ({
             name="telp"
             value={formData.telp}
             onChange={handleInputChange}
+            inputMode="tel"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., 0211234567"
+            placeholder="cth. 021-5551234"
           />
         </div>
 
@@ -197,7 +198,7 @@ const CompanyForm = ({
             value={formData.fax}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., 0211234568"
+            placeholder="cth. 021-5551235"
           />
         </div>
 
@@ -209,7 +210,7 @@ const CompanyForm = ({
             value={formData.email}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., info@contohjaya.com"
+            placeholder="cth. info@company.com"
           />
         </div>
 
@@ -221,7 +222,7 @@ const CompanyForm = ({
             value={formData.direktur_utama}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., Budi Santoso"
+            placeholder="cth. Budi Santoso"
           />
         </div>
 
@@ -245,7 +246,7 @@ const CompanyForm = ({
             value={formData.id_tku || ''}
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="e.g., TKU12345"
+            placeholder="cth. 0000000000000000"
           />
 
         </div>

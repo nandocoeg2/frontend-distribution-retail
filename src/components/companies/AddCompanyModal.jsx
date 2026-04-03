@@ -105,24 +105,31 @@ const AddCompanyModal = ({ show, onClose, onCompanyAdded, handleAuthError }) => 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4'>
       <div className='w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'>
-        <h3 className='text-lg font-medium text-gray-900 px-5 py-3 border-b border-gray-200'>
-          Add New Company
-        </h3>
-        <CompanyForm
-          formData={formData}
-          handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
-          closeModal={handleClose}
-          logo={formData.logo}
-          onLogoChange={handleLogoChange}
-          onLogoRemove={handleLogoRemove}
-          signatureImage={formData.signature_surat_jalan_image}
-          onSignatureImageChange={handleSignatureImageChange}
-          onSignatureImageRemove={handleSignatureImageRemove}
-          signatureInvoiceImage={formData.signature_invoice_image}
-          onSignatureInvoiceImageChange={handleSignatureInvoiceImageChange}
-          onSignatureInvoiceImageRemove={handleSignatureInvoiceImageRemove}
-        />
+        {/* Header */}
+        <div className='flex items-center justify-between border-b border-gray-200 bg-blue-600 px-5 py-3 text-white'>
+          <h3 className='text-base font-semibold'>Add Company</h3>
+          <button onClick={handleClose} className='rounded p-1 hover:bg-white/20 focus:outline-none' aria-label='Tutup'>
+            <span className='text-lg leading-none'>&times;</span>
+          </button>
+        </div>
+
+        <div className='max-h-[80vh] overflow-y-auto px-5 py-4'>
+          <CompanyForm
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            closeModal={handleClose}
+            logo={formData.logo}
+            onLogoChange={handleLogoChange}
+            onLogoRemove={handleLogoRemove}
+            signatureImage={formData.signature_surat_jalan_image}
+            onSignatureImageChange={handleSignatureImageChange}
+            onSignatureImageRemove={handleSignatureImageRemove}
+            signatureInvoiceImage={formData.signature_invoice_image}
+            onSignatureInvoiceImageChange={handleSignatureInvoiceImageChange}
+            onSignatureInvoiceImageRemove={handleSignatureInvoiceImageRemove}
+          />
+        </div>
       </div>
     </div>
   );

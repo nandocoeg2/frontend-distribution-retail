@@ -110,7 +110,7 @@ const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {
                     onChange={(e) => handlePICChange(index, 'nama_pic', e.target.value)}
                     disabled={disabled}
                     required
-                    placeholder="Enter PIC name"
+                    placeholder="cth. Budi"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
@@ -126,7 +126,7 @@ const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {
                     onChange={(e) => handlePICChange(index, 'dept', e.target.value)}
                     disabled={disabled}
                     required
-                    placeholder="e.g., Purchasing, Finance"
+                    placeholder="cth. Purchasing"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>
@@ -142,7 +142,8 @@ const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {
                     onChange={(e) => handlePICChange(index, 'telpon', e.target.value)}
                     disabled={disabled}
                     required
-                    placeholder="081234567890"
+                    inputMode="tel"
+                    placeholder="cth. 08123456789"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                   />
                 </div>

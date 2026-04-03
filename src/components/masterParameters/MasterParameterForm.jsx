@@ -16,7 +16,7 @@ const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeM
             required
             disabled={isEdit}
             className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed font-mono'
-            placeholder='UPPER_SNAKE_CASE'
+            placeholder='cth. TAX_RATE'
           />
 
         </div>
@@ -34,7 +34,7 @@ const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeM
             onChange={handleInputChange}
             required
             className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
-            placeholder='Enter parameter value'
+            placeholder='cth. 11'
           />
         </div>
 
@@ -50,7 +50,7 @@ const MasterParameterForm = ({ formData, handleInputChange, handleSubmit, closeM
             value={formData.description}
             onChange={handleInputChange}
             className='mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm'
-            placeholder='Describe the purpose of this parameter'
+            placeholder='cth. Persentase PPN default'
           />
         </div>
       </div>
