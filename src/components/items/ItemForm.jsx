@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import FormField from '../common/FormField';
 import FormSection from '../common/FormSection';
+import Autocomplete from '../common/Autocomplete';
 import { MultiSelect } from '../ui';
 import { getMixableItems } from '../../services/itemService';
 import { getCompanies } from '../../services/companyService';
+import { supplierItemPriceService } from '../../services/supplierItemPriceService';
+import useSupplierSearch from '../../hooks/useSupplierSearch';
 import authService from '../../services/authService';
 
 const DEFAULT_FORM_STATE = {
@@ -152,6 +156,11 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
   const [companies, setCompanies] = useState([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
 
+  // Supplier prices state
+  const [supplierPrices, setSupplierPrices] = useState([]);
+  const { searchResults: supplierResults = [], loading: supplierSearchLoading, searchSuppliers } = useSupplierSearch();
+  const supplierOptions = supplierResults.map((s) => ({ id: s.id, label: s.name, code: s.code }));
+
   const memoizedInitialData = useMemo(() => initialData, [initialData]);
 
   // Get default company from logged-in user
@@ -203,6 +212,29 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
 
     loadMixableItems();
   }, [formData.allow_mixed_carton, memoizedInitialData?.id]);
+
+  // Load existing supplier prices when editing
+  useEffect(() => {
+    if (!memoizedInitialData?.id) return;
+    const loadSupplierPrices = async () => {
+      try {
+        const res = await supplierItemPriceService.getAllWithFilters(1, 100, { itemId: memoizedInitialData.id });
+        const rows = res?.data?.data?.data || res?.data?.data || [];
+        if (Array.isArray(rows) && rows.length > 0) {
+          setSupplierPrices(rows.map((r) => ({
+            id: r.id,
+            supplierId: r.supplierId,
+            supplierName: r.supplier?.name || '',
+            harga_pcs: r.harga_pcs != null ? String(r.harga_pcs) : '',
+            spesifikasi: r.spesifikasi || '',
+          })));
+        }
+      } catch (e) {
+        console.error('Failed to load supplier prices:', e);
+      }
+    };
+    loadSupplierPrices();
+  }, [memoizedInitialData?.id]);
 
   // Helper function to calculate prices after discounts
   const calculatePricesAfterDiscount = (harga, pot1, pot2) => {
@@ -315,6 +347,24 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
     }));
   };
 
+  // Supplier price handlers
+  const handleAddSupplierPrice = () => {
+    setSupplierPrices((prev) => [...prev, { supplierId: '', supplierName: '', harga_pcs: '', spesifikasi: '' }]);
+  };
+
+  const handleRemoveSupplierPrice = (index) => {
+    setSupplierPrices((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSupplierPriceChange = (index, field, value) => {
+    setSupplierPrices((prev) => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+  };
+
+  const handleSupplierPriceSupplierChange = (index, value) => {
+    const selected = supplierOptions.find((o) => o.id === value);
+    setSupplierPrices((prev) => prev.map((row, i) => i === index ? { ...row, supplierId: value, supplierName: selected?.label || '' } : row));
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const dataToSubmit = {
@@ -377,6 +427,16 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
     if (formData.allow_mixed_carton && formData.mixedWithItemIds.length > 0) {
       dataToSubmit.mixedWithItemIds = formData.mixedWithItemIds;
     }
+
+    // Add supplier prices
+    dataToSubmit.supplierPrices = supplierPrices
+      .filter((sp) => sp.supplierId && sp.harga_pcs !== '')
+      .map((sp) => ({
+        id: sp.id || undefined,
+        supplierId: sp.supplierId,
+        harga_pcs: parseDecimal(sp.harga_pcs),
+        spesifikasi: sp.spesifikasi?.trim() || undefined,
+      }));
 
     onSubmit(dataToSubmit);
   };
@@ -738,6 +798,77 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
           value={formData.harga2}
           disabled={true}
         />
+      </FormSection>
+
+      <FormSection title="Harga Suppliers" columns={1}>
+        <div className='space-y-3'>
+          <div className='flex items-center justify-between'>
+            <p className='text-xs text-gray-500'>Atur harga item per supplier — otomatis digunakan saat Stock In</p>
+            <button
+              type='button'
+              onClick={handleAddSupplierPrice}
+              className='inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50'
+            >
+              <PlusIcon className='h-3.5 w-3.5' aria-hidden='true' />
+              Tambah Supplier
+            </button>
+          </div>
+
+          {supplierPrices.length === 0 ? (
+            <div className='rounded border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-center text-xs text-gray-500'>
+              Belum ada harga supplier. Klik "Tambah Supplier" untuk menambahkan.
+            </div>
+          ) : (
+            <div className='space-y-2'>
+              <div className='hidden sm:grid sm:grid-cols-[1fr_140px_1fr_40px] gap-2 px-1 text-xs font-medium uppercase tracking-wide text-gray-400'>
+                <span>Supplier</span>
+                <span>Harga/PCS</span>
+                <span>Spesifikasi</span>
+                <span />
+              </div>
+              {supplierPrices.map((sp, idx) => (
+                <div
+                  key={`sp-${idx}`}
+                  className='grid grid-cols-1 gap-2 rounded-md border border-gray-200 bg-white p-2.5 sm:grid-cols-[1fr_140px_1fr_40px] sm:items-center'
+                >
+                  <Autocomplete
+                    label='' name={`supplier-${idx}`}
+                    options={supplierOptions}
+                    value={sp.supplierId}
+                    onChange={(e) => handleSupplierPriceSupplierChange(idx, e?.target ? e.target.value : e)}
+                    placeholder='Cari supplier...'
+                    displayKey='label' valueKey='id'
+                    loading={supplierSearchLoading}
+                    onSearch={async (q) => { try { await searchSuppliers(q, 1, 20); } catch {} }}
+                    showId
+                  />
+                  <input
+                    type='number' step='0.01' min='0'
+                    value={sp.harga_pcs}
+                    onChange={(e) => handleSupplierPriceChange(idx, 'harga_pcs', e.target.value)}
+                    placeholder='Rp'
+                    className='w-full rounded-md border border-gray-300 px-2.5 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
+                  />
+                  <input
+                    type='text' maxLength={255}
+                    value={sp.spesifikasi}
+                    onChange={(e) => handleSupplierPriceChange(idx, 'spesifikasi', e.target.value)}
+                    placeholder='Opsional'
+                    className='w-full rounded-md border border-gray-300 px-2.5 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => handleRemoveSupplierPrice(idx)}
+                    className='flex items-center justify-center rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500'
+                    aria-label={`Hapus supplier ${idx + 1}`}
+                  >
+                    <TrashIcon className='h-4 w-4' aria-hidden='true' />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </FormSection>
 
       <div className="flex justify-end gap-2">

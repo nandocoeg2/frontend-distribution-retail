@@ -4,32 +4,37 @@ import { formatDate, formatCurrency } from '@/utils/formatUtils';
 const rd = (v) => <span className='text-xs text-gray-700'>{v ? formatDate(v) : '-'}</span>;
 const rc = (v) => <span className='text-xs text-gray-700'>{v != null && v !== '' ? formatCurrency(v) : '-'}</span>;
 const rt = (v) => <span className='text-xs text-gray-700'>{v || '-'}</span>;
-const rn = (v) => <span className='text-xs text-gray-700'>{v != null ? v : '-'}</span>;
+const rn = (v) => <span className='text-xs text-gray-700'>{v != null ? Number(v).toLocaleString('id-ID') : '-'}</span>;
 
 const columnGroups = [
   {
-    id: 'po', label: 'PO', hc: 'bg-blue-50 text-blue-700', align: 'center',
+    id: 'po', label: 'PO', hc: 'bg-blue-200 text-blue-900', shc: 'bg-blue-100 text-blue-800', cc: 'bg-blue-50', align: 'center',
     columns: [
-      { id: 'supplier', label: 'Nama Supplier', align: 'left', render: (r) => rt(r.supplier?.name) },
+      { id: 'supplier', label: 'Supplier', align: 'left', render: (r) => rt(r.supplier?.name) },
       { id: 'no_po', label: 'No PO', align: 'center', render: (r) => rt(r.no_po) },
-      { id: 'items', label: 'Item', align: 'left', render: (r) => rt(r.items?.map((i) => i.item?.nama_barang || i.item?.plu).join(', ')) },
+      { id: 'item', label: 'Item', align: 'left', render: (r) => rt(r.item ? `${r.item.plu || ''} - ${r.item.nama_barang || ''}` : null) },
       { id: 'spesifikasi', label: 'Spesifikasi', align: 'left', render: (r) => rt(r.spesifikasi) },
-      { id: 'qty_po_pcs', label: 'Qty PO (PCS)', align: 'right', render: (r) => rn(r.qty_po_pcs) },
-      { id: 'harga_pcs', label: 'Harga (PCS)', align: 'right', render: (r) => rc(r.harga_pcs) },
+      { id: 'qty_po', label: 'Qty PO', align: 'right', render: (r) => rn(r.qty_po) },
+      { id: 'harga_pcs', label: 'Harga', align: 'right', render: (r) => rc(r.harga_pcs) },
       { id: 'total', label: 'Total', align: 'right', render: (r) => rc(r.total) },
     ],
   },
   {
-    id: 'barang-masuk', label: 'Barang Masuk', hc: 'bg-green-50 text-green-700', align: 'center',
+    id: 'barang-masuk', label: 'Barang Masuk', hc: 'bg-emerald-200 text-emerald-900', shc: 'bg-emerald-100 text-emerald-800', cc: 'bg-emerald-50', align: 'center',
     columns: [
       { id: 'tanggal_kirim', label: 'Tgl Kirim', align: 'center', render: (r) => rd(r.tanggal_kirim) },
-      { id: 'no_surat_jalan', label: 'No. Surat Jalan', align: 'center', render: (r) => rt(r.no_surat_jalan) },
-      { id: 'qty_kirim', label: 'Qty Kirim', align: 'right', render: (r) => rn(r.qty_kirim) },
-      { id: 'qty_sisa_po', label: 'Qty Sisa PO', align: 'right', render: (r) => rn(r.qty_sisa_po) },
+      { id: 'no_surat_jalan', label: 'No SJ', align: 'center', render: (r) => rt(r.no_surat_jalan) },
+      { id: 'qty_kirim', label: 'Qty Dikirim', align: 'right', render: (r) => rn(r.qty_kirim) },
+      { id: 'qty_sisa', label: 'Qty Sisa PO', align: 'right', render: (r) => {
+        const qtyPo = r.qty_po != null ? Number(r.qty_po) : null;
+        const qtyKirim = r.qty_kirim != null ? Number(r.qty_kirim) : 0;
+        if (qtyPo == null) return rt('-');
+        return rn(qtyPo - qtyKirim);
+      }},
     ],
   },
   {
-    id: 'tagihan', label: 'Tagihan', hc: 'bg-amber-50 text-amber-700', align: 'center',
+    id: 'tagihan', label: 'Tagihan', hc: 'bg-amber-200 text-amber-900', shc: 'bg-amber-100 text-amber-800', cc: 'bg-amber-50', align: 'center',
     columns: [
       { id: 'no_kwitansi', label: 'No Kwitansi', align: 'center', render: (r) => rt(r.no_kwitansi) },
       { id: 'no_invoice', label: 'No Invoice', align: 'center', render: (r) => rt(r.no_invoice) },
@@ -58,7 +63,7 @@ const ReportPoSuppliersTable = ({ data = [], loading = false }) => (
         <tr>
           {columnGroups.map((g) => (
             <th key={g.id} colSpan={g.columns.length}
-              className={`border border-gray-200 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
+              className={`border border-gray-400 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
               {g.label}
             </th>
           ))}
@@ -67,7 +72,7 @@ const ReportPoSuppliersTable = ({ data = [], loading = false }) => (
           {columnGroups.flatMap((g) =>
             g.columns.map((c) => (
               <th key={`${g.id}-${c.id}`}
-                className={`border border-gray-200 bg-gray-50 px-2 py-1 text-[9px] font-semibold uppercase text-gray-600 ${al(c.align)}`}>
+                className={`border border-gray-400 px-2 py-1 text-[9px] font-semibold uppercase ${g.shc} ${al(c.align)}`}>
                 {c.label}
               </th>
             ))
@@ -96,7 +101,7 @@ const ReportPoSuppliersTable = ({ data = [], loading = false }) => (
                 {columnGroups.flatMap((g) =>
                   g.columns.map((c) => (
                     <td key={`${rk}-${g.id}-${c.id}`}
-                      className={`border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 ${al(c.align)}`}>
+                      className={`border border-gray-400 px-2 py-1.5 text-xs text-gray-700 whitespace-nowrap ${g.cc} ${al(c.align)}`}>
                       {c.render(row)}
                     </td>
                   ))

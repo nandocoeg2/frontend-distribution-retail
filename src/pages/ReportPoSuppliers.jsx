@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 import Card from '../components/ui/Card.jsx';
 import ReportPoSuppliersTable from '../components/reportPoSuppliers/ReportPoSuppliersTable.jsx';
 import Pagination from '../components/common/Pagination.jsx';
 import { reportPoSupplierService } from '../services/reportPoSupplierService.js';
+import toastService from '../services/toastService';
 
 const ReportPoSuppliers = () => {
   const [data, setData] = useState([]);
@@ -12,8 +14,7 @@ const ReportPoSuppliers = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [paginationInfo, setPaginationInfo] = useState({ totalItems: 0, totalPages: 0, currentPage: 1, itemsPerPage: 10 });
-
-
+  const [exportLoading, setExportLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -42,6 +43,19 @@ const ReportPoSuppliers = () => {
   const handlePageChange = useCallback((p) => { setPage(p); }, []);
   const handleLimitChange = useCallback((l) => { setLimit(l); setPage(1); }, []);
 
+  const handleExportExcel = async () => {
+    try {
+      setExportLoading(true);
+      await reportPoSupplierService.exportExcel();
+      toastService.success('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toastService.error(err?.message || 'Gagal mengexport data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const visibleCount = data.length;
   const totalItems = paginationInfo.totalItems || visibleCount;
 
@@ -55,6 +69,24 @@ const ReportPoSuppliers = () => {
           <span className='text-xs text-gray-500'>
             <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} data
           </span>
+          <button
+            type='button'
+            onClick={handleExportExcel}
+            disabled={exportLoading}
+            className='inline-flex items-center justify-center rounded bg-green-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors'
+          >
+            {exportLoading ? (
+              <>
+                <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
+                Exporting...
+              </>
+            ) : (
+              <>
+                <ArrowDownTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
+                Export Excel
+              </>
+            )}
+          </button>
         </div>
       </header>
 

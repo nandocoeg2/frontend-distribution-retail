@@ -38,6 +38,7 @@ const StockMovements = () => {
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const [itemOptions, setItemOptions] = useState([]);
   const [editingMovement, setEditingMovement] = useState(null);
+  const [editStockInMovement, setEditStockInMovement] = useState(null);
   const [editNotesValue, setEditNotesValue] = useState('');
   const [editNotesLoading, setEditNotesLoading] = useState(false);
 
@@ -122,8 +123,12 @@ const StockMovements = () => {
   }, [fetchMovements, pagination]);
 
   const handleEditNotes = useCallback((movement) => {
-    setEditingMovement(movement);
-    setEditNotesValue(movement.notes || '');
+    if (movement.type === 'STOCK_IN') {
+      setEditStockInMovement(movement);
+    } else {
+      setEditingMovement(movement);
+      setEditNotesValue(movement.notes || '');
+    }
   }, []);
 
   const handleCloseEditNotes = useCallback(() => {
@@ -246,14 +251,30 @@ const StockMovements = () => {
         </div>
       </div>
 
-      <CreateStockInModal
-        show={showStockInModal}
-        onClose={() => setShowStockInModal(false)}
-        onSubmit={createStockInMovement}
-        itemOptions={itemOptions}
-        suppliers={supplierOptions}
-        optionsLoading={optionsLoading}
-      />
+      {showStockInModal && (
+        <CreateStockInModal
+          onClose={() => setShowStockInModal(false)}
+          onSuccess={() => {
+            setShowStockInModal(false);
+            const currentPage = pagination?.currentPage || pagination?.page || 1;
+            const limit = pagination?.itemsPerPage || pagination?.limit || undefined;
+            fetchMovements(currentPage, limit);
+          }}
+        />
+      )}
+
+      {editStockInMovement && (
+        <CreateStockInModal
+          editMovement={editStockInMovement}
+          onClose={() => setEditStockInMovement(null)}
+          onSuccess={() => {
+            setEditStockInMovement(null);
+            const currentPage = pagination?.currentPage || pagination?.page || 1;
+            const limit = pagination?.itemsPerPage || pagination?.limit || undefined;
+            fetchMovements(currentPage, limit);
+          }}
+        />
+      )}
 
       <CreateStockOutModal
         show={showStockOutModal}
