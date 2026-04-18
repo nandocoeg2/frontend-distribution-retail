@@ -12,6 +12,24 @@ import { useMutasiBankQuery } from '../../hooks/useMutasiBankQuery';
 import { DataTable } from '../table';
 import Pagination from '../common/Pagination';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
+import DateFilter from '../common/DateFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+
+const STATUS_OPTIONS = [
+  { id: 'PENDING', name: 'Pending' },
+  { id: 'MATCHED', name: 'Matched' },
+  { id: 'UNMATCHED', name: 'Unmatched' },
+  { id: 'VALID', name: 'Valid' },
+  { id: 'INVALID', name: 'Invalid' },
+  { id: 'RECONCILED', name: 'Reconciled' },
+];
+
+const HAS_DOCUMENT_OPTIONS = [
+  { value: '', label: 'Semua' },
+  { value: 'true', label: 'Ada Dokumen' },
+  { value: 'false', label: 'Belum Ada Dokumen' },
+];
 
 const columnHelper = createColumnHelper();
 
@@ -211,12 +229,28 @@ const MutasiBankTableServerSide = ({
     getQueryParams: useCallback(
       ({ filters: columnFilters, ...rest }) => {
         const sanitized = sanitizeFilters(filters);
+        const mappedFilters = { ...sanitized };
+
+        if (columnFilters) {
+          if (columnFilters.transaction_date) {
+            mappedFilters.tanggal_start = columnFilters.transaction_date.from;
+            mappedFilters.tanggal_end = columnFilters.transaction_date.to;
+          }
+          if (columnFilters.amount) {
+            mappedFilters.min_amount = columnFilters.amount.min;
+            mappedFilters.max_amount = columnFilters.amount.max;
+          }
+          if (columnFilters.validation_status) {
+            mappedFilters.validation_status = columnFilters.validation_status;
+          }
+          if (columnFilters.matched_document) {
+            mappedFilters.has_document = columnFilters.matched_document;
+          }
+        }
+
         return {
           ...rest,
-          filters: {
-            ...columnFilters,
-            ...sanitized,
-          },
+          filters: mappedFilters,
         };
       },
       [filters]
@@ -229,12 +263,32 @@ const MutasiBankTableServerSide = ({
         (row) => row.tanggal_transaksi || null,
         {
           id: 'transaction_date',
-          header: 'Tanggal',
+          header: ({ column }) => {
+            const filterValue = column.getFilterValue() || { from: '', to: '' };
+            return (
+              <div className='space-y-0.5'>
+                <div className='font-medium text-[11px]'>Tanggal</div>
+                <div className='flex flex-col gap-0.5'>
+                  <DateFilter
+                    value={filterValue.from ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                    placeholder="Dari"
+                  />
+                  <DateFilter
+                    value={filterValue.to ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                    placeholder="Sampai"
+                  />
+                </div>
+              </div>
+            );
+          },
           size: 110,
           cell: (info) => {
             const value = info.getValue();
             return value ? formatDate(value) : '-';
           },
+          enableSorting: true,
         }
       ),
       columnHelper.accessor(
@@ -257,9 +311,15 @@ const MutasiBankTableServerSide = ({
         (row) => Number(row.jumlah || 0),
         {
           id: 'amount',
-          header: 'Nominal',
+          header: ({ column }) => (
+            <div className='space-y-0.5'>
+              <div className='font-medium text-[11px]'>Nominal</div>
+              <RangeColumnFilter column={column} setPage={setPage} />
+            </div>
+          ),
           size: 140,
           cell: (info) => formatCurrency(info.getValue() || 0),
+          enableSorting: true,
         }
       ),
       columnHelper.display({
@@ -283,7 +343,23 @@ const MutasiBankTableServerSide = ({
       }),
       columnHelper.display({
         id: 'validation_status',
-        header: 'Status',
+        header: ({ column }) => (
+          <div className='space-y-0.5 max-w-[120px]' onClick={(e) => e.stopPropagation()}>
+            <div className='font-medium text-[11px]'>Status</div>
+            <AutocompleteCheckboxLimitTag
+              options={STATUS_OPTIONS}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder='All'
+              displayKey='name'
+              valueKey='id'
+              limitTags={1}
+              size='small'
+              fetchOnClose
+              sx={{ minWidth: '100px' }}
+            />
+          </div>
+        ),
         size: 100,
         cell: ({ row }) => {
           const status = row.original.validation_status || '-';
@@ -295,7 +371,21 @@ const MutasiBankTableServerSide = ({
 
       columnHelper.display({
         id: 'matched_document',
-        header: 'Dokumen Cocok',
+        header: ({ column }) => (
+          <div className='space-y-0.5'>
+            <div className='font-medium text-[11px]'>Dokumen Cocok</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+              onClick={(e) => e.stopPropagation()}
+            >
+              {HAS_DOCUMENT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        ),
         size: 180,
         cell: ({ row }) => {
           const matched = resolveMatchedDocument(row.original);
