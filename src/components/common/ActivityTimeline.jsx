@@ -222,7 +222,7 @@ const ActivityTimeline = ({
                             )
                             .map(([key, value]) => {
                               const label = key
-                                .replace(/([A-Z])/g, ' ')
+                                .replace(/([A-Z])/g, ' $1')
                                 .replace(/_/g, ' ')
                                 .trim();
 
