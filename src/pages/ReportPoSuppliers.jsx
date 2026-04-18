@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 import Card from '../components/ui/Card.jsx';
 import ReportPoSuppliersTable from '../components/reportPoSuppliers/ReportPoSuppliersTable.jsx';
-import ReportPoSupplierFormModal from '../components/reportPoSuppliers/ReportPoSupplierFormModal.jsx';
-import { ConfirmationDialog } from '../components/ui/ConfirmationDialog.jsx';
 import Pagination from '../components/common/Pagination.jsx';
 import { reportPoSupplierService } from '../services/reportPoSupplierService.js';
 
@@ -16,16 +13,7 @@ const ReportPoSuppliers = () => {
   const [limit, setLimit] = useState(10);
   const [paginationInfo, setPaginationInfo] = useState({ totalItems: 0, totalPages: 0, currentPage: 1, itemsPerPage: 10 });
 
-  // Selection
-  const [selected, setSelected] = useState(null);
 
-  // Modal
-  const [showForm, setShowForm] = useState(false);
-  const [editData, setEditData] = useState(null);
-
-  // Delete confirmation
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -51,39 +39,8 @@ const ReportPoSuppliers = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Handlers
-  const handleAdd = () => { setEditData(null); setShowForm(true); };
-  const handleEdit = () => { if (selected) { setEditData(selected); setShowForm(true); } };
-  const handleDeleteClick = () => { if (selected) setShowDeleteConfirm(true); };
-
-  const handleFormSubmit = async (payload) => {
-    if (editData?.id) {
-      await reportPoSupplierService.update(editData.id, payload);
-    } else {
-      await reportPoSupplierService.create(payload);
-    }
-    setSelected(null);
-    fetchData();
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!selected?.id) return;
-    setDeleteLoading(true);
-    try {
-      await reportPoSupplierService.delete(selected.id);
-      setSelected(null);
-      setShowDeleteConfirm(false);
-      fetchData();
-    } catch (err) {
-      setError(err?.message || 'Gagal menghapus data.');
-      setShowDeleteConfirm(false);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  const handlePageChange = useCallback((p) => { setPage(p); setSelected(null); }, []);
-  const handleLimitChange = useCallback((l) => { setLimit(l); setPage(1); setSelected(null); }, []);
+  const handlePageChange = useCallback((p) => { setPage(p); }, []);
+  const handleLimitChange = useCallback((l) => { setLimit(l); setPage(1); }, []);
 
   const visibleCount = data.length;
   const totalItems = paginationInfo.totalItems || visibleCount;
@@ -98,25 +55,6 @@ const ReportPoSuppliers = () => {
           <span className='text-xs text-gray-500'>
             <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} data
           </span>
-
-          {/* Action buttons — show edit/delete only when a row is selected */}
-          {selected && (
-            <>
-              <button type='button' onClick={handleEdit}
-                className='inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500'>
-                <PencilSquareIcon className='h-3.5 w-3.5' aria-hidden='true' /> Edit
-              </button>
-              <button type='button' onClick={handleDeleteClick}
-                className='inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'>
-                <TrashIcon className='h-3.5 w-3.5' aria-hidden='true' /> Hapus
-              </button>
-            </>
-          )}
-
-          <button type='button' onClick={handleAdd}
-            className='inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500'>
-            <PlusIcon className='h-3.5 w-3.5' aria-hidden='true' /> Tambah
-          </button>
         </div>
       </header>
 
@@ -132,7 +70,7 @@ const ReportPoSuppliers = () => {
       )}
 
       <div className='mt-3'>
-        <ReportPoSuppliersTable data={data} loading={loading} selectedId={selected?.id} onSelect={setSelected} />
+        <ReportPoSuppliersTable data={data} loading={loading} />
         <Pagination
           pagination={{
             currentPage: paginationInfo.currentPage || page,
@@ -144,26 +82,6 @@ const ReportPoSuppliers = () => {
           onLimitChange={handleLimitChange}
         />
       </div>
-
-      {/* Add/Edit Modal */}
-      <ReportPoSupplierFormModal
-        show={showForm}
-        onClose={() => { setShowForm(false); setEditData(null); }}
-        onSubmit={handleFormSubmit}
-        editData={editData}
-      />
-
-      {/* Delete Confirmation */}
-      <ConfirmationDialog
-        show={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDeleteConfirm}
-        title='Hapus Report PO Supplier'
-        message={`Apakah Anda yakin ingin menghapus data "${selected?.nama_supplier || ''} - ${selected?.no_po || ''}"?`}
-        type='danger'
-        confirmText='Hapus'
-        loading={deleteLoading}
-      />
     </Card>
   );
 };

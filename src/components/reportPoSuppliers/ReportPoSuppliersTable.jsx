@@ -48,17 +48,14 @@ const columnGroups = [
   },
 ];
 
-const totalCols = columnGroups.reduce((t, g) => t + g.columns.length, 0) + 1;
+const totalCols = columnGroups.reduce((t, g) => t + g.columns.length, 0);
 const al = (a) => (a === 'center' ? 'text-center' : a === 'right' ? 'text-right' : 'text-left');
 
-const ReportPoSuppliersTable = ({ data = [], loading = false, selectedId, onSelect }) => (
+const ReportPoSuppliersTable = ({ data = [], loading = false }) => (
   <div className='overflow-x-auto'>
     <table className='min-w-full divide-y divide-gray-200 text-xs'>
       <thead className='bg-white'>
         <tr>
-          <th rowSpan={2} className='border border-gray-200 bg-gray-50 px-2 py-1.5 text-center w-10'>
-            <span className='sr-only'>Pilih</span>
-          </th>
           {columnGroups.map((g) => (
             <th key={g.id} colSpan={g.columns.length}
               className={`border border-gray-200 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
@@ -94,15 +91,8 @@ const ReportPoSuppliersTable = ({ data = [], loading = false, selectedId, onSele
         ) : (
           data.map((row, i) => {
             const rk = row.id || `r-${i}`;
-            const sel = selectedId === row.id;
             return (
-              <tr key={rk} className={sel ? 'bg-indigo-50' : 'hover:bg-gray-50'}>
-                <td className='border border-gray-200 px-2 py-1.5 text-center'>
-                  <input type='checkbox' checked={sel}
-                    onChange={() => onSelect?.(sel ? null : row)}
-                    className='h-3.5 w-3.5 cursor-pointer accent-indigo-600'
-                    aria-label={`Pilih ${row.supplier?.name || ''}`} />
-                </td>
+              <tr key={rk} className='hover:bg-gray-50'>
                 {columnGroups.flatMap((g) =>
                   g.columns.map((c) => (
                     <td key={`${rk}-${g.id}-${c.id}`}
