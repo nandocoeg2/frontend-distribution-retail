@@ -327,6 +327,7 @@ const MutasiBankTableServerSide = ({
         {
           id: 'transaction_date',
           header: 'Tanggal',
+          size: 110,
           cell: (info) => {
             const value = info.getValue();
             return value ? formatDate(value) : '-';
@@ -344,7 +345,15 @@ const MutasiBankTableServerSide = ({
         {
           id: 'description',
           header: 'Deskripsi',
-          cell: (info) => info.getValue() || '-',
+          size: 350,
+          cell: (info) => {
+            const value = info.getValue() || '-';
+            return (
+              <div className='max-w-[350px] truncate' title={value !== '-' ? value : ''}>
+                {value}
+              </div>
+            );
+          },
         }
       ),
       columnHelper.accessor(
@@ -356,12 +365,14 @@ const MutasiBankTableServerSide = ({
         {
           id: 'amount',
           header: 'Nominal',
+          size: 140,
           cell: (info) => formatCurrency(info.getValue() || 0),
         }
       ),
       columnHelper.display({
         id: 'mutation_type',
         header: 'Tipe',
+        size: 80,
         cell: ({ row }) => {
           const type = resolveMutationTypeLabel(row.original);
           const baseClass =
@@ -380,6 +391,7 @@ const MutasiBankTableServerSide = ({
       columnHelper.display({
         id: 'validation_status',
         header: 'Status',
+        size: 100,
         cell: ({ row }) => {
           const status =
             getFirstAvailableValue(row.original, [
@@ -396,6 +408,7 @@ const MutasiBankTableServerSide = ({
       columnHelper.display({
         id: 'matched_document',
         header: 'Dokumen Cocok',
+        size: 180,
         cell: ({ row }) => {
           const matched = resolveMatchedDocument(row.original);
           if (!matched) {
@@ -420,6 +433,7 @@ const MutasiBankTableServerSide = ({
       columnHelper.display({
         id: 'actions',
         header: 'Aksi',
+        size: 220,
         cell: ({ row }) => {
           const mutation = row.original;
           const mutationId = resolveMutationId(mutation);
@@ -441,35 +455,37 @@ const MutasiBankTableServerSide = ({
                 Detail
               </button>
 
-              <button
-                type='button'
-                onClick={() => {
-                  if (typeof onAssignDocument === 'function') {
-                    onAssignDocument(mutation, mutationId);
-                  }
-                }}
-                disabled={isAssigning}
-                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-40'
-                title='Kaitkan dokumen ke mutasi'
-              >
-                <LinkIcon className='w-3.5 h-3.5 mr-0.5' />
-                Bind
-              </button>
-
-              <button
-                type='button'
-                onClick={() => {
-                  if (typeof onUnassignDocument === 'function') {
-                    onUnassignDocument(mutation, mutationId);
-                  }
-                }}
-                disabled={!hasDocument || isUnassigning}
-                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600 disabled:opacity-40'
-                title={hasDocument ? 'Lepas kaitan dokumen' : 'Tidak ada dokumen terhubung'}
-              >
-                <XMarkIcon className='w-3.5 h-3.5 mr-0.5' />
-                Unbind
-              </button>
+              {hasDocument ? (
+                <button
+                  type='button'
+                  onClick={() => {
+                    if (typeof onUnassignDocument === 'function') {
+                      onUnassignDocument(mutation, mutationId);
+                    }
+                  }}
+                  disabled={isUnassigning}
+                  className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600 disabled:opacity-40'
+                  title='Lepas kaitan dokumen'
+                >
+                  <XMarkIcon className='w-3.5 h-3.5 mr-0.5' />
+                  Unbind
+                </button>
+              ) : (
+                <button
+                  type='button'
+                  onClick={() => {
+                    if (typeof onAssignDocument === 'function') {
+                      onAssignDocument(mutation, mutationId);
+                    }
+                  }}
+                  disabled={isAssigning}
+                  className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-40'
+                  title='Kaitkan dokumen ke mutasi'
+                >
+                  <LinkIcon className='w-3.5 h-3.5 mr-0.5' />
+                  Bind
+                </button>
+              )}
 
               <button
                 type='button'
