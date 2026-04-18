@@ -47,9 +47,6 @@ const MutasiBankValidateModal = ({
             <h2 className='text-lg font-semibold text-gray-900'>
               Validasi Mutasi Bank
             </h2>
-            <p className='text-sm text-gray-500'>
-              Tentukan hasil verifikasi mutasi bank yang dipilih.
-            </p>
           </div>
           <button
             type='button'
@@ -63,19 +60,6 @@ const MutasiBankValidateModal = ({
         </div>
 
         <form onSubmit={handleSubmit} className='px-6 py-5 space-y-5'>
-          <div className='rounded-lg bg-blue-50 border border-blue-100 p-4 text-sm text-blue-700'>
-            <CheckBadgeIcon className='h-5 w-5 inline mr-2' />
-            {isBulkValidation ? (
-              <span>
-                Anda akan memvalidasi{' '}
-                <strong>{selectedCount} mutasi bank</strong> sekaligus.
-              </span>
-            ) : (
-              <span>
-                Pastikan status sesuai dengan hasil verifikasi dokumen terkait.
-              </span>
-            )}
-          </div>
 
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>

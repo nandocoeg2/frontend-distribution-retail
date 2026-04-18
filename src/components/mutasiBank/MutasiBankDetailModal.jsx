@@ -3,71 +3,7 @@ import { XMarkIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 
-const toCamelCase = (value = '') =>
-  value.replace(/[_-](\w)/g, (_, letter) => letter.toUpperCase());
 
-const toSnakeCase = (value = '') =>
-  value
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^_/, '');
-
-const getNestedValue = (source, path) => {
-  if (!source || !path) {
-    return undefined;
-  }
-
-  const segments = path.split('.');
-  let current = source;
-
-  for (const segment of segments) {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(current, segment)) {
-      current = current[segment];
-      continue;
-    }
-
-    const camelSegment = toCamelCase(segment);
-    if (Object.prototype.hasOwnProperty.call(current, camelSegment)) {
-      current = current[camelSegment];
-      continue;
-    }
-
-    const snakeSegment = toSnakeCase(segment);
-    if (Object.prototype.hasOwnProperty.call(current, snakeSegment)) {
-      current = current[snakeSegment];
-      continue;
-    }
-
-    const lowerSegment = segment.toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(current, lowerSegment)) {
-      current = current[lowerSegment];
-      continue;
-    }
-
-    return undefined;
-  }
-
-  return current;
-};
-
-const getFirstValue = (source, paths = []) => {
-  if (!source || !Array.isArray(paths)) {
-    return undefined;
-  }
-
-  for (const path of paths) {
-    const value = getNestedValue(source, path);
-    if (value !== undefined && value !== null && value !== '') {
-      return value;
-    }
-  }
-
-  return undefined;
-};
 
 const statusVariant = (status) => {
   const value = typeof status === 'string' ? status.toUpperCase() : '';
@@ -113,77 +49,54 @@ const MutasiBankDetailModal = ({
     return mutation;
   }, [mutation, open]);
 
-  const transactionDate = getFirstValue(detail, [
-    'transaction_date',
-    'transactionDate',
-    'tanggal_transaksi',
-  ]);
-  const mutationType =
-    getFirstValue(detail, ['mutation_type', 'mutationType']) || '-';
-  const mutationStatus =
-    getFirstValue(detail, [
-      'validation_status',
-      'validationStatus',
-      'status',
-    ]) || '-';
-  const mutationAmount =
-    getFirstValue(detail, ['amount', 'nominal', 'total_amount']) || 0;
-  const mutationNotes = getFirstValue(detail, ['notes', 'catatan']) || '';
-  const bankCode =
-    getFirstValue(detail, ['bank_code', 'bankCode']) || 'Tidak diketahui';
-  const referenceNumber =
-    getFirstValue(detail, [
-      'reference_number',
-      'referenceNumber',
-      'nomor_referensi',
-    ]) || '-';
-  const batchNumber =
-    getFirstValue(detail, ['batch_number', 'batchNumber']) || '-';
-  const accountNumber =
-    getFirstValue(detail, [
-      'account_number',
-      'accountNumber',
-      'bank_account',
-      'bankAccount',
-    ]) || '-';
+  const transactionDate = detail?.tanggal_transaksi;
+  const mutationType = detail?.mutation_type || '-';
+  const mutationStatus = detail?.validation_status || '-';
+  const mutationAmount = detail?.jumlah || 0;
+  const mutationNotes = detail?.keterangan || '';
+  const bankCode = detail?.bank_code || 'Tidak diketahui';
+  const referenceNumber = detail?.nomor_referensi || '-';
+  const batchNumber = detail?.batch_number || '-';
+  const accountNumber = detail?.accountNumber || detail?.account_number || '-';
 
   const matchedDocument = useMemo(() => {
-    if (!detail) {
-      return null;
+    if (!detail) return null;
+
+    if (detail.invoicePenagihan) {
+      return {
+        type: 'Invoice Penagihan',
+        number: detail.invoicePenagihan.id || detail.invoicePenagihan.nomor_invoice || '-',
+        amount: detail.invoicePenagihan.grandTotal || null,
+        status: detail.invoicePenagihan.status?.name || detail.invoicePenagihan.status || '-',
+        additional: detail.invoicePenagihan,
+      };
     }
 
-    const matched = getFirstValue(detail, [
-      'matched_document',
-      'matchedDocument',
-      'document',
-      'matched',
-    ]);
-
-    if (!matched) {
-      return null;
+    if (detail.invoicePengiriman) {
+      return {
+        type: 'Invoice Pengiriman',
+        number: detail.invoicePengiriman.id || detail.invoicePengiriman.nomor_invoice || '-',
+        amount: detail.invoicePengiriman.grandTotal || null,
+        status: detail.invoicePengiriman.status?.name || detail.invoicePengiriman.status || '-',
+        additional: detail.invoicePengiriman,
+      };
     }
 
-    return {
-      type:
-        getFirstValue(matched, ['type', 'document_type', 'documentType']) ||
-        'Dokumen',
-      number:
-        getFirstValue(matched, [
-          'number',
-          'document_number',
-          'invoice_number',
-        ]) || '-',
-      amount: getFirstValue(matched, ['amount', 'total']) || null,
-      status:
-        getFirstValue(matched, ['status', 'payment_status', 'status_name']) ||
-        '-',
-      additional: matched,
-    };
+    if (detail.tandaTerimaFaktur) {
+      return {
+        type: 'Tanda Terima Faktur',
+        number: detail.tandaTerimaFaktur.id || detail.tandaTerimaFaktur.nomor_ttf || '-',
+        amount: detail.tandaTerimaFaktur.totalAmount || null,
+        status: detail.tandaTerimaFaktur.status?.name || detail.tandaTerimaFaktur.status || '-',
+        additional: detail.tandaTerimaFaktur,
+      };
+    }
+
+    return null;
   }, [detail]);
 
   const auditTrail = useMemo(() => {
-    const audit =
-      getFirstValue(detail, ['audit_logs', 'auditLogs', 'history']) || [];
+    const audit = detail?.auditLogs || detail?.history || [];
     if (Array.isArray(audit)) {
       return audit;
     }
@@ -203,9 +116,6 @@ const MutasiBankDetailModal = ({
             <h2 className='text-lg font-semibold text-gray-900'>
               Detail Mutasi Bank
             </h2>
-            <p className='text-sm text-gray-500'>
-              Periksa informasi lengkap mutasi dan histori pencocokan.
-            </p>
           </div>
           <button
             type='button'
@@ -354,16 +264,10 @@ const MutasiBankDetailModal = ({
                   </h3>
                   <ul className='mt-4 space-y-3'>
                     {auditTrail.map((entry, index) => {
-                      const actor =
-                        getFirstValue(entry, ['user', 'actor', 'performedBy']) ||
-                        'Sistem';
-                      const action =
-                        getFirstValue(entry, ['action', 'event']) || 'Perubahan';
-                      const timestamp =
-                        getFirstValue(entry, ['timestamp', 'created_at']) || null;
-                      const detailMessage =
-                        getFirstValue(entry, ['message', 'notes', 'detail']) ||
-                        '';
+                      const actor = entry?.user?.name || entry?.actor || entry?.performedBy || 'Sistem';
+                      const action = entry?.action || entry?.event || 'Perubahan';
+                      const timestamp = entry?.timestamp || entry?.createdAt || null;
+                      const detailMessage = entry?.message || entry?.notes || entry?.detail || '';
 
                       return (
                         <li

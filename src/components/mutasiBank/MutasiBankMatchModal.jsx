@@ -16,115 +16,22 @@ const SUGGESTION_LABELS = {
   billing_invoice: 'Invoice Penagihan',
 };
 
-const toCamelCase = (value = '') =>
-  value.replace(/[_-](\w)/g, (_, letter) => letter.toUpperCase());
 
-const toSnakeCase = (value = '') =>
-  value
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^_/, '');
-
-const getNestedValue = (source, path) => {
-  if (!source || !path) {
-    return undefined;
-  }
-
-  const segments = path.split('.');
-  let current = source;
-
-  for (const segment of segments) {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(current, segment)) {
-      current = current[segment];
-      continue;
-    }
-
-    const camelSegment = toCamelCase(segment);
-    if (Object.prototype.hasOwnProperty.call(current, camelSegment)) {
-      current = current[camelSegment];
-      continue;
-    }
-
-    const snakeSegment = toSnakeCase(segment);
-    if (Object.prototype.hasOwnProperty.call(current, snakeSegment)) {
-      current = current[snakeSegment];
-      continue;
-    }
-
-    return undefined;
-  }
-
-  return current;
-};
-
-const getFirstValue = (source, paths = []) => {
-  if (!source || !Array.isArray(paths)) {
-    return undefined;
-  }
-
-  for (const path of paths) {
-    const value = getNestedValue(source, path);
-    if (value !== undefined && value !== null && value !== '') {
-      return value;
-    }
-  }
-
-  return undefined;
-};
 
 const resolveSuggestionId = (suggestion) => {
-  return (
-    suggestion?.id ??
-    suggestion?.invoiceId ??
-    suggestion?.documentId ??
-    suggestion?.uuid ??
-    suggestion?._id ??
-    null
-  );
+  return suggestion?.id ?? null;
 };
 
 const resolveSuggestionLabel = (suggestion) => {
-  return (
-    getFirstValue(suggestion, [
-      'number',
-      'document_number',
-      'invoice_number',
-      'kode',
-      'nomor',
-      'reference',
-    ]) || resolveSuggestionId(suggestion) || 'Dokumen'
-  );
+  return suggestion?.id || 'Dokumen';
 };
 
 const resolveSuggestionDate = (suggestion) => {
-  return (
-    getFirstValue(suggestion, [
-      'tanggal',
-      'tanggal_dokumen',
-      'document_date',
-      'invoice_date',
-      'date',
-      'created_at',
-    ]) || null
-  );
+  return suggestion?.createdAt || null;
 };
 
 const resolveSuggestionAmount = (suggestion) => {
-  return (
-    Number(
-      getFirstValue(suggestion, [
-        'total',
-        'amount',
-        'nominal',
-        'grand_total',
-        'total_amount',
-      ]) || 0
-    ) || 0
-  );
+  return Number(suggestion?.grandTotal || suggestion?.totalAmount || 0);
 };
 
 const normalizeSuggestions = (rawSuggestions) => {

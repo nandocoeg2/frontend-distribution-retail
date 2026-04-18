@@ -11,7 +11,7 @@ const MutasiBankAssignDocumentModal = ({
   mutation,
 }) => {
   const [invoicePenagihanId, setInvoicePenagihanId] = useState('');
-  
+
   const {
     options: invoiceOptions,
     loading: invoiceLoading,
@@ -60,9 +60,6 @@ const MutasiBankAssignDocumentModal = ({
             <h2 className='text-lg font-semibold text-gray-900'>
               Kaitkan Dokumen
             </h2>
-            <p className='text-sm text-gray-500'>
-              Pilih Invoice Penagihan yang akan dikaitkan dengan mutasi bank.
-            </p>
           </div>
           <button
             type='button'
@@ -76,13 +73,6 @@ const MutasiBankAssignDocumentModal = ({
         </div>
 
         <form onSubmit={handleSubmit} className='px-6 py-5 space-y-5'>
-          <div className='rounded-lg bg-blue-50 border border-blue-100 p-4 text-sm text-blue-700'>
-            <LinkIcon className='h-5 w-5 inline mr-2' />
-            <span>
-              Setelah dikaitkan, status mutasi otomatis menjadi{' '}
-              <strong>MATCHED</strong>.
-            </span>
-          </div>
 
           {hasDocument ? (
             <div className='rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800'>
@@ -111,9 +101,6 @@ const MutasiBankAssignDocumentModal = ({
               showId
               required
             />
-            <p className='mt-1 text-xs text-gray-500'>
-              Sistem akan secara otomatis mengaitkan Invoice Pengiriman terkait jika ada.
-            </p>
           </div>
 
           {mutation && !hasDocument ? (

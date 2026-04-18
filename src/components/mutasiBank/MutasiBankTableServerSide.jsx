@@ -15,86 +15,10 @@ import { formatCurrency, formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
-const toCamelCase = (value = '') =>
-  value.replace(/[_-](\w)/g, (_, letter) => letter.toUpperCase());
 
-const toSnakeCase = (value = '') =>
-  value
-    .replace(/([A-Z])/g, '_$1')
-    .toLowerCase()
-    .replace(/^_/, '');
-
-const getNestedValue = (source, path) => {
-  if (!source || !path) {
-    return undefined;
-  }
-
-  const segments = path.split('.');
-  let current = source;
-
-  for (const segment of segments) {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(current, segment)) {
-      current = current[segment];
-      continue;
-    }
-
-    const camelSegment = toCamelCase(segment);
-    if (Object.prototype.hasOwnProperty.call(current, camelSegment)) {
-      current = current[camelSegment];
-      continue;
-    }
-
-    const snakeSegment = toSnakeCase(segment);
-    if (Object.prototype.hasOwnProperty.call(current, snakeSegment)) {
-      current = current[snakeSegment];
-      continue;
-    }
-
-    const lowerSegment = segment.toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(current, lowerSegment)) {
-      current = current[lowerSegment];
-      continue;
-    }
-
-    return undefined;
-  }
-
-  return current;
-};
-
-const getFirstAvailableValue = (source, paths = []) => {
-  if (!source || !Array.isArray(paths)) {
-    return undefined;
-  }
-
-  for (const path of paths) {
-    const value = getNestedValue(source, path);
-    if (value !== undefined && value !== null && value !== '') {
-      return value;
-    }
-  }
-
-  return undefined;
-};
 
 const resolveMutationId = (mutation) => {
-  if (!mutation) {
-    return null;
-  }
-
-  return (
-    mutation.id ??
-    mutation.mutationId ??
-    mutation.uuid ??
-    mutation._id ??
-    mutation.transactionId ??
-    mutation.bankMutationId ??
-    null
-  );
+  return mutation?.id ?? null;
 };
 
 const resolveStatusVariant = (status) => {
@@ -120,8 +44,7 @@ const resolveStatusVariant = (status) => {
 };
 
 const resolveMutationTypeLabel = (mutation) => {
-  const type =
-    getFirstAvailableValue(mutation, ['mutation_type', 'mutationType']) || '';
+  const type = mutation?.mutation_type || '';
   const normalized = String(type).toUpperCase();
 
   if (normalized === 'CR' || normalized === 'CREDIT') {
@@ -135,54 +58,42 @@ const resolveMutationTypeLabel = (mutation) => {
 
 const hasAssignedDocument = (mutation) => {
   return Boolean(
-    getFirstAvailableValue(mutation, [
-      'invoicePenagihanId',
-      'invoice_penagihan_id',
-      'invoicePengirimanId',
-      'invoice_pengiriman_id',
-      'tandaTerimaFakturId',
-      'tanda_terima_faktur_id',
-    ])
+    mutation?.invoicePenagihanId ||
+    mutation?.invoicePengirimanId ||
+    mutation?.tandaTerimaFakturId
   );
 };
 
 const resolveMatchedDocument = (mutation) => {
-  const matched = getFirstAvailableValue(mutation, [
-    'matched_document',
-    'matchedDocument',
-    'document',
-    'matched',
-  ]);
+  const invoicePenagihan = mutation?.invoicePenagihan;
+  const invoicePengiriman = mutation?.invoicePengiriman;
+  const tandaTerimaFaktur = mutation?.tandaTerimaFaktur;
 
-  if (!matched || typeof matched !== 'object') {
-    return null;
+  if (invoicePenagihan) {
+    return {
+      type: 'Invoice Penagihan',
+      number: invoicePenagihan.id || invoicePenagihan.nomor_invoice || '',
+      amount: invoicePenagihan.grandTotal || null,
+    };
   }
 
-  const documentType =
-    getFirstAvailableValue(matched, ['type', 'document_type', 'documentType']) ||
-    getFirstAvailableValue(mutation, ['matched_type', 'matchedType']);
-  const documentNumber =
-    getFirstAvailableValue(matched, [
-      'number',
-      'document_number',
-      'invoice_number',
-      'reference',
-    ]) ||
-    getFirstAvailableValue(mutation, [
-      'matched_number',
-      'matched_reference',
-      'matchedNumber',
-    ]);
+  if (invoicePengiriman) {
+    return {
+      type: 'Invoice Pengiriman',
+      number: invoicePengiriman.id || invoicePengiriman.nomor_invoice || '',
+      amount: invoicePengiriman.grandTotal || null,
+    };
+  }
 
-  const documentAmount =
-    getFirstAvailableValue(matched, ['amount', 'total']) ||
-    getFirstAvailableValue(mutation, ['matched_amount', 'matchedAmount']);
+  if (tandaTerimaFaktur) {
+    return {
+      type: 'Tanda Terima Faktur',
+      number: tandaTerimaFaktur.id || tandaTerimaFaktur.nomor_ttf || '',
+      amount: tandaTerimaFaktur.totalAmount || null,
+    };
+  }
 
-  return {
-    type: documentType || 'Dokumen',
-    number: documentNumber || '',
-    amount: documentAmount || null,
-  };
+  return null;
 };
 
 const sanitizeFilters = (filters = {}) => {
@@ -315,15 +226,7 @@ const MutasiBankTableServerSide = ({
   const tableColumns = useMemo(() => {
     return [
       columnHelper.accessor(
-        (row) =>
-          getFirstAvailableValue(row, [
-            'transaction_date',
-            'transactionDate',
-            'tanggal_transaksi',
-            'tanggalTransaksi',
-            'mutation_date',
-            'mutationDate',
-          ]) || null,
+        (row) => row.tanggal_transaksi || null,
         {
           id: 'transaction_date',
           header: 'Tanggal',
@@ -335,13 +238,7 @@ const MutasiBankTableServerSide = ({
         }
       ),
       columnHelper.accessor(
-        (row) =>
-          getFirstAvailableValue(row, [
-            'description',
-            'keterangan',
-            'details',
-            'remark',
-          ]) || '',
+        (row) => row.keterangan || '',
         {
           id: 'description',
           header: 'Deskripsi',
@@ -357,11 +254,7 @@ const MutasiBankTableServerSide = ({
         }
       ),
       columnHelper.accessor(
-        (row) =>
-          Number(
-            getFirstAvailableValue(row, ['amount', 'nominal', 'jumlah', 'total_amount']) ||
-            0
-          ),
+        (row) => Number(row.jumlah || 0),
         {
           id: 'amount',
           header: 'Nominal',
@@ -393,12 +286,7 @@ const MutasiBankTableServerSide = ({
         header: 'Status',
         size: 100,
         cell: ({ row }) => {
-          const status =
-            getFirstAvailableValue(row.original, [
-              'validation_status',
-              'validationStatus',
-              'status',
-            ]) || '-';
+          const status = row.original.validation_status || '-';
           return (
             <StatusBadge status={status} variant={resolveStatusVariant(status)} size='xs' />
           );
