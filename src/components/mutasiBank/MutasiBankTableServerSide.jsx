@@ -242,11 +242,11 @@ const MutasiBankTableServerSide = ({
         {
           id: 'description',
           header: 'Deskripsi',
-          size: 350,
+          size: 410,
           cell: (info) => {
             const value = info.getValue() || '-';
             return (
-              <div className='max-w-[350px] truncate' title={value !== '-' ? value : ''}>
+              <div className='w-full truncate' title={value !== '-' ? value : ''}>
                 {value}
               </div>
             );
@@ -321,7 +321,7 @@ const MutasiBankTableServerSide = ({
       columnHelper.display({
         id: 'actions',
         header: 'Aksi',
-        size: 220,
+        size: 160,
         cell: ({ row }) => {
           const mutation = row.original;
           const mutationId = resolveMutationId(mutation);
@@ -430,31 +430,6 @@ const MutasiBankTableServerSide = ({
 
   return (
     <div className='space-y-2'>
-      {summaryData ? (() => {
-        const summaryEntries = Object.entries(summaryData).filter(([key, value]) => {
-          const normalizedKey = String(key).toLowerCase();
-          if (normalizedKey.includes('breakdown')) {
-            return false;
-          }
-          return !isPlainObject(value);
-        });
-
-        if (summaryEntries.length === 0) {
-          return null;
-        }
-
-        return (
-          <div className='flex flex-wrap gap-2 p-2 bg-gray-50 rounded border border-gray-200'>
-            {summaryEntries.map(([key, value]) => (
-              <div key={key} className='px-2 py-1 bg-white border border-gray-200 rounded text-xs'>
-                <span className='text-gray-500'>{key.replace(/[_-]/g, ' ')}: </span>
-                <span className='font-medium text-gray-900'>{formatSummaryValue(key, value)}</span>
-              </div>
-            ))}
-          </div>
-        );
-      })() : null}
-
       <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
         <DataTable
           table={table}

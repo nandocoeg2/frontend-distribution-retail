@@ -300,7 +300,7 @@ const MutasiBankDetailModal = ({
                 </section>
               ) : null}
 
-              <section className='rounded-lg border border-gray-200 p-4'>
+              {/* <section className='rounded-lg border border-gray-200 p-4'>
                 <button
                   type='button'
                   onClick={() => setShowRaw((prev) => !prev)}
@@ -313,7 +313,7 @@ const MutasiBankDetailModal = ({
                     {JSON.stringify(mutation, null, 2)}
                   </pre>
                 ) : null}
-              </section>
+              </section> */}
             </>
           )}
         </div>
