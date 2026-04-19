@@ -29,6 +29,12 @@ const RangeColumnFilter = ({ column, setPage }) => {
                 value={localMin}
                 onChange={(e) => setLocalMin(e.target.value)}
                 onKeyDown={handleKeyDownMin}
+                onBlur={() => {
+                    if (filterValue.min !== localMin) {
+                        column.setFilterValue({ ...filterValue, min: localMin });
+                        if (setPage) setPage(1);
+                    }
+                }}
                 placeholder="Min"
                 className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                 onClick={(e) => e.stopPropagation()}
@@ -38,6 +44,12 @@ const RangeColumnFilter = ({ column, setPage }) => {
                 value={localMax}
                 onChange={(e) => setLocalMax(e.target.value)}
                 onKeyDown={handleKeyDownMax}
+                onBlur={() => {
+                    if (filterValue.max !== localMax) {
+                        column.setFilterValue({ ...filterValue, max: localMax });
+                        if (setPage) setPage(1);
+                    }
+                }}
                 placeholder="Max"
                 className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                 onClick={(e) => e.stopPropagation()}
