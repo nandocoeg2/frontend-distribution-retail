@@ -134,6 +134,52 @@ export const createStockIn = async (payload) => {
   return response.json();
 };
 
+/**
+ * Check whether a no_surat_jalan already exists for a supplier on Stock In.
+ * Returns `{ exists: boolean, movementNumber: string | null, movementId: string | null }`.
+ *
+ * Used by the Stock In form to give real-time feedback before submit.
+ * Empty/blank input or missing supplierId resolves to `{ exists: false }` without
+ * hitting the backend.
+ */
+export const checkSuratJalanExists = async ({
+  supplierId,
+  no_surat_jalan,
+  excludeMovementId,
+} = {}) => {
+  if (!supplierId || !isNonEmptyString(no_surat_jalan)) {
+    return { exists: false, movementNumber: null, movementId: null };
+  }
+
+  const query = buildQueryString({
+    supplierId,
+    no_surat_jalan: no_surat_jalan.trim(),
+    excludeMovementId,
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/check-surat-jalan${query}`,
+    { headers: buildHeaders() }
+  );
+
+  if (!response.ok) {
+    const message = await parseErrorMessage(
+      response,
+      'Failed to check delivery note'
+    );
+    throw new Error(message);
+  }
+
+  const payload = await response.json();
+  // ResponseUtil.success wraps the data under `data`
+  const data = payload?.data ?? payload;
+  return {
+    exists: !!data?.exists,
+    movementNumber: data?.movementNumber ?? null,
+    movementId: data?.movementId ?? null,
+  };
+};
+
 export const createStockOut = async (payload) => {
   const response = await fetch(`${API_BASE_URL}/stock-out`, {
     method: 'POST',

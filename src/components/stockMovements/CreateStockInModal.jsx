@@ -4,7 +4,7 @@ import Autocomplete from '../common/Autocomplete';
 import useSupplierSearch from '../../hooks/useSupplierSearch';
 import { searchItems } from '../../services/itemService';
 import { reportPoSupplierService } from '../../services/reportPoSupplierService';
-import { createStockIn } from '../../services/stockMovementService';
+import { createStockIn, checkSuratJalanExists } from '../../services/stockMovementService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import { supplierItemPriceService } from '../../services/supplierItemPriceService';
@@ -104,6 +104,43 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
   const [ppnRate, setPpnRate] = useState(0);
 
   const priceFetchIdRef = useRef(0);
+  const sjCheckIdRef = useRef(0);
+
+  /* ── No. Surat Jalan duplicate check (real-time) ── */
+  // suratJalanState: { status: 'idle' | 'checking' | 'duplicate' | 'available' | 'error',
+  //                    message?: string, movementNumber?: string }
+  const [suratJalanState, setSuratJalanState] = useState({ status: 'idle' });
+
+  const checkSuratJalan = useCallback(async (supplierId, noSuratJalan) => {
+    if (isEdit) return;
+    const trimmed = (noSuratJalan || '').trim();
+    if (!supplierId || !trimmed) {
+      setSuratJalanState({ status: 'idle' });
+      return;
+    }
+    const fetchId = ++sjCheckIdRef.current;
+    setSuratJalanState({ status: 'checking' });
+    try {
+      const res = await checkSuratJalanExists({
+        supplierId,
+        no_surat_jalan: trimmed,
+      });
+      if (fetchId !== sjCheckIdRef.current) return; // stale response
+      if (res.exists) {
+        setSuratJalanState({
+          status: 'duplicate',
+          message: `Sudah dipakai di ${res.movementNumber || 'movement lain'}`,
+          movementNumber: res.movementNumber,
+        });
+      } else {
+        setSuratJalanState({ status: 'available' });
+      }
+    } catch (err) {
+      if (fetchId !== sjCheckIdRef.current) return;
+      console.error('Failed to check no_surat_jalan:', err);
+      setSuratJalanState({ status: 'error', message: 'Gagal mengecek No. Surat Jalan' });
+    }
+  }, [isEdit]);
 
   const fetchSupplierPrice = useCallback(async (sid, iid) => {
     if (!sid || !iid || poMode === 'lama' || isEdit) return;
@@ -192,7 +229,21 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     const val = e?.target?.value || e;
     set('supplierId', val);
     fetchSupplierPrice(val, form.itemId);
-  }, [fetchSupplierPrice, form.itemId]);
+    // Re-check duplicate against the new supplier (or clear if supplier removed)
+    checkSuratJalan(val, form.no_surat_jalan);
+  }, [fetchSupplierPrice, form.itemId, form.no_surat_jalan, checkSuratJalan]);
+
+  /* ── No. Surat Jalan input handlers ── */
+  const handleSuratJalanChange = useCallback((e) => {
+    const v = e.target.value;
+    set('no_surat_jalan', v);
+    // Reset feedback while user is editing; check fires on blur.
+    setSuratJalanState({ status: 'idle' });
+  }, []);
+
+  const handleSuratJalanBlur = useCallback(() => {
+    checkSuratJalan(form.supplierId, form.no_surat_jalan);
+  }, [checkSuratJalan, form.supplierId, form.no_surat_jalan]);
 
   /* ── PO search ── */
   const handlePoSearch = useCallback(async (q) => {
@@ -262,6 +313,20 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     if (!qtyKirim || qtyKirim <= 0) { setFormError('Qty Kirim harus > 0'); return; }
     if (qtyPo > 0 && qtyKirim > maxQtyKirim) { setFormError(`Qty Kirim tidak boleh melebihi Qty Sisa PO (${fmt(maxQtyKirim)})`); return; }
     if (!companyId) { setFormError('Company tidak ditemukan, silakan login ulang'); return; }
+    // Block submission when the no_surat_jalan duplicate check is still running
+    // or has already flagged a duplicate. Backend also enforces the unique
+    // constraint as a safety net.
+    if (!isEdit && suratJalanState.status === 'checking') {
+      setFormError('Tunggu sebentar, sedang memeriksa No. Surat Jalan...');
+      return;
+    }
+    if (!isEdit && suratJalanState.status === 'duplicate') {
+      setFormError(
+        `No. Surat Jalan "${form.no_surat_jalan.trim()}" sudah dipakai untuk supplier ini` +
+        (suratJalanState.movementNumber ? ` (${suratJalanState.movementNumber})` : '')
+      );
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -385,10 +450,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                 <Label>Qty PO (PCS)</Label>
                 <Input value={form.qty_po} onChange={(e) => setNum('qty_po', e.target.value)} placeholder='1.000' inputMode='numeric' disabled={isEdit} />
               </div>
-              <div>
-                <Label>Harga / PCS</Label>
-                <Input value={form.harga_pcs} onChange={(e) => setNum('harga_pcs', e.target.value)} placeholder='15.000' inputMode='decimal' disabled={isEdit} />
-              </div>
+              <ReadOnly label='Harga / PCS' value={fmt(hargaPcs)} />
               <ReadOnly label='Total PO' value={fmt(total)} />
               <div>{/* spacer */}</div>
             </div>
@@ -409,7 +471,34 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
               </div>
               <div>
                 <Label>No. Surat Jalan</Label>
-                <Input value={form.no_surat_jalan} onChange={(e) => set('no_surat_jalan', e.target.value)} placeholder='SJ-2026-001' disabled={isEdit} />
+                <Input
+                  value={form.no_surat_jalan}
+                  onChange={handleSuratJalanChange}
+                  onBlur={handleSuratJalanBlur}
+                  placeholder='SJ-2026-001'
+                  disabled={isEdit}
+                  className={
+                    suratJalanState.status === 'duplicate'
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                      : suratJalanState.status === 'available'
+                      ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/20'
+                      : ''
+                  }
+                />
+                {suratJalanState.status === 'checking' && (
+                  <p className='mt-0.5 text-[10px] text-gray-500'>Memeriksa...</p>
+                )}
+                {suratJalanState.status === 'duplicate' && (
+                  <p className='mt-0.5 text-[10px] font-medium text-red-500'>
+                    {suratJalanState.message || 'Sudah dipakai untuk supplier ini'}
+                  </p>
+                )}
+                {suratJalanState.status === 'available' && (
+                  <p className='mt-0.5 text-[10px] text-emerald-600'>Tersedia</p>
+                )}
+                {suratJalanState.status === 'error' && (
+                  <p className='mt-0.5 text-[10px] text-amber-600'>{suratJalanState.message}</p>
+                )}
               </div>
               <div>
                 <Label required>Qty Kirim</Label>
@@ -502,8 +591,14 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
               className='rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50'>
               Batal
             </button>
-            <button type='submit' disabled={isSubmitting}
-              className='rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50'>
+            <button
+              type='submit'
+              disabled={
+                isSubmitting ||
+                (!isEdit && (suratJalanState.status === 'checking' || suratJalanState.status === 'duplicate'))
+              }
+              className='rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50'
+            >
               {isSubmitting ? (
                 <span className='flex items-center gap-2'>
                   <span className='h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white' />

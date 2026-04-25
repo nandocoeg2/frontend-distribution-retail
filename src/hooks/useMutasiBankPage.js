@@ -87,7 +87,9 @@ const useMutasiBankPage = () => {
   );
 
   const validateMutation = useCallback(
-    async (id, payload) => {
+    async (id, payload, options = {}) => {
+      const { suppressToast = false } = options;
+
       if (!id) {
         toastService.error('ID mutasi bank tidak valid.');
         return null;
@@ -104,7 +106,9 @@ const useMutasiBankPage = () => {
         toastService.success('Status mutasi bank berhasil diperbarui.');
         return response;
       } catch (error) {
-        if (!handleAuthError(error)) {
+        if (handleAuthError(error)) {
+          // session ended
+        } else if (!suppressToast) {
           toastService.error(
             resolveErrorMessage(error, 'Gagal memvalidasi mutasi bank.')
           );
@@ -118,7 +122,9 @@ const useMutasiBankPage = () => {
   );
 
   const assignDocument = useCallback(
-    async (id, payload) => {
+    async (id, payload, options = {}) => {
+      const { suppressToast = false } = options;
+
       if (!id) {
         toastService.error('ID mutasi bank tidak valid.');
         return null;
@@ -135,7 +141,9 @@ const useMutasiBankPage = () => {
         toastService.success('Dokumen berhasil dikaitkan ke mutasi bank.');
         return response;
       } catch (error) {
-        if (!handleAuthError(error)) {
+        if (handleAuthError(error)) {
+          // session ended
+        } else if (!suppressToast) {
           toastService.error(
             resolveErrorMessage(error, 'Gagal mengaitkan dokumen.')
           );

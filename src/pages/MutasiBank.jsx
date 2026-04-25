@@ -21,6 +21,16 @@ const resolveMutationId = (mutation) => {
   return mutation.id ?? mutation.mutationId ?? mutation.uuid ?? mutation._id ?? mutation.transactionId ?? mutation.bankMutationId ?? null;
 };
 
+const resolveErrorMessage = (error, fallback) => {
+  return (
+    error?.response?.data?.error?.message ||
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback ||
+    'Terjadi kesalahan saat memproses permintaan.'
+  );
+};
+
 const MutasiBank = () => {
   const queryClient = useQueryClient();
 
@@ -42,8 +52,10 @@ const MutasiBank = () => {
   const [detailData, setDetailData] = useState(null);
   const [validateModalOpen, setValidateModalOpen] = useState(false);
   const [validationTarget, setValidationTarget] = useState(null);
+  const [validateError, setValidateError] = useState(null);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignTarget, setAssignTarget] = useState(null);
+  const [assignError, setAssignError] = useState(null);
 
   const invalidateMutations = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['mutasiBank'] });
@@ -101,12 +113,14 @@ const MutasiBank = () => {
       id: targetId,
       mutation,
     });
+    setValidateError(null);
     setValidateModalOpen(true);
   }, []);
 
   const handleCloseValidateModal = useCallback(() => {
     setValidateModalOpen(false);
     setValidationTarget(null);
+    setValidateError(null);
   }, []);
 
   const handleSubmitValidation = useCallback(
@@ -115,11 +129,38 @@ const MutasiBank = () => {
         return;
       }
 
+      setValidateError(null);
       try {
-        await validateMutation(validationTarget.id, { status, notes });
+        // Suppress hook's generic toast; we dispatch by status code instead.
+        await validateMutation(
+          validationTarget.id,
+          { status, notes },
+          { suppressToast: true }
+        );
         invalidateMutations();
         handleCloseValidateModal();
       } catch (error) {
+        const httpStatus = error?.response?.status;
+        const message = resolveErrorMessage(
+          error,
+          'Gagal memvalidasi mutasi bank.'
+        );
+
+        if (httpStatus === 400) {
+          // Business rule violation (no document linked / notes too short
+          // for INVALID). Keep modal open so user can fix the form.
+          setValidateError(message);
+        } else if (httpStatus === 409) {
+          // Conflict: state changed (concurrent edit, already final, etc).
+          // Close modal, refresh table, surface via toast.
+          toastService.error(message);
+          invalidateMutations();
+          handleCloseValidateModal();
+        } else {
+          // Network / 5xx / unknown — show inline + toast for visibility.
+          setValidateError(message);
+          toastService.error(message);
+        }
         console.error('Gagal memvalidasi mutasi bank:', error);
       }
     },
@@ -142,12 +183,14 @@ const MutasiBank = () => {
       id: targetId,
       mutation,
     });
+    setAssignError(null);
     setAssignModalOpen(true);
   }, []);
 
   const handleCloseAssignModal = useCallback(() => {
     setAssignModalOpen(false);
     setAssignTarget(null);
+    setAssignError(null);
   }, []);
 
   const handleSubmitAssign = useCallback(
@@ -156,11 +199,36 @@ const MutasiBank = () => {
         return;
       }
 
+      setAssignError(null);
       try {
-        await assignDocument(assignTarget.id, payload);
+        await assignDocument(assignTarget.id, payload, { suppressToast: true });
         invalidateMutations();
         handleCloseAssignModal();
       } catch (error) {
+        const httpStatus = error?.response?.status;
+        const message = resolveErrorMessage(
+          error,
+          'Gagal mengaitkan dokumen.'
+        );
+
+        if (httpStatus === 404) {
+          // Either mutation or invoice no longer exists — refresh & close.
+          toastService.error(message);
+          invalidateMutations();
+          handleCloseAssignModal();
+        } else if (httpStatus === 409) {
+          // Invoice already linked to another mutation. Keep modal open
+          // so user can pick a different invoice. Refresh table in the
+          // background so other rows reflect the latest state.
+          setAssignError(message);
+          invalidateMutations();
+        } else if (httpStatus === 400) {
+          // Validation error on the form (e.g. invalid invoice id).
+          setAssignError(message);
+        } else {
+          setAssignError(message);
+          toastService.error(message);
+        }
         console.error('Gagal mengaitkan dokumen:', error);
       }
     },
@@ -248,6 +316,18 @@ const MutasiBank = () => {
         onSubmit={handleSubmitValidation}
         loading={validating}
         mutation={validationTarget?.mutation}
+        submitError={validateError}
+        onRequestAssignDocument={(mutation) => {
+          // Pivot from validate → assign flow when user clicks the
+          // "Assign Dokumen Sekarang" CTA in the warning banner.
+          const targetId =
+            validationTarget?.id || resolveMutationId(mutation);
+          handleCloseValidateModal();
+          if (targetId) {
+            setAssignTarget({ id: targetId, mutation });
+            setAssignModalOpen(true);
+          }
+        }}
         initialStatus={(() => {
           const currentStatus =
             validationTarget?.mutation?.validation_status ||
@@ -266,6 +346,7 @@ const MutasiBank = () => {
         onSubmit={handleSubmitAssign}
         loading={assigning}
         mutation={assignTarget?.mutation}
+        submitError={assignError}
       />
     </div>
   );

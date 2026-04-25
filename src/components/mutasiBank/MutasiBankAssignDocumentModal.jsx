@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { XMarkIcon, LinkIcon } from '@heroicons/react/24/outline';
+import {
+  XMarkIcon,
+  LinkIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 import useInvoicePenagihanAutocomplete from '../../hooks/useInvoicePenagihanAutocomplete';
 
@@ -9,6 +13,7 @@ const MutasiBankAssignDocumentModal = ({
   onSubmit,
   loading = false,
   mutation,
+  submitError = null,
 }) => {
   const [invoicePenagihanId, setInvoicePenagihanId] = useState('');
 
@@ -73,6 +78,16 @@ const MutasiBankAssignDocumentModal = ({
         </div>
 
         <form onSubmit={handleSubmit} className='px-6 py-5 space-y-5'>
+
+          {submitError ? (
+            <div className='flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800'>
+              <ExclamationTriangleIcon className='h-5 w-5 flex-shrink-0 mt-0.5' />
+              <div>
+                <p className='font-semibold'>Gagal mengaitkan dokumen</p>
+                <p className='mt-0.5'>{submitError}</p>
+              </div>
+            </div>
+          ) : null}
 
           {hasDocument ? (
             <div className='rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800'>
