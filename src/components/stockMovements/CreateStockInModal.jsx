@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 import useSupplierSearch from '../../hooks/useSupplierSearch';
@@ -7,6 +7,7 @@ import { reportPoSupplierService } from '../../services/reportPoSupplierService'
 import { createStockIn } from '../../services/stockMovementService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
+import { supplierItemPriceService } from '../../services/supplierItemPriceService';
 
 /* ────────────────────────────────────────────────────────────
    Sub-components
@@ -102,6 +103,24 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
   const [itemLoading, setItemLoading] = useState(false);
   const [ppnRate, setPpnRate] = useState(0);
 
+  const priceFetchIdRef = useRef(0);
+
+  const fetchSupplierPrice = useCallback(async (sid, iid) => {
+    if (!sid || !iid || poMode === 'lama' || isEdit) return;
+    const fetchId = ++priceFetchIdRef.current;
+    try {
+      const res = await supplierItemPriceService.getAllWithFilters(1, 1, { supplierId: sid, itemId: iid });
+      if (fetchId !== priceFetchIdRef.current) return;
+      const rows = res?.data?.data?.data || res?.data?.data || [];
+      const record = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+      if (record?.harga_pcs != null) {
+        setForm((p) => ({ ...p, harga_pcs: String(Number(record.harga_pcs)) }));
+      }
+    } catch (e) {
+      console.error('Failed to fetch supplier price:', e);
+    }
+  }, [poMode, isEdit]);
+
   /* ── load edit data on mount ── */
   React.useEffect(() => {
     if (!editMovement?.id) return;
@@ -169,6 +188,12 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
   const totalDibayar = parseFloat(form.total_dibayar) || 0;
   const selisih = totalInvoice - totalDibayar;
 
+  const handleSupplierSelect = useCallback((e) => {
+    const val = e?.target?.value || e;
+    set('supplierId', val);
+    fetchSupplierPrice(val, form.itemId);
+  }, [fetchSupplierPrice, form.itemId]);
+
   /* ── PO search ── */
   const handlePoSearch = useCallback(async (q) => {
     if (!q || q.length < 2) { setPoResults([]); return; }
@@ -225,7 +250,8 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     set('itemId', val);
     const selected = itemOptions.find((o) => o.id === val);
     if (selected?.ppn != null) setPpnRate(Number(selected.ppn));
-  }, [itemOptions]);
+    fetchSupplierPrice(form.supplierId, val);
+  }, [itemOptions, fetchSupplierPrice, form.supplierId]);
 
   /* ── submit ── */
   const handleSubmit = async (e) => {
@@ -311,7 +337,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                 <Label required>Nama Supplier</Label>
                 <Autocomplete
                   name='supplierId' options={supplierOptions} value={form.supplierId}
-                  onChange={(e) => set('supplierId', e?.target?.value || e)}
+                  onChange={handleSupplierSelect}
                   placeholder='Cari supplier...' displayKey='label' valueKey='id'
                   loading={supplierSearchLoading}
                   onSearch={async (q) => { try { await searchSuppliers(q, 1, 20); } catch {} }}
