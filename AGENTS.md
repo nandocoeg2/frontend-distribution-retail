@@ -16,5 +16,21 @@ Adopt two-space indentation, trailing semicolons, and single quotes to match the
 ## Testing Guidelines
 Automated testing is not yet wired in, so document manual verification steps in pull requests until a runner is adopted. When adding coverage, co-locate specs in a `__tests__` directory or leverage `src/components/test` for harness components, naming files `ComponentName.test.jsx`. Use `@testing-library/react` (or similar) for renderer tests and mock the bridges exposed via `contextBridge` in `src/preload.js`. Regardless of tooling, exercise critical flows—authentication, packing updates, reporting exports—through `npm start` before requesting review.
 
+## Agent skills
+
+Skills are loaded from `.claude/skills/` at the workspace root (`D:\Project\test-electron\.claude\skills\`).
+
+### Issue tracker
+
+No remote issue tracker configured — use local markdown under `.scratch/`. See `.claude/skills/engineering/setup-matt-pocock-skills/issue-tracker-local.md`.
+
+### Triage labels
+
+Default label vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `.claude/skills/engineering/setup-matt-pocock-skills/triage-labels.md`.
+
+### Domain docs
+
+Multi-context monorepo — frontend context lives here; backend context is in `../backend-distribusi-retail`. No `CONTEXT.md` or `docs/adr/` yet; create them lazily via `/grill-with-docs`.
+
 ## Commit & Pull Request Guidelines
 Follow the Conventional Commits format already in history (`feat:`, `fix:`, `chore:`) with concise, present-tense summaries such as `feat: improve packing status sync`. Group related changes per commit and describe migrations or breaking adjustments in the body. Pull requests should outline the problem, solution, testing evidence, and any deployment considerations; attach screenshots or recordings for UI changes and reference issue IDs when available. Rebase onto the latest main branch, confirm local checks (package/make as appropriate), and sanity-check generated installers prior to final review.

@@ -1,3 +1,4 @@
+import React from 'react';
 import { PlusIcon, TrashIcon, UserIcon } from '@heroicons/react/24/outline';
 
 const CustomerPICForm = ({ pics = [], onChange, disabled = false }) => {

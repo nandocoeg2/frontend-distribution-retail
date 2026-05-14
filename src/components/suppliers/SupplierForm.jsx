@@ -1,3 +1,4 @@
+import React from 'react';
 const SupplierForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false }) => {
   return (
     <form onSubmit={handleSubmit}>

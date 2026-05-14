@@ -1,3 +1,4 @@
+import React from 'react';
 import { XMarkIcon, CreditCardIcon, ClockIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';
 import { InfoTable } from '../ui';

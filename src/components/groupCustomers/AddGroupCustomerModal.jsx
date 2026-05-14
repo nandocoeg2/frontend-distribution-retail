@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import BulkUploadGroupCustomer from '@/components/groupCustomers/BulkUploadGroupCustomer';

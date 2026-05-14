@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { AccordionItem, InfoCard, InfoTable } from '../ui';
 import { formatDateTime } from '../../utils/formatUtils';

@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import SupplierForm from '@/components/suppliers/SupplierForm';
 import BulkUploadSupplier from '@/components/suppliers/BulkUploadSupplier';

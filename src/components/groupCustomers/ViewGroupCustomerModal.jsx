@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { XMarkIcon, UserGroupIcon, MapPinIcon, ClockIcon, TagIcon, UsersIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { formatDateTime } from '../../utils/formatUtils';

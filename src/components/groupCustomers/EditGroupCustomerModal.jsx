@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import GroupCustomerForm from '@/components/groupCustomers/GroupCustomerForm';
 import toastService from '@/services/toastService';

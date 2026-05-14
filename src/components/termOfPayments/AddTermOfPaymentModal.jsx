@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import TermOfPaymentForm from '@/components/termOfPayments/TermOfPaymentForm';
 import BulkUploadTermOfPayment from '@/components/termOfPayments/BulkUploadTermOfPayment';

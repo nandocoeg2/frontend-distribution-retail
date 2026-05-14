@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
@@ -262,7 +263,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
                       <ul className="text-red-700 text-xs space-y-0.5">
                         {generalError.split('\n').map((line, index) => (
                           <li key={index} className="flex items-start gap-1">
-                            <span className="text-red-400">•</span>
+                            <span className="text-red-400">â€¢</span>
                             <span>{line}</span>
                           </li>
                         ))}

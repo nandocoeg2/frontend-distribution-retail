@@ -1,3 +1,4 @@
+import React from 'react';
 const TermOfPaymentForm = ({ formData, handleInputChange, handleSubmit, closeModal, isEdit = false }) => {
   const handleBatasHariKeyDown = (e) => {
     // Allow: backspace, delete, tab, escape, enter, arrows, home, end

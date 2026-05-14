@@ -1,3 +1,4 @@
+import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { formatDateTime, formatCurrency } from '../../utils/formatUtils';
 
@@ -9,10 +10,10 @@ const ViewScheduledPriceModal = ({ schedule, onClose }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800', icon: '⏳' },
-      ACTIVE: { label: 'Active', className: 'bg-green-100 text-green-800', icon: '✅' },
-      EXPIRED: { label: 'Expired', className: 'bg-gray-100 text-gray-800', icon: '⏰' },
-      CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-800', icon: '❌' }
+      PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800', icon: 'â³' },
+      ACTIVE: { label: 'Active', className: 'bg-green-100 text-green-800', icon: 'âœ…' },
+      EXPIRED: { label: 'Expired', className: 'bg-gray-100 text-gray-800', icon: 'â°' },
+      CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-800', icon: 'âŒ' }
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;

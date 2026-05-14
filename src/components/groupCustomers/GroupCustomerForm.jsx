@@ -1,3 +1,4 @@
+import React from 'react';
 import useGroupCustomerForm from '../../hooks/useGroupCustomerForm';
 
 const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = false }) => {

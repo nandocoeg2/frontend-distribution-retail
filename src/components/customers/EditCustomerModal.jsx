@@ -1,3 +1,4 @@
+import React from 'react';
 import CustomerForm from '@/components/customers/CustomerForm';
 import useCustomerOperations from '../../hooks/useCustomerOperations';
 

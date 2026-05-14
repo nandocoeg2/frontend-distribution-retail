@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -98,7 +99,7 @@ const EditTagihanModal = ({ show, onClose, onSubmit, record }) => {
           <div>
             <h2 className='text-base font-semibold'>Edit Tagihan</h2>
             <p className='text-xs text-amber-100'>
-              {record.supplier?.name} — {record.item?.nama_barang} — {record.movementNumber}
+              {record.supplier?.name} â€” {record.item?.nama_barang} â€” {record.movementNumber}
             </p>
           </div>
           <button type='button' onClick={onClose} className='rounded p-1 hover:bg-white/20'>

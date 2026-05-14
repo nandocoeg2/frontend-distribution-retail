@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMemo } from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
@@ -64,7 +65,7 @@ const StockMovementItemsInput = ({
             Detail Item
           </h3>
           <span className='rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600'>
-            {items.length} item · {items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)} pcs
+            {items.length} item Â· {items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0)} pcs
           </span>
         </div>
         <button

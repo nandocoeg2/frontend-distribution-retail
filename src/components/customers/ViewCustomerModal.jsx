@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import customerService from '@/services/customerService';
 import groupCustomerService from '@/services/groupCustomerService';
