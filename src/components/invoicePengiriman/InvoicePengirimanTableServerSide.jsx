@@ -1,56 +1,70 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { createColumnHelper, useReactTable } from '@tanstack/react-table';
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { createColumnHelper, useReactTable } from "@tanstack/react-table";
 import {
   TrashIcon,
   PrinterIcon,
   DocumentPlusIcon,
   ArrowDownTrayIcon,
-} from '@heroicons/react/24/outline';
-import { StatusBadge } from '../ui/Badge';
-import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
-import { useInvoicePengirimanQuery } from '../../hooks/useInvoicePengirimanQuery';
-import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
-import invoicePengirimanService from '../../services/invoicePengirimanService';
-import customerService from '../../services/customerService';
-import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
-import PdfPreviewModal from '../common/PdfPreviewModal';
-import toastService from '../../services/toastService';
-import authService from '../../services/authService';
-import DateFilter from '../common/DateFilter';
-import TextColumnFilter from '../common/TextColumnFilter';
-import RangeColumnFilter from '../common/RangeColumnFilter';
+} from "@heroicons/react/24/outline";
+import { StatusBadge } from "../ui/Badge";
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+} from "../../utils/formatUtils";
+import { useInvoicePengirimanQuery } from "../../hooks/useInvoicePengirimanQuery";
+import { useServerSideTable } from "../../hooks/useServerSideTable";
+import { DataTable } from "../table";
+import invoicePengirimanService from "../../services/invoicePengirimanService";
+import customerService from "../../services/customerService";
+import AutocompleteCheckboxLimitTag from "../common/AutocompleteCheckboxLimitTag";
+import PdfPreviewModal from "../common/PdfPreviewModal";
+import toastService from "../../services/toastService";
+import authService from "../../services/authService";
+import DateFilter from "../common/DateFilter";
+import TextColumnFilter from "../common/TextColumnFilter";
+import RangeColumnFilter from "../common/RangeColumnFilter";
 
 const columnHelper = createColumnHelper();
 
 const getStatusVariant = (status) => {
-  const value = (status?.status_name || status?.status_code || '').toLowerCase();
-  if (value.includes('paid') || value.includes('completed') || value.includes('sudah') || value.includes('terkirim')) return 'success';
-  if (value.includes('cancelled') || value.includes('failed')) return 'danger';
-  if (value.includes('overdue')) return 'danger';
-  if (value.includes('pending')) return 'secondary';
-  return 'default';
+  const value = (
+    status?.status_name ||
+    status?.status_code ||
+    ""
+  ).toLowerCase();
+  if (
+    value.includes("paid") ||
+    value.includes("completed") ||
+    value.includes("sudah") ||
+    value.includes("terkirim")
+  )
+    return "success";
+  if (value.includes("cancelled") || value.includes("failed")) return "danger";
+  if (value.includes("overdue")) return "danger";
+  if (value.includes("pending")) return "secondary";
+  return "default";
 };
 
 // Status options for invoice pengiriman (use full status_code from database)
 const STATUS_OPTIONS = [
-  { id: 'PENDING INVOICE', name: 'Pending' },
-  { id: 'TERKIRIM INVOICE PENGIRIMAN', name: 'Terkirim' },
-  { id: 'CANCELLED INVOICE', name: 'Cancelled' },
+  { id: "PENDING INVOICE", name: "Pending" },
+  { id: "TERKIRIM INVOICE PENGIRIMAN", name: "Terkirim" },
+  { id: "CANCELLED INVOICE", name: "Cancelled" },
 ];
 
 // Print status options
 const PRINT_STATUS_OPTIONS = [
-  { value: '', label: 'Semua' },
-  { value: 'true', label: 'Sudah Diprint' },
-  { value: 'false', label: 'Belum Diprint' },
+  { value: "", label: "Semua" },
+  { value: "true", label: "Sudah Diprint" },
+  { value: "false", label: "Belum Diprint" },
 ];
 
 // Penagihan status options
 const PENAGIHAN_STATUS_OPTIONS = [
-  { value: '', label: 'Semua' },
-  { value: 'true', label: 'Sudah Ditagih' },
-  { value: 'false', label: 'Belum Ditagih' },
+  { value: "", label: "Semua" },
+  { value: "true", label: "Sudah Ditagih" },
+  { value: "false", label: "Belum Ditagih" },
 ];
 
 const InvoicePengirimanTableServerSide = ({
@@ -73,18 +87,20 @@ const InvoicePengirimanTableServerSide = ({
   // PDF Preview states
   const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
   const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
-  const [previewTitle, setPreviewTitle] = useState('');
-  const [previewFileName, setPreviewFileName] = useState('document.pdf');
+  const [previewTitle, setPreviewTitle] = useState("");
+  const [previewFileName, setPreviewFileName] = useState("document.pdf");
 
   // Fetch customers for autocomplete filter
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await customerService.getAllCustomers(1, 100, { hasInvoicePengiriman: true });
+        const response = await customerService.getAllCustomers(1, 100, {
+          hasInvoicePengiriman: true,
+        });
         const data = response?.data?.data || response?.data || [];
         setCustomers(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Failed to fetch customers:', error);
+        console.error("Failed to fetch customers:", error);
         setCustomers([]);
       }
     };
@@ -93,7 +109,7 @@ const InvoicePengirimanTableServerSide = ({
 
   const handleBulkPrintInvoice = async () => {
     if (!selectedInvoices || selectedInvoices.length === 0) {
-      toastService.error('Tidak ada invoice yang dipilih');
+      toastService.error("Tidak ada invoice yang dipilih");
       return;
     }
 
@@ -102,18 +118,25 @@ const InvoicePengirimanTableServerSide = ({
       toastService.info(`Memproses ${selectedInvoices.length} invoice...`);
 
       // Call backend API to get bulk HTML
-      const html = await invoicePengirimanService.exportInvoicePengirimanBulk(selectedInvoices);
+      const html =
+        await invoicePengirimanService.exportInvoicePengirimanBulk(
+          selectedInvoices,
+        );
 
       // Open preview modal with HTML content
       setPreviewHtmlContent(html);
-      setPreviewTitle(`Invoice Pengiriman Preview (${selectedInvoices.length} dokumen)`);
+      setPreviewTitle(
+        `Invoice Pengiriman Preview (${selectedInvoices.length} dokumen)`,
+      );
       setPreviewFileName(`invoice-pengiriman-bulk-${Date.now()}.pdf`);
       setPdfPreviewOpen(true);
 
-      toastService.success(`Berhasil memproses ${selectedInvoices.length} invoice.`);
+      toastService.success(
+        `Berhasil memproses ${selectedInvoices.length} invoice.`,
+      );
     } catch (error) {
-      console.error('Error in bulk print:', error);
-      toastService.error(error.message || 'Gagal mencetak invoice');
+      console.error("Error in bulk print:", error);
+      toastService.error(error.message || "Gagal mencetak invoice");
     } finally {
       setIsPrinting(false);
     }
@@ -121,7 +144,7 @@ const InvoicePengirimanTableServerSide = ({
 
   const handleBulkGenerateInvoicePenagihan = () => {
     if (!selectedInvoices || selectedInvoices.length === 0) {
-      toastService.error('Tidak ada invoice yang dipilih');
+      toastService.error("Tidak ada invoice yang dipilih");
       return;
     }
 
@@ -133,23 +156,28 @@ const InvoicePengirimanTableServerSide = ({
 
   const handleBulkDeleteInvoice = async () => {
     if (!selectedInvoices || selectedInvoices.length === 0) {
-      toastService.error('Tidak ada invoice yang dipilih');
+      toastService.error("Tidak ada invoice yang dipilih");
       return;
     }
 
     setIsDeleting(true);
     try {
-      const result = await invoicePengirimanService.bulkDeleteInvoicePengiriman(selectedInvoices);
+      const result =
+        await invoicePengirimanService.bulkDeleteInvoicePengiriman(
+          selectedInvoices,
+        );
 
       if (result?.success) {
         const { deletedCount, failedIds } = result.data || {};
         const failedIdList = Array.isArray(failedIds) ? failedIds : [];
         const deletedIds = selectedInvoices.filter(
-          (invoiceId) => !failedIdList.includes(invoiceId)
+          (invoiceId) => !failedIdList.includes(invoiceId),
         );
 
         if (failedIds && failedIds.length > 0) {
-          toastService.warning(`Berhasil menghapus ${deletedCount} invoice. ${failedIds.length} gagal dihapus.`);
+          toastService.warning(
+            `Berhasil menghapus ${deletedCount} invoice. ${failedIds.length} gagal dihapus.`,
+          );
         } else {
           toastService.success(`Berhasil menghapus ${deletedCount} invoice.`);
         }
@@ -158,11 +186,15 @@ const InvoicePengirimanTableServerSide = ({
           await onBulkDelete({ deletedIds, failedIds: failedIdList });
         }
       } else {
-        toastService.error('Gagal menghapus invoice');
+        toastService.error("Gagal menghapus invoice");
       }
     } catch (error) {
-      console.error('Error in bulk delete:', error);
-      toastService.error(error?.response?.data?.error?.message || error.message || 'Gagal menghapus invoice');
+      console.error("Error in bulk delete:", error);
+      toastService.error(
+        error?.response?.data?.error?.message ||
+          error.message ||
+          "Gagal menghapus invoice",
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -170,47 +202,62 @@ const InvoicePengirimanTableServerSide = ({
   const globalFilterConfig = useMemo(
     () => ({
       enabled: true,
-      initialValue: '',
+      initialValue: "",
       debounceMs: 500,
     }),
-    []
+    [],
   );
 
   // Map frontend filter keys to backend parameters
   const getQueryParams = useMemo(
-    () => ({ filters, ...rest }) => {
-      const companyId = authService.getCompanyData()?.id;
-      const mappedFilters = { ...filters };
+    () =>
+      ({ filters, ...rest }) => {
+        const companyId = authService.getCompanyData()?.id;
+        const mappedFilters = { ...filters };
 
-      if (companyId) {
-        mappedFilters.companyId = companyId;
-      }
-
-      // Handle customer filter (array of IDs)
-      if (mappedFilters.customerIds) {
-        if (Array.isArray(mappedFilters.customerIds) && mappedFilters.customerIds.length > 0) {
-          // Keep as customerIds
-        } else {
-          delete mappedFilters.customerIds;
+        if (companyId) {
+          mappedFilters.companyId = companyId;
         }
-      }
 
-      // Handle status filter (array of codes)
-      if (mappedFilters.status_codes) {
-        if (Array.isArray(mappedFilters.status_codes) && mappedFilters.status_codes.length > 0) {
-          // Keep as status_codes
-        } else {
-          delete mappedFilters.status_codes;
+        // Handle customer filter (array of IDs)
+        if (mappedFilters.customerIds) {
+          if (
+            Array.isArray(mappedFilters.customerIds) &&
+            mappedFilters.customerIds.length > 0
+          ) {
+            // Keep as customerIds
+          } else {
+            delete mappedFilters.customerIds;
+          }
         }
-      }
 
-      return {
-        ...rest,
-        filters: mappedFilters,
-      };
-    },
-    []
+        // Handle status filter (array of codes)
+        if (mappedFilters.status_codes) {
+          if (
+            Array.isArray(mappedFilters.status_codes) &&
+            mappedFilters.status_codes.length > 0
+          ) {
+            // Keep as status_codes
+          } else {
+            delete mappedFilters.status_codes;
+          }
+        }
+
+        return {
+          ...rest,
+          filters: mappedFilters,
+        };
+      },
+    [],
   );
+
+  // Stabilize selectData to prevent unnecessary useMemo recomputation in useServerSideTable
+  const selectData = useCallback(
+    (response) => response?.invoicePengiriman ?? [],
+    [],
+  );
+
+  const selectPagination = useCallback((response) => response?.pagination, []);
 
   const {
     data: invoices,
@@ -224,20 +271,20 @@ const InvoicePengirimanTableServerSide = ({
     tableOptions,
   } = useServerSideTable({
     queryHook: useInvoicePengirimanQuery,
-    selectData: (response) => response?.invoicePengiriman ?? [],
-    selectPagination: (response) => response?.pagination,
+    selectData,
+    selectPagination,
     initialLimit: 9999,
     initialPage: 1,
     globalFilter: globalFilterConfig,
     getQueryParams,
     columnFilterDebounceMs: 0,
-    storageKey: 'invoice-pengiriman', // Persist filter state to sessionStorage
+    storageKey: "invoice-pengiriman", // Persist filter state to sessionStorage
   });
 
   const columns = useMemo(
     () => [
       columnHelper.display({
-        id: 'select',
+        id: "select",
         header: () => {
           const isAllSelected =
             invoices.length > 0 && selectedInvoices.length === invoices.length;
@@ -247,143 +294,171 @@ const InvoicePengirimanTableServerSide = ({
 
           return (
             <input
-              type='checkbox'
+              type="checkbox"
               checked={isAllSelected}
               ref={(input) => {
                 if (input) input.indeterminate = isIndeterminate;
               }}
               onChange={() => onSelectAllInvoices(invoices)}
-              className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
         cell: ({ row }) => (
           <input
-            type='checkbox'
+            type="checkbox"
             checked={selectedInvoices.includes(row.original.id)}
             onChange={() => onSelectInvoice(row.original.id)}
-            className='h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
         ),
         enableSorting: false,
         enableHiding: false,
         enableColumnFilter: false,
       }),
-      columnHelper.accessor('tanggal', {
+      columnHelper.accessor("tanggal", {
         header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          const filterValue = column.getFilterValue() || { from: "", to: "" };
           return (
-            <div className='space-y-0.5'>
-              <div className='font-medium text-xs'>Tanggal</div>
-              <div className='flex flex-col gap-0.5'>
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-0.5">
                 <DateFilter
-                  value={filterValue.from ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  value={filterValue.from ?? ""}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, from: val });
+                    setPage(1);
+                  }}
                   placeholder="Dari"
                 />
                 <DateFilter
-                  value={filterValue.to ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  value={filterValue.to ?? ""}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, to: val });
+                    setPage(1);
+                  }}
                   placeholder="Sampai"
                 />
               </div>
             </div>
           );
         },
-        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
+        cell: (info) => (
+          <span className="text-xs text-gray-600">
+            {info.getValue() ? formatDate(info.getValue()) : "-"}
+          </span>
+        ),
       }),
-      columnHelper.accessor('no_invoice', {
+      columnHelper.accessor("no_invoice", {
         header: ({ column }) => (
-          <div className='space-y-1'>
-            <div className='font-medium text-xs'>No Invoice</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Invoice</div>
             <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => (
-          <div className='font-medium text-gray-900'>
-            {info.getValue() || '-'}
+          <div className="font-medium text-gray-900">
+            {info.getValue() || "-"}
           </div>
         ),
       }),
-      columnHelper.accessor('purchaseOrder.po_number', {
-        id: 'po_number',
+      columnHelper.accessor("purchaseOrder.po_number", {
+        id: "po_number",
         header: ({ column }) => (
-          <div className='space-y-1'>
-            <div className='font-medium text-xs'>No PO</div>
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No PO</div>
             <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => (
-          <div className='font-medium text-gray-900'>
-            {info.getValue() || '-'}
+          <div className="font-medium text-gray-900">
+            {info.getValue() || "-"}
           </div>
         ),
       }),
-      columnHelper.accessor((row) => row.purchaseOrder?.laporanPenerimaanBarang?.no_lpb, {
-        id: 'no_lpb',
+      columnHelper.accessor(
+        (row) => row.purchaseOrder?.laporanPenerimaanBarang?.no_lpb,
+        {
+          id: "no_lpb",
+          header: ({ column }) => (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">No LPB</div>
+              <select
+                value={column.getFilterValue() ?? ""}
+                onChange={(e) => {
+                  column.setFilterValue(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <option value="">Semua</option>
+                <option value="true">Ada LPB</option>
+                <option value="false">Tidak Ada LPB</option>
+              </select>
+            </div>
+          ),
+          cell: (info) => (
+            <div className="font-medium text-gray-900">
+              {info.getValue() || "-"}
+            </div>
+          ),
+        },
+      ),
+      columnHelper.accessor("purchaseOrder.customer.namaCustomer", {
+        id: "customerIds",
         header: ({ column }) => (
-          <div className='space-y-1'>
-            <div className='font-medium text-xs'>No LPB</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value="">Semua</option>
-              <option value="true">Ada LPB</option>
-              <option value="false">Tidak Ada LPB</option>
-            </select>
-          </div>
-        ),
-        cell: (info) => (
-          <div className='font-medium text-gray-900'>
-            {info.getValue() || '-'}
-          </div>
-        ),
-      }),
-      columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
-        id: 'customerIds',
-        header: ({ column }) => (
-          <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
-            <div className='font-medium text-xs'>Customer</div>
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Customer</div>
             <AutocompleteCheckboxLimitTag
               options={customers}
               value={column.getFilterValue() ?? []}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder='All'
-              displayKey='namaCustomer'
-              valueKey='id'
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="All"
+              displayKey="namaCustomer"
+              valueKey="id"
               limitTags={1}
-              size='small'
+              size="small"
               fetchOnClose
             />
           </div>
         ),
-        cell: (info) => <span className='text-xs truncate'>{info.row.original.purchaseOrder?.customer?.namaCustomer || '-'}</span>,
+        cell: (info) => (
+          <span className="text-xs truncate">
+            {info.row.original.purchaseOrder?.customer?.namaCustomer || "-"}
+          </span>
+        ),
       }),
-      columnHelper.accessor('grand_total', {
+      columnHelper.accessor("grand_total", {
         header: ({ column }) => (
-          <div className='space-y-0.5'>
-            <div className='font-medium text-xs'>Jumlah</div>
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Jumlah</div>
             <RangeColumnFilter column={column} setPage={setPage} />
           </div>
         ),
         cell: (info) => formatCurrency(info.getValue()),
       }),
-      columnHelper.accessor('is_printed', {
-        id: 'is_printed',
+      columnHelper.accessor("is_printed", {
+        id: "is_printed",
         header: ({ column }) => (
-          <div className='space-y-0.5'>
-            <div className='font-medium text-xs'>Print</div>
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Print</div>
             <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+              value={column.getFilterValue() ?? ""}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
               onClick={(e) => e.stopPropagation()}
             >
               {PRINT_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
@@ -393,27 +468,32 @@ const InvoicePengirimanTableServerSide = ({
           return (
             <StatusBadge
               dot={true}
-              status={isPrinted ? 'Sudah Diprint' : 'Belum Diprint'}
-              variant={isPrinted ? 'success' : 'secondary'}
-              size='sm'
+              status={isPrinted ? "Sudah Diprint" : "Belum Diprint"}
+              variant={isPrinted ? "success" : "secondary"}
+              size="sm"
             />
           );
         },
         enableSorting: true,
       }),
       columnHelper.accessor((row) => row.invoicePenagihanId, {
-        id: 'has_penagihan',
+        id: "has_penagihan",
         header: ({ column }) => (
-          <div className='space-y-0.5'>
-            <div className='font-medium text-xs'>Tagih</div>
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Tagih</div>
             <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+              value={column.getFilterValue() ?? ""}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
               onClick={(e) => e.stopPropagation()}
             >
               {PENAGIHAN_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
@@ -423,30 +503,36 @@ const InvoicePengirimanTableServerSide = ({
           return (
             <StatusBadge
               dot={true}
-              status={hasPenagihan ? 'Sudah Ditagih' : 'Belum Ditagih'}
-              variant={hasPenagihan ? 'success' : 'secondary'}
-              size='sm'
+              status={hasPenagihan ? "Sudah Ditagih" : "Belum Ditagih"}
+              variant={hasPenagihan ? "success" : "secondary"}
+              size="sm"
             />
           );
         },
         enableSorting: true,
       }),
-      columnHelper.accessor('updatedAt', {
-        id: 'print_date',
+      columnHelper.accessor("updatedAt", {
+        id: "print_date",
         header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          const filterValue = column.getFilterValue() || { from: "", to: "" };
           return (
-            <div className='space-y-0.5'>
-              <div className='font-medium text-xs'>Tgl Print</div>
-              <div className='flex flex-col gap-0.5'>
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tgl Print</div>
+              <div className="flex flex-col gap-0.5">
                 <DateFilter
-                  value={filterValue.from ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  value={filterValue.from ?? ""}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, from: val });
+                    setPage(1);
+                  }}
                   placeholder="Dari"
                 />
                 <DateFilter
-                  value={filterValue.to ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  value={filterValue.to ?? ""}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, to: val });
+                    setPage(1);
+                  }}
                   placeholder="Sampai"
                 />
               </div>
@@ -455,25 +541,35 @@ const InvoicePengirimanTableServerSide = ({
         },
         cell: (info) => {
           const isPrinted = info.row.original.is_printed;
-          return <span className='text-xs text-gray-600'>{isPrinted ? formatDateTime(info.getValue()) : '-'}</span>;
+          return (
+            <span className="text-xs text-gray-600">
+              {isPrinted ? formatDateTime(info.getValue()) : "-"}
+            </span>
+          );
         },
       }),
-      columnHelper.accessor('status.status_name', {
-        id: 'status_codes',
+      columnHelper.accessor("status.status_name", {
+        id: "status_codes",
         header: ({ column }) => (
-          <div className='space-y-0.5 max-w-[120px]' onClick={(e) => e.stopPropagation()}>
-            <div className='font-medium text-xs'>Status</div>
+          <div
+            className="space-y-0.5 max-w-[120px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
               options={STATUS_OPTIONS}
               value={column.getFilterValue() ?? []}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder='All'
-              displayKey='name'
-              valueKey='id'
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
               limitTags={1}
-              size='small'
+              size="small"
               fetchOnClose
-              sx={{ minWidth: '100px' }}
+              sx={{ minWidth: "100px" }}
             />
           </div>
         ),
@@ -483,14 +579,14 @@ const InvoicePengirimanTableServerSide = ({
           const statusText = status?.status_name || status?.status_code;
 
           if (!statusText) {
-            return <span className='text-sm text-gray-400'>-</span>;
+            return <span className="text-sm text-gray-400">-</span>;
           }
 
           return (
             <StatusBadge
               status={statusText}
               variant={getStatusVariant(status)}
-              size='sm'
+              size="sm"
               dot
             />
           );
@@ -505,7 +601,7 @@ const InvoicePengirimanTableServerSide = ({
       onSelectAllInvoices,
       setPage,
       customers,
-    ]
+    ],
   );
 
   const table = useReactTable({
@@ -516,76 +612,102 @@ const InvoicePengirimanTableServerSide = ({
   const loading = isLoading || isFetching;
 
   return (
-    <div className='space-y-2'>
+    <div className="space-y-2">
       {/* Toolbar - Always show Export Excel, conditionally show selection and filter actions */}
-      <div className='flex justify-between items-center'>
+      <div className="flex justify-between items-center">
         {/* Left side: Selection actions */}
         {hasSelectedInvoices ? (
-          <div className='flex items-center gap-2'>
-            <span className='text-xs font-medium text-blue-700'>{selectedInvoices.length} dipilih</span>
-            <button onClick={handleBulkGenerateInvoicePenagihan} disabled={isGenerating} className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'>
-              <DocumentPlusIcon className='h-3 w-3 mr-1' />{isGenerating ? '...' : 'Generate'}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-blue-700">
+              {selectedInvoices.length} dipilih
+            </span>
+            <button
+              onClick={handleBulkGenerateInvoicePenagihan}
+              disabled={isGenerating}
+              className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
+              <DocumentPlusIcon className="h-3 w-3 mr-1" />
+              {isGenerating ? "..." : "Generate"}
             </button>
-            <button onClick={handleBulkPrintInvoice} disabled={isPrinting} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
-              <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Print'}
+            <button
+              onClick={handleBulkPrintInvoice}
+              disabled={isPrinting}
+              className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              <PrinterIcon className="h-3 w-3 mr-1" />
+              {isPrinting ? "..." : "Print"}
             </button>
-            <button onClick={handleBulkDeleteInvoice} disabled={isDeleting} className='inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50'>
-              <TrashIcon className='h-3 w-3 mr-1' />{isDeleting ? '...' : 'Delete'}
+            <button
+              onClick={handleBulkDeleteInvoice}
+              disabled={isDeleting}
+              className="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              <TrashIcon className="h-3 w-3 mr-1" />
+              {isDeleting ? "..." : "Delete"}
             </button>
           </div>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
 
         {/* Right side: Export Excel and Reset Filter actions */}
-        <div className='flex items-center gap-2'>
+        <div className="flex items-center gap-2">
           {onExportExcel && (
             <button
-              onClick={() => onExportExcel(tableOptions.state?.columnFilters || [])}
+              onClick={() =>
+                onExportExcel(tableOptions.state?.columnFilters || [])
+              }
               disabled={exportLoading}
-              className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'
+              className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
             >
               {exportLoading ? (
                 <>
-                  <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1' />
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1" />
                   Exporting...
                 </>
               ) : (
                 <>
-                  <ArrowDownTrayIcon className='h-3 w-3 mr-1' />
+                  <ArrowDownTrayIcon className="h-3 w-3 mr-1" />
                   Export Excel
                 </>
               )}
             </button>
           )}
           {hasActiveFilters && (
-            <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
+            <button
+              onClick={resetFilters}
+              className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+            >
+              Reset Filter
+            </button>
           )}
         </div>
       </div>
-
 
       <DataTable
         table={table}
         isLoading={loading}
         error={error}
         hasActiveFilters={hasActiveFilters}
-        loadingMessage='Memuat...'
-        emptyMessage='Tidak ada data'
-        emptyFilteredMessage='Tidak ada data sesuai filter'
-        tableClassName='min-w-full bg-white border border-gray-200 text-xs table-fixed'
-        headerRowClassName='bg-gray-50'
+        loadingMessage="Memuat..."
+        emptyMessage="Tidak ada data"
+        emptyFilteredMessage="Tidak ada data sesuai filter"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
+        headerRowClassName="bg-gray-50"
         wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
-        headerCellClassName='px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider'
-        bodyClassName='divide-y divide-gray-100'
-        rowClassName='hover:bg-gray-50 cursor-pointer h-7'
+        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 cursor-pointer h-7"
         getRowClassName={({ row }) => {
-          if (selectedInvoiceId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
-          if (selectedInvoices.includes(row.original.id)) return 'bg-green-50';
+          if (selectedInvoiceId === row.original.id)
+            return "bg-blue-50 border-l-2 border-blue-500";
+          if (selectedInvoices.includes(row.original.id)) return "bg-green-50";
           return undefined;
         }}
         onRowClick={onViewDetail}
-        cellClassName='px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900'
-        emptyCellClassName='px-1.5 py-0.5 text-center text-gray-500'
-        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
+        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? "z-10" : "z-0"}`}
         footerContent={
           <tr>
             {table.getVisibleLeafColumns().map((column) => (
