@@ -54,9 +54,12 @@ const useGroupCustomerForm = (initialData = null) => {
       newErrors.nama_group = 'Nama group customer wajib diisi';
     }
 
-    // Optional validation for NPWP format if provided
-    if (formData.npwp && formData.npwp.trim() && !/^\d{15}$/.test(formData.npwp.replace(/\D/g, ''))) {
-      newErrors.npwp = 'Format NPWP tidak valid (harus 15 digit)';
+    // Optional validation for NPWP format if provided (accept 15 or 16 digits)
+    if (formData.npwp && formData.npwp.trim()) {
+      const cleanNpwp = formData.npwp.replace(/\D/g, '');
+      if (cleanNpwp.length < 15 || cleanNpwp.length > 16) {
+        newErrors.npwp = 'Format NPWP tidak valid (harus 15 atau 16 digit)';
+      }
     }
 
     setErrors(newErrors);
@@ -95,7 +98,14 @@ const useGroupCustomerForm = (initialData = null) => {
         kode_group: formData.kode_group.trim(),
         nama_group: formData.nama_group.trim(),
         alamat: formData.alamat.trim() || null,
-        npwp: formData.npwp.trim() || null,
+        npwp: (() => {
+          const raw = formData.npwp.trim();
+          if (!raw) return null;
+          const clean = raw.replace(/\D/g, '');
+          // Auto-convert 15 digit to 16 digit by prepending '0'
+          if (clean.length === 15) return `0${clean}`;
+          return clean;
+        })(),
         parentGroupCustomerId: formData.parentGroupCustomerId || null
       };
 
@@ -177,12 +187,31 @@ const useGroupCustomerForm = (initialData = null) => {
     setErrors({});
   }, []);
 
+  /**
+   * Auto-format NPWP on blur:
+   * - Strip non-digit characters
+   * - If 15 digits (old format), prepend '0' to convert to 16-digit format
+   */
+  const handleNPWPBlur = useCallback((e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, npwp: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      setFormData(prev => ({ ...prev, npwp: cleanValue }));
+    }
+  }, []);
+
   return {
     formData,
     setFormData,
     loading,
     errors,
     handleInputChange,
+    handleNPWPBlur,
     handleSubmit,
     resetForm,
     setFieldError,

@@ -145,6 +145,26 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Auto-format NPWP on blur:
+   * - Strip non-digit characters
+   * - If 15 digits (old format), prepend '0' to convert to 16-digit format
+   */
+  const handleNPWPBlur = (e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      // If value had non-digit chars, clean it
+      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
+    }
+  };
+
   const handleAutocompleteChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -317,8 +337,14 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                     name="NPWP"
                     value={formData?.NPWP || ''}
                     onChange={handleInputChange}
+                    onBlur={handleNPWPBlur}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="16 digit (NPWP 15 digit otomatis ditambah 0 di depan)"
+                    maxLength={20}
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
+                  </p>
                 </div>
 
                 <div>
