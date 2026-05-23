@@ -84,6 +84,26 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Auto-format NPWP on blur:
+   * - Strip non-digit characters
+   * - If 15 digits (old format), prepend '0' to convert to 16-digit format
+   */
+  const handleNPWPBlur = (e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      // If value had non-digit chars, clean it
+      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
+    }
+  };
+
   const handleAutocompleteChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -242,10 +262,15 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             name='NPWP'
             value={formData.NPWP}
             onChange={handleChange}
+            onBlur={handleNPWPBlur}
             disabled={isLoading}
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
-            placeholder='cth. 01.234.567.8-901.000'
+            placeholder='cth. 0123456789012345 (16 digit)'
+            maxLength={20}
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
+          </p>
         </div>
 
         {/* NPWP Address */}

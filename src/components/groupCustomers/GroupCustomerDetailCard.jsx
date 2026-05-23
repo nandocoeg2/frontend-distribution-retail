@@ -95,6 +95,24 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Auto-format NPWP on blur:
+   * - Strip non-digit characters
+   * - If 15 digits (old format), prepend '0' to convert to 16-digit format
+   */
+  const handleNPWPBlur = (e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, npwp: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      setFormData(prev => ({ ...prev, npwp: cleanValue }));
+    }
+  };
+
   if (!groupCustomer) return null;
 
   const isDeleted = Boolean(groupCustomer?.is_deleted);
@@ -245,9 +263,14 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                           name="npwp"
                           value={formData?.npwp || ''}
                           onChange={handleInputChange}
+                          onBlur={handleNPWPBlur}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Masukkan NPWP (15 digit)"
+                          placeholder="Masukkan NPWP (16 digit)"
+                          maxLength={20}
                         />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
+                        </p>
                       </div>
 
                       <div>

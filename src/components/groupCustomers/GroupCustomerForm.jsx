@@ -7,6 +7,7 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
     loading,
     errors,
     handleInputChange,
+    handleNPWPBlur,
     handleSubmit,
     resetForm,
     parentGroupOptions,
@@ -130,12 +131,17 @@ const GroupCustomerForm = ({ initialData = null, onSubmit, onCancel, isEdit = fa
           name="npwp"
           value={formData.npwp}
           onChange={handleInputChange}
+          onBlur={handleNPWPBlur}
           disabled={loading}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 ${
             errors.npwp ? 'border-red-500' : 'border-gray-300'
           }`}
-          placeholder="cth. 01.234.567.8-901.000"
+          placeholder="cth. 0123456789012345 (16 digit)"
+          maxLength={20}
         />
+        <p className="mt-1 text-xs text-gray-500">
+          Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
+        </p>
         {errors.npwp && (
           <p className="mt-1 text-sm text-red-600">{errors.npwp}</p>
         )}
