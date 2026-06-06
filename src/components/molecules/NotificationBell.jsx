@@ -311,7 +311,7 @@ const NotificationBell = () => {
       <button
         ref={bellRef}
         onClick={handleBellClick}
-        className='relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
+        className='relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors' aria-label='Notifications'
       >
         <svg
           className='w-6 h-6'
@@ -438,7 +438,7 @@ const NotificationBell = () => {
                           <button
                             onClick={() => handleDeleteNotification(notification.id)}
                             className='p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors'
-                            title='Delete notification'
+                            title='Delete notification' aria-label='Delete notification'
                           >
                             <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                               <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
@@ -520,7 +520,7 @@ const NotificationBell = () => {
               </div>
               <button
                 onClick={handleCloseDetail}
-                className='p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors'
+                className='p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors' aria-label='Close detail'
               >
                 <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                   <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />

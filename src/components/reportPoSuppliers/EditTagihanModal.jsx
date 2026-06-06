@@ -102,7 +102,7 @@ const EditTagihanModal = ({ show, onClose, onSubmit, record }) => {
               {record.supplier?.name} â€” {record.item?.nama_barang} â€” {record.movementNumber}
             </p>
           </div>
-          <button type='button' onClick={onClose} className='rounded p-1 hover:bg-white/20'>
+          <button type='button' onClick={onClose} className='rounded p-1 hover:bg-white/20' aria-label='Tutup modal'>
             <XMarkIcon className='h-5 w-5' />
           </button>
         </div>
