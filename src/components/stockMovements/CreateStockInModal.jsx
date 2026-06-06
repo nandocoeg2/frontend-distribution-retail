@@ -383,7 +383,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
         {/* ── Header ── */}
         <div className='flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-3.5'>
           <h2 className='text-sm font-bold tracking-wide text-white'>{isEdit ? 'Edit Stock In' : 'Stock In'}</h2>
-          <button type='button' onClick={onClose} className='rounded-lg p-1 text-white/70 transition-colors hover:bg-white/15 hover:text-white'>
+          <button type='button' onClick={onClose} className='rounded-lg p-1 text-white/70 transition-colors hover:bg-white/15 hover:text-white' aria-label='Tutup modal'>
             <XMarkIcon className='h-5 w-5' />
           </button>
         </div>
