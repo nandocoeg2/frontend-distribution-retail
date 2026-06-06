@@ -16,7 +16,7 @@ class AuthService {
 
   // Save user data to localStorage
   saveUserData(userData) {
-    console.log('Saving user data:', userData); // Debug log
+    // Security Fix: Removed exposed user data
     if (userData.user) {
       localStorage.setItem('userData', JSON.stringify(userData.user));
     }
@@ -91,7 +91,7 @@ class AuthService {
       });
 
       if (response.data && response.data.success) {
-        console.log('API Response:', response.data); // Debug log
+        // Security Fix: Removed exposed API response
         this.saveUserData(response.data.data);
         return { success: true, data: response.data.data };
       }
