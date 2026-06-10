@@ -127,6 +127,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
     id: detail.customer.id,
     namaCustomer: detail.customer.nama_customer || detail.customer.namaCustomer,
   }] : []);
+  const customerNpwp = detail?.customer?.groupCustomer?.npwp || detail?.customer?.npwp || detail?.customer?.NPWP;
 
   // Sync formData with fakturPajak
   useEffect(() => {
@@ -530,7 +531,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
               <InfoTable compact data={[
                 { label: 'Nama', value: detail?.customer?.nama_customer || detail?.customer?.namaCustomer || '-' },
                 { label: 'Kode', value: detail?.customer?.kode_customer || detail?.customer?.kodeCustomer || '-' },
-                { label: 'NPWP', value: detail?.customer?.npwp || detail?.customer?.NPWP || '-' },
+                { label: 'NPWP', value: customerNpwp || '-' },
               ]} />
             </AccordionItem>
 

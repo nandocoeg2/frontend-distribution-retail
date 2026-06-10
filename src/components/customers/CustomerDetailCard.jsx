@@ -71,7 +71,6 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
       alamatPengiriman: customerData?.alamatPengiriman || '',
       phoneNumber: customerData?.phoneNumber || '',
       email: customerData?.email || '',
-      NPWP: customerData?.NPWP || '',
       alamatNPWP: customerData?.alamatNPWP || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
@@ -112,7 +111,8 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await customerService.update(customer.id, formData);
+      const { NPWP: _ignoredNpwp, ...payload } = formData || {};
+      await customerService.update(customer.id, payload);
       toastService.success('Customer updated successfully!');
       
       // Refresh customer data
@@ -194,6 +194,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
 
   // Use fullCustomer if loaded, otherwise use prop customer
   const displayCustomer = fullCustomer || customer;
+  const displayNpwp = displayCustomer.groupCustomer?.npwp || displayCustomer.NPWP;
   const defaultPic = displayCustomer.customerPics?.find(pic => pic.default);
   const primaryPic = defaultPic || displayCustomer.customerPics?.[0];
 
@@ -313,13 +314,13 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
                     {displayCustomer.alamatPengiriman || '-'}
                   </p>
                 </div>
-                {displayCustomer.NPWP && (
+                {displayNpwp && (
                   <div>
                     <span className="text-gray-500 text-xs flex items-center">
                       <IdentificationIcon className="h-3 w-3 mr-1" />
                       NPWP:
                     </span>
-                    <p className="font-medium text-gray-900">{displayCustomer.NPWP}</p>
+                    <p className="font-medium text-gray-900">{displayNpwp}</p>
                     {displayCustomer.alamatNPWP && (
                       <p className="text-xs text-gray-500 mt-1 leading-relaxed">{displayCustomer.alamatNPWP}</p>
                     )}

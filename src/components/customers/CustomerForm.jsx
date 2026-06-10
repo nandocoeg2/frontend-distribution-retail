@@ -14,7 +14,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     alamatPengiriman: '',
     phoneNumber: '',
     email: '',
-    NPWP: '',
     alamatNPWP: '',
     customerPics: [],
   });
@@ -29,7 +28,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     initialData?.alamatPengiriman,
     initialData?.phoneNumber,
     initialData?.email,
-    initialData?.NPWP,
     initialData?.alamatNPWP,
     initialData?.customerPics
   ]);
@@ -44,7 +42,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
         alamatPengiriman: memoizedInitialData.alamatPengiriman || '',
         phoneNumber: memoizedInitialData.phoneNumber || '',
         email: memoizedInitialData.email || '',
-        NPWP: memoizedInitialData.NPWP || '',
         alamatNPWP: memoizedInitialData.alamatNPWP || '',
         customerPics: memoizedInitialData.customerPics?.map(pic => ({
           nama_pic: pic.nama_pic || '',
@@ -84,26 +81,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * Auto-format NPWP on blur:
-   * - Strip non-digit characters
-   * - If 15 digits (old format), prepend '0' to convert to 16-digit format
-   */
-  const handleNPWPBlur = (e) => {
-    const { value } = e.target;
-    if (!value) return;
-
-    const cleanValue = value.replace(/[^0-9]/g, '');
-
-    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
-    if (cleanValue.length === 15) {
-      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
-    } else if (cleanValue !== value) {
-      // If value had non-digit chars, clean it
-      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
-    }
-  };
-
   const handleAutocompleteChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -125,6 +102,9 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
   };
 
   const isLoading = dropdownLoading || loading;
+  const selectedGroupCustomer = groupCustomers.find(group => group.id === formData.groupCustomerId)
+    || (memoizedInitialData?.groupCustomer?.id === formData.groupCustomerId ? memoizedInitialData.groupCustomer : null)
+    || null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -201,6 +181,9 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             required
             disabled={isLoading}
           />
+          <p className="mt-1 text-xs text-gray-500">
+            NPWP: {selectedGroupCustomer?.npwp || '-'}
+          </p>
         </div>
 
         {/* Region (Freetext) */}
@@ -252,29 +235,8 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           />
         </div>
 
-        {/* NPWP */}
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            NPWP
-          </label>
-          <input
-            type='text'
-            name='NPWP'
-            value={formData.NPWP}
-            onChange={handleChange}
-            onBlur={handleNPWPBlur}
-            disabled={isLoading}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
-            placeholder='cth. 0123456789012345 (16 digit)'
-            maxLength={20}
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
-          </p>
-        </div>
-
         {/* NPWP Address */}
-        <div>
+        <div className="md:col-span-2">
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             NPWP Address
           </label>
@@ -322,4 +284,3 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
 };
 
 export default CustomerForm;
-

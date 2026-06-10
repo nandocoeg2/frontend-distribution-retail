@@ -80,6 +80,13 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
     toastService.success('Copied to clipboard!');
   };
 
+  const customerTaxNpwp =
+    groupCustomer?.npwp ||
+    fullCustomer?.groupCustomer?.npwp ||
+    customer?.groupCustomer?.npwp ||
+    fullCustomer?.NPWP ||
+    customer?.NPWP;
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -187,7 +194,7 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                       </div>
                       <InfoTable
                         data={[
-                          { label: 'NPWP', value: fullCustomer?.NPWP || customer?.NPWP, copyable: true },
+                          { label: 'NPWP', value: customerTaxNpwp, copyable: true },
                           { label: 'Description', value: fullCustomer?.description || customer?.description }
                         ]}
                       />
@@ -367,4 +374,3 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
 };
 
 export default ViewCustomerModal;
-

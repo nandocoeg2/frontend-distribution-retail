@@ -70,7 +70,6 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
       alamatPengiriman: customerData?.alamatPengiriman || '',
       phoneNumber: customerData?.phoneNumber || '',
       email: customerData?.email || '',
-      NPWP: customerData?.NPWP || '',
       alamatNPWP: customerData?.alamatNPWP || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
@@ -111,7 +110,8 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await customerService.update(customer.id, formData);
+      const { NPWP: _ignoredNpwp, ...payload } = formData || {};
+      await customerService.update(customer.id, payload);
       toastService.success('Customer updated successfully!');
       
       // Refresh customer data
@@ -145,26 +145,6 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * Auto-format NPWP on blur:
-   * - Strip non-digit characters
-   * - If 15 digits (old format), prepend '0' to convert to 16-digit format
-   */
-  const handleNPWPBlur = (e) => {
-    const { value } = e.target;
-    if (!value) return;
-
-    const cleanValue = value.replace(/[^0-9]/g, '');
-
-    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
-    if (cleanValue.length === 15) {
-      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
-    } else if (cleanValue !== value) {
-      // If value had non-digit chars, clean it
-      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
-    }
-  };
-
   const handleAutocompleteChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -177,6 +157,10 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
 
   const displayCustomer = fullCustomer || customer;
   const displayData = isEditMode ? formData : displayCustomer;
+  const selectedGroupCustomer = groupCustomers.find(group => group.id === formData?.groupCustomerId)
+    || (displayCustomer.groupCustomer?.id === formData?.groupCustomerId ? displayCustomer.groupCustomer : null)
+    || null;
+  const displayNpwp = displayCustomer.groupCustomer?.npwp || displayCustomer.NPWP;
   const defaultPic = displayCustomer.customerPics?.find(pic => pic.default);
   const primaryPic = defaultPic || displayCustomer.customerPics?.[0];
 
@@ -283,6 +267,9 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                     required
                     disabled={dropdownLoading}
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    NPWP: {selectedGroupCustomer?.npwp || '-'}
+                  </p>
                 </div>
 
                 <div>
@@ -330,24 +317,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
-                  <input
-                    type="text"
-                    name="NPWP"
-                    value={formData?.NPWP || ''}
-                    onChange={handleInputChange}
-                    onBlur={handleNPWPBlur}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="16 digit (NPWP 15 digit otomatis ditambah 0 di depan)"
-                    maxLength={20}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
-                  </p>
-                </div>
-
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">NPWP Address</label>
                   <textarea
                     name="alamatNPWP"
@@ -427,13 +397,13 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                         {displayCustomer.alamatPengiriman || '-'}
                       </p>
                     </div>
-                    {displayCustomer.NPWP && (
+                    {displayNpwp && (
                       <div>
                         <span className="text-gray-500 text-xs flex items-center">
                           <IdentificationIcon className="h-3 w-3 mr-1" />
                           NPWP:
                         </span>
-                        <p className="font-medium text-gray-900">{displayCustomer.NPWP}</p>
+                        <p className="font-medium text-gray-900">{displayNpwp}</p>
                         {displayCustomer.alamatNPWP && (
                           <p className="text-xs text-gray-500 mt-1 leading-relaxed">{displayCustomer.alamatNPWP}</p>
                         )}

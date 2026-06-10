@@ -105,6 +105,7 @@ const CheckingListDetailCard = ({
   const firstSuratJalan = suratJalanData[0];
   const firstPurchaseOrder = firstSuratJalan?.purchaseOrder;
   const customer = firstPurchaseOrder?.customer;
+  const customerNpwp = customer?.groupCustomer?.npwp || customer?.NPWP;
   const supplier = firstPurchaseOrder?.supplier;
 
   // Extract unique purchase orders from all surat jalan
@@ -875,7 +876,7 @@ const CheckingListDetailCard = ({
                         },
                         {
                           label: 'NPWP',
-                          value: customer.NPWP || '-',
+                          value: customerNpwp || '-',
                         },
                         {
                           label: 'Alamat NPWP',

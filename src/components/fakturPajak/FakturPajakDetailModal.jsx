@@ -49,6 +49,7 @@ const FakturPajakDetailModal = ({ isOpen, onClose, fakturPajak, isLoading }) => 
   }
 
   const detail = fakturPajak || {};
+  const customerNpwp = detail?.customer?.groupCustomer?.npwp || detail?.customer?.npwp || detail?.customer?.NPWP;
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4'>
@@ -139,7 +140,7 @@ const FakturPajakDetailModal = ({ isOpen, onClose, fakturPajak, isLoading }) => 
                   />
                   <InfoRow
                     label='NPWP'
-                    value={detail?.customer?.npwp || '-'}
+                    value={customerNpwp || '-'}
                   />
                 </div>
               </section>

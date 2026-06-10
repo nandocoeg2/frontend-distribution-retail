@@ -187,7 +187,7 @@ const ViewGroupCustomerModal = ({ show, onClose, groupCustomer, loading = false 
                                   {customer.namaCustomer}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {customer.NPWP || 'N/A'}
+                                  {groupCustomer.npwp || customer.NPWP || 'N/A'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                   {customer.email || 'N/A'}
