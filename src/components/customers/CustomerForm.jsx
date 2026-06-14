@@ -15,6 +15,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     phoneNumber: '',
     email: '',
     alamatNPWP: '',
+    NPWP: '',
     customerPics: [],
   });
   const [groupCustomers, setGroupCustomers] = useState([]);
@@ -29,6 +30,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     initialData?.phoneNumber,
     initialData?.email,
     initialData?.alamatNPWP,
+    initialData?.NPWP,
     initialData?.customerPics
   ]);
 
@@ -43,6 +45,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
         phoneNumber: memoizedInitialData.phoneNumber || '',
         email: memoizedInitialData.email || '',
         alamatNPWP: memoizedInitialData.alamatNPWP || '',
+        NPWP: memoizedInitialData.NPWP || '',
         customerPics: memoizedInitialData.customerPics?.map(pic => ({
           nama_pic: pic.nama_pic || '',
           dept: pic.dept || '',
@@ -83,6 +86,38 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
 
   const handleAutocompleteChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleGroupCustomerChange = (groupId) => {
+    const selectedGroup = groupCustomers.find(group => group.id === groupId);
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        groupCustomerId: groupId,
+      };
+      
+      if (selectedGroup) {
+        updated.NPWP = selectedGroup.npwp || '';
+        updated.alamatNPWP = selectedGroup.alamat || '';
+      }
+      
+      return updated;
+    });
+  };
+
+  const handleNPWPBlur = (e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      // If value had non-digit chars, clean it
+      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
+    }
   };
 
   const handlePICsChange = (pics) => {
@@ -159,7 +194,6 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             name='phoneNumber'
             value={formData.phoneNumber}
             onChange={handleChange}
-            required
             disabled={isLoading}
             inputMode='tel'
             className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
@@ -174,7 +208,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             name="groupCustomerId"
             options={groupCustomers}
             value={formData.groupCustomerId}
-            onChange={(e) => handleAutocompleteChange('groupCustomerId', e.target.value)}
+            onChange={(e) => handleGroupCustomerChange(e.target.value)}
             placeholder="Search for a group"
             displayKey="nama_group"
             valueKey="id"
@@ -205,7 +239,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
         {/* Shipping Address */}
         <div className="md:col-span-2">
           <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Shipping Address
+            Shipping Address *
           </label>
           <input
             type='text'
@@ -235,8 +269,23 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           />
         </div>
 
+        {/* NPWP */}
+        <div>
+          <label className='block text-sm font-medium text-gray-700 mb-1'>
+            NPWP
+          </label>
+          <input
+            type='text'
+            name='NPWP'
+            value={formData.NPWP}
+            readOnly
+            className='w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none'
+            placeholder='Auto-filled from Group Customer'
+          />
+        </div>
+
         {/* NPWP Address */}
-        <div className="md:col-span-2">
+        <div>
           <label className='block text-sm font-medium text-gray-700 mb-1'>
             NPWP Address
           </label>
@@ -244,10 +293,9 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
             type='text'
             name='alamatNPWP'
             value={formData.alamatNPWP}
-            onChange={handleChange}
-            disabled={isLoading}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
-            placeholder='cth. Jl. Pajak No. 10, Jakarta'
+            readOnly
+            className='w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none'
+            placeholder='Auto-filled from Group Customer'
           />
         </div>
 

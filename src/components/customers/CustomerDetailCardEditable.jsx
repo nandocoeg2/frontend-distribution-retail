@@ -71,6 +71,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
       phoneNumber: customerData?.phoneNumber || '',
       email: customerData?.email || '',
       alamatNPWP: customerData?.alamatNPWP || '',
+      NPWP: customerData?.NPWP || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
         nama_pic: pic.nama_pic || '',
@@ -110,8 +111,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const { NPWP: _ignoredNpwp, ...payload } = formData || {};
-      await customerService.update(customer.id, payload);
+      await customerService.update(customer.id, formData);
       toastService.success('Customer updated successfully!');
       
       // Refresh customer data
@@ -146,7 +146,37 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
   };
 
   const handleAutocompleteChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'groupCustomerId') {
+      const selectedGroup = groupCustomers.find(group => group.id === value);
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          groupCustomerId: value,
+        };
+        if (selectedGroup) {
+          updated.NPWP = selectedGroup.npwp || '';
+          updated.alamatNPWP = selectedGroup.alamat || '';
+        }
+        return updated;
+      });
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleNPWPBlur = (e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      // If value had non-digit chars, clean it
+      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
+    }
   };
 
   const handlePICsChange = (pics) => {
@@ -160,7 +190,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
   const selectedGroupCustomer = groupCustomers.find(group => group.id === formData?.groupCustomerId)
     || (displayCustomer.groupCustomer?.id === formData?.groupCustomerId ? displayCustomer.groupCustomer : null)
     || null;
-  const displayNpwp = displayCustomer.groupCustomer?.npwp || displayCustomer.NPWP;
+  const displayNpwp = displayCustomer.NPWP || displayCustomer.groupCustomer?.npwp;
   const defaultPic = displayCustomer.customerPics?.find(pic => pic.default);
   const primaryPic = defaultPic || displayCustomer.customerPics?.[0];
 
@@ -317,14 +347,27 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                   />
                 </div>
 
-                <div className="md:col-span-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
+                  <input
+                    type="text"
+                    name="NPWP"
+                    value={formData?.NPWP || ''}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none"
+                    placeholder="Auto-filled from Group Customer"
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">NPWP Address</label>
-                  <textarea
+                  <input
+                    type="text"
                     name="alamatNPWP"
                     value={formData?.alamatNPWP || ''}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none"
+                    placeholder="Auto-filled from Group Customer"
                   />
                 </div>
 

@@ -72,6 +72,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
       phoneNumber: customerData?.phoneNumber || '',
       email: customerData?.email || '',
       alamatNPWP: customerData?.alamatNPWP || '',
+      NPWP: customerData?.NPWP || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
         nama_pic: pic.nama_pic || '',
@@ -111,8 +112,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const { NPWP: _ignoredNpwp, ...payload } = formData || {};
-      await customerService.update(customer.id, payload);
+      await customerService.update(customer.id, formData);
       toastService.success('Customer updated successfully!');
       
       // Refresh customer data
@@ -147,7 +147,37 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
   };
 
   const handleAutocompleteChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'groupCustomerId') {
+      const selectedGroup = groupCustomers.find(group => group.id === value);
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          groupCustomerId: value,
+        };
+        if (selectedGroup) {
+          updated.NPWP = selectedGroup.npwp || '';
+          updated.alamatNPWP = selectedGroup.alamat || '';
+        }
+        return updated;
+      });
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleNPWPBlur = (e) => {
+    const { value } = e.target;
+    if (!value) return;
+
+    const cleanValue = value.replace(/[^0-9]/g, '');
+
+    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
+    if (cleanValue.length === 15) {
+      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
+    } else if (cleanValue !== value) {
+      // If value had non-digit chars, clean it
+      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
+    }
   };
 
   const handlePICChange = (index, field, value) => {
@@ -194,7 +224,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
 
   // Use fullCustomer if loaded, otherwise use prop customer
   const displayCustomer = fullCustomer || customer;
-  const displayNpwp = displayCustomer.groupCustomer?.npwp || displayCustomer.NPWP;
+  const displayNpwp = displayCustomer.NPWP || displayCustomer.groupCustomer?.npwp;
   const defaultPic = displayCustomer.customerPics?.find(pic => pic.default);
   const primaryPic = defaultPic || displayCustomer.customerPics?.[0];
 

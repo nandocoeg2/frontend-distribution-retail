@@ -81,11 +81,11 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
   };
 
   const customerTaxNpwp =
+    fullCustomer?.NPWP ||
+    customer?.NPWP ||
     groupCustomer?.npwp ||
     fullCustomer?.groupCustomer?.npwp ||
-    customer?.groupCustomer?.npwp ||
-    fullCustomer?.NPWP ||
-    customer?.NPWP;
+    customer?.groupCustomer?.npwp;
 
 
   return (
