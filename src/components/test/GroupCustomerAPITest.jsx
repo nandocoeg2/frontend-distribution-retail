@@ -28,7 +28,7 @@ const GroupCustomerAPITest = () => {
 
   const testToken = () => {
     const token = localStorage.getItem('token');
-    console.log('Current token:', token);
+    // Security Fix: Removed exposed access token
     showInfo(`Token: ${token ? 'Present' : 'Missing'}`);
   };
 
