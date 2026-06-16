@@ -89,7 +89,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
         </div>
         <div className="flex items-center gap-1">
           {onClose && (
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded" title="Close">
+            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded" title="Close" aria-label="Close detail">
               <XMarkIcon className="w-4 h-4 text-gray-500" />
             </button>
           )}

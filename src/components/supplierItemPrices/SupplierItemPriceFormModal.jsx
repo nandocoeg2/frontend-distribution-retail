@@ -93,7 +93,7 @@ const SupplierItemPriceFormModal = ({ show, onClose, onSubmit, editData = null }
       <div className='w-full max-w-lg overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200'>
         <div className='flex items-center justify-between border-b border-gray-200 bg-indigo-600 px-5 py-3 text-white'>
           <h2 className='text-base font-semibold'>{isEdit ? 'Edit' : 'Tambah'} Harga Item Supplier</h2>
-          <button type='button' onClick={onClose} className='rounded p-1 hover:bg-white/20'><XMarkIcon className='h-5 w-5' /></button>
+          <button type='button' onClick={onClose} className='rounded p-1 hover:bg-white/20' aria-label='Close form'><XMarkIcon className='h-5 w-5' /></button>
         </div>
 
         <form onSubmit={handleSubmit} className='px-5 py-4 space-y-3'>
