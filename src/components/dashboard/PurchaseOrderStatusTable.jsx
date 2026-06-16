@@ -81,30 +81,7 @@ const PurchaseOrderStatusTable = ({ title, subtitle, orders = [], columnGroups, 
   const totalCols = cols.reduce((t, g) => t + g.columns.length, 0);
   const align = (a) => a === 'center' ? 'text-center' : a === 'right' ? 'text-right' : 'text-left';
 
-  const HeaderRow = () => (
-    <tr>
-      {cols.map((g) => (
-        <th key={g.id} colSpan={g.showSubHeader === false ? 1 : g.columns.length} rowSpan={g.showSubHeader === false ? 2 : 1}
-          className={`border border-gray-200 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.headerClassName} ${align(g.align)}`}>{g.label}</th>
-      ))}
-    </tr>
-  );
 
-  const SubHeaderRow = () => {
-    const cells = cols.filter((g) => g.showSubHeader !== false).flatMap((g) => g.columns.map((c) => (
-      <th key={`${g.id}-${c.id}`} className={`border border-gray-200 bg-gray-50 px-2 py-1 text-[9px] font-semibold uppercase text-gray-600 ${align(c.align)}`}>{c.label}</th>
-    )));
-    return cells.length ? <tr>{cells}</tr> : null;
-  };
-
-  const EmptyRow = () => <tr><td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'>{emptyMessage}</td></tr>;
-  const LoadingRow = () => <tr><td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'><div className='flex items-center justify-center gap-1'><div className='h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent' /><span>Memuat...</span></div></td></tr>;
-
-  const Cell = ({ order, group, column, rowKey }) => (
-    <td key={`${rowKey}-${group.id}-${column.id}`} className={`border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 ${align(column.align)} ${column.cellClassName || ''}`}>
-      {column.render ? column.render(order) : order[column.id] || '-'}
-    </td>
-  );
 
   return (
     <div>
@@ -116,11 +93,36 @@ const PurchaseOrderStatusTable = ({ title, subtitle, orders = [], columnGroups, 
       )}
       <div className='overflow-x-auto'>
         <table className='min-w-full divide-y divide-gray-200 text-xs'>
-          <thead className='bg-white'><HeaderRow /><SubHeaderRow /></thead>
+          <thead className='bg-white'>
+            <tr>
+              {cols.map((g) => (
+                <th key={g.id} colSpan={g.showSubHeader === false ? 1 : g.columns.length} rowSpan={g.showSubHeader === false ? 2 : 1}
+                  className={`border border-gray-200 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.headerClassName} ${align(g.align)}`}>{g.label}</th>
+              ))}
+            </tr>
+            {(() => {
+              const cells = cols.filter((g) => g.showSubHeader !== false).flatMap((g) => g.columns.map((c) => (
+                <th key={`${g.id}-${c.id}`} className={`border border-gray-200 bg-gray-50 px-2 py-1 text-[9px] font-semibold uppercase text-gray-600 ${align(c.align)}`}>{c.label}</th>
+              )));
+              return cells.length ? <tr>{cells}</tr> : null;
+            })()}
+          </thead>
           <tbody className='bg-white divide-y divide-gray-200'>
-            {loading ? <LoadingRow /> : orders.length === 0 ? <EmptyRow /> : orders.map((o, i) => {
+            {loading ? (
+              <tr><td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'><div className='flex items-center justify-center gap-1'><div className='h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent' /><span>Memuat...</span></div></td></tr>
+            ) : orders.length === 0 ? (
+              <tr><td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'>{emptyMessage}</td></tr>
+            ) : orders.map((o, i) => {
               const rk = o.__rowKey || o.po_id || `${o.po_number || 'po'}-${i}`;
-              return <tr key={rk} className='hover:bg-gray-50'>{cols.flatMap((g) => g.columns.map((c) => <Cell key={`${rk}-${g.id}-${c.id}`} order={o} group={g} column={c} rowKey={rk} />))}</tr>;
+              return (
+                <tr key={rk} className='hover:bg-gray-50'>
+                  {cols.flatMap((g) => g.columns.map((c) => (
+                    <td key={`${rk}-${g.id}-${c.id}`} className={`border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 ${align(c.align)} ${c.cellClassName || ''}`}>
+                      {c.render ? c.render(o) : o[c.id] || '-'}
+                    </td>
+                  )))}
+                </tr>
+              );
             })}
           </tbody>
         </table>
