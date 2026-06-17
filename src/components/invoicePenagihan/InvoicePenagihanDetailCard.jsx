@@ -197,7 +197,7 @@ const InvoicePenagihanDetailCard = ({
                       { label: 'Sub Total', value: formatCurrency(invoice.sub_total) },
                       { label: 'Diskon', value: formatCurrency(invoice.total_discount) },
                       { label: 'Total', value: formatCurrency(invoice.total_price) },
-                      { label: 'PPN', value: typeof invoice.ppn_percentage === 'number' ? `${invoice.ppn_percentage}%` : invoice.ppn_percentage || '0%' },
+                      { label: 'PPN', value: invoice.ppn_percentage != null ? `${invoice.ppn_percentage}%` : '0%' },
                       { label: 'PPN (Rp)', value: formatCurrency(invoice.ppnRupiah ?? invoice.ppn_rupiah) },
                       { label: 'Grand Total', value: formatCurrency(invoice.grand_total) },
                     ]}
