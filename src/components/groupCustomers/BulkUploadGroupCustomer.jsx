@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import groupCustomerService from '../../services/groupCustomerService';
 import toastService from '../../services/toastService';
+import BulkUploadErrorDisplay from '../common/BulkUploadErrorDisplay';
 
 const BulkUploadGroupCustomer = ({ onClose, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -331,12 +332,7 @@ const BulkUploadGroupCustomer = ({ onClose, onSuccess }) => {
                 </div>
               </>
             )}
-            {uploadStatus.reason && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                <span className="text-sm font-medium text-red-800">Alasan Gagal:</span>
-                <p className="text-sm text-red-700 mt-1">{uploadStatus.reason}</p>
-              </div>
-            )}
+            <BulkUploadErrorDisplay reason={uploadStatus.reason} />
           </div>
         </div>
       )}
