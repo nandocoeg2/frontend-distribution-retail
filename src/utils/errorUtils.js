@@ -148,3 +148,184 @@ export const parseErrorMessage = async (response, fallbackMessage) => {
         return fallbackMessage;
     }
 };
+
+const fieldNameMappings = {
+    // Scheduled Price / Item Price
+    plu: 'PLU Item',
+    kodeCustomer: 'Kode Customer',
+    effectiveDate: 'Tanggal Efektif',
+    harga: 'Harga Baru',
+    pot1: 'Potongan A (%)',
+    harga1: 'Harga Setelah Pot A',
+    pot2: 'Potongan B (%)',
+    harga2: 'Harga Setelah Pot B',
+    ppn: 'PPN (%)',
+    notes: 'Catatan',
+
+    // Term of Payment
+    topCode: 'Kode Term of Payment',
+    topName: 'Nama Term of Payment',
+    topDays: 'Jumlah Hari',
+    kode_top: 'Kode Term of Payment',
+    batas_hari: 'Batas Hari',
+
+    // Supplier
+    supplierCode: 'Kode Supplier',
+    supplierName: 'Nama Supplier',
+    picName: 'Nama PIC',
+    picPhone: 'No. Telp PIC',
+    name: 'Nama',
+    code: 'Kode',
+    supplier_code_letter: 'Kode Surat Jalan',
+    description: 'Deskripsi',
+    address: 'Alamat',
+    phoneNumber: 'Nomor Telepon',
+    email: 'Email',
+    fax: 'Nomor Fax',
+    direktur: 'Direktur',
+    npwp: 'NPWP',
+    id_tku: 'ID TKU',
+    bankName: 'Nama Bank',
+    accountNumber: 'Nomor Rekening',
+    accountHolder: 'Pemilik Rekening',
+
+    // Customer Group
+    custGroupCode: 'Kode Group Customer',
+    custGroupName: 'Nama Group Customer',
+    kode_group: 'Kode Group Customer',
+    nama_group: 'Nama Group Customer',
+    parent_group: 'Parent Group Customer',
+    alamat: 'Alamat',
+
+    // Item
+    itemName: 'Nama Item',
+    category: 'Kategori',
+    unit: 'Satuan',
+    barcode: 'Barcode',
+    item_code: 'Kode Item',
+    nama_barang: 'Nama Barang',
+    eanBarcode: 'EAN Barcode',
+    uom: 'Satuan (UOM)',
+    allow_mixed_carton: 'Boleh Mixed Karton',
+    tax_category: 'Kategori Pajak',
+    tax_code: 'Kode Pajak',
+    uom_djp_code: 'Kode UOM DJP',
+    dimensi_berat: 'Dimensi Berat',
+    dimensi_panjang: 'Dimensi Panjang',
+    dimensi_lebar: 'Dimensi Lebar',
+    dimensi_tinggi: 'Dimensi Tinggi',
+    karton_berat: 'Berat Karton',
+    karton_panjang: 'Panjang Karton',
+    karton_lebar: 'Lebar Karton',
+    karton_tinggi: 'Tinggi Karton',
+    stok_quantity: 'Jumlah Stok',
+    min_stok: 'Stok Minimal',
+    qty_per_carton: 'Qty Per Karton',
+
+    // Customer
+    customerCode: 'Kode Customer',
+    namaCustomer: 'Nama Customer',
+    groupCustomerCode: 'Kode Group Customer',
+    alamatPengiriman: 'Alamat Pengiriman',
+    alamatNPWP: 'Alamat NPWP',
+    region: 'Wilayah/Region',
+    phone: 'No. Telepon',
+    taxType: 'Tipe Pajak',
+    priceType: 'Tipe Harga',
+};
+
+/**
+ * Parse and structure bulk upload error reason
+ * @param {string} reasonText - The raw error reason from status response
+ * @returns {Object|null} Parsed error details
+ */
+export const parseBulkUploadReason = (reasonText) => {
+    if (!reasonText) return null;
+
+    // Case 1: Zod validation error at a specific row
+    // Format: "Invalid data at row X: [JSON_ARRAY]"
+    const rowMatch = reasonText.match(/^Invalid data at row (\d+):\s*(.+)$/s);
+    if (rowMatch) {
+        const rowNum = parseInt(rowMatch[1], 10);
+        const jsonContent = rowMatch[2];
+        try {
+            const errors = JSON.parse(jsonContent);
+            if (Array.isArray(errors)) {
+                return {
+                    type: 'zod_validation',
+                    row: rowNum,
+                    errors: errors.map(err => {
+                        const path = Array.isArray(err.path) && err.path.length > 0
+                            ? err.path.join('.')
+                            : '';
+                        
+                        const fieldName = fieldNameMappings[path] || 
+                            path.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim() ||
+                            'Field';
+
+                        let msg = err.message || 'Validasi gagal';
+                        
+                        // Check if the error message is a default Zod English message
+                        const isDefaultZod = !err.message || 
+                            /expected/i.test(err.message) || 
+                            /received/i.test(err.message) || 
+                            /must contain/i.test(err.message) || 
+                            /greater than/i.test(err.message) || 
+                            /less than/i.test(err.message) || 
+                            /required/i.test(err.message);
+
+                        if (isDefaultZod) {
+                            if (err.code === 'invalid_type') {
+                                if (err.received === 'null' || err.received === 'undefined') {
+                                    msg = 'Wajib diisi';
+                                } else {
+                                    msg = `Format tidak sesuai (diharapkan ${err.expected})`;
+                                }
+                            } else if (err.code === 'too_small') {
+                                if (err.type === 'number') {
+                                    msg = `Nilai minimal ${err.minimum}`;
+                                } else if (err.type === 'string') {
+                                    msg = `Minimal ${err.minimum} karakter`;
+                                }
+                            } else if (err.code === 'too_big') {
+                                if (err.type === 'number') {
+                                    msg = `Nilai maksimal ${err.maximum}`;
+                                } else if (err.type === 'string') {
+                                    msg = `Maksimal ${err.maximum} karakter`;
+                                }
+                            }
+                        }
+                        return { field: fieldName, message: msg };
+                    })
+                };
+            }
+        } catch (e) {
+            // Not JSON, fallback to row_error
+            return {
+                type: 'row_error',
+                row: rowNum,
+                message: jsonContent
+            };
+        }
+    }
+
+    // Case 2: Multi-row processing errors
+    // Format: "X error(s): err1; err2; ..."
+    const errorMatch = reasonText.match(/^(\d+) error\(s\): (.+)$/s);
+    if (errorMatch) {
+        const total = parseInt(errorMatch[1], 10);
+        const content = errorMatch[2];
+        const errors = content.split(';').map(e => e.trim()).filter(Boolean);
+        return {
+            type: 'multiple_errors',
+            total,
+            errors
+        };
+    }
+
+    // Case 3: Standard single error message
+    return {
+        type: 'single_error',
+        message: reasonText
+    };
+};
