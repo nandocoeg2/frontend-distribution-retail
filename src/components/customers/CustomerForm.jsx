@@ -128,10 +128,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     e.preventDefault();
     const dataToSubmit = {
       ...formData,
-      // Filter out empty values
-      ...Object.fromEntries(
-        Object.entries(formData).filter(([_, value]) => value !== '')
-      )
+      email: formData.email === '' ? null : formData.email,
     };
     onSubmit(dataToSubmit);
   };
