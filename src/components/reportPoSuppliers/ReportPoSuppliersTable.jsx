@@ -57,9 +57,9 @@ const totalCols = columnGroups.reduce((t, g) => t + g.columns.length, 0);
 const al = (a) => (a === 'center' ? 'text-center' : a === 'right' ? 'text-right' : 'text-left');
 
 const ReportPoSuppliersTable = ({ data = [], loading = false }) => (
-  <div className='overflow-x-auto'>
+  <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
     <table className='min-w-full divide-y divide-gray-200 text-xs'>
-      <thead className='bg-white'>
+      <thead className='bg-white sticky top-0 z-10 shadow-sm'>
         <tr>
           {columnGroups.map((g) => (
             <th key={g.id} colSpan={g.columns.length}

@@ -98,9 +98,9 @@ const StokGantungTable = ({
     return (
         <div className='space-y-2'>
             <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
-                <div className='overflow-x-auto'>
+                <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]'>
                     <table className='min-w-[980px] w-full divide-y divide-gray-200 text-xs table-fixed'>
-                        <thead className='bg-gray-50'>
+                        <thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
                             <tr>
                                 <th
                                     scope='col'
