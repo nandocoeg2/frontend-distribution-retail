@@ -405,17 +405,6 @@ const ItemTableServerSide = forwardRef(({
                 onRowClick={onViewDetail}
             />
 
-            {!error && (
-                <Pagination
-                    pagination={pagination}
-                    onPageChange={setPage}
-                    onLimitChange={(nextLimit) => {
-                        setPage(1);
-                        setLimit(nextLimit);
-                    }}
-                />
-            )}
-
             <ConfirmationDialog onConfirm={handleConfirmDelete} />
         </div>
     );

@@ -123,7 +123,6 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
             </tbody>
           </table>
         </div>
-        <Pagination compact pagination={pagination} onPageChange={onPageChange} onLimitChange={onLimitChange} />
       </div>
       
       <ConfirmationDialog 

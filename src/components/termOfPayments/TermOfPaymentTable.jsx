@@ -85,7 +85,6 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
             </tbody>
           </table>
         </div>
-        <Pagination compact pagination={pagination} onPageChange={onPageChange} onLimitChange={onLimitChange} />
       </div>
     </div>
   );

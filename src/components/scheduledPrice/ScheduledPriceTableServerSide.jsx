@@ -472,17 +472,6 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
             />
 
-            {!error && (
-                <Pagination
-                    pagination={pagination}
-                    onPageChange={setPage}
-                    onLimitChange={(nextLimit) => {
-                        setPage(1);
-                        setLimit(nextLimit);
-                    }}
-                />
-            )}
-
             <ConfirmationDialog />
         </div>
     );

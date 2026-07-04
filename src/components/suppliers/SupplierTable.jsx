@@ -130,12 +130,6 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
             </tbody>
           </table>
         </div>
-        <Pagination
-          compact
-          pagination={pagination}
-          onPageChange={onPageChange}
-          onLimitChange={onLimitChange}
-        />
       </div>
     </div>
   );
