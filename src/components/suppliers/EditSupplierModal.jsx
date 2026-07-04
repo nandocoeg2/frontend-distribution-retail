@@ -5,6 +5,37 @@ import toastService from '@/services/toastService';
 
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
+const parseValidationError = (errData) => {
+  const errors = {};
+  
+  if (errData && errData.code === 'FST_ERR_VALIDATION' && typeof errData.message === 'string') {
+    try {
+      const parsed = JSON.parse(errData.message);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(issue => {
+          if (Array.isArray(issue.path) && issue.path.length > 0) {
+            const key = issue.path.join('.');
+            errors[key] = issue.message;
+          }
+        });
+      }
+    } catch (e) {
+      // ignore JSON parse error
+    }
+  }
+  
+  if (errData && errData.error === 'Validation failed' && Array.isArray(errData.issues)) {
+    errData.issues.forEach(issue => {
+      if (issue.path) {
+        const key = issue.path.startsWith('body.') ? issue.path.slice(5) : issue.path;
+        errors[key] = issue.message;
+      }
+    });
+  }
+  
+  return errors;
+};
+
 const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleAuthError }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -25,6 +56,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
       holder: ''
     }
   });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (supplier) {
@@ -47,6 +79,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
           holder: supplier.bank?.holder || ''
         }
       });
+      setErrors({});
     }
   }, [supplier]);
 
@@ -94,14 +127,26 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
         return;
       }
 
-      if (!response.ok) throw new Error('Failed to update supplier');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw errorData;
+      }
 
       const updatedSupplier = await response.json();
       onSupplierUpdated(updatedSupplier);
       toastService.success('Supplier updated successfully');
+      setErrors({});
       onClose();
     } catch (err) {
-      toastService.error('Failed to update supplier');
+      if (err && typeof err === 'object') {
+        const validationErrors = parseValidationError(err);
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
+          toastService.error('Validation failed. Please check the fields.');
+          return;
+        }
+      }
+      toastService.error(err.message || 'Failed to update supplier');
     }
   };
 
@@ -122,6 +167,7 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
           handleSubmit={updateSupplier}
           closeModal={onClose}
           isEdit
+          errors={errors}
         />
         </div>
       </div>
@@ -130,4 +176,3 @@ const EditSupplierModal = ({ show, onClose, supplier, onSupplierUpdated, handleA
 };
 
 export default EditSupplierModal;
-

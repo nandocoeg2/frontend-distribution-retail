@@ -26,12 +26,45 @@ const initialFormData = {
   }
 };
 
+const parseValidationError = (errData) => {
+  const errors = {};
+  
+  if (errData && errData.code === 'FST_ERR_VALIDATION' && typeof errData.message === 'string') {
+    try {
+      const parsed = JSON.parse(errData.message);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(issue => {
+          if (Array.isArray(issue.path) && issue.path.length > 0) {
+            const key = issue.path.join('.');
+            errors[key] = issue.message;
+          }
+        });
+      }
+    } catch (e) {
+      // ignore JSON parse error
+    }
+  }
+  
+  if (errData && errData.error === 'Validation failed' && Array.isArray(errData.issues)) {
+    errData.issues.forEach(issue => {
+      if (issue.path) {
+        const key = issue.path.startsWith('body.') ? issue.path.slice(5) : issue.path;
+        errors[key] = issue.message;
+      }
+    });
+  }
+  
+  return errors;
+};
+
 const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) => {
   const [activeTab, setActiveTab] = useState('single');
   const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
 
   const resetForm = () => {
     setFormData(initialFormData);
+    setErrors({});
     setActiveTab('single');
   };
 
@@ -76,7 +109,10 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
         return;
       }
 
-      if (!response.ok) throw new Error('Failed to create supplier');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw errorData;
+      }
 
       const newSupplier = await response.json();
       resetForm();
@@ -84,7 +120,15 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
       toastService.success('Supplier created successfully');
       onClose();
     } catch (err) {
-      toastService.error('Failed to create supplier');
+      if (err && typeof err === 'object') {
+        const validationErrors = parseValidationError(err);
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
+          toastService.error('Validation failed. Please check the fields.');
+          return;
+        }
+      }
+      toastService.error(err.message || 'Failed to create supplier');
     }
   };
 
@@ -142,6 +186,7 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
             handleInputChange={handleInputChange}
             handleSubmit={createSupplier}
             closeModal={handleClose}
+            errors={errors}
           />
         )}
 
@@ -155,4 +200,3 @@ const AddSupplierModal = ({ show, onClose, onSupplierAdded, handleAuthError }) =
 };
 
 export default AddSupplierModal;
-
