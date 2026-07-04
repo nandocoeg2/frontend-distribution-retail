@@ -75,7 +75,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [buildQueryParams, limit, page, updateStatusOptions]);
+  }, [buildQueryParams, updateStatusOptions]);
 
   useEffect(() => { fetchSummary(); }, [fetchSummary]);
 
