@@ -114,9 +114,9 @@ const PurchaseOrderStatusTable = ({ title, subtitle, orders = [], columnGroups, 
           {subtitle && <p className='text-xs text-gray-500'>{subtitle}</p>}
         </div>
       )}
-      <div className='overflow-x-auto'>
+      <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
         <table className='min-w-full divide-y divide-gray-200 text-xs'>
-          <thead className='bg-white'><HeaderRow /><SubHeaderRow /></thead>
+          <thead className='bg-white sticky top-0 z-10 shadow-sm'><HeaderRow /><SubHeaderRow /></thead>
           <tbody className='bg-white divide-y divide-gray-200'>
             {loading ? <LoadingRow /> : orders.length === 0 ? <EmptyRow /> : orders.map((o, i) => {
               const rk = o.__rowKey || o.po_id || `${o.po_number || 'po'}-${i}`;
