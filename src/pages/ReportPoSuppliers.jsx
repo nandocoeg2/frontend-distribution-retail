@@ -3,7 +3,6 @@ import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 import Card from '../components/ui/Card.jsx';
 import ReportPoSuppliersTable from '../components/reportPoSuppliers/ReportPoSuppliersTable.jsx';
-import Pagination from '../components/common/Pagination.jsx';
 import { reportPoSupplierService } from '../services/reportPoSupplierService.js';
 import toastService from '../services/toastService';
 
@@ -11,37 +10,24 @@ const ReportPoSuppliers = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [paginationInfo, setPaginationInfo] = useState({ totalItems: 0, totalPages: 0, currentPage: 1, itemsPerPage: 10 });
   const [exportLoading, setExportLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await reportPoSupplierService.getAll(page, limit);
+      const response = await reportPoSupplierService.getAll(1, 9999);
       if (!response?.success) throw new Error(response?.error?.message || 'Gagal memuat data.');
       const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
-      const p = response?.data?.pagination || {};
       setData(rows);
-      setPaginationInfo({
-        totalItems: Number(p.totalItems ?? p.total ?? rows.length) || 0,
-        totalPages: Number(p.totalPages ?? p.total_pages ?? 0) || 0,
-        currentPage: Number(p.currentPage ?? p.page ?? page) || page,
-        itemsPerPage: Number(p.itemsPerPage ?? p.limit ?? limit) || limit,
-      });
     } catch (err) {
       setError(err.message || 'Gagal memuat data.');
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handlePageChange = useCallback((p) => { setPage(p); }, []);
-  const handleLimitChange = useCallback((l) => { setLimit(l); setPage(1); }, []);
 
   const handleExportExcel = async () => {
     try {
@@ -57,7 +43,7 @@ const ReportPoSuppliers = () => {
   };
 
   const visibleCount = data.length;
-  const totalItems = paginationInfo.totalItems || visibleCount;
+  const totalItems = visibleCount;
 
   return (
     <Card padding='md' className='shadow-sm'>
@@ -103,16 +89,6 @@ const ReportPoSuppliers = () => {
 
       <div className='mt-3'>
         <ReportPoSuppliersTable data={data} loading={loading} />
-        <Pagination
-          pagination={{
-            currentPage: paginationInfo.currentPage || page,
-            totalPages: paginationInfo.totalPages || 0,
-            totalItems: paginationInfo.totalItems || 0,
-            itemsPerPage: paginationInfo.itemsPerPage || limit,
-          }}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
       </div>
     </Card>
   );

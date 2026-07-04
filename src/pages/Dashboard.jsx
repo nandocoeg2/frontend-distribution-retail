@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Card from '../components/ui/Card.jsx';
 import PurchaseOrderStatusTable from '../components/dashboard/PurchaseOrderStatusTable.jsx';
 import PurchaseOrderFilters, { purchaseOrderFilterDefaults } from '../components/dashboard/PurchaseOrderFilters.jsx';
-import Pagination from '../components/common/Pagination.jsx';
 import dashboardService from '../services/dashboardService.js';
 import authService from '../services/authService.js';
 
@@ -32,9 +31,6 @@ const Dashboard = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [paginationInfo, setPaginationInfo] = useState({ totalItems: 0, totalPages: 0, currentPage: 1, itemsPerPage: 10 });
   const statusMapsRef = useRef({ shipping: new Map(), billing: new Map(), payment: new Map() });
   const [statusOptions, setStatusOptions] = useState({ shippingStatus: [], billingStatus: [], paymentStatus: [] });
 
@@ -54,7 +50,7 @@ const Dashboard = () => {
   }, []);
 
   const buildQueryParams = useCallback(() => {
-    const params = { page, limit };
+    const params = { page: 1, limit: 9999 };
     const companyId = authService.getCompanyData()?.id;
     if (companyId) params.companyId = companyId;
     if (filters.search?.trim()) params.po_number = filters.search.trim();
@@ -62,7 +58,7 @@ const Dashboard = () => {
     if (filters.billingStatus !== 'all') params.status_tagihan = filters.billingStatus;
     if (filters.paymentStatus !== 'all') params.status_pembayaran = filters.paymentStatus;
     return params;
-  }, [filters, limit, page]);
+  }, [filters]);
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
@@ -71,16 +67,8 @@ const Dashboard = () => {
       const response = await dashboardService.getPurchaseOrderSummary(buildQueryParams());
       if (!response?.success) throw new Error(response?.error?.message || 'Gagal memuat data dashboard.');
       const rows = Array.isArray(response?.data?.data) ? response.data.data : [];
-      const p = response?.data?.pagination || {};
       setPurchaseOrders(rows);
       updateStatusOptions(rows);
-      const totalItems = Number(p.totalItems ?? p.total ?? rows.length) || 0;
-      const totalPages = Number(p.totalPages ?? p.total_pages ?? 0) || 0;
-      const currentPage = Number(p.currentPage ?? p.page ?? page) || page;
-      const itemsPerPage = Number(p.itemsPerPage ?? p.limit ?? limit) || limit;
-      setPaginationInfo({ totalItems, totalPages, currentPage, itemsPerPage });
-      if (itemsPerPage !== limit) setLimit(itemsPerPage);
-      if (currentPage !== page) setPage(currentPage);
     } catch (err) {
       console.error('Failed to fetch dashboard summary:', err);
       setError(err.message || 'Gagal memuat data dashboard.');
@@ -108,20 +96,16 @@ const Dashboard = () => {
   const handleFiltersChange = useCallback((f) => {
     setFilters({ search: f.search ?? '', shippingStatus: f.shippingStatus ?? 'all', billingStatus: f.billingStatus ?? 'all', paymentStatus: f.paymentStatus ?? 'all' });
     setOnlyPending(Boolean(f.onlyPending));
-    setPage(1);
   }, []);
 
   const handleResetFilters = useCallback((f = purchaseOrderFilterDefaults) => {
     setFilters({ search: f.search ?? '', shippingStatus: f.shippingStatus ?? 'all', billingStatus: f.billingStatus ?? 'all', paymentStatus: f.paymentStatus ?? 'all' });
     setOnlyPending(Boolean(f.onlyPending));
-    setPage(1);
   }, []);
 
-  const handlePageChange = useCallback((p) => { setPage(p); setPaginationInfo((prev) => ({ ...prev, currentPage: p })); }, []);
-  const handleLimitChange = useCallback((l) => { setLimit(l); setPaginationInfo((prev) => ({ ...prev, itemsPerPage: l })); setPage(1); }, []);
   const handleRetryFetch = useCallback(() => { fetchSummary(); }, [fetchSummary]);
 
-  const totalItems = onlyPending ? visibleOrders.length : paginationInfo.totalItems || visibleOrders.length;
+  const totalItems = visibleOrders.length;
   const visibleCount = visibleOrders.length;
   const tableEmptyMessage = hasActiveFilters ? 'Tidak ada PO yang cocok dengan filter.' : 'Belum ada data PO.';
 
@@ -150,11 +134,6 @@ const Dashboard = () => {
 
       <div className='mt-3'>
         <PurchaseOrderStatusTable orders={visibleOrders} emptyMessage={tableEmptyMessage} loading={loading} />
-        <Pagination
-          pagination={{ currentPage: paginationInfo.currentPage || page, totalPages: paginationInfo.totalPages || 0, totalItems: paginationInfo.totalItems || 0, itemsPerPage: paginationInfo.itemsPerPage || limit }}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-        />
       </div>
     </Card>
   );

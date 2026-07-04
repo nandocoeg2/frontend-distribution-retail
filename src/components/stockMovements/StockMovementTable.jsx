@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import Pagination from '../common/Pagination.jsx';
 import { TableLoading } from '../ui/Loading.jsx';
 import { StatusBadge } from '../ui/Badge.jsx';
 import { formatDateTime } from '../../utils/formatUtils';
@@ -43,9 +42,6 @@ const resolveStatusVariant = (status) => {
 
 const StockMovementTable = ({
   movements = [],
-  pagination,
-  onPageChange,
-  onLimitChange,
   loading = false,
   searchLoading = false,
   onClassify,
@@ -323,11 +319,6 @@ const StockMovementTable = ({
         </table>
       </div>
 
-      <Pagination
-        pagination={pagination}
-        onPageChange={onPageChange}
-        onLimitChange={onLimitChange}
-      />
     </div>
   );
 };

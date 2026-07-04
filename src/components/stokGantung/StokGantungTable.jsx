@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import Pagination from '../common/Pagination.jsx';
 import { TableLoading } from '../ui/Loading.jsx';
 import { StatusBadge } from '../ui/Badge.jsx';
 import { formatDateTime } from '../../utils/formatUtils';
@@ -30,9 +29,6 @@ const resolveTypeLabel = (type) => {
 
 const StokGantungTable = ({
     movements = [],
-    pagination,
-    onPageChange,
-    onLimitChange,
     loading = false,
     searchLoading = false,
     onClassify,
@@ -259,12 +255,6 @@ const StokGantungTable = ({
                     </table>
                 </div>
 
-                <Pagination
-                    compact
-                    pagination={pagination}
-                    onPageChange={onPageChange}
-                    onLimitChange={onLimitChange}
-                />
             </div>
         </div>
     );

@@ -4,7 +4,6 @@ import {
   TrashIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
-import Pagination from '../common/Pagination';
 import { StatusBadge } from '../ui/Badge';
 
 const getDisplayName = (user) => {
@@ -12,7 +11,7 @@ const getDisplayName = (user) => {
   return fullName || user?.username || '-';
 };
 
-const UserTable = ({ users, pagination, onPageChange, onLimitChange, onEdit, onDelete, onView, searchQuery }) => {
+const UserTable = ({ users, onEdit, onDelete, onView, searchQuery }) => {
   const hasUsers = users.length > 0;
 
   return (
@@ -104,12 +103,6 @@ const UserTable = ({ users, pagination, onPageChange, onLimitChange, onEdit, onD
             </tbody>
           </table>
         </div>
-        <Pagination
-          compact
-          pagination={pagination}
-          onPageChange={onPageChange}
-          onLimitChange={onLimitChange}
-        />
       </div>
     </div>
   );
