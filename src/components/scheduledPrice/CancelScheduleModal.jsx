@@ -41,10 +41,10 @@ const CancelScheduleModal = ({ schedule, onClose, onSuccess }) => {
             </p>
             <div className="mt-3 p-3 bg-gray-50 rounded-md">
               <p className="text-sm font-medium text-gray-900">
-                {schedule.itemPrice?.inventory?.nama_barang || 'Unknown Item'}
+                {schedule.itemPrice?.item?.nama_barang || 'Unknown Item'}
               </p>
               <p className="text-sm text-gray-600">
-                PLU: {schedule.itemPrice?.inventory?.plu || '-'}
+                PLU: {schedule.itemPrice?.item?.plu || '-'}
               </p>
               <p className="text-sm text-gray-600 mt-1">
                 Scheduled Price: Rp {schedule.harga?.toLocaleString('id-ID')}
