@@ -101,7 +101,7 @@ const ItemTableServerSide = forwardRef(({
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            maximumFractionDigits: 2,
         }).format(numericValue);
     };
 
