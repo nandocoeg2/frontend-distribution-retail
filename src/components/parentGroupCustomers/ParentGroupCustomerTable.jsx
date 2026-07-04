@@ -15,7 +15,7 @@ const ParentGroupCustomerTable = ({
     return (
         <div className='space-y-2'>
             <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
-                <div className='overflow-x-auto'>
+                <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]'>
                     <table className='min-w-full w-full divide-y divide-gray-200 text-xs table-fixed'>
                         <colgroup>
                             <col style={{ width: '120px' }} />
@@ -24,7 +24,7 @@ const ParentGroupCustomerTable = ({
                             <col style={{ width: '120px' }} />
                             <col style={{ width: '60px' }} />
                         </colgroup>
-                        <thead className='bg-gray-50'>
+                        <thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
                             <tr>
                                 <th className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'>
                                     Kode Parent

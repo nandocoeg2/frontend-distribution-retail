@@ -166,7 +166,7 @@ const ItemTable = ({
         </div>
       )}
 
-      <div className='overflow-x-auto'>
+      <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
         <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
           <colgroup>
             <col style={{ width: '80px' }} />
@@ -178,7 +178,7 @@ const ItemTable = ({
             <col style={{ width: '90px' }} />
             <col style={{ width: '50px' }} />
           </colgroup>
-          <thead className='bg-gray-50'>
+          <thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
             <tr>
               {/* Company Code */}
               <th className='px-1.5 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
