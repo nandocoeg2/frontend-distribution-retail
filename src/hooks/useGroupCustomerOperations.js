@@ -112,14 +112,14 @@ const useGroupCustomerOperations = () => {
       
       if (err.message.includes('404')) {
         errorMessage = 'Group customer tidak ditemukan';
-      } else if (err.message.includes('409')) {
-        errorMessage = 'Group customer tidak dapat dihapus karena masih digunakan';
-      } else if (err.message.includes('500')) {
-        errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
+      } else if (err.message.includes('409') || err.message.includes('referenced by other records') || err.message.includes('foreign key constraint')) {
+        errorMessage = 'Group customer tidak dapat dihapus karena masih digunakan oleh data lain';
       } else if (err.message.includes('Network')) {
         errorMessage = 'Koneksi jaringan bermasalah. Periksa koneksi internet Anda.';
-      } else if (err.message) {
+      } else if (err.message && !err.message.includes('500') && !err.message.includes('Internal Server Error') && !err.message.includes('prisma.')) {
         errorMessage = err.message;
+      } else if (err.message.includes('500')) {
+        errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
       }
 
       toastService.error(errorMessage);
