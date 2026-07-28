@@ -1,10 +1,59 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatDate, formatCurrency } from '@/utils/formatUtils';
 
 const rd = (v) => <span className='text-xs text-gray-700'>{v ? formatDate(v) : '-'}</span>;
 const rc = (v) => <span className='text-xs text-gray-700'>{v != null && v !== '' ? formatCurrency(v) : '-'}</span>;
 const rt = (v) => <span className='text-xs text-gray-700'>{v || '-'}</span>;
 const rn = (v) => <span className='text-xs text-gray-700'>{v != null ? Number(v).toLocaleString('id-ID') : '-'}</span>;
+
+const processReportData = (records) => {
+  if (!Array.isArray(records) || records.length === 0) return [];
+
+  const poGroups = new Map();
+  const resultMap = new Map();
+
+  records.forEach((r, originalIndex) => {
+    const noPo = (r.no_po || '').trim();
+    const itemId = r.itemId || r.item?.id || '';
+    if (noPo) {
+      const key = `${noPo}__${itemId}`;
+      if (!poGroups.has(key)) {
+        poGroups.set(key, []);
+      }
+      poGroups.get(key).push({ ...r, _originalIndex: originalIndex });
+    }
+  });
+
+  poGroups.forEach((groupItems) => {
+    const sortedGroup = [...groupItems].sort((a, b) => {
+      const dateA = a.tanggal_kirim ? new Date(a.tanggal_kirim).getTime() : 0;
+      const dateB = b.tanggal_kirim ? new Date(b.tanggal_kirim).getTime() : 0;
+      if (dateA !== dateB) return dateA - dateB;
+      const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (createdA !== createdB) return createdA - createdB;
+      return a._originalIndex - b._originalIndex;
+    });
+
+    let cumulativeKirim = 0;
+    sortedGroup.forEach((item) => {
+      cumulativeKirim += Number(item.qty_kirim || 0);
+      const qtyPo = item.qty_po != null ? Number(item.qty_po) : null;
+      const calculatedQtySisa = qtyPo != null ? qtyPo - cumulativeKirim : null;
+      resultMap.set(item._originalIndex, calculatedQtySisa);
+    });
+  });
+
+  return records.map((r, index) => {
+    const qtyPo = r.qty_po != null ? Number(r.qty_po) : null;
+    const qtyKirim = r.qty_kirim != null ? Number(r.qty_kirim) : 0;
+    const fallbackSisa = qtyPo != null ? qtyPo - qtyKirim : null;
+    return {
+      ...r,
+      calculatedQtySisa: resultMap.has(index) ? resultMap.get(index) : fallbackSisa,
+    };
+  });
+};
 
 const columnGroups = [
   {
@@ -26,10 +75,9 @@ const columnGroups = [
       { id: 'no_surat_jalan', label: 'No SJ', align: 'center', render: (r) => rt(r.no_surat_jalan) },
       { id: 'qty_kirim', label: 'Qty Dikirim', align: 'right', render: (r) => rn(r.qty_kirim) },
       { id: 'qty_sisa', label: 'Qty Sisa PO', align: 'right', render: (r) => {
-        const qtyPo = r.qty_po != null ? Number(r.qty_po) : null;
-        const qtyKirim = r.qty_kirim != null ? Number(r.qty_kirim) : 0;
-        if (qtyPo == null) return rt('-');
-        return rn(qtyPo - qtyKirim);
+        const qtySisa = r.calculatedQtySisa != null ? r.calculatedQtySisa : (r.qty_po != null ? Number(r.qty_po) - Number(r.qty_kirim || 0) : null);
+        if (qtySisa == null) return rt('-');
+        return rn(qtySisa);
       }},
     ],
   },
@@ -56,63 +104,67 @@ const columnGroups = [
 const totalCols = columnGroups.reduce((t, g) => t + g.columns.length, 0);
 const al = (a) => (a === 'center' ? 'text-center' : a === 'right' ? 'text-right' : 'text-left');
 
-const ReportPoSuppliersTable = ({ data = [], loading = false }) => (
-  <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
-    <table className='min-w-full divide-y divide-gray-200 text-xs'>
-      <thead className='bg-white sticky top-0 z-10 shadow-sm'>
-        <tr>
-          {columnGroups.map((g) => (
-            <th key={g.id} colSpan={g.columns.length}
-              className={`border border-gray-400 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
-              {g.label}
-            </th>
-          ))}
-        </tr>
-        <tr>
-          {columnGroups.flatMap((g) =>
-            g.columns.map((c) => (
-              <th key={`${g.id}-${c.id}`}
-                className={`border border-gray-400 px-2 py-1 text-[9px] font-semibold uppercase ${g.shc} ${al(c.align)}`}>
-                {c.label}
+const ReportPoSuppliersTable = ({ data = [], loading = false }) => {
+  const processedData = useMemo(() => processReportData(data), [data]);
+
+  return (
+    <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
+      <table className='min-w-full divide-y divide-gray-200 text-xs'>
+        <thead className='bg-white sticky top-0 z-10 shadow-sm'>
+          <tr>
+            {columnGroups.map((g) => (
+              <th key={g.id} colSpan={g.columns.length}
+                className={`border border-gray-400 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
+                {g.label}
               </th>
-            ))
+            ))}
+          </tr>
+          <tr>
+            {columnGroups.flatMap((g) =>
+              g.columns.map((c) => (
+                <th key={`${g.id}-${c.id}`}
+                  className={`border border-gray-400 px-2 py-1 text-[9px] font-semibold uppercase ${g.shc} ${al(c.align)}`}>
+                  {c.label}
+                </th>
+              ))
+            )}
+          </tr>
+        </thead>
+        <tbody className='bg-white divide-y divide-gray-200'>
+          {loading ? (
+            <tr>
+              <td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'>
+                <div className='flex items-center justify-center gap-1'>
+                  <div className='h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent' />
+                  <span>Memuat...</span>
+                </div>
+              </td>
+            </tr>
+          ) : processedData.length === 0 ? (
+            <tr>
+              <td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'>Belum ada data report.</td>
+            </tr>
+          ) : (
+            processedData.map((row, i) => {
+              const rk = row.id || `r-${i}`;
+              return (
+                <tr key={rk} className='hover:bg-gray-50'>
+                  {columnGroups.flatMap((g) =>
+                    g.columns.map((c) => (
+                      <td key={`${rk}-${g.id}-${c.id}`}
+                        className={`border border-gray-400 px-2 py-1.5 text-xs text-gray-700 whitespace-nowrap ${g.cc} ${al(c.align)}`}>
+                        {c.render(row)}
+                      </td>
+                    ))
+                  )}
+                </tr>
+              );
+            })
           )}
-        </tr>
-      </thead>
-      <tbody className='bg-white divide-y divide-gray-200'>
-        {loading ? (
-          <tr>
-            <td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'>
-              <div className='flex items-center justify-center gap-1'>
-                <div className='h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent' />
-                <span>Memuat...</span>
-              </div>
-            </td>
-          </tr>
-        ) : data.length === 0 ? (
-          <tr>
-            <td colSpan={totalCols} className='px-2 py-4 text-center text-xs text-gray-500'>Belum ada data report.</td>
-          </tr>
-        ) : (
-          data.map((row, i) => {
-            const rk = row.id || `r-${i}`;
-            return (
-              <tr key={rk} className='hover:bg-gray-50'>
-                {columnGroups.flatMap((g) =>
-                  g.columns.map((c) => (
-                    <td key={`${rk}-${g.id}-${c.id}`}
-                      className={`border border-gray-400 px-2 py-1.5 text-xs text-gray-700 whitespace-nowrap ${g.cc} ${al(c.align)}`}>
-                      {c.render(row)}
-                    </td>
-                  ))
-                )}
-              </tr>
-            );
-          })
-        )}
-      </tbody>
-    </table>
-  </div>
-);
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 export default ReportPoSuppliersTable;
