@@ -56,11 +56,10 @@ const SectionHeader = ({ label, color, description }) => {
 const PoModeButton = ({ active, onClick, children }) => (
   <button
     type='button' onClick={onClick}
-    className={`rounded-md px-3 py-1 text-[11px] font-semibold transition-all ${
-      active
-        ? 'bg-indigo-600 text-white shadow-sm'
-        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
-    }`}
+    className={`rounded-md px-3 py-1 text-[11px] font-semibold transition-all ${active
+      ? 'bg-indigo-600 text-white shadow-sm'
+      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+      }`}
   >{children}</button>
 );
 
@@ -405,7 +404,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                   onChange={handleSupplierSelect}
                   placeholder='Cari supplier...' displayKey='label' valueKey='id'
                   loading={supplierSearchLoading}
-                  onSearch={async (q) => { try { await searchSuppliers(q, 1, 20); } catch {} }}
+                  onSearch={async (q) => { try { await searchSuppliers(q, 1, 20); } catch { } }}
                   showId disabled={isEdit || (poMode === 'lama' && !!selectedPo)}
                 />
               </div>
@@ -450,7 +449,16 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                 <Label>Qty PO (PCS)</Label>
                 <Input value={form.qty_po} onChange={(e) => setNum('qty_po', e.target.value)} placeholder='1.000' inputMode='numeric' disabled={isEdit} />
               </div>
-              <ReadOnly label='Harga / PCS' value={fmt(hargaPcs)} />
+              <div>
+                <Label>Harga / PCS</Label>
+                <Input
+                  value={form.harga_pcs}
+                  onChange={(e) => setNum('harga_pcs', e.target.value)}
+                  placeholder='0'
+                  inputMode='numeric'
+                  disabled={isEdit || poMode === 'lama'}
+                />
+              </div>
               <ReadOnly label='Total PO' value={fmt(total)} />
               <div>{/* spacer */}</div>
             </div>
@@ -481,8 +489,8 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                     suratJalanState.status === 'duplicate'
                       ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
                       : suratJalanState.status === 'available'
-                      ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/20'
-                      : ''
+                        ? 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/20'
+                        : ''
                   }
                 />
                 {suratJalanState.status === 'checking' && (
