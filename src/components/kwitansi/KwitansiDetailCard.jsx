@@ -292,7 +292,7 @@ const KwitansiDetailCard = ({
                 </button>
               )} */}
               {onClose && (
-                <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" title="Close">
+                <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" title="Close" aria-label="Close detail">
                   <XMarkIcon className="w-4 h-4 text-gray-500" />
                 </button>
               )}

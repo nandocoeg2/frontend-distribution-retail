@@ -308,7 +308,7 @@ const LaporanPenerimaanBarangDetailCard = ({
         <div className='flex items-center gap-1'>
           <StatusBadge status={statusLabel || '-'} variant={statusVariant} size='xs' />
           {onClose && (
-            <button onClick={onClose} className='p-1 hover:bg-gray-100 rounded' title='Close'>
+            <button onClick={onClose} className='p-1 hover:bg-gray-100 rounded' title='Close' aria-label='Close detail'>
               <XMarkIcon className='w-4 h-4 text-gray-500' />
             </button>
           )}
