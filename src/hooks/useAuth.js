@@ -67,14 +67,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const result = await authService.login(username, password, companyId);
       
-      console.log('Login result:', result); // Debug log
+      // Security Fix: Removed exposed login result
       
       if (result.success) {
         // Periksa struktur data dengan aman
         if (result.data && result.data.user && result.data.accessToken) {
           const { user: userData, accessToken, company: companyData } = result.data;
-          console.log('User data:', userData); // Debug log
-          console.log('Access token:', accessToken); // Debug log
+          // Security Fix: Removed exposed user data
+          // Security Fix: Removed exposed access token
           setUser(userData);
           setToken(accessToken);
           setIsAuthenticated(true);

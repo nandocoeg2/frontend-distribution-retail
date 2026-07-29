@@ -42,7 +42,7 @@ const SettingProfile = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Profile updated:', userData);
+    // Security Fix: Removed exposed user profile data
   };
 
   return (
