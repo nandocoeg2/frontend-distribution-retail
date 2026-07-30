@@ -67,6 +67,7 @@ import StokGantung from './pages/StokGantung.jsx';
 import ScheduledPrice from './pages/ScheduledPrice.jsx';
 import ReportPoSuppliers from './pages/ReportPoSuppliers.jsx';
 import SupplierItemPrices from './pages/SupplierItemPrices.jsx';
+import InventoryControl from './pages/InventoryControl.jsx';
 
 // Component untuk routes yang menggunakan useAuth
 const AppRoutes = () => {
@@ -286,6 +287,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ReportPoSuppliers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/inventory/inventory-control'
+        element={
+          <ProtectedRoute>
+            <InventoryControl />
           </ProtectedRoute>
         }
       />
