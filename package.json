@@ -1,7 +1,7 @@
 {
   "name": "frontend-distribution-retail",
   "productName": "frontend-distribution-retail",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Frontend Distribution Retail",
   "main": ".webpack/main",
   "scripts": {
