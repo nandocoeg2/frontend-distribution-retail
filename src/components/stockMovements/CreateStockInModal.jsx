@@ -141,6 +141,8 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     }
   }, [isEdit]);
 
+  const [priceFetchedFromMaster, setPriceFetchedFromMaster] = useState(false);
+
   const fetchSupplierPrice = useCallback(async (sid, iid) => {
     if (!sid || !iid || poMode === 'lama' || isEdit) return;
     const fetchId = ++priceFetchIdRef.current;
@@ -149,15 +151,19 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
       if (fetchId !== priceFetchIdRef.current) return;
       const rows = res?.data?.data?.data || res?.data?.data || [];
       const record = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
-      if (record?.harga_pcs != null) {
+      if (record?.harga_pcs != null && Number(record.harga_pcs) > 0) {
         setForm((p) => ({
           ...p,
           harga_pcs: String(Number(record.harga_pcs)),
           tax_type: record.tax_type || 'EXCLUDE',
         }));
+        setPriceFetchedFromMaster(true);
+      } else {
+        setPriceFetchedFromMaster(false);
       }
     } catch (e) {
       console.error('Failed to fetch supplier price:', e);
+      setPriceFetchedFromMaster(false);
     }
   }, [poMode, isEdit]);
 
@@ -231,6 +237,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
   const handleSupplierSelect = useCallback((e) => {
     const val = e?.target?.value || e;
     set('supplierId', val);
+    setPriceFetchedFromMaster(false);
     fetchSupplierPrice(val, form.itemId);
     // Re-check duplicate against the new supplier (or clear if supplier removed)
     checkSuratJalan(val, form.no_surat_jalan);
@@ -270,6 +277,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     setSelectedPo(po);
     setPreviousDeliveredQty(po.total_qty_kirim || 0);
     setPpnRate(po.ppn_rate || 0);
+    setPriceFetchedFromMaster(false);
     setForm((prev) => ({
       ...prev,
       no_po: po.no_po, supplierId: po.supplierId, itemId: po.itemId,
@@ -283,6 +291,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     setSelectedPo(null);
     setPreviousDeliveredQty(0);
     setItemOptions([]);
+    setPriceFetchedFromMaster(false);
     setForm((p) => ({ ...p, no_po: '', itemId: '', qty_po: '', harga_pcs: '', spesifikasi: '' }));
   }, []);
 
@@ -304,6 +313,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
     set('itemId', val);
     const selected = itemOptions.find((o) => o.id === val);
     if (selected?.ppn != null) setPpnRate(Number(selected.ppn));
+    setPriceFetchedFromMaster(false);
     fetchSupplierPrice(form.supplierId, val);
   }, [itemOptions, fetchSupplierPrice, form.supplierId]);
 
@@ -448,24 +458,56 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
               />
             </div>
 
-            {/* Row 3: Qty PO + Harga + Total + Status PPN */}
+            {/* Row 3: Qty PO + Harga + Status PPN (Exc/Incl) + Total PO */}
             <div className='mt-3 grid gap-x-4 gap-y-3 sm:grid-cols-4'>
               <div>
                 <Label>Qty PO (PCS)</Label>
                 <Input value={form.qty_po} onChange={(e) => setNum('qty_po', e.target.value)} placeholder='1.000' inputMode='numeric' disabled={isEdit} />
               </div>
               <div>
-                <Label>Harga / PCS</Label>
+                <div className='flex items-center justify-between'>
+                  <Label>Harga / PCS</Label>
+                  {priceFetchedFromMaster && !isEdit && poMode !== 'lama' && (
+                    <span className='mb-1 rounded bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-700'>
+                      Dari Master
+                    </span>
+                  )}
+                </div>
                 <Input
                   value={form.harga_pcs}
-                  onChange={(e) => setNum('harga_pcs', e.target.value)}
+                  onChange={(e) => {
+                    setNum('harga_pcs', e.target.value);
+                    setPriceFetchedFromMaster(false);
+                  }}
                   placeholder='0'
                   inputMode='numeric'
                   disabled={isEdit || poMode === 'lama'}
                 />
               </div>
+              <div>
+                <Label>Status PPN</Label>
+                <div className='flex h-9 items-center rounded-md border border-gray-300 bg-white p-1'>
+                  {['EXCLUDE', 'INCLUDE'].map((type) => {
+                    const active = form.tax_type === type;
+                    const isDisabled = isEdit || poMode === 'lama';
+                    return (
+                      <button
+                        key={type}
+                        type='button'
+                        disabled={isDisabled}
+                        onClick={() => set('tax_type', type)}
+                        className={`flex-1 rounded py-1 text-[11px] font-semibold transition-all ${active
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                          } ${isDisabled ? 'cursor-not-allowed opacity-60' : ''}`}
+                      >
+                        {type === 'EXCLUDE' ? 'Exc' : 'Incl'}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <ReadOnly label='Total PO' value={fmt(total)} />
-              <div>{/* spacer */}</div>
             </div>
           </div>
 
