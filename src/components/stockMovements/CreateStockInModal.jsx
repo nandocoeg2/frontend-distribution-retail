@@ -467,7 +467,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
               <div>
                 <div className='flex items-center justify-between'>
                   <Label>Harga / PCS</Label>
-                  {priceFetchedFromMaster && !isEdit && poMode !== 'lama' && (
+                  {priceFetchedFromMaster && !isEdit && (
                     <span className='mb-1 rounded bg-indigo-100 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-700'>
                       Dari Master
                     </span>
@@ -481,7 +481,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                   }}
                   placeholder='0'
                   inputMode='numeric'
-                  disabled={isEdit || poMode === 'lama'}
+                  disabled={isEdit}
                 />
               </div>
               <div>
@@ -489,7 +489,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
                 <div className='flex h-9 items-center rounded-md border border-gray-300 bg-white p-1'>
                   {['EXCLUDE', 'INCLUDE'].map((type) => {
                     const active = form.tax_type === type;
-                    const isDisabled = isEdit || poMode === 'lama';
+                    const isDisabled = isEdit;
                     return (
                       <button
                         key={type}
