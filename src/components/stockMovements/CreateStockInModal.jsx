@@ -73,7 +73,7 @@ const fmt = (n) => {
    ──────────────────────────────────────────────────────────── */
 const INITIAL = {
   supplierId: '', no_po: '', spesifikasi: '', itemId: '',
-  qty_po: '', harga_pcs: '',
+  qty_po: '', harga_pcs: '', tax_type: 'EXCLUDE',
   tanggal_kirim: new Date().toISOString().slice(0, 10),
   no_surat_jalan: '', qty_kirim: '',
   no_kwitansi: '', no_invoice: '', no_faktur_pajak: '', tanggal_faktur_pajak: '',
@@ -150,7 +150,11 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
       const rows = res?.data?.data?.data || res?.data?.data || [];
       const record = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
       if (record?.harga_pcs != null) {
-        setForm((p) => ({ ...p, harga_pcs: String(Number(record.harga_pcs)) }));
+        setForm((p) => ({
+          ...p,
+          harga_pcs: String(Number(record.harga_pcs)),
+          tax_type: record.tax_type || 'EXCLUDE',
+        }));
       }
     } catch (e) {
       console.error('Failed to fetch supplier price:', e);
@@ -352,6 +356,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
           companyId, supplierId: form.supplierId,
           no_po: form.no_po || undefined, spesifikasi: form.spesifikasi || undefined,
           itemId: form.itemId, qty_po: qtyPo || undefined, harga_pcs: hargaPcs || undefined,
+          tax_type: form.tax_type || undefined,
           tanggal_kirim: form.tanggal_kirim || undefined, no_surat_jalan: form.no_surat_jalan || undefined,
           qty_kirim: qtyKirim,
           no_kwitansi: form.no_kwitansi || undefined, no_invoice: form.no_invoice || undefined,
@@ -443,7 +448,7 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
               />
             </div>
 
-            {/* Row 3: Qty PO + Harga + Total + blank */}
+            {/* Row 3: Qty PO + Harga + Total + Status PPN */}
             <div className='mt-3 grid gap-x-4 gap-y-3 sm:grid-cols-4'>
               <div>
                 <Label>Qty PO (PCS)</Label>

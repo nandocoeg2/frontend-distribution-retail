@@ -139,13 +139,14 @@ const SupplierItemPrices = () => {
               <th className='border border-gray-200 px-3 py-2 text-left font-semibold text-gray-600'>Item (PLU)</th>
               <th className='border border-gray-200 px-3 py-2 text-left font-semibold text-gray-600'>Nama Barang</th>
               <th className='border border-gray-200 px-3 py-2 text-right font-semibold text-gray-600'>Harga/PCS</th>
+              <th className='border border-gray-200 px-3 py-2 text-center font-semibold text-gray-600'>PPN (Exc/Incl)</th>
               <th className='border border-gray-200 px-3 py-2 text-left font-semibold text-gray-600'>Spesifikasi</th>
             </tr>
           </thead>
           <tbody className='bg-white divide-y divide-gray-200'>
             {loading ? (
               <tr>
-                <td colSpan={7} className='px-3 py-4 text-center text-xs text-gray-500'>
+                <td colSpan={8} className='px-3 py-4 text-center text-xs text-gray-500'>
                   <div className='flex items-center justify-center gap-1'>
                     <div className='h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent' />
                     <span>Memuat...</span>
@@ -154,7 +155,7 @@ const SupplierItemPrices = () => {
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={7} className='px-3 py-4 text-center text-xs text-gray-500'>Belum ada data harga.</td>
+                <td colSpan={8} className='px-3 py-4 text-center text-xs text-gray-500'>Belum ada data harga.</td>
               </tr>
             ) : (
               data.map((row) => {
@@ -171,6 +172,11 @@ const SupplierItemPrices = () => {
                     <td className='border border-gray-200 px-3 py-1.5'>{row.item?.plu || '-'}</td>
                     <td className='border border-gray-200 px-3 py-1.5'>{row.item?.nama_barang || '-'}</td>
                     <td className='border border-gray-200 px-3 py-1.5 text-right'>{formatCurrency(row.harga_pcs)}</td>
+                    <td className='border border-gray-200 px-3 py-1.5 text-center'>
+                      <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${row.tax_type === 'INCLUDE' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {row.tax_type === 'INCLUDE' ? 'Include PPN' : 'Exclude PPN'}
+                      </span>
+                    </td>
                     <td className='border border-gray-200 px-3 py-1.5'>{row.spesifikasi || '-'}</td>
                   </tr>
                 );

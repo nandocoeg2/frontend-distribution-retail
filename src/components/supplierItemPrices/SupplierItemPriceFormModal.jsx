@@ -8,7 +8,7 @@ import { getItems } from '../../services/itemService';
 const SupplierItemPriceFormModal = ({ show, onClose, onSubmit, editData = null }) => {
   const isEdit = !!editData?.id;
 
-  const [form, setForm] = useState({ supplierId: '', itemId: '', harga_pcs: '', spesifikasi: '' });
+  const [form, setForm] = useState({ supplierId: '', itemId: '', harga_pcs: '', tax_type: 'EXCLUDE', spesifikasi: '' });
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [itemOptions, setItemOptions] = useState([]);
@@ -24,10 +24,11 @@ const SupplierItemPriceFormModal = ({ show, onClose, onSubmit, editData = null }
           supplierId: editData.supplierId || '',
           itemId: editData.itemId || '',
           harga_pcs: editData.harga_pcs != null ? String(editData.harga_pcs) : '',
+          tax_type: editData.tax_type || 'EXCLUDE',
           spesifikasi: editData.spesifikasi || '',
         });
       } else {
-        setForm({ supplierId: '', itemId: '', harga_pcs: '', spesifikasi: '' });
+        setForm({ supplierId: '', itemId: '', harga_pcs: '', tax_type: 'EXCLUDE', spesifikasi: '' });
       }
       setFormError('');
       setIsSubmitting(false);
@@ -71,8 +72,8 @@ const SupplierItemPriceFormModal = ({ show, onClose, onSubmit, editData = null }
     if (err) { setFormError(err); return; }
 
     const payload = isEdit
-      ? { harga_pcs: Number(form.harga_pcs), spesifikasi: form.spesifikasi.trim() || undefined }
-      : { supplierId: form.supplierId.trim(), itemId: form.itemId.trim(), harga_pcs: Number(form.harga_pcs), spesifikasi: form.spesifikasi.trim() || undefined };
+      ? { harga_pcs: Number(form.harga_pcs), tax_type: form.tax_type, spesifikasi: form.spesifikasi.trim() || undefined }
+      : { supplierId: form.supplierId.trim(), itemId: form.itemId.trim(), harga_pcs: Number(form.harga_pcs), tax_type: form.tax_type, spesifikasi: form.spesifikasi.trim() || undefined };
 
     setFormError('');
     setIsSubmitting(true);
@@ -122,10 +123,20 @@ const SupplierItemPriceFormModal = ({ show, onClose, onSubmit, editData = null }
             </>
           )}
 
-          <div>
-            <label className='block text-xs font-medium text-gray-600 mb-1'>Harga / PCS (Rp)</label>
-            <input name='harga_pcs' type='number' step='0.01' min='0' value={form.harga_pcs} onChange={handleFieldChange}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500' />
+          <div className='grid grid-cols-2 gap-3'>
+            <div>
+              <label className='block text-xs font-medium text-gray-600 mb-1'>Harga / PCS (Rp)</label>
+              <input name='harga_pcs' type='number' step='0.01' min='0' value={form.harga_pcs} onChange={handleFieldChange}
+                className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500' />
+            </div>
+            <div>
+              <label className='block text-xs font-medium text-gray-600 mb-1'>Status PPN (Exc/Incl)</label>
+              <select name='tax_type' value={form.tax_type} onChange={handleFieldChange}
+                className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500'>
+                <option value='EXCLUDE'>Exclude PPN</option>
+                <option value='INCLUDE'>Include PPN</option>
+              </select>
+            </div>
           </div>
 
           <div>
