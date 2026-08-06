@@ -77,6 +77,21 @@ const HeroIcon = ({ name, className = 'w-5 h-5' }) => {
         />
       </svg>
     ),
+    'building-office-2': (
+      <svg
+        className={className}
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'
+      >
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4m-4-8h.01M16 12h.01M9 16h.01M15 16h.01M9 8h.01M15 8h.01'
+        />
+      </svg>
+    ),
     'user-circle': (
       <svg
         className={className}
