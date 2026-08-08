@@ -165,6 +165,7 @@ const ReportPoSuppliersTable = ({ data = [], loading = false }) => {
         </tbody>
       </table>
     </div>
+  </div>
   );
 };
 
