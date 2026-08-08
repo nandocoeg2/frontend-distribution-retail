@@ -427,8 +427,6 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
               <InfoTable compact data={[
                 { label: 'Customer', value: order.customer?.namaCustomer || '-' },
                 { label: 'Code', value: order.customer?.kodeCustomer || '-' },
-                { label: 'Email', value: order.customer?.email || '-' },
-                { label: 'Phone', value: order.customer?.phoneNumber || '-' },
                 { label: 'Supplier', value: order.supplier?.name || 'Not assigned' },
               ]} />
             </AccordionItem>

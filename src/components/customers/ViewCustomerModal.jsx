@@ -170,6 +170,11 @@ const ViewCustomerModal = ({ show, onClose, customer }) => {
                       />
                     </div>
 
+                    {/* Tax Information */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                      <div className="flex items-center mb-4">
+                        <IdentificationIcon className="h-5 w-5 text-gray-500 mr-2" />
+                        <h3 className="text-lg font-semibold text-gray-900">Tax Information</h3>
                       </div>
                       <InfoTable
                         data={[

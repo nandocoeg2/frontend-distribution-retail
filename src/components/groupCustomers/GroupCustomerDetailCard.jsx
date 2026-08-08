@@ -391,15 +391,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                             Customer Name
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            NPWP
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Email
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Phone
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Address
                           </th>
                         </tr>
@@ -412,15 +403,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {customer.namaCustomer}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {groupCustomer.npwp || customer.NPWP || 'N/A'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {customer.email || 'N/A'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {customer.phoneNumber || 'N/A'}
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={customer.alamatPengiriman}>
                               {customer.alamatPengiriman || 'N/A'}
