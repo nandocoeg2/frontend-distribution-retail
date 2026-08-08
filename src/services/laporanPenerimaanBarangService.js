@@ -497,6 +497,15 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  async bulkGenerateInvoicePenagihan(payload = {}) {
+    try {
+      const response = await this.api.post('/laporan-penerimaan-barang/bulk-generate-invoice-penagihan', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk generating invoice penagihan from LPBs:', error);
+      throw error;
+    }
+  }
 }
 
 export default new LaporanPenerimaanBarangService();

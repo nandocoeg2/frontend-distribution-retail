@@ -12,6 +12,7 @@ import {
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
 import toastService from '@/services/toastService';
+import GenerateInvoicePenagihanDialog from '@/components/invoicePengiriman/GenerateInvoicePenagihanDialog';
 
 const LaporanPenerimaanBarang = () => {
   const queryClient = useQueryClient();
@@ -35,6 +36,11 @@ const LaporanPenerimaanBarang = () => {
   const [isCompletingReports, setIsCompletingReports] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
+  const [generateConfirmation, setGenerateConfirmation] = useState({
+    show: false,
+    lpbIds: [],
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const {
     showDialog: showCompleteDialog,
@@ -203,6 +209,65 @@ const LaporanPenerimaanBarang = () => {
     }
   }, [bulkDeleteReports, selectedReportIds, resolveReportId, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
 
+  const openGenerateDialog = useCallback((lpbIds) => {
+    if (!lpbIds || lpbIds.length === 0) {
+      toastService.error('Tidak ada laporan yang dipilih');
+      return;
+    }
+    setGenerateConfirmation({
+      show: true,
+      lpbIds,
+    });
+  }, []);
+
+  const closeGenerateDialog = useCallback(() => {
+    setGenerateConfirmation({
+      show: false,
+      lpbIds: [],
+    });
+  }, []);
+
+  const handleGenerateConfirm = useCallback(async (tanggalDokumen) => {
+    const lpbIds = generateConfirmation.lpbIds;
+
+    if (!lpbIds || lpbIds.length === 0) {
+      closeGenerateDialog();
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      toastService.info(`Memproses ${lpbIds.length} laporan penerimaan barang...`);
+
+      // Call bulk API route on laporanPenerimaanBarangService!
+      const response = await laporanPenerimaanBarangService.bulkGenerateInvoicePenagihan({
+        lpbIds,
+        tanggal_dokumen: tanggalDokumen,
+      });
+
+      const resData = response?.success ? response.data : response;
+      const { successCount = 0, failCount = 0 } = resData || {};
+
+      if (successCount > 0 && failCount === 0) {
+        toastService.success(`✅ Berhasil membuat semua dokumen untuk ${successCount} laporan penerimaan barang (Invoice Penagihan + Kwitansi + Faktur Pajak)`);
+      } else if (successCount > 0 && failCount > 0) {
+        toastService.warning(`✅ Berhasil membuat semua dokumen untuk ${successCount} laporan penerimaan barang. ${failCount} gagal.`);
+      } else {
+        toastService.error('❌ Gagal membuat dokumen invoice');
+      }
+
+      // Clear selection and refresh data
+      setSelectedReportIds([]);
+      await queryClient.invalidateQueries({ queryKey: ['laporanPenerimaanBarang'] });
+      closeGenerateDialog();
+    } catch (error) {
+      console.error('Error in bulk generate:', error);
+      toastService.error(error.message || 'Gagal membuat dokumen invoice');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [generateConfirmation.lpbIds, closeGenerateDialog, queryClient]);
+
   const openCreateModal = useCallback(() => {
     setSelectedReport(null);
     setIsCreateModalOpen(true);
@@ -295,6 +360,8 @@ const LaporanPenerimaanBarang = () => {
             hasSelectedReports={hasSelectedReports}
             selectedReportId={selectedReportForDetail?.id}
             onFiltersChange={handleFiltersChange}
+            onOpenGenerateDialog={openGenerateDialog}
+            isGenerating={isGenerating}
           />
         </div>
       </div>
@@ -322,6 +389,14 @@ const LaporanPenerimaanBarang = () => {
       <ExportConfirmationDialog onConfirm={handleConfirmExport} />
 
       <DeleteConfirmationDialog onConfirm={handleConfirmDelete} />
+
+      <GenerateInvoicePenagihanDialog
+        show={generateConfirmation.show}
+        onClose={closeGenerateDialog}
+        onConfirm={handleGenerateConfirm}
+        invoiceCount={generateConfirmation.lpbIds.length}
+        loading={isGenerating}
+      />
 
       {selectedReportForDetail && (
         <LaporanPenerimaanBarangDetailCard report={selectedReportForDetail} onClose={handleCloseDetail} loading={detailLoading} />

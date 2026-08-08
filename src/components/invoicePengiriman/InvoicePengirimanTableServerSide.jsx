@@ -3,7 +3,6 @@ import { createColumnHelper, useReactTable } from "@tanstack/react-table";
 import {
   TrashIcon,
   PrinterIcon,
-  DocumentPlusIcon,
   ArrowDownTrayIcon,
   EyeIcon,
 } from "@heroicons/react/24/outline";
@@ -66,8 +65,6 @@ const InvoicePengirimanTableServerSide = ({
   exportLoading = false,
   onPreviewExcel,
   previewLoading = false,
-  onOpenGenerateDialog,
-  isGenerating = false,
 }) => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -131,17 +128,7 @@ const InvoicePengirimanTableServerSide = ({
     }
   };
 
-  const handleBulkGenerateInvoicePenagihan = () => {
-    if (!selectedInvoices || selectedInvoices.length === 0) {
-      toastService.error("Tidak ada invoice yang dipilih");
-      return;
-    }
 
-    // Call parent handler to show confirmation dialog
-    if (onOpenGenerateDialog) {
-      onOpenGenerateDialog(selectedInvoices);
-    }
-  };
 
   const handleBulkDeleteInvoice = async () => {
     if (!selectedInvoices || selectedInvoices.length === 0) {
@@ -508,14 +495,7 @@ const InvoicePengirimanTableServerSide = ({
             <span className="text-xs font-medium text-blue-700">
               {selectedInvoices.length} dipilih
             </span>
-            <button
-              onClick={handleBulkGenerateInvoicePenagihan}
-              disabled={isGenerating}
-              className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              <DocumentPlusIcon className="h-3 w-3 mr-1" />
-              {isGenerating ? "..." : "Generate"}
-            </button>
+
             <button
               onClick={handleBulkPrintInvoice}
               disabled={isPrinting}

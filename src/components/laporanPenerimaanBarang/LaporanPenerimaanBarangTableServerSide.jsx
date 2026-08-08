@@ -8,6 +8,7 @@ import {
   LinkIcon,
   LinkSlashIcon,
   PrinterIcon,
+  DocumentPlusIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
@@ -77,6 +78,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
   hasSelectedReports = false,
   selectedReportId = null,
   onFiltersChange,
+  onOpenGenerateDialog,
+  isGenerating = false,
 }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedLpbForAssign, setSelectedLpbForAssign] = useState(null);
@@ -331,6 +334,34 @@ const LaporanPenerimaanBarangTableServerSide = ({
       toastService.error(error.message || 'Gagal mendownload LPB');
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleBulkGenerateInvoicePenagihan = () => {
+    if (!selectedReports || selectedReports.length === 0) {
+      toastService.error('Tidak ada laporan yang dipilih');
+      return;
+    }
+
+    // Filter reports that have invoice pengiriman
+    const validReports = selectedReports.filter((id) => {
+      const report = reports.find((r) => resolveReportId(r) === id);
+      return !!report?.purchaseOrder?.invoice?.id;
+    });
+
+    if (validReports.length === 0) {
+      toastService.error('Laporan Penerimaan Barang yang dipilih tidak memiliki Invoice Pengiriman');
+      return;
+    }
+
+    if (validReports.length < selectedReports.length) {
+      toastService.warning(
+        `Hanya ${validReports.length} dari ${selectedReports.length} laporan penerimaan barang yang memiliki Invoice Pengiriman`
+      );
+    }
+
+    if (onOpenGenerateDialog) {
+      onOpenGenerateDialog(validReports);
     }
   };
 
@@ -653,6 +684,14 @@ const LaporanPenerimaanBarangTableServerSide = ({
               <span className="text-xs font-medium text-blue-700">{selectedReports.length} dipilih</span>
               <button onClick={handlePrintSelected} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
                 <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print'}
+              </button>
+              <button
+                onClick={handleBulkGenerateInvoicePenagihan}
+                disabled={isGenerating || isPrinting}
+                className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                <DocumentPlusIcon className="h-3 w-3 mr-1" />
+                {isGenerating ? '...' : 'Generate'}
               </button>
               <button onClick={onCompleteSelected} disabled={actionDisabled} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
                 <CheckIcon className="h-3 w-3 mr-1" />{isCompleting ? '...' : 'Selesai'}
