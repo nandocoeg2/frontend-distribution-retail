@@ -10,7 +10,6 @@ import { StatusBadge } from '../ui/Badge';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { useMutasiBankQuery } from '../../hooks/useMutasiBankQuery';
 import { DataTable } from '../table';
-import Pagination from '../common/Pagination';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import DateFilter from '../common/DateFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
@@ -208,7 +207,7 @@ const MutasiBankTableServerSide = ({
   isAssigning = false,
   isUnassigning = false,
   initialPage = 1,
-  initialLimit = 10,
+  initialLimit = 999999,
 }) => {
 
   const {
@@ -556,17 +555,7 @@ const MutasiBankTableServerSide = ({
           }
         />
 
-        {!error && (
-          <Pagination
-            compact
-            pagination={pagination}
-            onPageChange={setPage}
-            onLimitChange={(nextLimit) => {
-              setPage(1);
-              setLimit(nextLimit);
-            }}
-          />
-        )}
+
       </div>
     </div>
   );
