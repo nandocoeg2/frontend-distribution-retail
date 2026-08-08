@@ -54,20 +54,6 @@ const STATUS_OPTIONS = [
   { id: "CANCELLED INVOICE", name: "Cancelled" },
 ];
 
-// Print status options
-const PRINT_STATUS_OPTIONS = [
-  { value: "", label: "Semua" },
-  { value: "true", label: "Sudah Diprint" },
-  { value: "false", label: "Belum Diprint" },
-];
-
-// Penagihan status options
-const PENAGIHAN_STATUS_OPTIONS = [
-  { value: "", label: "Semua" },
-  { value: "true", label: "Sudah Ditagih" },
-  { value: "false", label: "Belum Ditagih" },
-];
-
 const InvoicePengirimanTableServerSide = ({
   onBulkDelete,
   selectedInvoices = [],
@@ -443,113 +429,6 @@ const InvoicePengirimanTableServerSide = ({
           </div>
         ),
         cell: (info) => formatCurrency(info.getValue()),
-      }),
-      columnHelper.accessor("is_printed", {
-        id: "is_printed",
-        header: ({ column }) => (
-          <div className="space-y-0.5">
-            <div className="font-medium text-xs">Print</div>
-            <select
-              value={column.getFilterValue() ?? ""}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {PRINT_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const isPrinted = row.original.is_printed;
-          return (
-            <StatusBadge
-              dot={true}
-              status={isPrinted ? "Sudah Diprint" : "Belum Diprint"}
-              variant={isPrinted ? "success" : "secondary"}
-              size="sm"
-            />
-          );
-        },
-        enableSorting: true,
-      }),
-      columnHelper.accessor((row) => row.invoicePenagihanId, {
-        id: "has_penagihan",
-        header: ({ column }) => (
-          <div className="space-y-0.5">
-            <div className="font-medium text-xs">Tagih</div>
-            <select
-              value={column.getFilterValue() ?? ""}
-              onChange={(e) => {
-                column.setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {PENAGIHAN_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ),
-        cell: ({ row }) => {
-          const hasPenagihan = !!row.original.invoicePenagihanId;
-          return (
-            <StatusBadge
-              dot={true}
-              status={hasPenagihan ? "Sudah Ditagih" : "Belum Ditagih"}
-              variant={hasPenagihan ? "success" : "secondary"}
-              size="sm"
-            />
-          );
-        },
-        enableSorting: true,
-      }),
-      columnHelper.accessor("updatedAt", {
-        id: "print_date",
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: "", to: "" };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tgl Print</div>
-              <div className="flex flex-col gap-0.5">
-                <DateFilter
-                  value={filterValue.from ?? ""}
-                  onChange={(val) => {
-                    column.setFilterValue({ ...filterValue, from: val });
-                    setPage(1);
-                  }}
-                  placeholder="Dari"
-                />
-                <DateFilter
-                  value={filterValue.to ?? ""}
-                  onChange={(val) => {
-                    column.setFilterValue({ ...filterValue, to: val });
-                    setPage(1);
-                  }}
-                  placeholder="Sampai"
-                />
-              </div>
-            </div>
-          );
-        },
-        cell: (info) => {
-          const isPrinted = info.row.original.is_printed;
-          return (
-            <span className="text-xs text-gray-600">
-              {isPrinted ? formatDateTime(info.getValue()) : "-"}
-            </span>
-          );
-        },
       }),
       columnHelper.accessor("status.status_name", {
         id: "status_codes",
