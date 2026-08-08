@@ -324,7 +324,6 @@ const LaporanPenerimaanBarangDetailCard = ({
         <div>
           <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
             <Tab id='items' label='Detail Item' icon={<ListBulletIcon className='w-3 h-3' />} badge={itemsBadge} />
-            <Tab id='overview' label='Overview' icon={<DocumentTextIcon className='w-3 h-3' />} />
             <Tab id='timeline' label='Timeline' icon={<ClockIcon className='w-3 h-3' />} badge={auditTrailCount} />
           </TabContainer>
 

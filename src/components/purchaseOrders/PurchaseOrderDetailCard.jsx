@@ -312,7 +312,6 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: <DocumentTextIcon className='w-4 h-4' /> },
     { id: 'details', label: 'Details', icon: <ListBulletIcon className='w-4 h-4' /> },
     { id: 'documents', label: 'Documents', icon: <FolderIcon className='w-4 h-4' /> },
     { id: 'timeline', label: 'Timeline', icon: <ClockIcon className='w-4 h-4' />, badge: order?.auditTrails?.length },

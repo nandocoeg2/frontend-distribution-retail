@@ -183,11 +183,6 @@ const CheckingListDetailCard = ({
 
   const tabs = [
     {
-      id: 'overview',
-      label: 'Overview',
-      icon: <DocumentTextIcon className='w-5 h-5' aria-hidden='true' />,
-    },
-    {
       id: 'purchaseOrder',
       label: 'Purchase Order',
       icon: <ShoppingCartIcon className='w-5 h-5' aria-hidden='true' />,
