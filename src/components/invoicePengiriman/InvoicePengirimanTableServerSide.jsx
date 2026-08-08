@@ -5,6 +5,7 @@ import {
   PrinterIcon,
   DocumentPlusIcon,
   ArrowDownTrayIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import { StatusBadge } from "../ui/Badge";
 import {
@@ -77,6 +78,8 @@ const InvoicePengirimanTableServerSide = ({
   selectedInvoiceId,
   onExportExcel,
   exportLoading = false,
+  onPreviewExcel,
+  previewLoading = false,
   onOpenGenerateDialog,
   isGenerating = false,
 }) => {
@@ -652,6 +655,27 @@ const InvoicePengirimanTableServerSide = ({
 
         {/* Right side: Export Excel and Reset Filter actions */}
         <div className="flex items-center gap-2">
+          {onPreviewExcel && (
+            <button
+              onClick={() =>
+                onPreviewExcel(tableOptions.state?.columnFilters || [])
+              }
+              disabled={previewLoading}
+              className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {previewLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1" />
+                  Previewing...
+                </>
+              ) : (
+                <>
+                  <EyeIcon className="h-3 w-3 mr-1" />
+                  Preview Excel
+                </>
+              )}
+            </button>
+          )}
           {onExportExcel && (
             <button
               onClick={() =>

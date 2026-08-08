@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
@@ -19,6 +19,49 @@ const InvoicePengirimanPage = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const [exportFilters, setExportFilters] = useState({});
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [localFilters, setLocalFilters] = useState({
+    no_invoice: '',
+    po: '',
+    customer: '',
+    tanggal_invoice: '',
+    top: '',
+    status: '',
+    plu: '',
+    nama_barang: '',
+    quantity: '',
+    harga: '',
+    total: '',
+    sub_total: '',
+    total_discount: '',
+    ppn_percentage: '',
+    grand_total: '',
+  });
+
+  const filteredPreviewData = useMemo(() => {
+    if (!previewData?.data) return [];
+    return previewData.data.filter(row => {
+      return (
+        String(row.no_invoice || '').toLowerCase().includes(localFilters.no_invoice.toLowerCase()) &&
+        String(row.po || '').toLowerCase().includes(localFilters.po.toLowerCase()) &&
+        String(row.customer || '').toLowerCase().includes(localFilters.customer.toLowerCase()) &&
+        String(row.tanggal_invoice || '').toLowerCase().includes(localFilters.tanggal_invoice.toLowerCase()) &&
+        String(row.top || '').toLowerCase().includes(localFilters.top.toLowerCase()) &&
+        String(row.status || '').toLowerCase().includes(localFilters.status.toLowerCase()) &&
+        String(row.plu || '').toLowerCase().includes(localFilters.plu.toLowerCase()) &&
+        String(row.nama_barang || '').toLowerCase().includes(localFilters.nama_barang.toLowerCase()) &&
+        String(row.quantity ?? '').toLowerCase().includes(localFilters.quantity.toLowerCase()) &&
+        String(row.harga ?? '').toLowerCase().includes(localFilters.harga.toLowerCase()) &&
+        String(row.total ?? '').toLowerCase().includes(localFilters.total.toLowerCase()) &&
+        String(row.sub_total ?? '').toLowerCase().includes(localFilters.sub_total.toLowerCase()) &&
+        String(row.total_discount ?? '').toLowerCase().includes(localFilters.total_discount.toLowerCase()) &&
+        String(row.ppn_percentage ?? '').toLowerCase().includes(localFilters.ppn_percentage.toLowerCase()) &&
+        String(row.grand_total ?? '').toLowerCase().includes(localFilters.grand_total.toLowerCase())
+      );
+    });
+  }, [previewData, localFilters]);
   const [generateConfirmation, setGenerateConfirmation] = useState({
     show: false,
     invoiceIds: [],
@@ -184,6 +227,41 @@ const InvoicePengirimanPage = () => {
     }
   }, [exportFilters]);
 
+  const handlePreviewExcel = useCallback(async (columnFilters) => {
+    setPreviewLoading(true);
+    setShowPreviewModal(true);
+    setLocalFilters({
+      no_invoice: '',
+      po: '',
+      customer: '',
+      tanggal_invoice: '',
+      top: '',
+      status: '',
+      plu: '',
+      nama_barang: '',
+      quantity: '',
+      harga: '',
+      total: '',
+      sub_total: '',
+      total_discount: '',
+      ppn_percentage: '',
+      grand_total: '',
+    });
+
+    try {
+      const params = convertFiltersToParams(columnFilters);
+      const response = await invoicePengirimanService.previewExportExcel(params);
+      const resData = response?.success ? response.data : response;
+      setPreviewData(resData);
+    } catch (err) {
+      console.error('Preview failed:', err);
+      toastService.error(err.message || 'Gagal memuat preview data');
+      setShowPreviewModal(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [convertFiltersToParams]);
+
   const openGenerateDialog = useCallback((invoiceIds) => {
     if (!invoiceIds || invoiceIds.length === 0) {
       toastService.error('Tidak ada invoice yang dipilih');
@@ -281,6 +359,8 @@ const InvoicePengirimanPage = () => {
             selectedInvoiceId={selectedInvoiceForDetail?.id}
             onExportExcel={handleExportExcel}
             exportLoading={exportLoading}
+            onPreviewExcel={handlePreviewExcel}
+            previewLoading={previewLoading}
             onOpenGenerateDialog={openGenerateDialog}
             isGenerating={isGenerating}
           />
@@ -310,6 +390,133 @@ const InvoicePengirimanPage = () => {
         invoiceCount={generateConfirmation.invoiceIds.length}
         loading={isGenerating}
       />
+
+      {/* Excel Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" onClick={() => setShowPreviewModal(false)}></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-7xl sm:w-full border border-gray-100">
+              <div className="bg-white px-6 pt-6 pb-4 sm:pb-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                  <h3 className="text-lg leading-6 font-bold text-gray-900 flex items-center gap-2">
+                    <span className="p-1.5 bg-green-50 text-green-600 rounded-lg">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </span>
+                    Preview Hasil Export Excel (Invoice Pengiriman)
+                  </h3>
+                  <button
+                    onClick={() => setShowPreviewModal(false)}
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {previewLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                    <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm font-medium text-gray-500 animate-pulse">Menyiapkan preview data...</p>
+                  </div>
+                ) : !previewData || previewData.data?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p className="text-sm font-semibold text-gray-900">Tidak ada data untuk diexport</p>
+                    <p className="text-xs text-gray-500 mt-1">Silakan sesuaikan filter pencarian Anda.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[55vh] border border-gray-200 rounded-lg shadow-sm">
+                    <table className="min-w-full divide-y divide-gray-200 text-xs">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          {previewData.headers?.map((header, idx) => (
+                            <th
+                              key={idx}
+                              className="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200"
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                        <tr className="bg-gray-100/50">
+                          {Object.keys(localFilters).map((key) => (
+                            <th key={key} className="px-3 py-1.5 border-b border-gray-200 min-w-[120px]">
+                              <input
+                                type="text"
+                                value={localFilters[key]}
+                                onChange={(e) => setLocalFilters({ ...localFilters, [key]: e.target.value })}
+                                placeholder={`Filter ${key.replace('_', ' ')}...`}
+                                className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                              />
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {filteredPreviewData.length === 0 ? (
+                          <tr>
+                            <td colSpan={previewData.headers?.length || 15} className="px-4 py-8 text-center text-gray-500 font-medium bg-gray-50/50">
+                              Tidak ada data yang cocok dengan filter pencarian.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredPreviewData.map((row, rowIdx) => (
+                            <tr key={rowIdx} className="hover:bg-gray-50/70 transition-colors odd:bg-white even:bg-gray-50/30">
+                              <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{row.no_invoice}</td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{row.po}</td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-medium">{row.customer}</td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{row.tanggal_invoice}</td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap font-mono">{row.top}</td>
+                              <td className="px-4 py-2.5 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
+                                  row.status?.includes('LUNAS') || row.status?.includes('PAID')
+                                    ? 'bg-green-50 text-green-700'
+                                    : row.status?.includes('POSTED')
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {row.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-mono">{row.plu}</td>
+                              <td className="px-4 py-2.5 text-gray-800 font-medium max-w-xs truncate" title={row.nama_barang}>{row.nama_barang}</td>
+                              <td className="px-4 py-2.5 text-gray-900 font-semibold text-right pr-6">{row.quantity}</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.harga.toLocaleString('id-ID')}</td>
+                              <td className="px-4 py-2.5 text-gray-900 font-medium text-right pr-6">{row.total.toLocaleString('id-ID')}</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.sub_total.toLocaleString('id-ID')}</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.total_discount.toLocaleString('id-ID')}</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.ppn_percentage}%</td>
+                              <td className="px-4 py-2.5 text-gray-900 font-bold text-right pr-6">{row.grand_total.toLocaleString('id-ID')}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+              <div className="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setShowPreviewModal(false)}
+                  className="w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-colors sm:w-auto"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
