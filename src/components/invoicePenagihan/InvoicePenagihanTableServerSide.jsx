@@ -604,7 +604,9 @@ const InvoicePenagihanTableServerSide = forwardRef(({
                 key={column.id}
                 className="px-2 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {pagination?.totalItems || 0}
+                {column.id === 'grand_total'
+                  ? formatCurrency(totalGrandTotal)
+                  : pagination?.totalItems || 0}
               </td>
             ))}
           </tr>
