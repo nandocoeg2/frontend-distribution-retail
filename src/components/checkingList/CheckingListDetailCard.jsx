@@ -105,7 +105,7 @@ const CheckingListDetailCard = ({
   const firstSuratJalan = suratJalanData[0];
   const firstPurchaseOrder = firstSuratJalan?.purchaseOrder;
   const customer = firstPurchaseOrder?.customer;
-  const customerNpwp = customer?.groupCustomer?.npwp || customer?.NPWP;
+  const customerNpwp = customer?.groupCustomer?.npwp;
   const supplier = firstPurchaseOrder?.supplier;
 
   // Extract unique purchase orders from all surat jalan
@@ -861,14 +861,7 @@ const CheckingListDetailCard = ({
                             customer.code ||
                             '-',
                         },
-                        {
-                          label: 'Email',
-                          value: customer.email || '-',
-                        },
-                        {
-                          label: 'Phone Number',
-                          value: customer.phoneNumber || '-',
-                        },
+
                         {
                           label: 'NPWP',
                           value: customerNpwp || '-',
