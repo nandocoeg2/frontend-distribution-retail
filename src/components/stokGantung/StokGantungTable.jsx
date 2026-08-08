@@ -96,59 +96,59 @@ const StokGantungTable = ({
     }
 
     return (
-        <div className='space-y-2'>
-            <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
-                <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]'>
+        <div className='flex-1 flex flex-col min-h-0 space-y-2'>
+            <div className='flex-1 flex flex-col min-h-0 overflow-hidden rounded-md border border-gray-200 bg-white'>
+                <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px]'>
                     <table className='min-w-[980px] w-full divide-y divide-gray-200 text-xs table-fixed'>
-                        <thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
+                        <thead className='bg-gray-50'>
                             <tr>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                 >
                                     No. Retur
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                 >
                                     Status
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                 >
                                     Produk
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                     title='Jumlah jenis barang'
                                 >
                                     Items
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                     title='Total kuantitas (PCS)'
                                 >
                                     Qty
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                 >
                                     Tanggal
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                 >
                                     Notes
                                 </th>
                                 <th
                                     scope='col'
-                                    className='px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'
+                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'
                                 >
                                     Actions
                                 </th>
