@@ -284,6 +284,11 @@ const InvoicePengirimanTableServerSide = ({
     storageKey: "invoice-pengiriman", // Persist filter state to sessionStorage
   });
 
+  const totalGrandTotal = useMemo(() => {
+    if (!invoices || !Array.isArray(invoices)) return 0;
+    return invoices.reduce((acc, row) => acc + (Number(row.grand_total) || 0), 0);
+  }, [invoices]);
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -739,7 +744,9 @@ const InvoicePengirimanTableServerSide = ({
                 key={column.id}
                 className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {pagination?.totalItems || 0}
+                {column.id === "grand_total"
+                  ? formatCurrency(totalGrandTotal)
+                  : pagination?.totalItems || 0}
               </td>
             ))}
           </tr>
