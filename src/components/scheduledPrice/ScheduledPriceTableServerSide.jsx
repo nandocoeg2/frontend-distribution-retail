@@ -18,8 +18,6 @@ const columnHelper = createColumnHelper();
 const STATUS_OPTIONS = [
     { id: 'PENDING', label: 'Pending' },
     { id: 'ACTIVE', label: 'Active' },
-    { id: 'EXPIRED', label: 'Expired' },
-    { id: 'CANCELLED', label: 'Cancelled' },
 ];
 
 const ScheduledPriceTableServerSide = forwardRef(({
@@ -62,7 +60,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
             const mappedFilters = { ...filters };
 
             // Map range filters
-            ['harga', 'newPrice', 'pot1', 'pot2', 'ppn'].forEach(field => {
+            ['newPrice', 'pot1', 'pot2', 'ppn'].forEach(field => {
                 if (mappedFilters[field] && typeof mappedFilters[field] === 'object') {
                     const paramName = field === 'newPrice' ? 'new_price' : field;
                     if (mappedFilters[field].min) {
@@ -237,25 +235,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                     <span className="text-xs">{info.row.original.customer?.namaCustomer || 'Semua'}</span>
                 ),
             }),
-            // Base Price (from itemPrice.harga)
-            columnHelper.accessor('itemPrice.harga', {
-                id: 'harga',
-                size: 80,
-                minSize: 80,
-                enableColumnFilter: true,
-                filterFn: () => true,
-                header: ({ column }) => (
-                    <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="font-medium text-xs">Base Price</div>
-                        <div className="flex flex-col gap-0.5">
-                            <RangeColumnFilter column={column} setPage={setPage} />
-                        </div>
-                    </div>
-                ),
-                cell: (info) => (
-                    <span className="text-xs text-right block">{formatCurrency(info.getValue() ?? 0)}</span>
-                ),
-            }),
+
             // New Price (from schedule.harga)
             columnHelper.accessor('harga', {
                 id: 'newPrice',
@@ -290,7 +270,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                         </div>
                     </div>
                 ),
-                cell: (info) => <span className="text-xs text-center block">{info.getValue() ?? 0}%</span>,
+                cell: (info) => <span className="text-xs text-center block">{info.getValue() != null ? `${info.getValue()}%` : '-'}</span>,
             }),
             // POT B
             columnHelper.accessor('pot2', {
@@ -307,7 +287,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                         </div>
                     </div>
                 ),
-                cell: (info) => <span className="text-xs text-center block">{info.getValue() ?? 0}%</span>,
+                cell: (info) => <span className="text-xs text-center block">{info.getValue() != null ? `${info.getValue()}%` : '-'}</span>,
             }),
             // PPN
             columnHelper.accessor('ppn', {
@@ -324,7 +304,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                         </div>
                     </div>
                 ),
-                cell: (info) => <span className="text-xs text-center block">{info.getValue() ?? 0}%</span>,
+                cell: (info) => <span className="text-xs text-center block">{info.getValue() != null ? `${info.getValue()}%` : '-'}</span>,
             }),
             // Effective Date
             columnHelper.accessor('effectiveDate', {
@@ -451,7 +431,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1 flex flex-col min-h-0">
 
             {/* Table */}
             <DataTable
@@ -462,7 +442,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 loadingMessage="Memuat data..."
                 emptyMessage="Tidak ada data."
                 emptyFilteredMessage="Tidak ada data sesuai filter."
-                wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
+                wrapperClassName="overflow-x-auto overflow-y-auto flex-1 min-h-[300px]"
                 tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
                 headerRowClassName="bg-gray-50"
                 headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"

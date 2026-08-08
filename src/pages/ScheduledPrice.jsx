@@ -68,9 +68,9 @@ const ScheduledPrice = () => {
   };
 
   return (
-    <div>
-      <div className="max-w-full mx-auto">
-        <div className="bg-white shadow-md rounded-lg p-3">
+    <div className="h-full flex flex-col">
+      <div className="max-w-full mx-auto w-full h-full flex flex-col">
+        <div className="bg-white shadow rounded-lg overflow-hidden p-3 flex flex-col flex-1 min-h-0">
           {/* Header */}
           <div className="mb-2">
             <div className="flex justify-between items-center">
@@ -90,7 +90,7 @@ const ScheduledPrice = () => {
           </div>
 
           {/* Server-side Table */}
-          <div className="mt-3">
+          <div className="mt-3 flex-1 flex flex-col min-h-0">
             <ScheduledPriceTableServerSide
               ref={tableRef}
               onEdit={handleEdit}
