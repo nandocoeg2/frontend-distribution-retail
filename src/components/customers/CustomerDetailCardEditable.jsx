@@ -68,10 +68,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
       groupCustomerId: customerData?.groupCustomerId || '',
       region: customerData?.region || '',
       alamatPengiriman: customerData?.alamatPengiriman || '',
-      phoneNumber: customerData?.phoneNumber || '',
-      email: customerData?.email || '',
       alamatNPWP: customerData?.alamatNPWP || '',
-      NPWP: customerData?.NPWP || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
         nama_pic: pic.nama_pic || '',
@@ -154,28 +151,12 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
           groupCustomerId: value,
         };
         if (selectedGroup) {
-          updated.NPWP = selectedGroup.npwp || '';
           updated.alamatNPWP = selectedGroup.alamat || '';
         }
         return updated;
       });
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleNPWPBlur = (e) => {
-    const { value } = e.target;
-    if (!value) return;
-
-    const cleanValue = value.replace(/[^0-9]/g, '');
-
-    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
-    if (cleanValue.length === 15) {
-      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
-    } else if (cleanValue !== value) {
-      // If value had non-digit chars, clean it
-      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
     }
   };
 
@@ -190,7 +171,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
   const selectedGroupCustomer = groupCustomers.find(group => group.id === formData?.groupCustomerId)
     || (displayCustomer.groupCustomer?.id === formData?.groupCustomerId ? displayCustomer.groupCustomer : null)
     || null;
-  const displayNpwp = displayCustomer.NPWP || displayCustomer.groupCustomer?.npwp;
+  const displayNpwp = displayCustomer.groupCustomer?.npwp;
   const defaultPic = displayCustomer.customerPics?.find(pic => pic.default);
   const primaryPic = defaultPic || displayCustomer.customerPics?.[0];
 
@@ -314,27 +295,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData?.phoneNumber || ''}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData?.email || ''}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Address</label>
@@ -347,17 +308,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
-                  <input
-                    type="text"
-                    name="NPWP"
-                    value={formData?.NPWP || ''}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none"
-                    placeholder="Auto-filled from Group Customer"
-                  />
-                </div>
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">NPWP Address</label>
@@ -420,20 +371,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
                     <h4 className="text-sm font-semibold text-gray-900">Contact & Address</h4>
                   </div>
                   <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-500 text-xs flex items-center">
-                        <DevicePhoneMobileIcon className="h-3 w-3 mr-1" />
-                        Phone:
-                      </span>
-                      <p className="font-medium text-gray-900">{displayCustomer.phoneNumber || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-xs flex items-center">
-                        <AtSymbolIcon className="h-3 w-3 mr-1" />
-                        Email:
-                      </span>
-                      <p className="font-medium text-gray-900">{displayCustomer.email || '-'}</p>
-                    </div>
+
                     <div>
                       <span className="text-gray-500 text-xs">Shipping Address:</span>
                       <p className="font-medium text-gray-900 text-xs leading-relaxed">

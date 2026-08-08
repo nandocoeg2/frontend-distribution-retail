@@ -37,8 +37,7 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
               <col style={{ width: '100px' }} />
               <col style={{ width: '120px' }} />
               <col style={{ width: '100px' }} />
-              <col style={{ width: '200px' }} />
-              <col style={{ width: '120px' }} />
+              <col style={{ width: '220px' }} />
               <col style={{ width: '60px' }} />
             </colgroup>
             <thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
@@ -58,9 +57,6 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
                 <th className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'>
                   Alamat
                 </th>
-                <th className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'>
-                  Phone
-                </th>
                 <th className='px-2.5 py-1.5 text-right text-[11px] font-medium uppercase tracking-wider text-gray-500'>
                   Actions
                 </th>
@@ -69,7 +65,7 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
             <tbody className='divide-y divide-gray-100 bg-white'>
               {customers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className='px-3 py-6 text-center text-xs text-gray-500'>
+                  <td colSpan="6" className='px-3 py-6 text-center text-xs text-gray-500'>
                     {searchQuery ? 'No customers found matching your search.' : 'No customers available.'}
                   </td>
                 </tr>
@@ -98,9 +94,6 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
                     </td>
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.alamatPengiriman || '-'}>
                       {customer.alamatPengiriman || '-'}
-                    </td>
-                    <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900'>
-                      {customer.phoneNumber || '-'}
                     </td>
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-right text-xs'>
                       <div className='flex items-center justify-end gap-1'>

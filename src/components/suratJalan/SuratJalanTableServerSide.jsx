@@ -276,6 +276,7 @@ const SuratJalanTableServerSide = ({
     initialPage: 1,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    initialSorting: [{ id: 'no_surat_jalan', desc: true }],
     storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
 
@@ -402,17 +403,7 @@ const SuratJalanTableServerSide = ({
         ),
         cell: (info) => info.getValue() || 'N/A',
       }),
-      columnHelper.accessor('invoice.no_invoice', {
-        id: 'no_invoice',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">No Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
-        cell: (info) => info.getValue() || 'N/A',
-        enableColumnFilter: false,
-      }),
+
       columnHelper.accessor('status.status_name', {
         id: 'status_code',
         header: ({ column }) => (
