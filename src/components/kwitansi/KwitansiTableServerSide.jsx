@@ -160,6 +160,11 @@ const KwitansiTableServerSide = ({
     getQueryParams,
   });
 
+  const totalGrandTotal = useMemo(() => {
+    if (!kwitansis || !Array.isArray(kwitansis)) return 0;
+    return kwitansis.reduce((acc, row) => acc + (parseFloat(row.grand_total) || 0), 0);
+  }, [kwitansis]);
+
   // Handler untuk select all toggle
   const handleSelectAllInternalToggle = useCallback(() => {
     const currentPageKwitansiIds = kwitansis
@@ -653,7 +658,9 @@ const KwitansiTableServerSide = ({
                 key={column.id}
                 className="px-2 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {pagination?.totalItems || 0}
+                {column.id === 'grand_total'
+                  ? formatCurrency(totalGrandTotal)
+                  : pagination?.totalItems || 0}
               </td>
             ))}
           </tr>

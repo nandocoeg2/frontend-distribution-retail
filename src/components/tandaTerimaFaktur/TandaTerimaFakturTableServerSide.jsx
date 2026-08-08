@@ -234,6 +234,20 @@ const TandaTerimaFakturTableServerSide = ({
     getQueryParams,
   });
 
+  const totals = useMemo(() => {
+    if (!tandaTerimaFakturs || !Array.isArray(tandaTerimaFakturs)) {
+      return { grandTotalInvoice: 0, grandTotal: 0, totalPayment: 0 };
+    }
+    return tandaTerimaFakturs.reduce(
+      (acc, row) => ({
+        grandTotalInvoice: acc.grandTotalInvoice + (parseFloat(row.invoicePenagihan?.grand_total) || 0),
+        grandTotal: acc.grandTotal + (parseFloat(row.grand_total) || 0),
+        totalPayment: acc.totalPayment + (parseFloat(row.bankMutation?.jumlah) || 0),
+      }),
+      { grandTotalInvoice: 0, grandTotal: 0, totalPayment: 0 }
+    );
+  }, [tandaTerimaFakturs]);
+
   const columns = useMemo(
     () => [
       columnHelper.accessor('tanggal', {
@@ -744,14 +758,17 @@ const TandaTerimaFakturTableServerSide = ({
         footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
         footerContent={
           <tr>
-            {table.getVisibleLeafColumns().map((column) => (
-              <td
-                key={column.id}
-                className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center"
-              >
-                {pagination?.totalItems || 0}
-              </td>
-            ))}
+            {table.getVisibleLeafColumns().map((column) => {
+              let footerValue = pagination?.totalItems || 0;
+              if (column.id === 'grand_total_invoice') footerValue = formatCurrency(totals.grandTotalInvoice);
+              else if (column.id === 'grand_total') footerValue = formatCurrency(totals.grandTotal);
+              else if (column.id === 'total_payment') footerValue = formatCurrency(totals.totalPayment);
+              return (
+                <td key={column.id} className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center">
+                  {footerValue}
+                </td>
+              );
+            })}
           </tr>
         }
       />
