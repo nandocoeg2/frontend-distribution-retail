@@ -310,17 +310,7 @@ const CustomerDetailCardEditable = ({ customer, onClose, onUpdate }) => {
 
 
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">NPWP Address</label>
-                  <input
-                    type="text"
-                    name="alamatNPWP"
-                    value={formData?.alamatNPWP || ''}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none"
-                    placeholder="Auto-filled from Group Customer"
-                  />
-                </div>
+
 
               </div>
 

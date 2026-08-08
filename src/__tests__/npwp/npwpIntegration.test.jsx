@@ -138,7 +138,7 @@ describe('NPWP Derivation and Display Integration Tests (Commit 784d2eb)', () =>
   });
 
   describe('CustomerForm NPWP autofill logic', () => {
-    it('should have NPWP Address input and autofill it from selected Group Customer', async () => {
+    it('should show selected Group Customer NPWP helper text', async () => {
       const mockGroupCustomers = [
         { id: 'g-1', nama_group: 'Group One', npwp: '1111111111111111', alamat: 'Alamat Group One' },
         { id: 'g-2', nama_group: 'Group Two', npwp: '2222222222222222', alamat: 'Alamat Group Two' },
@@ -149,27 +149,22 @@ describe('NPWP Derivation and Display Integration Tests (Commit 784d2eb)', () =>
         data: { data: mockGroupCustomers },
       });
 
-      const { container } = render(
+      render(
         <CustomerForm onSubmit={vi.fn()} onClose={vi.fn()} />
       );
 
       // Wait for the group customers to be fetched and loaded
       await screen.findByText('Group Customer');
 
-      // Assert that manual NPWP Address text input exists
-      const npwpAddressInput = container.querySelector('input[name="alamatNPWP"]');
-      
-      expect(npwpAddressInput).toBeTruthy();
-
-      // Initially, it should be empty
-      expect(npwpAddressInput.value).toBe('');
+      // Initially should show NPWP: -
+      expect(screen.getByText('NPWP: -')).toBeTruthy();
 
       // Simulate selecting "Group One" using fireEvent.change
       const select = screen.getByTestId('autocomplete-select');
       fireEvent.change(select, { target: { value: 'g-1' } });
 
-      // Now NPWP Address input should be autofilled with Group One values
-      expect(npwpAddressInput.value).toBe('Alamat Group One');
+      // Now NPWP helper text should show the group's NPWP
+      expect(screen.getByText('NPWP: 1111111111111111')).toBeTruthy();
     });
   });
 });
