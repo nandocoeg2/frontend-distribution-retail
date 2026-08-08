@@ -2,7 +2,6 @@ import React from 'react';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import {
   PencilIcon,
-  EyeIcon,
   XCircleIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
@@ -16,7 +15,6 @@ const ScheduledPriceTable = ({
   onPageChange,
   onLimitChange,
   onEdit,
-  onView,
   onCancel,
   onDelete
 }) => {
@@ -144,14 +142,6 @@ const ScheduledPriceTable = ({
                   </td>
                   <td className="px-2 py-1 whitespace-nowrap text-xs">
                     <div className="flex space-x-1">
-                      <button
-                        onClick={() => onView(schedule)}
-                        className="p-0.5 text-blue-600 hover:text-blue-900"
-                        title="View Details"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
-
                       {schedule.status === 'PENDING' && (
                         <>
                           <button

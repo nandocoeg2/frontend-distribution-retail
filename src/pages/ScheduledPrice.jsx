@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import ScheduledPriceTableServerSide from '../components/scheduledPrice/ScheduledPriceTableServerSide';
 import AddScheduledPriceModal from '../components/scheduledPrice/AddScheduledPriceModal';
 import EditScheduledPriceModal from '../components/scheduledPrice/EditScheduledPriceModal';
-import ViewScheduledPriceModal from '../components/scheduledPrice/ViewScheduledPriceModal';
 import CancelScheduleModal from '../components/scheduledPrice/CancelScheduleModal';
 import useScheduledPriceOperations from '../hooks/useScheduledPriceOperations';
 import authService from '../services/authService';
@@ -13,7 +12,6 @@ const ScheduledPrice = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
 
@@ -34,20 +32,6 @@ const ScheduledPrice = () => {
       // Fallback to existing data if fetch fails
       setSelectedSchedule(schedule);
       setShowEditModal(true);
-    }
-  };
-
-  const handleView = async (schedule) => {
-    try {
-      // Fetch full details including customer, itemPrice, item relations
-      const fullSchedule = await getSchedule(schedule.id);
-      setSelectedSchedule(fullSchedule);
-      setShowViewModal(true);
-    } catch (err) {
-      console.error('Failed to fetch schedule details:', err);
-      // Fallback to existing data if fetch fails
-      setSelectedSchedule(schedule);
-      setShowViewModal(true);
     }
   };
 
@@ -94,7 +78,6 @@ const ScheduledPrice = () => {
             <ScheduledPriceTableServerSide
               ref={tableRef}
               onEdit={handleEdit}
-              onView={handleView}
               onCancel={handleCancel}
               onDelete={handleDelete}
               deleteLoading={operationLoading}
@@ -118,16 +101,6 @@ const ScheduledPrice = () => {
                 setSelectedSchedule(null);
               }}
               onSuccess={handleModalSuccess}
-            />
-          )}
-
-          {showViewModal && selectedSchedule && (
-            <ViewScheduledPriceModal
-              schedule={selectedSchedule}
-              onClose={() => {
-                setShowViewModal(false);
-                setSelectedSchedule(null);
-              }}
             />
           )}
 
