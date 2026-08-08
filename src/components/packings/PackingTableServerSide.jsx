@@ -12,7 +12,7 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable } from '../table';
-import { exportPackingStickerBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
+import { exportPackingStickerBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, previewExportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
 import customerService from '../../services/customerService';
@@ -117,6 +117,11 @@ const PackingTableServerSide = forwardRef(({
   const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewFileName, setPreviewFileName] = useState('document.pdf');
+
+  // Excel Preview states
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Status options for multi-select filter
   const statusOptions = useMemo(() => [
@@ -365,9 +370,45 @@ const PackingTableServerSide = forwardRef(({
     }
   };
 
+  const handleConfirmPreview = async () => {
+    try {
+      setPreviewLoading(true);
+      setShowPreviewModal(true);
+
+      const currentFilters = columnFilters.reduce((acc, filter) => {
+        acc[filter.id] = filter.value;
+        return acc;
+      }, {});
+
+      if (globalFilter) {
+        currentFilters.search = globalFilter;
+      }
+
+      // Reuse getQueryParams logic to format filters correctly
+      const { filters: mappedFilters } = getQueryParams({ filters: currentFilters });
+
+      if (companyId) {
+        mappedFilters.companyId = companyId;
+      }
+
+      const response = await previewExportExcel(mappedFilters);
+      const resData = response?.success ? response.data : response;
+      setPreviewData(resData);
+    } catch (err) {
+      console.error('Preview failed:', err);
+      toastService.error(err.message || 'Gagal memuat preview data');
+      setShowPreviewModal(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     openExportDialog: () => {
       setShowExportConfirmation(true);
+    },
+    openPreviewDialog: () => {
+      handleConfirmPreview();
     },
   }));
 
@@ -852,6 +893,104 @@ const PackingTableServerSide = forwardRef(({
         title={previewTitle}
         fileName={previewFileName}
       />
+
+      {/* Excel Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" onClick={() => setShowPreviewModal(false)}></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full border border-gray-100">
+              <div className="bg-white px-6 pt-6 pb-4 sm:pb-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                  <h3 className="text-lg leading-6 font-bold text-gray-900 flex items-center gap-2">
+                    <span className="p-1.5 bg-green-50 text-green-600 rounded-lg">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </span>
+                    Preview Hasil Export Excel
+                  </h3>
+                  <button
+                    onClick={() => setShowPreviewModal(false)}
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {previewLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                    <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm font-medium text-gray-500 animate-pulse">Menyiapkan preview data...</p>
+                  </div>
+                ) : !previewData || previewData.data?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p className="text-sm font-semibold text-gray-900">Tidak ada data untuk diexport</p>
+                    <p className="text-xs text-gray-500 mt-1">Silakan sesuaikan filter pencarian Anda.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[55vh] border border-gray-200 rounded-lg shadow-sm">
+                    <table className="min-w-full divide-y divide-gray-200 text-xs">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          {previewData.headers?.map((header, idx) => (
+                            <th
+                              key={idx}
+                              className="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200"
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {previewData.data?.map((row, rowIdx) => (
+                          <tr key={rowIdx} className="hover:bg-gray-50/70 transition-colors odd:bg-white even:bg-gray-50/30">
+                            <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{row.po}</td>
+                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{row.customer}</td>
+                            <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{row.tanggal_packing}</td>
+                            <td className="px-4 py-2.5 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
+                                row.status?.includes('COMPLETE') 
+                                  ? 'bg-green-50 text-green-700' 
+                                  : row.status?.includes('PROCESS') 
+                                  ? 'bg-blue-50 text-blue-700' 
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {row.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-mono">{row.plu}</td>
+                            <td className="px-4 py-2.5 text-gray-800 font-medium max-w-xs truncate" title={row.nama_barang}>{row.nama_barang}</td>
+                            <td className="px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap text-right pr-6">{row.quantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+              <div className="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setShowPreviewModal(false)}
+                  className="w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none transition-colors sm:w-auto"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
