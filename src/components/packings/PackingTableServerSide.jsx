@@ -122,6 +122,30 @@ const PackingTableServerSide = forwardRef(({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [localFilters, setLocalFilters] = useState({
+    po: '',
+    customer: '',
+    tanggal_packing: '',
+    status: '',
+    plu: '',
+    nama_barang: '',
+    quantity: ''
+  });
+
+  const filteredPreviewData = useMemo(() => {
+    if (!previewData?.data) return [];
+    return previewData.data.filter(row => {
+      return (
+        String(row.po || '').toLowerCase().includes(localFilters.po.toLowerCase()) &&
+        String(row.customer || '').toLowerCase().includes(localFilters.customer.toLowerCase()) &&
+        String(row.tanggal_packing || '').toLowerCase().includes(localFilters.tanggal_packing.toLowerCase()) &&
+        String(row.status || '').toLowerCase().includes(localFilters.status.toLowerCase()) &&
+        String(row.plu || '').toLowerCase().includes(localFilters.plu.toLowerCase()) &&
+        String(row.nama_barang || '').toLowerCase().includes(localFilters.nama_barang.toLowerCase()) &&
+        String(row.quantity ?? '').toLowerCase().includes(localFilters.quantity.toLowerCase())
+      );
+    });
+  }, [previewData, localFilters]);
 
   // Status options for multi-select filter
   const statusOptions = useMemo(() => [
@@ -374,6 +398,15 @@ const PackingTableServerSide = forwardRef(({
     try {
       setPreviewLoading(true);
       setShowPreviewModal(true);
+      setLocalFilters({
+        po: '',
+        customer: '',
+        tanggal_packing: '',
+        status: '',
+        plu: '',
+        nama_barang: '',
+        quantity: ''
+      });
 
       const currentFilters = columnFilters.reduce((acc, filter) => {
         acc[filter.id] = filter.value;
@@ -950,29 +983,102 @@ const PackingTableServerSide = forwardRef(({
                             </th>
                           ))}
                         </tr>
+                        <tr className="bg-gray-100/50">
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.po}
+                              onChange={(e) => setLocalFilters({ ...localFilters, po: e.target.value })}
+                              placeholder="Filter PO..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.customer}
+                              onChange={(e) => setLocalFilters({ ...localFilters, customer: e.target.value })}
+                              placeholder="Filter Customer..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.tanggal_packing}
+                              onChange={(e) => setLocalFilters({ ...localFilters, tanggal_packing: e.target.value })}
+                              placeholder="Filter Tanggal..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.status}
+                              onChange={(e) => setLocalFilters({ ...localFilters, status: e.target.value })}
+                              placeholder="Filter Status..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.plu}
+                              onChange={(e) => setLocalFilters({ ...localFilters, plu: e.target.value })}
+                              placeholder="Filter PLU..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.nama_barang}
+                              onChange={(e) => setLocalFilters({ ...localFilters, nama_barang: e.target.value })}
+                              placeholder="Filter Barang..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.quantity}
+                              onChange={(e) => setLocalFilters({ ...localFilters, quantity: e.target.value })}
+                              placeholder="Filter Qty..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                        </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
-                        {previewData.data?.map((row, rowIdx) => (
-                          <tr key={rowIdx} className="hover:bg-gray-50/70 transition-colors odd:bg-white even:bg-gray-50/30">
-                            <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{row.po}</td>
-                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{row.customer}</td>
-                            <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{row.tanggal_packing}</td>
-                            <td className="px-4 py-2.5 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                                row.status?.includes('COMPLETE') 
-                                  ? 'bg-green-50 text-green-700' 
-                                  : row.status?.includes('PROCESS') 
-                                  ? 'bg-blue-50 text-blue-700' 
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {row.status}
-                              </span>
+                        {filteredPreviewData.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-gray-500 font-medium bg-gray-50/50">
+                              Tidak ada data yang cocok dengan filter pencarian.
                             </td>
-                            <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-mono">{row.plu}</td>
-                            <td className="px-4 py-2.5 text-gray-800 font-medium max-w-xs truncate" title={row.nama_barang}>{row.nama_barang}</td>
-                            <td className="px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap text-right pr-6">{row.quantity}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          filteredPreviewData.map((row, rowIdx) => (
+                            <tr key={rowIdx} className="hover:bg-gray-50/70 transition-colors odd:bg-white even:bg-gray-50/30">
+                              <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{row.po}</td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{row.customer}</td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{row.tanggal_packing}</td>
+                              <td className="px-4 py-2.5 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
+                                  row.status?.includes('COMPLETE') 
+                                    ? 'bg-green-50 text-green-700' 
+                                    : row.status?.includes('PROCESS') 
+                                    ? 'bg-blue-50 text-blue-700' 
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {row.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-mono">{row.plu}</td>
+                              <td className="px-4 py-2.5 text-gray-800 font-medium max-w-xs truncate" title={row.nama_barang}>{row.nama_barang}</td>
+                              <td className="px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap text-right pr-6">{row.quantity}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
