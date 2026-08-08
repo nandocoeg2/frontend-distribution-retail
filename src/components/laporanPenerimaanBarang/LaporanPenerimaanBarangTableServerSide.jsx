@@ -164,6 +164,25 @@ const LaporanPenerimaanBarangTableServerSide = ({
     storageKey: 'laporan-penerimaan-barang', // Persist filter state to sessionStorage
   });
 
+  const totals = useMemo(() => {
+    if (!reports || !Array.isArray(reports)) {
+      return { lpb: 0, invoice: 0, selisih: 0 };
+    }
+    return reports.reduce(
+      (acc, row) => {
+        const lpbVal = parseFloat(row.detailInvoice?.grand_total) || 0;
+        const invVal = parseFloat(row.purchaseOrder?.invoice?.grand_total) || 0;
+        const selVal = lpbVal - invVal;
+        return {
+          lpb: acc.lpb + lpbVal,
+          invoice: acc.invoice + invVal,
+          selisih: acc.selisih + selVal,
+        };
+      },
+      { lpb: 0, invoice: 0, selisih: 0 }
+    );
+  }, [reports]);
+
   // Notify parent of filter changes for export
   useEffect(() => {
     if (typeof onFiltersChange === 'function') {
@@ -675,14 +694,25 @@ const LaporanPenerimaanBarangTableServerSide = ({
           footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
           footerContent={
             <tr>
-              {table.getVisibleLeafColumns().map((column) => (
-                <td
-                  key={column.id}
-                  className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
-                >
-                  {pagination?.totalItems || 0}
-                </td>
-              ))}
+              {table.getVisibleLeafColumns().map((column) => {
+                let footerValue = pagination?.totalItems || 0;
+                if (column.id === 'grandtotal_lpb') {
+                  footerValue = formatCurrency(totals.lpb);
+                } else if (column.id === 'grandtotal_invoice') {
+                  footerValue = formatCurrency(totals.invoice);
+                } else if (column.id === 'selisih') {
+                  footerValue = formatCurrency(totals.selisih);
+                }
+
+                return (
+                  <td
+                    key={column.id}
+                    className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
+                  >
+                    {footerValue}
+                  </td>
+                );
+              })}
             </tr>
           }
           wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
