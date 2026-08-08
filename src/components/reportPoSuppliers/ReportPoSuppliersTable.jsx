@@ -108,28 +108,29 @@ const ReportPoSuppliersTable = ({ data = [], loading = false }) => {
   const processedData = useMemo(() => processReportData(data), [data]);
 
   return (
-    <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
-      <table className='min-w-full divide-y divide-gray-200 text-xs'>
-        <thead className='bg-white sticky top-0 z-10 shadow-sm'>
-          <tr>
-            {columnGroups.map((g) => (
-              <th key={g.id} colSpan={g.columns.length}
-                className={`border border-gray-400 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
-                {g.label}
-              </th>
-            ))}
-          </tr>
-          <tr>
-            {columnGroups.flatMap((g) =>
-              g.columns.map((c) => (
-                <th key={`${g.id}-${c.id}`}
-                  className={`border border-gray-400 px-2 py-1 text-[9px] font-semibold uppercase ${g.shc} ${al(c.align)}`}>
-                  {c.label}
+    <div className='flex-1 flex flex-col min-h-0'>
+      <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px] rounded-md border border-gray-200'>
+        <table className='min-w-full divide-y divide-gray-200 text-xs'>
+          <thead className='bg-white'>
+            <tr>
+              {columnGroups.map((g) => (
+                <th key={g.id} colSpan={g.columns.length}
+                  className={`sticky top-0 z-20 border border-gray-400 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.hc} ${al(g.align)}`}>
+                  {g.label}
                 </th>
-              ))
-            )}
-          </tr>
-        </thead>
+              ))}
+            </tr>
+            <tr>
+              {columnGroups.flatMap((g) =>
+                g.columns.map((c) => (
+                  <th key={`${g.id}-${c.id}`}
+                    className={`sticky top-[27px] z-20 border border-gray-400 px-2 py-1 text-[9px] font-semibold uppercase ${g.shc} ${al(c.align)}`}>
+                    {c.label}
+                  </th>
+                ))
+              )}
+            </tr>
+          </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
           {loading ? (
             <tr>
