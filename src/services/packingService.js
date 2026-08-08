@@ -132,6 +132,11 @@ export const exportExcel = async (filters = {}) => {
   }
 };
 
+// Preview packings export to Excel
+export const previewExportExcel = async (filters = {}) => {
+  return get(`${API_URL}/export/preview`, filters);
+};
+
 // Export packing sticker to HTML for printing
 export const exportPackingSticker = async (packingId, companyId) => {
   try {
@@ -331,4 +336,5 @@ export default {
   exportPackingTandaTerimaGrouped,
   exportPackingTandaTerimaGroupedBulk,
   exportExcel,
+  previewExportExcel,
 };

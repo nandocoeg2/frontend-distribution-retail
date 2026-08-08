@@ -11,7 +11,7 @@ import {
   useConfirmationDialog,
   ConfirmationDialog as BaseConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 const PackingsPage = () => {
   const queryClient = useQueryClient();
@@ -170,19 +170,34 @@ const PackingsPage = () => {
     }
   }, []);
 
+  const handlePreviewExcel = useCallback(() => {
+    if (tableRef.current) {
+      tableRef.current.openPreviewDialog();
+    }
+  }, []);
+
   return (
     <div>
       <div className='overflow-hidden bg-white rounded-lg shadow'>
         <div className='px-3 py-3 space-y-2'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Packing</h3>
-            <button
-              onClick={handleExportExcel}
-              className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
-              Export Excel
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePreviewExcel}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <EyeIcon className="h-4 w-4 mr-1.5" />
+                Preview Excel
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                Export Excel
+              </button>
+            </div>
           </div>
           {error ? (
             <div className='p-2 border border-red-200 rounded bg-red-50'>
