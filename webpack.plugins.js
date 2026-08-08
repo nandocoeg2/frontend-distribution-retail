@@ -1,8 +1,11 @@
 const webpack = require('webpack');
 const path = require('path');
 
-// Load environment variables from .env file
-require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+// Load environment variables from local .env or parent .env
+const localEnv = require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+if (localEnv.error) {
+  require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+}
 
 module.exports = [
   new webpack.DefinePlugin({

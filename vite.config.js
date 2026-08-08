@@ -20,7 +20,9 @@ const injectScriptPlugin = () => ({
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     // Load env file based on mode (development, production, etc.)
-    const env = loadEnv(mode, __dirname, '');
+    const localEnv = loadEnv(mode, __dirname, '');
+    const parentEnv = loadEnv(mode, resolve(__dirname, '..'), '');
+    const env = { ...parentEnv, ...localEnv };
 
     // Determine the backend URL based on APP_ENV
     const appEnv = env.APP_ENV || 'local';
