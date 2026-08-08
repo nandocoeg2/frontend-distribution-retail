@@ -212,6 +212,7 @@ const MutasiBankTableServerSide = ({
 }) => {
 
   const {
+    data: mutations,
     pagination,
     setPage,
     setLimit,
@@ -518,6 +519,11 @@ const MutasiBankTableServerSide = ({
     return summary;
   }, [queryResult?.data?.meta]);
 
+  const totalAmount = useMemo(() => {
+    if (!mutations || !Array.isArray(mutations)) return 0;
+    return mutations.reduce((acc, row) => acc + (Number(row.jumlah) || 0), 0);
+  }, [mutations]);
+
   return (
     <div className='space-y-2'>
       <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
@@ -536,6 +542,18 @@ const MutasiBankTableServerSide = ({
           rowClassName='hover:bg-gray-50 transition-colors'
           cellClassName='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900'
           emptyCellClassName='px-3 py-6 text-center text-xs text-gray-500'
+          footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+          footerContent={
+            <tr>
+              {table.getVisibleLeafColumns().map((column) => (
+                <td key={column.id} className="px-2.5 py-1 text-xs border-t border-gray-300 text-center">
+                  {column.id === 'amount'
+                    ? formatCurrency(totalAmount)
+                    : pagination?.totalItems || 0}
+                </td>
+              ))}
+            </tr>
+          }
         />
 
         {!error && (

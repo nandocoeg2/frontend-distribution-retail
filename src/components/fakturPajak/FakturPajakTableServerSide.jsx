@@ -207,6 +207,17 @@ const FakturPajakTableServerSide = ({
     getQueryParams,
   });
 
+  const totals = useMemo(() => {
+    if (!fakturPajaks || !Array.isArray(fakturPajaks)) return { dpp: 0, ppn: 0 };
+    return fakturPajaks.reduce(
+      (acc, row) => ({
+        dpp: acc.dpp + (parseFloat(row.dasar_pengenaan_pajak) || 0),
+        ppn: acc.ppn + (parseFloat(row.ppnRupiah) || 0),
+      }),
+      { dpp: 0, ppn: 0 }
+    );
+  }, [fakturPajaks]);
+
   // Reset selection when data changes (page change, filter change)
   const prevFakturPajaksRef = useRef(fakturPajaks);
   useEffect(() => {
@@ -724,14 +735,16 @@ const FakturPajakTableServerSide = ({
         footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? "z-10" : "z-0"}`}
         footerContent={
           <tr>
-            {table.getVisibleLeafColumns().map((column) => (
-              <td
-                key={column.id}
-                className="px-2 py-1 text-xs border-t border-gray-300 text-center"
-              >
-                {pagination?.totalItems || 0}
-              </td>
-            ))}
+            {table.getVisibleLeafColumns().map((column) => {
+              let footerValue = pagination?.totalItems || 0;
+              if (column.id === 'dasar_pengenaan_pajak') footerValue = formatCurrency(totals.dpp);
+              else if (column.id === 'ppnRupiah') footerValue = formatCurrency(totals.ppn);
+              return (
+                <td key={column.id} className="px-2 py-1 text-xs border-t border-gray-300 text-center">
+                  {footerValue}
+                </td>
+              );
+            })}
           </tr>
         }
       />
