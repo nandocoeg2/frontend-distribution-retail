@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { XMarkIcon, LinkIcon } from '@heroicons/react/24/outline';
-import Autocomplete from '../common/Autocomplete';
+import { XMarkIcon, LinkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import purchaseOrderService from '../../services/purchaseOrderService';
+import { formatCurrency, formatDate } from '../../utils/formatUtils';
 
 const AssignPurchaseOrderModal = ({
   show,
@@ -13,14 +13,16 @@ const AssignPurchaseOrderModal = ({
   const [selectedPurchaseOrderId, setSelectedPurchaseOrderId] = useState('');
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [isLoadingPurchaseOrders, setIsLoadingPurchaseOrders] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load purchase orders when modal opens
   useEffect(() => {
     if (show) {
-      loadPurchaseOrders();
+      setSearchQuery('');
+      loadPurchaseOrders('');
     } else {
-      // Reset state when modal closes
       setSelectedPurchaseOrderId('');
+      setPurchaseOrders([]);
     }
   }, [show]);
 
@@ -30,15 +32,13 @@ const AssignPurchaseOrderModal = ({
       const params = {
         page: 1,
         limit: 50,
-        hasNoLpb: true, // Only show POs that haven't been assigned to any LPB
+        hasNoLpb: true,
       };
 
-      // Filter by company if lpbData has companyId
       if (lpbData?.companyId) {
         params.companyId = lpbData.companyId;
       }
 
-      // Filter by customer if lpbData has customerId
       if (lpbData?.customerId) {
         params.customerId = lpbData.customerId;
       }
@@ -48,7 +48,6 @@ const AssignPurchaseOrderModal = ({
       }
 
       const response = await purchaseOrderService.getPurchaseOrders(params);
-      // Handle nested response structure: response.data.data or response.data.purchaseOrders
       const orders =
         response?.data?.data ||
         response?.data?.purchaseOrders ||
@@ -63,12 +62,13 @@ const AssignPurchaseOrderModal = ({
     }
   }, [lpbData?.companyId, lpbData?.customerId]);
 
-  const handleSearch = useCallback(
-    async (query) => {
-      await loadPurchaseOrders(query);
-    },
-    [loadPurchaseOrders]
-  );
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadPurchaseOrders(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery, loadPurchaseOrders]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -77,143 +77,203 @@ const AssignPurchaseOrderModal = ({
     }
   };
 
-  const handleChange = (e) => {
-    setSelectedPurchaseOrderId(e.target.value);
-  };
+  if (!show) return null;
 
-  if (!show) {
-    return null;
-  }
+  const selectedPO = purchaseOrders.find((po) => po.id === selectedPurchaseOrderId);
 
-  const autocompleteOptions = purchaseOrders.map((po) => ({
-    id: po.id,
-    name: `${po.po_number || 'N/A'} - ${po.customer?.namaCustomer || '-'}`,
-    po_number: po.po_number,
-    po_date: po.po_date,
-    customer: po.customer?.namaCustomer || 'N/A',
-  }));
+  // LPB grand total from detailInvoice
+  const lpbGrandTotal = lpbData?.detailInvoice?.grand_total ?? null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full flex flex-col">
-        {/* Header - Compact */}
-        <div className="flex justify-between items-center px-4 py-2 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center space-x-2">
-            <div className="p-1.5 bg-blue-100 rounded">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-xl">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-100 rounded-lg">
               <LinkIcon className="w-4 h-4 text-blue-600" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-gray-900">Assign Purchase Order</h2>
+              <p className="text-xs text-gray-500">Pilih PO untuk di-assign ke LPB ini</p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1 hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
             <XMarkIcon className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
-        {/* Content - Compact */}
-        <div className="flex-1 overflow-visible p-3">
-          <div className="flex gap-3">
-            {/* Left: LPB Info */}
-            {lpbData && (
-              <div className="w-1/3 p-2 bg-gray-50 rounded border border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-700 mb-1.5">Info LPB</h3>
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">No. LPB:</span>
-                    <span className="font-medium text-gray-900 truncate ml-1">{lpbData.no_lpb || '-'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Tanggal:</span>
-                    <span className="font-medium text-gray-900">
-                      {lpbData.tanggal_po ? new Date(lpbData.tanggal_po).toLocaleDateString('id-ID') : '-'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Customer:</span>
-                    <span className="font-medium text-gray-900 truncate ml-1">{lpbData.customer?.namaCustomer || '-'}</span>
-                  </div>
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex flex-col p-4 gap-3">
+
+          {/* LPB Info */}
+          {lpbData && (
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Info LPB</h3>
+              <div className="grid grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                <div>
+                  <span className="text-gray-500 block">No. LPB</span>
+                  <span className="font-semibold text-gray-900">{lpbData.no_lpb || '-'}</span>
                 </div>
+                <div>
+                  <span className="text-gray-500 block">Tanggal</span>
+                  <span className="font-medium text-gray-900">
+                    {lpbData.tanggal_po ? formatDate(lpbData.tanggal_po) : '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Customer</span>
+                  <span className="font-medium text-gray-900 truncate block">{lpbData.customer?.namaCustomer || '-'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Grand Total LPB</span>
+                  <span className="font-bold text-blue-700">
+                    {lpbGrandTotal != null ? formatCurrency(lpbGrandTotal) : '-'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PO Table */}
+          <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col gap-2">
+            {/* Search */}
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari No. PO..."
+                className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Table */}
+            <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200 text-xs">
+                <thead className="bg-gray-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="w-8 px-3 py-2 text-center"></th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Nomor PO</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Nama DC</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Tanggal Expired</th>
+                    <th className="px-3 py-2 text-right font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Grand Total PO</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {isLoadingPurchaseOrders ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          Memuat data PO...
+                        </div>
+                      </td>
+                    </tr>
+                  ) : purchaseOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                        {searchQuery ? 'Tidak ada PO yang cocok dengan pencarian.' : 'Tidak ada Purchase Order tersedia.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    purchaseOrders.map((po) => {
+                      const isSelected = selectedPurchaseOrderId === po.id;
+                      const grandTotal = po.invoice?.grand_total ?? null;
+                      return (
+                        <tr
+                          key={po.id}
+                          onClick={() => setSelectedPurchaseOrderId(po.id)}
+                          className={`cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'bg-blue-50 border-l-2 border-l-blue-500'
+                              : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <td className="px-3 py-2 text-center">
+                            <input
+                              type="radio"
+                              checked={isSelected}
+                              onChange={() => setSelectedPurchaseOrderId(po.id)}
+                              className="h-3.5 w-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                          <td className="px-3 py-2 font-semibold text-gray-900 whitespace-nowrap">
+                            {po.po_number || '-'}
+                          </td>
+                          <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                            {po.customer?.namaCustomer || '-'}
+                          </td>
+                          <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                            {po.tanggal_batas_kirim
+                              ? formatDate(po.tanggal_batas_kirim)
+                              : po.delivery_date
+                              ? formatDate(po.delivery_date)
+                              : '-'}
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium text-gray-900 whitespace-nowrap">
+                            {grandTotal != null ? formatCurrency(grandTotal) : '-'}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Selected PO summary */}
+            {selectedPO && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-blue-600 font-semibold text-xs">PO Terpilih:</span>
+                <span className="text-blue-900 font-bold text-xs">{selectedPO.po_number}</span>
+                <span className="text-blue-600 text-xs">—</span>
+                <span className="text-blue-800 text-xs">{selectedPO.customer?.namaCustomer || '-'}</span>
+                {selectedPO.invoice?.grand_total != null && (
+                  <>
+                    <span className="text-blue-600 text-xs">—</span>
+                    <span className="text-blue-900 font-semibold text-xs">{formatCurrency(selectedPO.invoice.grand_total)}</span>
+                  </>
+                )}
               </div>
             )}
 
-            {/* Right: PO Selection */}
-            <div className={lpbData ? 'w-2/3' : 'w-full'}>
-              <form onSubmit={handleSubmit} className="space-y-2">
-                <Autocomplete
-                  label="Pilih Purchase Order"
-                  placeholder="Cari No. PO..."
-                  options={autocompleteOptions}
-                  value={selectedPurchaseOrderId}
-                  onChange={handleChange}
-                  displayKey="name"
-                  valueKey="id"
-                  required
-                  disabled={isSubmitting}
-                  onSearch={handleSearch}
-                  loading={isLoadingPurchaseOrders}
-                  showId={false}
-                  className="w-full"
-                  optionsClassName="bg-white border-gray-300 z-[60]"
-                />
-
-                {selectedPurchaseOrderId && (
-                  <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                    <h4 className="text-xs font-semibold text-blue-800 mb-1">PO Terpilih</h4>
-                    {(() => {
-                      const selectedPO = purchaseOrders.find((po) => po.id === selectedPurchaseOrderId);
-                      if (!selectedPO) return null;
-                      return (
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-blue-600">No. PO:</span>
-                            <span className="font-medium text-blue-900">{selectedPO.po_number || '-'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-600">Customer:</span>
-                            <span className="font-medium text-blue-900 truncate">{selectedPO.customer?.namaCustomer || '-'}</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+            {/* Footer */}
+            <div className="flex justify-end gap-2 pt-1 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-4 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={!selectedPurchaseOrderId || isSubmitting}
+                className="px-4 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <LinkIcon className="w-3 h-3" />
+                    Assign
+                  </>
                 )}
-
-                {/* Footer - Inline */}
-                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    disabled={isSubmitting}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={!selectedPurchaseOrderId || isSubmitting}
-                    className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Saving...
-                      </span>
-                    ) : (
-                      'Assign'
-                    )}
-                  </button>
-                </div>
-              </form>
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
