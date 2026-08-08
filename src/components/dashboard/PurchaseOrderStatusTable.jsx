@@ -85,14 +85,14 @@ const PurchaseOrderStatusTable = ({ title, subtitle, orders = [], columnGroups, 
     <tr>
       {cols.map((g) => (
         <th key={g.id} colSpan={g.showSubHeader === false ? 1 : g.columns.length} rowSpan={g.showSubHeader === false ? 2 : 1}
-          className={`border border-gray-200 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.headerClassName} ${align(g.align)}`}>{g.label}</th>
+          className={`sticky top-0 z-20 border border-gray-200 px-2 py-1.5 text-[10px] font-semibold uppercase ${g.headerClassName} ${align(g.align)}`}>{g.label}</th>
       ))}
     </tr>
   );
 
   const SubHeaderRow = () => {
     const cells = cols.filter((g) => g.showSubHeader !== false).flatMap((g) => g.columns.map((c) => (
-      <th key={`${g.id}-${c.id}`} className={`border border-gray-200 bg-gray-50 px-2 py-1 text-[9px] font-semibold uppercase text-gray-600 ${align(c.align)}`}>{c.label}</th>
+      <th key={`${g.id}-${c.id}`} className={`sticky top-[27px] z-20 border border-gray-200 bg-gray-50 px-2 py-1 text-[9px] font-semibold uppercase text-gray-600 ${align(c.align)}`}>{c.label}</th>
     )));
     return cells.length ? <tr>{cells}</tr> : null;
   };
@@ -107,16 +107,16 @@ const PurchaseOrderStatusTable = ({ title, subtitle, orders = [], columnGroups, 
   );
 
   return (
-    <div>
+    <div className='flex-1 flex flex-col min-h-0'>
       {(title || subtitle) && (
-        <div className='pb-2'>
+        <div className='pb-2 flex-shrink-0'>
           {title && <h2 className='text-sm font-semibold text-gray-900'>{title}</h2>}
           {subtitle && <p className='text-xs text-gray-500'>{subtitle}</p>}
         </div>
       )}
-      <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)] rounded-md border border-gray-200'>
+      <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px] rounded-md border border-gray-200'>
         <table className='min-w-full divide-y divide-gray-200 text-xs'>
-          <thead className='bg-white sticky top-0 z-10 shadow-sm'><HeaderRow /><SubHeaderRow /></thead>
+          <thead className='bg-white'><HeaderRow /><SubHeaderRow /></thead>
           <tbody className='bg-white divide-y divide-gray-200'>
             {loading ? <LoadingRow /> : orders.length === 0 ? <EmptyRow /> : orders.map((o, i) => {
               const rk = o.__rowKey || o.po_id || `${o.po_number || 'po'}-${i}`;

@@ -110,32 +110,34 @@ const Dashboard = () => {
   const tableEmptyMessage = hasActiveFilters ? 'Tidak ada PO yang cocok dengan filter.' : 'Belum ada data PO.';
 
   return (
-    <Card padding='md' className='shadow-sm'>
-      <header className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-lg font-semibold text-gray-900'>Dashboard PO Tracking</h1>
+    <div className='h-full flex flex-col'>
+      <Card padding='md' className='shadow-sm flex-1 flex flex-col min-h-0'>
+        <header className='flex items-center justify-between flex-shrink-0'>
+          <div>
+            <h1 className='text-lg font-semibold text-gray-900'>Dashboard PO Tracking</h1>
+          </div>
+          <span className='text-xs text-gray-500'>
+            <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} PO
+            {hasActiveFilters && <span className='ml-2 text-indigo-600'>• Filter aktif</span>}
+          </span>
+        </header>
+
+        <div className='my-2 h-px bg-gray-200 flex-shrink-0' />
+
+        <PurchaseOrderFilters filters={combinedFilters} onChange={handleFiltersChange} onReset={handleResetFilters} options={statusOptions} />
+
+        {error && (
+          <div className='mt-2 flex items-center justify-between rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 flex-shrink-0'>
+            <span>Error: {error}</span>
+            <button type='button' onClick={handleRetryFetch} className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'>Muat ulang</button>
+          </div>
+        )}
+
+        <div className='mt-3 flex-1 flex flex-col min-h-0'>
+          <PurchaseOrderStatusTable orders={visibleOrders} emptyMessage={tableEmptyMessage} loading={loading} />
         </div>
-        <span className='text-xs text-gray-500'>
-          <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} PO
-          {hasActiveFilters && <span className='ml-2 text-indigo-600'>• Filter aktif</span>}
-        </span>
-      </header>
-
-      <div className='my-2 h-px bg-gray-200' />
-
-      <PurchaseOrderFilters filters={combinedFilters} onChange={handleFiltersChange} onReset={handleResetFilters} options={statusOptions} />
-
-      {error && (
-        <div className='mt-2 flex items-center justify-between rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800'>
-          <span>Error: {error}</span>
-          <button type='button' onClick={handleRetryFetch} className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'>Muat ulang</button>
-        </div>
-      )}
-
-      <div className='mt-3'>
-        <PurchaseOrderStatusTable orders={visibleOrders} emptyMessage={tableEmptyMessage} loading={loading} />
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 };
 
