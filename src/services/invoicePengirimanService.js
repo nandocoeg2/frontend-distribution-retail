@@ -242,6 +242,18 @@ class InvoicePengirimanService {
       throw error;
     }
   }
+
+  async previewExportExcel(filters = {}) {
+    try {
+      const response = await this.api.get('/export-excel/preview', {
+        params: filters
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error previewing export invoice pengiriman:', error);
+      throw error;
+    }
+  }
 }
 
 export default new InvoicePengirimanService();
