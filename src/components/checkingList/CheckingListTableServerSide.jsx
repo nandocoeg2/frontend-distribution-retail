@@ -7,7 +7,7 @@ import checkingListService from '../../services/checkingListService';
 import toastService from '../../services/toastService';
 import authService from '../../services/authService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
@@ -466,7 +466,7 @@ const CheckingListTableServerSide = ({
                 key={column.id}
                 className="px-2 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {pagination?.totalItems || 0}
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>

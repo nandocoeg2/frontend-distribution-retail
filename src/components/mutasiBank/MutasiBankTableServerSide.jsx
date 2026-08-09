@@ -9,7 +9,7 @@ import {
 import { StatusBadge } from '../ui/Badge';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { useMutasiBankQuery } from '../../hooks/useMutasiBankQuery';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import DateFilter from '../common/DateFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
@@ -546,9 +546,7 @@ const MutasiBankTableServerSide = ({
             <tr>
               {table.getVisibleLeafColumns().map((column) => (
                 <td key={column.id} className="px-2.5 py-1 text-xs border-t border-gray-300 text-center">
-                  {column.id === 'amount'
-                    ? formatCurrency(totalAmount)
-                    : pagination?.totalItems || 0}
+                  <TableFooterCell column={column} table={table} />
                 </td>
               ))}
             </tr>

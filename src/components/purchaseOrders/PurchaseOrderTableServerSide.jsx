@@ -9,7 +9,7 @@ import customerService from '../../services/customerService';
 import authService from '../../services/authService';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import DateFilter from '../common/DateFilter';
 
 const columnHelper = createColumnHelper();
@@ -569,8 +569,8 @@ const PurchaseOrderTableServerSide = forwardRef(({
         footerContent={
           <tr>
             {table.getVisibleLeafColumns().map((column) => (
-              <td key={column.id} className="px-1.5 py-1 text-xs border-t border-gray-300">
-                {pagination?.totalItems || 0}
+              <td key={column.id} className="px-1.5 py-1 text-xs border-t border-gray-300 text-center">
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>

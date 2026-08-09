@@ -11,7 +11,7 @@ import { StatusBadge } from "../ui/Badge";
 import { useFakturPajakQuery } from "../../hooks/useFakturPajakQuery";
 import { formatCurrency, formatDate } from "../../utils/formatUtils";
 import { useServerSideTable } from "../../hooks/useServerSideTable";
-import { DataTable, DataTablePagination } from "../table";
+import { DataTable, DataTablePagination, TableFooterCell } from "../table";
 import AutocompleteCheckboxLimitTag from "../common/AutocompleteCheckboxLimitTag";
 import customerService from "../../services/customerService";
 import { termOfPaymentService } from "../../services/termOfPaymentService";
@@ -735,16 +735,11 @@ const FakturPajakTableServerSide = ({
         footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? "z-10" : "z-0"}`}
         footerContent={
           <tr>
-            {table.getVisibleLeafColumns().map((column) => {
-              let footerValue = pagination?.totalItems || 0;
-              if (column.id === 'dasar_pengenaan_pajak') footerValue = formatCurrency(totals.dpp);
-              else if (column.id === 'ppnRupiah') footerValue = formatCurrency(totals.ppn);
-              return (
-                <td key={column.id} className="px-2 py-1 text-xs border-t border-gray-300 text-center">
-                  {footerValue}
-                </td>
-              );
-            })}
+            {table.getVisibleLeafColumns().map((column) => (
+              <td key={column.id} className="px-2 py-1 text-xs border-t border-gray-300 text-center">
+                <TableFooterCell column={column} table={table} />
+              </td>
+            ))}
           </tr>
         }
       />
