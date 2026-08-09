@@ -104,43 +104,33 @@ const TandaTerimaFakturGroupedPage = () => {
                     <HeroIcon name='arrow-up-tray' className='w-4 h-4 mr-1.5' />
                     Upload TTF 2
                   </button>
-                  <button
-                    onClick={handleOpenPrintModal}
-                    className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'
-                  >
-                    <PrinterIcon className='w-4 h-4 mr-1.5' />
-                    Print TTF 1
-                  </button>
                 </div>
               </div>
               <div className='flex flex-wrap gap-2'>
                 <button
                   onClick={() => handleFilterModeChange('all')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${
-                    filterMode === 'all'
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${filterMode === 'all'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Semua Data
                 </button>
                 <button
                   onClick={() => handleFilterModeChange('single')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${
-                    filterMode === 'single'
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${filterMode === 'single'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Tanggal Spesifik
                 </button>
                 <button
                   onClick={() => handleFilterModeChange('range')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${
-                    filterMode === 'range'
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition ${filterMode === 'range'
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Range Tanggal
                 </button>
