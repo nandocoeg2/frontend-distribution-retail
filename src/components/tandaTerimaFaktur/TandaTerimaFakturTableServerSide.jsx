@@ -378,7 +378,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { min: '', max: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs text-right">Total TTF (Nominal)</div>
+              <div className="font-medium text-xs text-right">Total TTF</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="number"
@@ -415,7 +415,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">TTF 1 (Tanggal Print)</div>
+              <div className="font-medium text-xs">TTF 1</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
@@ -441,7 +441,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">TTF 2 (Tanggal Upload)</div>
+              <div className="font-medium text-xs">TTF 2</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
@@ -503,7 +503,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal Bayar (Mutasi Bank)</div>
+              <div className="font-medium text-xs">Tanggal Bayar</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
@@ -529,7 +529,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { min: '', max: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs text-right">Payment (Nominal Payment Mutasi Bank)</div>
+              <div className="font-medium text-xs text-right">Payment</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="number"
