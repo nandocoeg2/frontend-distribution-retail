@@ -11,7 +11,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
-  const [processingMethod, setProcessingMethod] = useState('ai');
+  const processingMethod = 'text-extraction';
 
   // Autocomplete options state
   const [groupCustomerOptions, setGroupCustomerOptions] = useState([]);
@@ -158,7 +158,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
     setUploadResults([]);
     setUploadProgress({});
     setIsUploading(false);
-    setProcessingMethod('ai');
     onClose();
   };
 
@@ -168,7 +167,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
     setUploadResults([]);
     setUploadProgress({});
     setIsUploading(false);
-    setProcessingMethod('ai');
   };
 
   if (!isOpen) {
@@ -216,42 +214,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
               showId={true}
               disabled={isUploading}
             />
-
-            {/* Processing Method Selection */}
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Metode Processing <span className='text-red-500'>*</span>
-              </label>
-              <div className='flex space-x-6'>
-                <label className='inline-flex items-center cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='processingMethod'
-                    value='ai'
-                    checked={processingMethod === 'ai'}
-                    onChange={(e) => setProcessingMethod(e.target.value)}
-                    disabled={isUploading}
-                    className='form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500'
-                  />
-                  <span className='ml-2 text-sm text-gray-700'>AI (Gemini)</span>
-                </label>
-                <label className='inline-flex items-center cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='processingMethod'
-                    value='text-extraction'
-                    checked={processingMethod === 'text-extraction'}
-                    onChange={(e) => setProcessingMethod(e.target.value)}
-                    disabled={isUploading}
-                    className='form-radio h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500'
-                  />
-                  <span className='ml-2 text-sm text-gray-700'>Text Extraction</span>
-                </label>
-              </div>
-              <p className='mt-1 text-xs text-gray-500'>
-                AI menggunakan Gemini untuk ekstraksi data. Text Extraction lebih cepat untuk format standar.
-              </p>
-            </div>
 
             {/* File Upload */}
             <div>

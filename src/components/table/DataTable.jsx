@@ -70,9 +70,17 @@ const DataTable = ({
     ? emptyFilteredMessage
     : emptyMessage;
 
+  const hasSizing = Object.keys(table.getState().columnSizing || {}).length > 0;
+
   return (
     <div className={wrapperClassName}>
-      <table className={tableClassName}>
+      <table
+        className={tableClassName}
+        style={{
+          width: hasSizing ? table.getTotalSize() : undefined,
+          tableLayout: hasSizing ? 'fixed' : undefined,
+        }}
+      >
         <thead className="sticky top-0 z-10 bg-gray-50">
           {headerGroups.map((headerGroup) => (
             <tr key={headerGroup.id} className={headerRowClassName}>
@@ -85,14 +93,19 @@ const DataTable = ({
                     ? header.column.columnDef.header
                     : flexRender(header.column.columnDef.header, header.getContext());
 
+                const width = hasSizing || header.column.columnDef.size !== 150 ? header.getSize() : undefined;
+
                 return (
                   <th
                     key={header.id}
                     className={headerCellClassName}
-                    style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                    style={{
+                      width,
+                      position: 'relative',
+                    }}
                   >
                     {header.isPlaceholder ? null : (
-                      <div className="space-y-1">
+                      <div className="space-y-1 select-none">
                         {/* Header content - not wrapped in click handler to allow filter inputs */}
                         <div className="flex items-center justify-between">
                           <div className="flex-1">{content}</div>
@@ -114,6 +127,16 @@ const DataTable = ({
                           )}
                         </div>
                       </div>
+                    )}
+                    {header.column.getCanResize() && (
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-blue-400 z-20 transition-colors ${
+                          header.column.getIsResizing() ? 'bg-blue-500 w-1.5' : 'bg-gray-300 opacity-0 hover:opacity-100'
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      />
                     )}
                   </th>
                 );
@@ -156,11 +179,13 @@ const DataTable = ({
                       .filter(Boolean)
                       .join(' ');
 
+                    const cellWidth = hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined;
+
                     return (
                       <td
                         key={cell.id}
                         className={computedCellClass}
-                        style={{ width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined }}
+                        style={{ width: cellWidth }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>

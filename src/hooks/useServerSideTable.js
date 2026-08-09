@@ -407,6 +407,8 @@ export const useServerSideTable = ({
     manualSorting,
     manualFiltering,
     pageCount: pagination.totalPages,
+    columnResizeMode: 'onChange',
+    enableColumnResizing: true,
     state: {
       sorting,
       columnFilters: columnFiltersInput,
