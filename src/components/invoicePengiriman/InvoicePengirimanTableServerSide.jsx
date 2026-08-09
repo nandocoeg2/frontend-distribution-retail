@@ -14,7 +14,7 @@ import {
 } from "../../utils/formatUtils";
 import { useInvoicePengirimanQuery } from "../../hooks/useInvoicePengirimanQuery";
 import { useServerSideTable } from "../../hooks/useServerSideTable";
-import { DataTable } from "../table";
+import { DataTable, TableFooterCell } from "../table";
 import invoicePengirimanService from "../../services/invoicePengirimanService";
 import customerService from "../../services/customerService";
 import AutocompleteCheckboxLimitTag from "../common/AutocompleteCheckboxLimitTag";
@@ -603,9 +603,7 @@ const InvoicePengirimanTableServerSide = ({
                 key={column.id}
                 className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {column.id === "grand_total"
-                  ? formatCurrency(totalGrandTotal)
-                  : pagination?.totalItems || 0}
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>

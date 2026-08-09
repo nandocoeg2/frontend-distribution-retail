@@ -14,7 +14,7 @@ import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import AssignPurchaseOrderModal from './AssignPurchaseOrderModal';
 import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerimaanBarangOperations';
@@ -733,25 +733,14 @@ const LaporanPenerimaanBarangTableServerSide = ({
           footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
           footerContent={
             <tr>
-              {table.getVisibleLeafColumns().map((column) => {
-                let footerValue = pagination?.totalItems || 0;
-                if (column.id === 'grandtotal_lpb') {
-                  footerValue = formatCurrency(totals.lpb);
-                } else if (column.id === 'grandtotal_invoice') {
-                  footerValue = formatCurrency(totals.invoice);
-                } else if (column.id === 'selisih') {
-                  footerValue = formatCurrency(totals.selisih);
-                }
-
-                return (
-                  <td
-                    key={column.id}
-                    className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
-                  >
-                    {footerValue}
-                  </td>
-                );
-              })}
+              {table.getVisibleLeafColumns().map((column) => (
+                <td
+                  key={column.id}
+                  className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
+                >
+                  <TableFooterCell column={column} table={table} />
+                </td>
+              ))}
             </tr>
           }
           wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"

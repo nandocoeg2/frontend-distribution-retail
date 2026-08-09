@@ -5,7 +5,7 @@ import { StatusBadge } from '../ui/Badge';
 import { useTandaTerimaFakturQuery } from '../../hooks/useTandaTerimaFakturQuery';
 import { formatCurrency, formatDate } from '@/utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable, DataTablePagination, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import groupCustomerService from '../../services/groupCustomerService';
 import companyService from '../../services/companyService';
@@ -742,23 +742,11 @@ const TandaTerimaFakturTableServerSide = ({
         footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
         footerContent={
           <tr>
-            {table.getVisibleLeafColumns().map((column) => {
-              let footerValue = '';
-              if (column.id === 'tanggal') {
-                footerValue = `Total (${pagination?.totalItems || 0})`;
-              } else if (column.id === 'grand_total') {
-                footerValue = formatCurrency(totals.grandTotal);
-              } else if (column.id === 'total_payment') {
-                footerValue = formatCurrency(totals.totalPayment);
-              } else if (column.id === 'selisih') {
-                footerValue = formatCurrency(totals.totalSelisih);
-              }
-              return (
-                <td key={column.id} className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center font-bold">
-                  {footerValue}
-                </td>
-              );
-            })}
+            {table.getVisibleLeafColumns().map((column) => (
+              <td key={column.id} className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center font-bold">
+                <TableFooterCell column={column} table={table} />
+              </td>
+            ))}
           </tr>
         }
       />
