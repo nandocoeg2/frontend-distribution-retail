@@ -87,10 +87,10 @@ const Users = () => {
   }
 
   return (
-    <div className='p-3 space-y-3'>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className='h-full flex flex-col p-3'>
+      <div className='bg-white shadow rounded-lg overflow-hidden flex-1 flex flex-col min-h-0'>
+        <div className='px-3 py-3 space-y-2 flex-1 flex flex-col min-h-0'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between flex-shrink-0'>
             <div>
               <h3 className='text-sm font-semibold text-gray-900'>User List</h3>
             </div>
@@ -110,16 +110,18 @@ const Users = () => {
             searchLoading={searchLoading}
           />
 
-          <UserTable
-            users={users}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onEdit={openEditModal}
-            onDelete={deleteUser}
-            onView={openViewModal}
-            searchQuery={activeSearchQuery}
-          />
+          <div className='flex-1 flex flex-col min-h-0'>
+            <UserTable
+              users={users}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              onEdit={openEditModal}
+              onDelete={deleteUser}
+              onView={openViewModal}
+              searchQuery={activeSearchQuery}
+            />
+          </div>
         </div>
       </div>
 
