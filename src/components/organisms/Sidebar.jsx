@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getActiveCompanyName } from '../../utils/companyUtils';
-import CompanySwitcher from './CompanySwitcher';
 import {
   ArchiveBoxIcon,
   BanknotesIcon,
@@ -36,20 +35,6 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState(new Set());
   const [companyName, setCompanyName] = useState(() => getActiveCompanyName());
-
-  const handleCompanyChange = (company) => {
-    // Save the selected company to localStorage
-    if (company) {
-      localStorage.setItem('company', JSON.stringify(company));
-      setCompanyName(company.nama_perusahaan);
-      
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(new Event('company:updated'));
-      
-      // Reload the page to apply company changes
-      window.location.reload();
-    }
-  };
 
   const toggleSubmenu = (menuId) => {
     const newExpanded = new Set(expandedMenus);
@@ -373,11 +358,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       <div className='relative px-4 py-5 border-b border-white/10'>
         <div className='flex items-center gap-2'>
           {!isCollapsed && (
-            <div className='flex-1 min-w-0'>
-              <CompanySwitcher
-                companyName={companyName}
-                onCompanyChange={handleCompanyChange}
-              />
+            <div className='flex-1 min-w-0 flex items-center space-x-3'>
+              <div className="flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex-shrink-0">
+                <BuildingStorefrontIcon
+                  className="w-6 h-6 text-white"
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm font-bold text-transparent bg-gradient-to-r from-white to-slate-200 bg-clip-text truncate">
+                  {companyName}
+                </h1>
+                <p className="text-xs text-slate-400 truncate">Active Company</p>
+              </div>
             </div>
           )}
           {isCollapsed && (
