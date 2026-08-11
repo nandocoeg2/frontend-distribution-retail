@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getActiveCompanyName } from '../../utils/companyUtils';
+import CompanySwitcher from './CompanySwitcher.jsx';
 import {
   ArchiveBoxIcon,
   BanknotesIcon,
@@ -17,6 +18,7 @@ import {
   DocumentCurrencyDollarIcon,
   DocumentTextIcon,
   HomeIcon,
+  MagnifyingGlassIcon,
   MapPinIcon,
   ReceiptPercentIcon,
   ReceiptRefundIcon,
@@ -35,6 +37,16 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState(new Set());
   const [companyName, setCompanyName] = useState(() => getActiveCompanyName());
+  const [menuFilterQuery, setMenuFilterQuery] = useState('');
+
+  const handleCompanyChange = (company) => {
+    if (company) {
+      localStorage.setItem('company', JSON.stringify(company));
+      setCompanyName(company.nama_perusahaan);
+      window.dispatchEvent(new Event('company:updated'));
+      window.location.reload();
+    }
+  };
 
   const toggleSubmenu = (menuId) => {
     const newExpanded = new Set(expandedMenus);
@@ -156,6 +168,54 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
   ];
 
   const allMenus = menus.length > 0 ? menus : defaultMenuItems;
+
+  const filteredMenus = useMemo(() => {
+    if (!menuFilterQuery.trim()) {
+      return allMenus;
+    }
+    const q = menuFilterQuery.toLowerCase().trim();
+
+    const filterMenuTree = (items) => {
+      const result = [];
+      for (const item of items) {
+        const nameMatches = item.name && item.name.toLowerCase().includes(q);
+        const descriptionMatches =
+          item.description && item.description.toLowerCase().includes(q);
+
+        let matchingChildren = [];
+        if (Array.isArray(item.children) && item.children.length > 0) {
+          matchingChildren = filterMenuTree(item.children);
+        }
+
+        if (nameMatches || descriptionMatches || matchingChildren.length > 0) {
+          result.push({
+            ...item,
+            children:
+              matchingChildren.length > 0 ? matchingChildren : item.children,
+          });
+        }
+      }
+      return result;
+    };
+
+    return filterMenuTree(allMenus);
+  }, [allMenus, menuFilterQuery]);
+
+  useEffect(() => {
+    if (menuFilterQuery.trim()) {
+      const allParentIds = new Set();
+      const collectParents = (items) => {
+        for (const item of items) {
+          if (Array.isArray(item.children) && item.children.length > 0) {
+            allParentIds.add(item.id);
+            collectParents(item.children);
+          }
+        }
+      };
+      collectParents(filteredMenus);
+      setExpandedMenus((prev) => new Set([...prev, ...allParentIds]));
+    }
+  }, [menuFilterQuery, filteredMenus]);
 
   const isPathMatch = (targetUrl) => {
     if (!targetUrl || targetUrl === '#') {
@@ -358,19 +418,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       <div className='relative px-4 py-5 border-b border-white/10'>
         <div className='flex items-center gap-2'>
           {!isCollapsed && (
-            <div className='flex-1 min-w-0 flex items-center space-x-3'>
-              <div className="flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex-shrink-0">
-                <BuildingStorefrontIcon
-                  className="w-6 h-6 text-white"
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-bold text-transparent bg-gradient-to-r from-white to-slate-200 bg-clip-text truncate">
-                  {companyName}
-                </h1>
-                <p className="text-xs text-slate-400 truncate">Active Company</p>
-              </div>
+            <div className='flex-1 min-w-0'>
+              <CompanySwitcher
+                companyName={companyName}
+                onCompanyChange={handleCompanyChange}
+              />
             </div>
           )}
           {isCollapsed && (
@@ -399,7 +451,30 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       </div>
 
       {/* Menu Items */}
-      <div className='relative flex-1 py-6 overflow-y-auto custom-scrollbar'>
+      <div className='relative flex-1 py-4 overflow-y-auto custom-scrollbar'>
+        {!isCollapsed && (
+          <div className='px-4 mb-3'>
+            <div className='relative'>
+              <MagnifyingGlassIcon className='w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2' />
+              <input
+                type='text'
+                value={menuFilterQuery}
+                onChange={(e) => setMenuFilterQuery(e.target.value)}
+                placeholder='Cari menu...'
+                className='w-full pl-9 pr-7 py-1.5 bg-slate-800/90 border border-white/10 rounded-lg text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all'
+              />
+              {menuFilterQuery && (
+                <button
+                  type='button'
+                  onClick={() => setMenuFilterQuery('')}
+                  className='absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs px-1'
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {!isCollapsed && (
           <div className='px-6 mb-4'>
             <p className='text-xs font-semibold tracking-wider uppercase text-slate-400'>
@@ -408,7 +483,13 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
           </div>
         )}
         <div className='space-y-1'>
-          {allMenus.map((menu) => renderMenuItem(menu))}
+          {filteredMenus.length === 0 ? (
+            <div className='px-6 py-4 text-xs text-slate-400 text-center'>
+              Menu "{menuFilterQuery}" tidak ditemukan
+            </div>
+          ) : (
+            filteredMenus.map((menu) => renderMenuItem(menu))
+          )}
         </div>
       </div>
 

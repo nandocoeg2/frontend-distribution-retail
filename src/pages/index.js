@@ -1,4 +1,4 @@
-﻿export { default as Login } from './Login';
+export { default as Login } from './Login';
 export { default as Register } from './Register';
 export { default as Dashboard } from './Dashboard';
 export { default as Reporting } from './Reporting';
@@ -22,6 +22,8 @@ export { default as TermOfPayments } from './TermOfPayments';
 export { default as PurchaseOrderHistory } from './PurchaseOrderHistory';
 export { default as Items } from './Items';
 export { default as StockMovements } from './StockMovements';
+export { default as StockIn } from './StockIn';
+export { default as StockOut } from './StockOut';
 export { default as GroupCustomers } from './GroupCustomers';
 export { default as Companies } from './Companies';
 export { default as LaporanPenerimaanBarang } from './LaporanPenerimaanBarang';

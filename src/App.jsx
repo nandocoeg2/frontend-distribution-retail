@@ -63,6 +63,8 @@ import NotFound from './pages/NotFound.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import CheckingList from './pages/CheckingList.jsx';
 import StockMovements from './pages/StockMovements.jsx';
+import StockIn from './pages/StockIn.jsx';
+import StockOut from './pages/StockOut.jsx';
 import StokGantung from './pages/StokGantung.jsx';
 import ScheduledPrice from './pages/ScheduledPrice.jsx';
 import ReportPoSuppliers from './pages/ReportPoSuppliers.jsx';
@@ -271,6 +273,22 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <StockMovements />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/stock-in'
+        element={
+          <ProtectedRoute>
+            <StockIn />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/master/stock-out'
+        element={
+          <ProtectedRoute>
+            <StockOut />
           </ProtectedRoute>
         }
       />

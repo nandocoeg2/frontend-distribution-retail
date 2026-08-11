@@ -18,19 +18,26 @@ const buildQuery = (params = {}) => {
 
 /**
  * Fetch monthly inventory control recap.
- * @param {number} fromYear
- * @param {number} fromMonth  1–12
- * @param {number} toYear
- * @param {number} toMonth    1–12
+ * @param {string|object} startDateOrParams - YYYY-MM-DD string or params object
+ * @param {string} endDate - YYYY-MM-DD string
  * @param {number} page
  * @param {number} limit
- * @param {string} q          search term (item name / PLU)
+ * @param {string} q - search term (item name / PLU)
  */
 export const getInventoryControl = async (
-  fromYear, fromMonth, toYear, toMonth,
-  page = 1, limit = 20, q = ''
+  startDateOrParams, endDate, page = 1, limit = 20, q = '', viewMode = 'weekly'
 ) => {
-  const query = buildQuery({ fromYear, fromMonth, toYear, toMonth, page, limit, q });
+  let params = {};
+  if (typeof startDateOrParams === 'object' && startDateOrParams !== null) {
+    params = startDateOrParams;
+  } else if (typeof startDateOrParams === 'number') {
+    const [fromYear, fromMonth, toYear, toMonth, p, l, search, mode] = arguments;
+    params = { fromYear, fromMonth, toYear, toMonth, page: p || 1, limit: l || 20, q: search || '', viewMode: mode || 'weekly' };
+  } else {
+    params = { startDate: startDateOrParams, endDate, page, limit, q, viewMode };
+  }
+
+  const query = buildQuery(params);
   const res = await fetch(`${API_BASE_URL}${query}`, { headers: buildHeaders() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -43,9 +50,19 @@ export const getInventoryControl = async (
  * Download inventory control recap as Excel.
  */
 export const exportInventoryControlExcel = async (
-  fromYear, fromMonth, toYear, toMonth, q = ''
+  startDateOrParams, endDate, q = '', viewMode = 'weekly'
 ) => {
-  const query = buildQuery({ fromYear, fromMonth, toYear, toMonth, q });
+  let params = {};
+  if (typeof startDateOrParams === 'object' && startDateOrParams !== null) {
+    params = startDateOrParams;
+  } else if (typeof startDateOrParams === 'number') {
+    const [fromYear, fromMonth, toYear, toMonth, search, mode] = arguments;
+    params = { fromYear, fromMonth, toYear, toMonth, q: search || '', viewMode: mode || 'weekly' };
+  } else {
+    params = { startDate: startDateOrParams, endDate, q, viewMode };
+  }
+
+  const query = buildQuery(params);
   const res = await fetch(`${API_BASE_URL}/export-excel${query}`, { headers: buildHeaders() });
   if (!res.ok) throw new Error('Gagal export Excel');
 
