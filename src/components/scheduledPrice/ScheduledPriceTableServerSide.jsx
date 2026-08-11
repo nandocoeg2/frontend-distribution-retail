@@ -369,7 +369,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                     const schedule = row.original;
                     const canEdit = schedule.status === 'PENDING';
                     const canCancel = schedule.status === 'PENDING' || schedule.status === 'ACTIVE';
-                    const canDelete = schedule.status === 'PENDING' || schedule.status === 'CANCELLED';
+                    const canDelete = true;
 
                     return (
                         <div className="flex items-center gap-0.5">

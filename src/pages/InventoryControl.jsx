@@ -115,10 +115,10 @@ const InventoryControl = () => {
         setPeriodRange(rows[0].months);
       } else if (viewMode === 'weekly') {
         setPeriodRange([
-          { periodKey: 'W1', label: 'W1' },
-          { periodKey: 'W2', label: 'W2' },
-          { periodKey: 'W3', label: 'W3' },
-          { periodKey: 'W4', label: 'W4' },
+          { periodKey: 'W1', label: 'W1', monthName: 'BULAN 1' },
+          { periodKey: 'W2', label: 'W2', monthName: 'BULAN 1' },
+          { periodKey: 'W3', label: 'W3', monthName: 'BULAN 1' },
+          { periodKey: 'W4', label: 'W4', monthName: 'BULAN 1' },
         ]);
       } else {
         setPeriodRange([]);
@@ -150,6 +150,22 @@ const InventoryControl = () => {
       setExporting(false);
     }
   };
+
+  // Group weeks by Month Name for multi-month weekly header row
+  const groupedMonths = useMemo(() => {
+    const map = new Map();
+    periodRange.forEach((p) => {
+      const monthTitle = p.monthName || (p.month && p.year ? `BULAN ${p.month}/${p.year}` : 'PERIODE');
+      if (!map.has(monthTitle)) {
+        map.set(monthTitle, []);
+      }
+      map.get(monthTitle).push(p);
+    });
+    return Array.from(map.entries()).map(([monthName, weeks]) => ({
+      monthName,
+      weeks,
+    }));
+  }, [periodRange]);
 
   // Filter rows according to header inputs ("DI BIKIN BISA FILTER")
   const filteredData = useMemo(() => {
@@ -339,15 +355,15 @@ const InventoryControl = () => {
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse border border-gray-300 text-xs">
             <thead>
-              {/* Row 1: Top Banner with Date Range (e.g. 01 - 15 JANUARI) */}
+              {/* Row 1: Top Banner with Date Range (e.g. 28 JULI - 12 AGUSTUS 2026) */}
               <tr className="bg-slate-800 text-white font-bold text-xs uppercase">
-                <th rowSpan={3} className="sticky left-0 z-20 min-w-[200px] bg-slate-800 border-r border-slate-700 px-3 py-2 text-left">
+                <th rowSpan={4} className="sticky left-0 z-20 min-w-[200px] bg-slate-800 border-r border-slate-700 px-3 py-2 text-left">
                   ITEM
                 </th>
-                <th rowSpan={3} className="min-w-[90px] border-r border-slate-700 px-3 py-2 text-left whitespace-nowrap">
+                <th rowSpan={4} className="min-w-[90px] border-r border-slate-700 px-3 py-2 text-left whitespace-nowrap">
                   PLU
                 </th>
-                <th rowSpan={3} className="min-w-[110px] border-r border-slate-700 px-3 py-2 text-right whitespace-nowrap bg-emerald-950/40">
+                <th rowSpan={4} className="min-w-[110px] border-r border-slate-700 px-3 py-2 text-right whitespace-nowrap bg-emerald-950/40">
                   STOCK AWAL
                 </th>
 
@@ -359,7 +375,7 @@ const InventoryControl = () => {
                   {formatDateRangeLabel(startDate, endDate)}
                 </th>
 
-                <th rowSpan={3} className="min-w-[110px] bg-emerald-700 px-3 py-2 text-right font-extrabold uppercase whitespace-nowrap text-white">
+                <th rowSpan={4} className="min-w-[110px] bg-emerald-700 px-3 py-2 text-right font-extrabold uppercase whitespace-nowrap text-white">
                   STOCK AKHIR
                 </th>
               </tr>
@@ -380,7 +396,38 @@ const InventoryControl = () => {
                 </th>
               </tr>
 
-              {/* Row 3: Sub-Period Headers (W1, W2, W3, W4... TOTAL STOCK IN / TOTAL STOCK OUT) */}
+              {/* Row 3: Baris Nama Bulan (JULI 2026, AGUSTUS 2026) */}
+              <tr className="text-slate-900 font-bold text-xs border-b border-slate-300">
+                {/* Under STOCK IN */}
+                {groupedMonths.map((g, idx) => (
+                  <th
+                    key={`in_m_${g.monthName || idx}`}
+                    colSpan={g.weeks.length}
+                    className="border-r border-slate-300 px-2 py-1 text-center bg-blue-100 text-blue-950 font-extrabold uppercase tracking-wide whitespace-nowrap"
+                  >
+                    {g.monthName}
+                  </th>
+                ))}
+                <th rowSpan={2} className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-blue-300 text-blue-950 whitespace-nowrap align-middle">
+                  TOTAL STOCK IN
+                </th>
+
+                {/* Under STOCK OUT */}
+                {groupedMonths.map((g, idx) => (
+                  <th
+                    key={`out_m_${g.monthName || idx}`}
+                    colSpan={g.weeks.length}
+                    className="border-r border-slate-300 px-2 py-1 text-center bg-amber-100 text-amber-950 font-extrabold uppercase tracking-wide whitespace-nowrap"
+                  >
+                    {g.monthName}
+                  </th>
+                ))}
+                <th rowSpan={2} className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-amber-300 text-amber-950 whitespace-nowrap align-middle">
+                  TOTAL STOCK OUT
+                </th>
+              </tr>
+
+              {/* Row 4: Sub-Period Headers (W1, W2, W3, W4...) */}
               <tr className="bg-slate-100 text-slate-800 font-bold text-xs border-b border-slate-300">
                 {/* Under STOCK IN */}
                 {periodRange.map((p, idx) => (
@@ -388,9 +435,6 @@ const InventoryControl = () => {
                     {p.label}
                   </th>
                 ))}
-                <th className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-blue-300 text-blue-950 whitespace-nowrap">
-                  TOTAL STOCK IN
-                </th>
 
                 {/* Under STOCK OUT */}
                 {periodRange.map((p, idx) => (
@@ -398,12 +442,9 @@ const InventoryControl = () => {
                     {p.label}
                   </th>
                 ))}
-                <th className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-amber-300 text-amber-950 whitespace-nowrap">
-                  TOTAL STOCK OUT
-                </th>
               </tr>
 
-              {/* Row 4: Column Filter Row ("DI BIKIN BISA FILTER") */}
+              {/* Row 5: Column Filter Row ("DI BIKIN BISA FILTER") */}
               <tr className="bg-slate-50 border-b border-slate-300">
                 <th className="sticky left-0 z-20 bg-slate-50 border-r border-slate-300 px-1 py-1">
                   <input
