@@ -25,17 +25,16 @@ const buildQuery = (params = {}) => {
  * @param {string} q - search term (item name / PLU)
  */
 export const getInventoryControl = async (
-  startDateOrParams, endDate, page = 1, limit = 20, q = ''
+  startDateOrParams, endDate, page = 1, limit = 20, q = '', viewMode = 'weekly'
 ) => {
   let params = {};
   if (typeof startDateOrParams === 'object' && startDateOrParams !== null) {
     params = startDateOrParams;
   } else if (typeof startDateOrParams === 'number') {
-    // Legacy support if fromYear was passed as first arg
-    const [fromYear, fromMonth, toYear, toMonth, p, l, search] = arguments;
-    params = { fromYear, fromMonth, toYear, toMonth, page: p || 1, limit: l || 20, q: search || '' };
+    const [fromYear, fromMonth, toYear, toMonth, p, l, search, mode] = arguments;
+    params = { fromYear, fromMonth, toYear, toMonth, page: p || 1, limit: l || 20, q: search || '', viewMode: mode || 'weekly' };
   } else {
-    params = { startDate: startDateOrParams, endDate, page, limit, q };
+    params = { startDate: startDateOrParams, endDate, page, limit, q, viewMode };
   }
 
   const query = buildQuery(params);
@@ -51,16 +50,16 @@ export const getInventoryControl = async (
  * Download inventory control recap as Excel.
  */
 export const exportInventoryControlExcel = async (
-  startDateOrParams, endDate, q = ''
+  startDateOrParams, endDate, q = '', viewMode = 'weekly'
 ) => {
   let params = {};
   if (typeof startDateOrParams === 'object' && startDateOrParams !== null) {
     params = startDateOrParams;
   } else if (typeof startDateOrParams === 'number') {
-    const [fromYear, fromMonth, toYear, toMonth, search] = arguments;
-    params = { fromYear, fromMonth, toYear, toMonth, q: search || '' };
+    const [fromYear, fromMonth, toYear, toMonth, search, mode] = arguments;
+    params = { fromYear, fromMonth, toYear, toMonth, q: search || '', viewMode: mode || 'weekly' };
   } else {
-    params = { startDate: startDateOrParams, endDate, q };
+    params = { startDate: startDateOrParams, endDate, q, viewMode };
   }
 
   const query = buildQuery(params);
