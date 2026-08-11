@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ChevronDownIcon,
-  ChevronRightIcon,
   ClipboardDocumentCheckIcon,
   ClockIcon,
   DocumentTextIcon,
@@ -12,6 +10,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { resolveStatusVariant } from '../../utils/modalUtils';
+import PackingGroupedItemsTable from '../packings/PackingGroupedItemsTable';
 import { AccordionItem, StatusBadge, InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 import { formatDateTime, formatDate } from '../../utils/formatUtils';
 import ActivityTimeline from '../common/ActivityTimeline';
@@ -31,7 +30,6 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
     metaInfo: false,
     historyInfo: false,
   });
-  const [expandedDetails, setExpandedDetails] = useState({});
 
   if (!suratJalan) return null;
 
@@ -39,13 +37,6 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
-    }));
-  };
-
-  const toggleDetail = (detailId) => {
-    setExpandedDetails((prev) => ({
-      ...prev,
-      [detailId]: !prev[detailId],
     }));
   };
 
@@ -291,48 +282,7 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
                 <span className='text-xs font-medium text-gray-700'>Box Details</span>
                 <span className='px-2 py-0.5 text-xs font-medium text-blue-800 bg-blue-100 rounded-full'>{packingBoxes.length} boxes • {totalQuantity || 0} qty</span>
               </div>
-              {packingBoxes && packingBoxes.length > 0 ? (
-                <div className='space-y-2 max-h-[400px] overflow-y-auto'>
-                  {packingBoxes.map((box, boxIndex) => (
-                    <div key={box.id || boxIndex} className='border border-gray-200 rounded overflow-hidden'>
-                      <div onClick={() => toggleDetail(box.id || boxIndex)} className='px-2 py-1.5 bg-gray-100 border-b border-gray-200 cursor-pointer hover:bg-gray-200'>
-                        <div className='flex justify-between items-center'>
-                          <div className='flex items-center gap-2'>
-                            {expandedDetails[box.id || boxIndex] ? <ChevronDownIcon className='w-3 h-3 text-gray-600' /> : <ChevronRightIcon className='w-3 h-3 text-gray-600' />}
-                            <span className='text-xs font-semibold text-gray-900'>Box #{box.no_box}</span>
-                            <span className='text-xs text-gray-500'>({box.packingBoxItems?.length || 0} items)</span>
-                          </div>
-                          <span className='text-xs text-gray-600'>Qty: <strong>{box.total_quantity_in_box || 0}</strong></span>
-                        </div>
-                      </div>
-                      {expandedDetails[box.id || boxIndex] && (
-                        <div className='overflow-x-auto'>
-                          {box.packingBoxItems && box.packingBoxItems.length > 0 ? (
-                            <table className='min-w-full divide-y divide-gray-200 text-xs'>
-                              <thead className='bg-gray-50'>
-                                <tr>
-                                  <th className='px-2 py-1 text-xs font-medium text-left text-gray-500 uppercase'>Nama</th>
-                                  <th className='px-2 py-1 text-xs font-medium text-left text-gray-500 uppercase'>Qty</th>
-                                  <th className='px-2 py-1 text-xs font-medium text-left text-gray-500 uppercase'>Ket</th>
-                                </tr>
-                              </thead>
-                              <tbody className='bg-white divide-y divide-gray-100'>
-                                {box.packingBoxItems.map((item, itemIndex) => (
-                                  <tr key={item.id || item.itemId || itemIndex} className='hover:bg-gray-50'>
-                                    <td className='px-2 py-1 text-xs text-gray-900'>{item.nama_barang}</td>
-                                    <td className='px-2 py-1'><span className='px-1.5 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800'>{item.quantity}</span></td>
-                                    <td className='px-2 py-1 text-xs text-gray-500'>{item.keterangan || '-'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : <div className='px-2 py-2 text-xs text-center text-gray-500'>Tidak ada items</div>}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : <div className='py-4 text-center text-xs text-gray-500'>No boxes available</div>}
+              <PackingGroupedItemsTable packingBoxes={packingBoxes} />
             </TabPanel>
 
             <TabPanel tabId='checklist'>
