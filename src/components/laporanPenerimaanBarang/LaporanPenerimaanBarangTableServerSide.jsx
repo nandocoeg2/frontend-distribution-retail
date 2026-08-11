@@ -8,12 +8,13 @@ import {
   LinkIcon,
   LinkSlashIcon,
   PrinterIcon,
+  DocumentPlusIcon,
 } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useLaporanPenerimaanBarangQuery } from '../../hooks/useLaporanPenerimaanBarangQuery';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import AssignPurchaseOrderModal from './AssignPurchaseOrderModal';
 import useLaporanPenerimaanBarangOperations from '../../hooks/useLaporanPenerimaanBarangOperations';
@@ -77,6 +78,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
   hasSelectedReports = false,
   selectedReportId = null,
   onFiltersChange,
+  onOpenGenerateDialog,
+  isGenerating = false,
 }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedLpbForAssign, setSelectedLpbForAssign] = useState(null);
@@ -331,6 +334,34 @@ const LaporanPenerimaanBarangTableServerSide = ({
       toastService.error(error.message || 'Gagal mendownload LPB');
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleBulkGenerateInvoicePenagihan = () => {
+    if (!selectedReports || selectedReports.length === 0) {
+      toastService.error('Tidak ada laporan yang dipilih');
+      return;
+    }
+
+    // Filter reports that have invoice pengiriman
+    const validReports = selectedReports.filter((id) => {
+      const report = reports.find((r) => resolveReportId(r) === id);
+      return !!report?.purchaseOrder?.invoice?.id;
+    });
+
+    if (validReports.length === 0) {
+      toastService.error('Laporan Penerimaan Barang yang dipilih tidak memiliki Invoice Pengiriman');
+      return;
+    }
+
+    if (validReports.length < selectedReports.length) {
+      toastService.warning(
+        `Hanya ${validReports.length} dari ${selectedReports.length} laporan penerimaan barang yang memiliki Invoice Pengiriman`
+      );
+    }
+
+    if (onOpenGenerateDialog) {
+      onOpenGenerateDialog(validReports);
     }
   };
 
@@ -654,6 +685,14 @@ const LaporanPenerimaanBarangTableServerSide = ({
               <button onClick={handlePrintSelected} disabled={isPrinting} className="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
                 <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Print'}
               </button>
+              <button
+                onClick={handleBulkGenerateInvoicePenagihan}
+                disabled={isGenerating || isPrinting}
+                className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                <DocumentPlusIcon className="h-3 w-3 mr-1" />
+                {isGenerating ? '...' : 'Generate'}
+              </button>
               <button onClick={onCompleteSelected} disabled={actionDisabled} className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
                 <CheckIcon className="h-3 w-3 mr-1" />{isCompleting ? '...' : 'Selesai'}
               </button>
@@ -694,25 +733,14 @@ const LaporanPenerimaanBarangTableServerSide = ({
           footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
           footerContent={
             <tr>
-              {table.getVisibleLeafColumns().map((column) => {
-                let footerValue = pagination?.totalItems || 0;
-                if (column.id === 'grandtotal_lpb') {
-                  footerValue = formatCurrency(totals.lpb);
-                } else if (column.id === 'grandtotal_invoice') {
-                  footerValue = formatCurrency(totals.invoice);
-                } else if (column.id === 'selisih') {
-                  footerValue = formatCurrency(totals.selisih);
-                }
-
-                return (
-                  <td
-                    key={column.id}
-                    className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
-                  >
-                    {footerValue}
-                  </td>
-                );
-              })}
+              {table.getVisibleLeafColumns().map((column) => (
+                <td
+                  key={column.id}
+                  className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
+                >
+                  <TableFooterCell column={column} table={table} />
+                </td>
+              ))}
             </tr>
           }
           wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"

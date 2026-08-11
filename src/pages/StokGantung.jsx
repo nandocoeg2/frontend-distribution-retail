@@ -162,11 +162,11 @@ const StokGantung = () => {
     }, [editingMovement, editNotesValue, updateMovementNotes, handleCloseEditNotes]);
 
     return (
-        <div className='p-3 space-y-3'>
-            <div className='rounded-lg bg-white p-3 shadow'>
-                <div className='space-y-3'>
+        <div className='h-full flex flex-col p-3'>
+            <div className='rounded-lg bg-white p-3 shadow flex-1 flex flex-col min-h-0'>
+                <div className='space-y-3 flex-1 flex flex-col min-h-0'>
                     {/* Header */}
-                    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between flex-shrink-0'>
                         <div>
                             <h1 className='text-sm font-semibold text-gray-900'>Stok Gantung</h1>
                             <p className='text-xs text-gray-500'>Daftar barang return yang menunggu klasifikasi</p>
@@ -194,7 +194,7 @@ const StokGantung = () => {
 
                     {/* Error */}
                     {error && (
-                        <div className='flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800'>
+                        <div className='flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 flex-shrink-0'>
                             <span>Gagal memuat data: {error}</span>
                             <button
                                 type='button'
@@ -207,17 +207,19 @@ const StokGantung = () => {
                     )}
 
                     {/* Table */}
-                    <StokGantungTable
-                        movements={movements}
-                        pagination={pagination}
-                        onPageChange={handlePageChange}
-                        onLimitChange={handleLimitChange}
-                        loading={loading}
-                        searchLoading={searchLoading}
-                        onClassify={handleClassifyRequest}
-                        classifyLoadingId={classifyLoadingId}
-                        onEditNotes={handleEditNotes}
-                    />
+                    <div className='flex-1 flex flex-col min-h-0'>
+                        <StokGantungTable
+                            movements={movements}
+                            pagination={pagination}
+                            onPageChange={handlePageChange}
+                            onLimitChange={handleLimitChange}
+                            loading={loading}
+                            searchLoading={searchLoading}
+                            onClassify={handleClassifyRequest}
+                            classifyLoadingId={classifyLoadingId}
+                            onEditNotes={handleEditNotes}
+                        />
+                    </div>
                 </div>
             </div>
 

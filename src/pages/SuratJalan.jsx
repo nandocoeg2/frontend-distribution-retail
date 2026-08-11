@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { SuratJalanTableServerSide } from '@/components/suratJalan';
+import { SuratJalanTableServerSide, ProcessSuratJalanModal } from '@/components/suratJalan';
 import {
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
@@ -27,12 +27,6 @@ const SuratJalan = () => {
 
   // Process dialog state
   const [showProcessDialog, setShowProcessDialog] = useState(false);
-  const [processFormData, setProcessFormData] = useState({
-    checker: '',
-    driver: '',
-    mobil: '',
-    kota: '',
-  });
   const [itemsToProcess, setItemsToProcess] = useState([]);
 
   const {
@@ -160,11 +154,10 @@ const SuratJalan = () => {
 
     // Store items to process and show dialog
     setItemsToProcess(unprocessedItems);
-    setProcessFormData({ checker: '', driver: '', mobil: '', kota: '' });
     setShowProcessDialog(true);
   }, [selectedSuratJalan]);
 
-  const handleProcessConfirm = useCallback(async () => {
+  const handleProcessConfirm = useCallback(async (checklistPayload) => {
     if (itemsToProcess.length === 0) return;
 
     setIsProcessing(true);
@@ -172,14 +165,7 @@ const SuratJalan = () => {
       const selectedIds = itemsToProcess.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
       const requestBody = {
         ids: selectedIds,
-        checklist: {
-          status_code: 'PENDING CHECKLIST SURAT JALAN',
-          tanggal: new Date().toISOString(),
-          checker: processFormData.checker || undefined,
-          driver: processFormData.driver || undefined,
-          mobil: processFormData.mobil || undefined,
-          kota: processFormData.kota || undefined,
-        },
+        checklist: checklistPayload,
       };
 
       const response = await suratJalanService.processSuratJalan(requestBody);
@@ -217,7 +203,7 @@ const SuratJalan = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [itemsToProcess, processFormData, handleAuthError, queryClient]);
+  }, [itemsToProcess, handleAuthError, queryClient]);
 
   const handleUnprocessSelected = useCallback(() => {
     // Filter only processed items
@@ -448,130 +434,14 @@ const SuratJalan = () => {
         loading={exportLoading}
       />
 
-      {/* Process Surat Jalan Dialog with Form Fields */}
-      {showProcessDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => !isProcessing && setShowProcessDialog(false)} />
-          <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Proses Surat Jalan</h3>
-            </div>
-
-            {/* Body */}
-            <div className="px-4 py-4 space-y-4">
-              {/* Summary of selected items */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800 font-medium mb-2">
-                  Akan memproses {itemsToProcess.length} surat jalan:
-                </p>
-                <ul className="text-xs text-blue-700 space-y-1 max-h-32 overflow-y-auto">
-                  {itemsToProcess.map((item) => (
-                    <li key={item.id}>
-                      • {item.no_surat_jalan || '(No. Surat Jalan tidak tersedia)'}
-                      {(item.deliver_to || item.deliverTo) && ` - ${item.deliver_to || item.deliverTo}`}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Form Fields */}
-              <div className="space-y-3">
-                <div>
-                  <label htmlFor="process-checker" className="block text-sm font-medium text-gray-700 mb-1">
-                    Checker
-                  </label>
-                  <input
-                    id="process-checker"
-                    type="text"
-                    value={processFormData.checker}
-                    onChange={(e) => setProcessFormData(prev => ({ ...prev, checker: e.target.value }))}
-                    placeholder="Nama checker..."
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isProcessing}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="process-driver" className="block text-sm font-medium text-gray-700 mb-1">
-                    Driver
-                  </label>
-                  <input
-                    id="process-driver"
-                    type="text"
-                    value={processFormData.driver}
-                    onChange={(e) => setProcessFormData(prev => ({ ...prev, driver: e.target.value }))}
-                    placeholder="Nama driver..."
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isProcessing}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="process-mobil" className="block text-sm font-medium text-gray-700 mb-1">
-                    Kendaraan
-                  </label>
-                  <input
-                    id="process-mobil"
-                    type="text"
-                    value={processFormData.mobil}
-                    onChange={(e) => setProcessFormData(prev => ({ ...prev, mobil: e.target.value }))}
-                    placeholder="Nomor plat / jenis kendaraan..."
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isProcessing}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="process-kota" className="block text-sm font-medium text-gray-700 mb-1">
-                    Kota
-                  </label>
-                  <input
-                    id="process-kota"
-                    type="text"
-                    value={processFormData.kota}
-                    onChange={(e) => setProcessFormData(prev => ({ ...prev, kota: e.target.value }))}
-                    placeholder="Kota tujuan..."
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isProcessing}
-                  />
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-500">
-                * Tanggal checklist akan diisi dengan tanggal sekarang
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowProcessDialog(false)}
-                disabled={isProcessing}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={handleProcessConfirm}
-                disabled={isProcessing}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Memproses...
-                  </>
-                ) : (
-                  'Proses'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProcessSuratJalanModal
+        show={showProcessDialog}
+        onClose={() => setShowProcessDialog(false)}
+        onSubmit={handleProcessConfirm}
+        isSubmitting={isProcessing}
+        selectedItems={itemsToProcess}
+        selectedIds={itemsToProcess.map((item) => typeof item === 'string' ? item : item?.id).filter(Boolean)}
+      />
     </div>
   );
 };

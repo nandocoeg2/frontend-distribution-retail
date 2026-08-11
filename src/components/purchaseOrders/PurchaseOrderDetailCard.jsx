@@ -312,7 +312,6 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: <DocumentTextIcon className='w-4 h-4' /> },
     { id: 'details', label: 'Details', icon: <ListBulletIcon className='w-4 h-4' /> },
     { id: 'documents', label: 'Documents', icon: <FolderIcon className='w-4 h-4' /> },
     { id: 'timeline', label: 'Timeline', icon: <ClockIcon className='w-4 h-4' />, badge: order?.auditTrails?.length },
@@ -428,8 +427,6 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
               <InfoTable compact data={[
                 { label: 'Customer', value: order.customer?.namaCustomer || '-' },
                 { label: 'Code', value: order.customer?.kodeCustomer || '-' },
-                { label: 'Email', value: order.customer?.email || '-' },
-                { label: 'Phone', value: order.customer?.phoneNumber || '-' },
                 { label: 'Supplier', value: order.supplier?.name || 'Not assigned' },
               ]} />
             </AccordionItem>

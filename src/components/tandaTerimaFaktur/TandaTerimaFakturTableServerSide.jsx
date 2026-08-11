@@ -5,7 +5,7 @@ import { StatusBadge } from '../ui/Badge';
 import { useTandaTerimaFakturQuery } from '../../hooks/useTandaTerimaFakturQuery';
 import { formatCurrency, formatDate } from '@/utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable, DataTablePagination, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import groupCustomerService from '../../services/groupCustomerService';
 import companyService from '../../services/companyService';
@@ -236,15 +236,20 @@ const TandaTerimaFakturTableServerSide = ({
 
   const totals = useMemo(() => {
     if (!tandaTerimaFakturs || !Array.isArray(tandaTerimaFakturs)) {
-      return { grandTotalInvoice: 0, grandTotal: 0, totalPayment: 0 };
+      return { grandTotal: 0, totalPayment: 0, totalSelisih: 0 };
     }
     return tandaTerimaFakturs.reduce(
-      (acc, row) => ({
-        grandTotalInvoice: acc.grandTotalInvoice + (parseFloat(row.invoicePenagihan?.grand_total) || 0),
-        grandTotal: acc.grandTotal + (parseFloat(row.grand_total) || 0),
-        totalPayment: acc.totalPayment + (parseFloat(row.bankMutation?.jumlah) || 0),
-      }),
-      { grandTotalInvoice: 0, grandTotal: 0, totalPayment: 0 }
+      (acc, row) => {
+        const totalTTF = parseFloat(row.grand_total) || 0;
+        const payment = parseFloat(row.bankMutation?.jumlah) || 0;
+        const selisih = totalTTF - payment;
+        return {
+          grandTotal: acc.grandTotal + totalTTF,
+          totalPayment: acc.totalPayment + payment,
+          totalSelisih: acc.totalSelisih + selisih,
+        };
+      },
+      { grandTotal: 0, totalPayment: 0, totalSelisih: 0 }
     );
   }, [tandaTerimaFakturs]);
 
@@ -316,7 +321,7 @@ const TandaTerimaFakturTableServerSide = ({
         id: 'invoice_no',
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-            <div className="font-medium text-xs">Invoice No</div>
+            <div className="font-medium text-xs">Invoice</div>
             <input
               type="text"
               value={column.getFilterValue() ?? ''}
@@ -339,44 +344,6 @@ const TandaTerimaFakturTableServerSide = ({
         },
         enableSorting: false,
       }),
-      columnHelper.accessor((row) => {
-        return row.invoicePenagihan?.purchaseOrder?.po_number || '';
-      }, {
-        id: 'po_number',
-        header: ({ column }) => (
-          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-            <div className="font-medium text-xs">PO No</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search..."
-              className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        ),
-        cell: (info) => {
-          const poNo = info.getValue();
-          return (
-            <div className="text-xs text-gray-700 whitespace-nowrap">
-              {poNo || <span className="text-gray-400">-</span>}
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
-      columnHelper.accessor((row) => {
-        return Number(row.invoicePenagihan?.grand_total) || 0;
-      }, {
-        id: 'grand_total_invoice', // Virtual column
-        header: 'Grand Total Invoice',
-        cell: (info) => <div className="text-xs font-medium text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
-        enableSorting: false,
-        size: 110,
-      }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top_codes',
         header: ({ column }) => (
@@ -397,7 +364,6 @@ const TandaTerimaFakturTableServerSide = ({
           </div>
         ),
         cell: (info) => {
-          const row = info.row.original;
           return (
             <div>
               <div className="text-xs font-medium text-gray-900">{info.getValue() || '-'}</div>
@@ -406,7 +372,6 @@ const TandaTerimaFakturTableServerSide = ({
         },
         size: 55,
       }),
-
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
         header: ({ column }) => {
@@ -444,7 +409,58 @@ const TandaTerimaFakturTableServerSide = ({
         enableColumnFilter: true,
         size: 110,
       }),
-      // Tanggal Jatuh Tempo (calculated: tanggal + batas_hari)
+      columnHelper.accessor('tanggal_print_ttf1', {
+        id: 'tanggal_print_ttf1',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">TTF 1</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
+        enableSorting: true,
+        size: 90,
+      }),
+      columnHelper.accessor('tanggal_upload_ttf2', {
+        id: 'tanggal_upload_ttf2',
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">TTF 2</div>
+              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
+        enableSorting: true,
+        size: 90,
+      }),
       columnHelper.accessor((row) => {
         const tanggal = row.tanggal ? new Date(row.tanggal) : null;
         const batasHari = row.termOfPayment?.batas_hari || 0;
@@ -481,68 +497,13 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: true,
         size: 90,
       }),
-      // Tanggal TTF 1 (Print date)
-      columnHelper.accessor('tanggal_print_ttf1', {
-        id: 'tanggal_print_ttf1',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">TTF 1</div>
-              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <DateFilter
-                  value={filterValue.from ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
-                  placeholder="Dari"
-                />
-                <DateFilter
-                  value={filterValue.to ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
-                  placeholder="Sampai"
-                />
-              </div>
-            </div>
-          );
-        },
-        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
-        enableSorting: true,
-        size: 90,
-      }),
-      // Tanggal TTF 2 (Upload/Validation date)
-      columnHelper.accessor('tanggal_upload_ttf2', {
-        id: 'tanggal_upload_ttf2',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">TTF 2</div>
-              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <DateFilter
-                  value={filterValue.from ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
-                  placeholder="Dari"
-                />
-                <DateFilter
-                  value={filterValue.to ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
-                  placeholder="Sampai"
-                />
-              </div>
-            </div>
-          );
-        },
-        cell: (info) => <div className="text-xs text-gray-700">{info.getValue() ? formatDate(info.getValue()) : '-'}</div>,
-        enableSorting: true,
-        size: 90,
-      }),
-      // Tanggal Bayar (from BankMutation)
       columnHelper.accessor('bankMutation.tanggal_transaksi', {
         id: 'tanggal_bayar',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tgl Bayar</div>
+              <div className="font-medium text-xs">Tanggal Bayar</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
@@ -562,7 +523,6 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: true,
         size: 90,
       }),
-      // Total Payment (from BankMutation)
       columnHelper.accessor((row) => Number(row.bankMutation?.jumlah) || 0, {
         id: 'total_payment',
         header: ({ column }) => {
@@ -596,12 +556,26 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: true,
         size: 100,
       }),
+      columnHelper.accessor((row) => {
+        const totalTTF = Number(row.grand_total) || 0;
+        const payment = Number(row.bankMutation?.jumlah) || 0;
+        return totalTTF - payment;
+      }, {
+        id: 'selisih',
+        header: () => <div className="font-medium text-xs text-right">Selisih</div>,
+        cell: (info) => {
+          const value = info.getValue();
+          return (
+            <div className={`text-xs font-semibold text-right ${value !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              {formatCurrency(value)}
+            </div>
+          );
+        },
+        enableSorting: false,
+        size: 100,
+      }),
       columnHelper.accessor('status.status_name', {
-        id: 'status', // For sorting, backend expects 'statusId' or similar? Or maybe it doesn't support sorting by status name. 
-        // The error message allowed 'createdAt', 'updatedAt', 'grand_total', 'tanggal', 'kode_top', 'group_customer_name', 'group_customer_code', 'company_name', 'code_supplier'.
-        // It DOES NOT list status. So sorting by status might fail if I send 'status' or 'status_name'.
-        // I will disable sorting for status for now or assume it is not supported to avoid errors, 
-        // OR I should check if I can map it. For now, disable sorting for Status to be safe.
+        id: 'status',
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
@@ -630,13 +604,23 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: true,
         size: 85,
       }),
+      columnHelper.accessor('bankMutation.keterangan', {
+        id: 'keterangan',
+        header: () => <div className="font-medium text-xs">Keterangan</div>,
+        cell: (info) => (
+          <div className="text-xs text-gray-700 max-w-[200px] truncate" title={info.getValue() ?? ''}>
+            {info.getValue() || '-'}
+          </div>
+        ),
+        enableSorting: false,
+        size: 150,
+      }),
       columnHelper.display({
         id: 'actions',
         header: () => <div className="font-medium text-xs">Act</div>,
         size: 90,
         cell: ({ row }) => {
           const item = row.original;
-          // All relations are now one-to-one (single object, not array)
           const hasLaporan = !!item?.laporanPenerimaanBarang;
           const hasInvoice = !!item?.invoicePenagihan;
           const hasFaktur = !!item?.fakturPajak;
@@ -758,17 +742,11 @@ const TandaTerimaFakturTableServerSide = ({
         footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
         footerContent={
           <tr>
-            {table.getVisibleLeafColumns().map((column) => {
-              let footerValue = pagination?.totalItems || 0;
-              if (column.id === 'grand_total_invoice') footerValue = formatCurrency(totals.grandTotalInvoice);
-              else if (column.id === 'grand_total') footerValue = formatCurrency(totals.grandTotal);
-              else if (column.id === 'total_payment') footerValue = formatCurrency(totals.totalPayment);
-              return (
-                <td key={column.id} className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center">
-                  {footerValue}
-                </td>
-              );
-            })}
+            {table.getVisibleLeafColumns().map((column) => (
+              <td key={column.id} className="px-1.5 py-0.5 text-xs border-t border-gray-300 text-center font-bold">
+                <TableFooterCell column={column} table={table} />
+              </td>
+            ))}
           </tr>
         }
       />

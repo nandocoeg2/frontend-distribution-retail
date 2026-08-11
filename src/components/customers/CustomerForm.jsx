@@ -12,10 +12,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     groupCustomerId: '',
     region: '',
     alamatPengiriman: '',
-    phoneNumber: '',
-    email: '',
     alamatNPWP: '',
-    NPWP: '',
     customerPics: [],
   });
   const [groupCustomers, setGroupCustomers] = useState([]);
@@ -27,10 +24,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
     initialData?.groupCustomerId,
     initialData?.region,
     initialData?.alamatPengiriman,
-    initialData?.phoneNumber,
-    initialData?.email,
     initialData?.alamatNPWP,
-    initialData?.NPWP,
     initialData?.customerPics
   ]);
 
@@ -42,10 +36,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
         groupCustomerId: memoizedInitialData.groupCustomerId || '',
         region: memoizedInitialData.region || '',
         alamatPengiriman: memoizedInitialData.alamatPengiriman || '',
-        phoneNumber: memoizedInitialData.phoneNumber || '',
-        email: memoizedInitialData.email || '',
         alamatNPWP: memoizedInitialData.alamatNPWP || '',
-        NPWP: memoizedInitialData.NPWP || '',
         customerPics: memoizedInitialData.customerPics?.map(pic => ({
           nama_pic: pic.nama_pic || '',
           dept: pic.dept || '',
@@ -97,27 +88,11 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
       };
       
       if (selectedGroup) {
-        updated.NPWP = selectedGroup.npwp || '';
         updated.alamatNPWP = selectedGroup.alamat || '';
       }
       
       return updated;
     });
-  };
-
-  const handleNPWPBlur = (e) => {
-    const { value } = e.target;
-    if (!value) return;
-
-    const cleanValue = value.replace(/[^0-9]/g, '');
-
-    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
-    if (cleanValue.length === 15) {
-      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
-    } else if (cleanValue !== value) {
-      // If value had non-digit chars, clean it
-      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
-    }
   };
 
   const handlePICsChange = (pics) => {
@@ -126,11 +101,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const dataToSubmit = {
-      ...formData,
-      email: formData.email === '' ? null : formData.email,
-    };
-    onSubmit(dataToSubmit);
+    onSubmit(formData);
   };
 
   const isLoading = dropdownLoading || loading;
@@ -181,22 +152,7 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           />
         </div>
 
-        {/* Phone Number */}
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Phone Number
-          </label>
-          <input
-            type='tel'
-            name='phoneNumber'
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            disabled={isLoading}
-            inputMode='tel'
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
-            placeholder='cth. 08123456789'
-          />
-        </div>
+
 
         {/* Group Customer Autocomplete */}
         <div>
@@ -250,51 +206,9 @@ const CustomerForm = ({ onSubmit, onClose, initialData = {}, loading = false, er
           />
         </div>
 
-        {/* Email */}
-        <div className="md:col-span-2">
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Email
-          </label>
-          <input
-            type='email'
-            name='email'
-            value={formData.email}
-            onChange={handleChange}
-            disabled={isLoading}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
-            placeholder='cth. toko@email.com'
-          />
-        </div>
 
-        {/* NPWP */}
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            NPWP
-          </label>
-          <input
-            type='text'
-            name='NPWP'
-            value={formData.NPWP}
-            readOnly
-            className='w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none'
-            placeholder='Auto-filled from Group Customer'
-          />
-        </div>
 
-        {/* NPWP Address */}
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            NPWP Address
-          </label>
-          <input
-            type='text'
-            name='alamatNPWP'
-            value={formData.alamatNPWP}
-            readOnly
-            className='w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed focus:outline-none'
-            placeholder='Auto-filled from Group Customer'
-          />
-        </div>
+
 
       </div>
 

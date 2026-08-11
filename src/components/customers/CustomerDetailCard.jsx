@@ -69,10 +69,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
       groupCustomerId: customerData?.groupCustomerId || '',
       region: customerData?.region || '',
       alamatPengiriman: customerData?.alamatPengiriman || '',
-      phoneNumber: customerData?.phoneNumber || '',
-      email: customerData?.email || '',
       alamatNPWP: customerData?.alamatNPWP || '',
-      NPWP: customerData?.NPWP || '',
       customerPics: customerData?.customerPics?.map(pic => ({
         id: pic.id,
         nama_pic: pic.nama_pic || '',
@@ -155,28 +152,12 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
           groupCustomerId: value,
         };
         if (selectedGroup) {
-          updated.NPWP = selectedGroup.npwp || '';
           updated.alamatNPWP = selectedGroup.alamat || '';
         }
         return updated;
       });
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleNPWPBlur = (e) => {
-    const { value } = e.target;
-    if (!value) return;
-
-    const cleanValue = value.replace(/[^0-9]/g, '');
-
-    // If 15 digits (old NPWP format), auto-prepend '0' to make 16 digits
-    if (cleanValue.length === 15) {
-      setFormData(prev => ({ ...prev, NPWP: `0${cleanValue}` }));
-    } else if (cleanValue !== value) {
-      // If value had non-digit chars, clean it
-      setFormData(prev => ({ ...prev, NPWP: cleanValue }));
     }
   };
 
@@ -224,7 +205,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
 
   // Use fullCustomer if loaded, otherwise use prop customer
   const displayCustomer = fullCustomer || customer;
-  const displayNpwp = displayCustomer.NPWP || displayCustomer.groupCustomer?.npwp;
+  const displayNpwp = displayCustomer.groupCustomer?.npwp;
   const defaultPic = displayCustomer.customerPics?.find(pic => pic.default);
   const primaryPic = defaultPic || displayCustomer.customerPics?.[0];
 
@@ -324,20 +305,7 @@ const CustomerDetailCard = ({ customer, onClose, onUpdate }) => {
                 <h4 className="text-sm font-semibold text-gray-900">Contact & Address</h4>
               </div>
               <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-gray-500 text-xs flex items-center">
-                    <DevicePhoneMobileIcon className="h-3 w-3 mr-1" />
-                    Phone:
-                  </span>
-                  <p className="font-medium text-gray-900">{displayCustomer.phoneNumber || '-'}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-xs flex items-center">
-                    <AtSymbolIcon className="h-3 w-3 mr-1" />
-                    Email:
-                  </span>
-                  <p className="font-medium text-gray-900">{displayCustomer.email || '-'}</p>
-                </div>
+
                 <div>
                   <span className="text-gray-500 text-xs">Shipping Address:</span>
                   <p className="font-medium text-gray-900 text-xs leading-relaxed">

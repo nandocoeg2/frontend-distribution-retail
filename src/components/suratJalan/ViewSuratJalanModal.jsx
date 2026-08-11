@@ -52,7 +52,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
     try {
       // Validate surat jalan data
       const packingBoxes = getPackingBoxes(suratJalan);
-      
+
       if (!suratJalan || packingBoxes.length === 0) {
         toastService.error('Tidak ada packing boxes untuk dicetak. Pastikan purchase order memiliki packing data.');
         return;
@@ -76,7 +76,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
-        
+
         // Wait for content to load, then trigger print dialog
         printWindow.onload = () => {
           printWindow.focus();
@@ -184,8 +184,8 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
     typeof statusData === 'string'
       ? statusData
       : statusData?.status_name ||
-        statusData?.status_code ||
-        'DRAFT SURAT JALAN';
+      statusData?.status_code ||
+      'DRAFT SURAT JALAN';
   const statusVariant = resolveStatusVariant(
     typeof statusData === 'string'
       ? statusData
@@ -200,11 +200,6 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
   const statusId = typeof statusData === 'string' ? null : statusData?.id;
 
   const tabs = [
-    {
-      id: 'overview',
-      label: 'Overview',
-      icon: <DocumentTextIcon className='w-5 h-5' aria-hidden='true' />,
-    },
     {
       id: 'details',
       label: 'Box Details',
@@ -313,11 +308,10 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${
-                  activeTab === tab.id
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors ${activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>
@@ -510,7 +504,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                             }
                             variant={resolveStatusVariant(
                               historyItem.status?.status_name ||
-                                historyItem.status?.status_code
+                              historyItem.status?.status_code
                             )}
                             size='sm'
                             dot
@@ -553,68 +547,68 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
             // Use packingBoxes structure only
             const packingBoxes = getPackingBoxes(suratJalan);
             const { totalBoxes, totalQuantity } = getTotals(suratJalan);
-            
+
             return (
-            <div className='space-y-4'>
-              <div className='flex items-center justify-between mb-6'>
-                <h3 className='text-xl font-semibold text-gray-900'>
-                  Box Details <span className='text-sm text-green-600'>(from Packing)</span>
-                </h3>
-                <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
-                  {packingBoxes.length} box{packingBoxes.length !== 1 ? 'es' : ''} • {totalQuantity || 0} qty
+              <div className='space-y-4'>
+                <div className='flex items-center justify-between mb-6'>
+                  <h3 className='text-xl font-semibold text-gray-900'>
+                    Box Details <span className='text-sm text-green-600'>(from Packing)</span>
+                  </h3>
+                  <div className='px-3 py-1 text-sm font-medium text-blue-800 bg-blue-100 rounded-full'>
+                    {packingBoxes.length} box{packingBoxes.length !== 1 ? 'es' : ''} • {totalQuantity || 0} qty
+                  </div>
                 </div>
-              </div>
 
-              {packingBoxes && packingBoxes.length > 0 ? (
-                packingBoxes.map((box, boxIndex) => (
-                  <div
-                    key={box.id || boxIndex}
-                    className='overflow-hidden bg-white border border-gray-200 rounded-lg'
-                  >
-                    <button
-                      onClick={() => toggleDetail(box.id || boxIndex)}
-                      className='flex items-center justify-between w-full px-6 py-4 text-left transition-colors hover:bg-gray-50'
+                {packingBoxes && packingBoxes.length > 0 ? (
+                  packingBoxes.map((box, boxIndex) => (
+                    <div
+                      key={box.id || boxIndex}
+                      className='overflow-hidden bg-white border border-gray-200 rounded-lg'
                     >
-                      <div className='flex items-center space-x-4'>
-                        <div className='p-2 bg-blue-100 rounded-lg'>
-                          <span>📦</span>
+                      <button
+                        onClick={() => toggleDetail(box.id || boxIndex)}
+                        className='flex items-center justify-between w-full px-6 py-4 text-left transition-colors hover:bg-gray-50'
+                      >
+                        <div className='flex items-center space-x-4'>
+                          <div className='p-2 bg-blue-100 rounded-lg'>
+                            <span>📦</span>
+                          </div>
+                          <div>
+                            <h4 className='text-lg font-semibold text-gray-900'>
+                              Box #{box.no_box}
+                            </h4>
+                            <p className='text-sm text-gray-600'>
+                              Total Qty: {box.total_quantity_in_box} • Items:{' '}
+                              {box.packingBoxItems?.length || 0}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className='text-lg font-semibold text-gray-900'>
-                            Box #{box.no_box}
-                          </h4>
-                          <p className='text-sm text-gray-600'>
-                            Total Qty: {box.total_quantity_in_box} • Items:{' '}
-                            {box.packingBoxItems?.length || 0}
-                          </p>
-                        </div>
-                      </div>
-                      {expandedDetails[box.id || boxIndex] ? (
-                        <ChevronDownIcon className='w-5 h-5 text-gray-500' />
-                      ) : (
-                        <ChevronRightIcon className='w-5 h-5 text-gray-500' />
-                      )}
-                    </button>
+                        {expandedDetails[box.id || boxIndex] ? (
+                          <ChevronDownIcon className='w-5 h-5 text-gray-500' />
+                        ) : (
+                          <ChevronRightIcon className='w-5 h-5 text-gray-500' />
+                        )}
+                      </button>
 
-                    {expandedDetails[box.id || boxIndex] && (
-                      <div className='px-6 pb-6 border-t border-gray-100'>
-                        <div className='mt-4 mb-6'>
-                          <InfoTable
-                            data={[
-                              { label: 'No Box', value: box.no_box },
-                              {
-                                label: 'Total Quantity in Box',
-                                value: box.total_quantity_in_box,
-                              },
-                              {
-                                label: 'Number of Items',
-                                value: box.packingBoxItems?.length || 0,
-                              },
-                            ]}
-                          />
-                        </div>
+                      {expandedDetails[box.id || boxIndex] && (
+                        <div className='px-6 pb-6 border-t border-gray-100'>
+                          <div className='mt-4 mb-6'>
+                            <InfoTable
+                              data={[
+                                { label: 'No Box', value: box.no_box },
+                                {
+                                  label: 'Total Quantity in Box',
+                                  value: box.total_quantity_in_box,
+                                },
+                                {
+                                  label: 'Number of Items',
+                                  value: box.packingBoxItems?.length || 0,
+                                },
+                              ]}
+                            />
+                          </div>
 
-                        {box.packingBoxItems && box.packingBoxItems.length > 0 && (
+                          {box.packingBoxItems && box.packingBoxItems.length > 0 && (
                             <div>
                               <h5 className='mb-4 text-lg font-medium text-gray-900'>
                                 Items ({box.packingBoxItems.length})
@@ -674,27 +668,27 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                               </div>
                             </div>
                           )}
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className='py-12 text-center'>
+                    <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
+                      <ArchiveBoxIcon
+                        className='w-8 h-8 text-gray-400'
+                        aria-hidden='true'
+                      />
+                    </div>
+                    <h3 className='mb-2 text-lg font-medium text-gray-900'>
+                      No Box Details Found
+                    </h3>
+                    <p className='text-gray-500'>
+                      No packing boxes available. Please ensure the purchase order has packing data.
+                    </p>
                   </div>
-                ))
-              ) : (
-                <div className='py-12 text-center'>
-                  <div className='flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full'>
-                    <ArchiveBoxIcon
-                      className='w-8 h-8 text-gray-400'
-                      aria-hidden='true'
-                    />
-                  </div>
-                  <h3 className='mb-2 text-lg font-medium text-gray-900'>
-                    No Box Details Found
-                  </h3>
-                  <p className='text-gray-500'>
-                    No packing boxes available. Please ensure the purchase order has packing data.
-                  </p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             );
           })()}
 

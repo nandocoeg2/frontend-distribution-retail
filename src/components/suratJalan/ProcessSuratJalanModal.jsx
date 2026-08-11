@@ -20,10 +20,10 @@ const createDefaultFormValues = () => {
 
 const fieldLabels = {
   status_code: 'Status Checklist',
-  tanggal: 'Tanggal Checklist',
+  tanggal: 'Tanggal Checking List',
   checker: 'Checker',
   driver: 'Driver',
-  mobil: 'Mobil',
+  mobil: 'Kendaraan',
   kota: 'Kota',
 };
 
@@ -81,7 +81,7 @@ const ProcessSuratJalanModal = ({
     const nextErrors = {};
 
     if (!formValues.tanggal) {
-      nextErrors.tanggal = 'Tanggal checklist wajib diisi.';
+      nextErrors.tanggal = 'Tanggal checking list wajib diisi.';
     } else {
       const parsedDate = new Date(formValues.tanggal);
       if (Number.isNaN(parsedDate.getTime())) {

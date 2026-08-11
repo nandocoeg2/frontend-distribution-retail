@@ -4,7 +4,6 @@ import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import GenerateInvoicePenagihanDialog from '@/components/invoicePengiriman/GenerateInvoicePenagihanDialog';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
 import toastService from '@/services/toastService';
 
@@ -62,11 +61,7 @@ const InvoicePengirimanPage = () => {
       );
     });
   }, [previewData, localFilters]);
-  const [generateConfirmation, setGenerateConfirmation] = useState({
-    show: false,
-    invoiceIds: [],
-  });
-  const [isGenerating, setIsGenerating] = useState(false);
+
 
   const fetchInvoiceDetail = useCallback(
     async (id) => {
@@ -262,84 +257,7 @@ const InvoicePengirimanPage = () => {
     }
   }, [convertFiltersToParams]);
 
-  const openGenerateDialog = useCallback((invoiceIds) => {
-    if (!invoiceIds || invoiceIds.length === 0) {
-      toastService.error('Tidak ada invoice yang dipilih');
-      return;
-    }
-    setGenerateConfirmation({
-      show: true,
-      invoiceIds,
-    });
-  }, []);
 
-  const closeGenerateDialog = useCallback(() => {
-    setGenerateConfirmation({
-      show: false,
-      invoiceIds: [],
-    });
-  }, []);
-
-  const handleGenerateConfirm = useCallback(async (tanggalDokumen) => {
-    const invoiceIds = generateConfirmation.invoiceIds;
-
-    if (!invoiceIds || invoiceIds.length === 0) {
-      closeGenerateDialog();
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      toastService.info(`Memproses ${invoiceIds.length} invoice (membuat 3 dokumen per invoice)...`);
-
-      let successCount = 0;
-      let failCount = 0;
-
-      // Loop through selected invoices and generate invoice penagihan
-      for (let i = 0; i < invoiceIds.length; i++) {
-        const invoiceId = invoiceIds[i];
-
-        try {
-          const response = await invoicePengirimanService.generateInvoicePenagihan(invoiceId, {
-            tanggal_dokumen: tanggalDokumen,
-          });
-
-          if (response?.success) {
-            successCount++;
-          } else {
-            failCount++;
-          }
-        } catch (error) {
-          failCount++;
-          console.error(`Error generating invoice penagihan for ${invoiceId}:`, error);
-        }
-
-        // Small delay between requests to prevent overwhelming the server
-        if (i < invoiceIds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
-
-      // Show results with enhanced messaging
-      if (successCount > 0 && failCount === 0) {
-        toastService.success(`✅ Berhasil membuat semua dokumen untuk ${successCount} invoice (Invoice Penagihan + Kwitansi + Faktur Pajak)`);
-      } else if (successCount > 0 && failCount > 0) {
-        toastService.warning(`✅ Berhasil membuat semua dokumen untuk ${successCount} invoice. ${failCount} gagal.`);
-      } else {
-        toastService.error('❌ Gagal membuat dokumen invoice');
-      }
-
-      // Clear selection and refresh data
-      setSelectedInvoices([]);
-      await queryClient.invalidateQueries({ queryKey: ['invoicePengiriman'] });
-      closeGenerateDialog();
-    } catch (error) {
-      console.error('Error in bulk generate:', error);
-      toastService.error(error.message || 'Gagal membuat dokumen invoice');
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [generateConfirmation.invoiceIds, closeGenerateDialog, queryClient]);
 
   return (
     <div>
@@ -361,8 +279,6 @@ const InvoicePengirimanPage = () => {
             exportLoading={exportLoading}
             onPreviewExcel={handlePreviewExcel}
             previewLoading={previewLoading}
-            onOpenGenerateDialog={openGenerateDialog}
-            isGenerating={isGenerating}
           />
         </div>
       </div>
@@ -383,13 +299,7 @@ const InvoicePengirimanPage = () => {
         loading={exportLoading}
       />
 
-      <GenerateInvoicePenagihanDialog
-        show={generateConfirmation.show}
-        onClose={closeGenerateDialog}
-        onConfirm={handleGenerateConfirm}
-        invoiceCount={generateConfirmation.invoiceIds.length}
-        loading={isGenerating}
-      />
+
 
       {/* Excel Preview Modal */}
       {showPreviewModal && (

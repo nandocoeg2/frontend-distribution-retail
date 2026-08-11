@@ -10,7 +10,7 @@ import { formatCurrency, formatDate } from '@/utils/formatUtils';
 import kwitansiService from '../../services/kwitansiService';
 import toastService from '../../services/toastService';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable, DataTablePagination, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import PdfPreviewModal from '../common/PdfPreviewModal';
 import { ConfirmationDialog, useConfirmationDialog } from '../ui/ConfirmationDialog';
@@ -658,9 +658,7 @@ const KwitansiTableServerSide = ({
                 key={column.id}
                 className="px-2 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {column.id === 'grand_total'
-                  ? formatCurrency(totalGrandTotal)
-                  : pagination?.totalItems || 0}
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>

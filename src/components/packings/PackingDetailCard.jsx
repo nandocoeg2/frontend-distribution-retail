@@ -104,7 +104,6 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
       ) : (
         <div>
           <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant="underline" className="mb-2">
-            <Tab id="overview" label="Overview" icon={<DocumentTextIcon className="w-3 h-3" />} />
             <Tab id="boxes" label="Boxes" icon={<ArchiveBoxIcon className="w-3 h-3" />} badge={packing.packingBoxes?.length || 0} />
             <Tab id="timeline" label="Timeline" icon={<ClockIcon className="w-3 h-3" />} badge={packing.auditTrails?.length || 0} />
           </TabContainer>

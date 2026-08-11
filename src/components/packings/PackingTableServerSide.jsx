@@ -11,7 +11,7 @@ import {
 import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import { exportPackingStickerBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, previewExportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
@@ -785,7 +785,7 @@ const PackingTableServerSide = forwardRef(({
                 key={column.id}
                 className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {pagination?.totalItems || 0}
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>

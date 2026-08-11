@@ -50,9 +50,105 @@ const InvoicePenagihanPage = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
 
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
+  const [bulkCancelling, setBulkCancelling] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [showBulkCancelDialog, setShowBulkCancelDialog] = useState(false);
+
+  const handleSelectionChange = useCallback((id, isSelected) => {
+    setSelectedInvoices((prev) => {
+      if (isSelected) {
+        return [...prev, id];
+      } else {
+        return prev.filter((item) => item !== id);
+      }
+    });
+  }, []);
+
   const refreshData = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['invoicePenagihan'] });
   }, [queryClient]);
+
+  const handleBulkCancel = useCallback(() => {
+    if (selectedInvoices.length === 0) {
+      toastService.warning('Pilih minimal satu invoice penagihan untuk dibatalkan.');
+      return;
+    }
+    setShowBulkCancelDialog(true);
+  }, [selectedInvoices]);
+
+  const confirmBulkCancel = async () => {
+    setBulkCancelling(true);
+    try {
+      const idsSnapshot = [...selectedInvoices];
+      const result = await invoicePenagihanService.bulkCancelInvoicePenagihan(idsSnapshot);
+      const resultData = result?.data || result;
+
+      setShowBulkCancelDialog(false);
+      
+      const successCount = resultData?.successCount || 0;
+      const failedCount = resultData?.failedIds?.length || 0;
+
+      if (successCount > 0 && failedCount === 0) {
+        toastService.success(`Berhasil membatalkan ${successCount} invoice penagihan.`);
+      } else if (successCount > 0 && failedCount > 0) {
+        toastService.warning(`Berhasil membatalkan ${successCount} invoice penagihan. ${failedCount} gagal dibatalkan.`);
+      } else {
+        toastService.error(`Gagal membatalkan invoice penagihan.`);
+      }
+
+      await refreshData();
+      setSelectedInvoices([]);
+      if (viewingInvoice && idsSnapshot.includes(viewingInvoice.id)) {
+        setViewingInvoice(null);
+      }
+    } catch (err) {
+      toastService.error(err.message || 'Gagal membatalkan invoice penagihan.');
+    } finally {
+      setBulkCancelling(false);
+    }
+  };
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedInvoices.length === 0) {
+      toastService.warning('Pilih minimal satu invoice penagihan untuk dihapus.');
+      return;
+    }
+    setShowBulkDeleteDialog(true);
+  }, [selectedInvoices]);
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      const idsSnapshot = [...selectedInvoices];
+      const result = await invoicePenagihanService.bulkDeleteInvoicePenagihan(idsSnapshot);
+      const resultData = result?.data || result;
+
+      setShowBulkDeleteDialog(false);
+
+      const successCount = resultData?.successCount || 0;
+      const failedCount = resultData?.failedIds?.length || 0;
+
+      if (successCount > 0 && failedCount === 0) {
+        toastService.success(`Berhasil menghapus ${successCount} invoice penagihan.`);
+      } else if (successCount > 0 && failedCount > 0) {
+        toastService.warning(`Berhasil menghapus ${successCount} invoice penagihan. ${failedCount} gagal dihapus.`);
+      } else {
+        toastService.error(`Gagal menghapus invoice penagihan.`);
+      }
+
+      await refreshData();
+      setSelectedInvoices([]);
+      if (viewingInvoice && idsSnapshot.includes(viewingInvoice.id)) {
+        setViewingInvoice(null);
+      }
+    } catch (err) {
+      toastService.error(err.message || 'Gagal menghapus invoice penagihan.');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   const openAddModal = () => setShowAddModal(true);
   const closeAddModal = () => setShowAddModal(false);
@@ -238,12 +334,13 @@ const InvoicePenagihanPage = () => {
 
           <InvoicePenagihanTableServerSide
             ref={tableRef}
-            onDelete={showDeleteConfirmation}
-            onCancel={showCancelConfirmation}
-            deleteLoading={deleteDialogLoading}
-            cancelLoading={cancelDialogLoading}
-            initialPage={1}
-            initialLimit={10}
+            selectedInvoices={selectedInvoices}
+            onSelectionChange={handleSelectionChange}
+            onBulkCancel={handleBulkCancel}
+            onBulkDelete={handleBulkDelete}
+            isCancelling={bulkCancelling}
+            isDeleting={bulkDeleting}
+            hasSelectedInvoices={selectedInvoices.length > 0}
             selectedInvoiceId={viewingInvoice?.id}
             onRowClick={handleViewDetail}
           />
@@ -303,6 +400,32 @@ const InvoicePenagihanPage = () => {
         confirmText='Ya, Export'
         cancelText='Batal'
         loading={exportLoading}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showBulkDeleteDialog}
+        onClose={() => setShowBulkDeleteDialog(false)}
+        onConfirm={confirmBulkDelete}
+        title="Hapus Invoice Penagihan"
+        message={`Apakah Anda yakin ingin menghapus ${selectedInvoices.length} invoice penagihan yang dipilih? Tindakan ini tidak dapat dibatalkan.`}
+        type='danger'
+        confirmText='Hapus'
+        cancelText='Batal'
+        loading={bulkDeleting}
+      />
+
+      {/* Bulk Cancel Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showBulkCancelDialog}
+        onClose={() => setShowBulkCancelDialog(false)}
+        onConfirm={confirmBulkCancel}
+        title="Batalkan Invoice Penagihan"
+        message={`Apakah Anda yakin ingin membatalkan ${selectedInvoices.length} invoice penagihan yang dipilih?\n\nTindakan ini akan:\n• Mengubah status menjadi CANCELLED\n• Menghapus Kwitansi terkait\n• Menghapus referensi Faktur Pajak`}
+        type='warning'
+        confirmText='Ya, Batalkan'
+        cancelText='Tidak'
+        loading={bulkCancelling}
       />
     </div>
   );

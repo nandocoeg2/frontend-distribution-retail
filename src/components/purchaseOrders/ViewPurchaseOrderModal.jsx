@@ -612,14 +612,6 @@ const ViewPurchaseOrderModal = ({
                           value: order.customer?.kodeCustomer,
                         },
                         {
-                          label: 'Customer Email',
-                          value: order.customer?.email,
-                        },
-                        {
-                          label: 'Customer Phone',
-                          value: order.customer?.phoneNumber,
-                        },
-                        {
                           label: 'Supplier Name',
                           value: order.supplier?.name || 'Not assigned',
                         },

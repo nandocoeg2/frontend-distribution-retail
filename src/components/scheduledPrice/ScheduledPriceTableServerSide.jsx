@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, EyeIcon, XCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, XCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useScheduledPricesQuery } from '../../hooks/useScheduledPricesQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
@@ -21,7 +21,6 @@ const STATUS_OPTIONS = [
 ];
 
 const ScheduledPriceTableServerSide = forwardRef(({
-    onView,
     onEdit,
     onCancel,
     onDelete,
@@ -374,13 +373,6 @@ const ScheduledPriceTableServerSide = forwardRef(({
 
                     return (
                         <div className="flex items-center gap-0.5">
-                            <button
-                                onClick={() => onView && onView(schedule)}
-                                className="p-0.5 text-blue-600 hover:text-blue-800"
-                                title="View"
-                            >
-                                <EyeIcon className="h-4 w-4" />
-                            </button>
                             {canEdit && (
                                 <button
                                     onClick={() => onEdit && onEdit(schedule)}
@@ -414,7 +406,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 },
             }),
         ],
-        [customerOptions, setPage, onView, onEdit, onCancel, deleteLoading, deleteId]
+        [customerOptions, setPage, onEdit, onCancel, deleteLoading, deleteId]
     );
 
     const table = useReactTable({

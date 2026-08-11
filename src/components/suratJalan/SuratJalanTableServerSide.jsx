@@ -10,7 +10,7 @@ import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable } from '../table';
+import { DataTable, TableFooterCell } from '../table';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
@@ -276,6 +276,7 @@ const SuratJalanTableServerSide = ({
     initialPage: 1,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    initialSorting: [{ id: 'no_surat_jalan', desc: true }],
     storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
 
@@ -402,17 +403,7 @@ const SuratJalanTableServerSide = ({
         ),
         cell: (info) => info.getValue() || 'N/A',
       }),
-      columnHelper.accessor('invoice.no_invoice', {
-        id: 'no_invoice',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">No Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
-        cell: (info) => info.getValue() || 'N/A',
-        enableColumnFilter: false,
-      }),
+
       columnHelper.accessor('status.status_name', {
         id: 'status_code',
         header: ({ column }) => (
@@ -608,7 +599,7 @@ const SuratJalanTableServerSide = ({
                 key={column.id}
                 className="px-1.5 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {pagination?.totalItems || 0}
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>

@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import authService from './authService';
 
 const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1/invoice-penagihan`;
@@ -147,6 +147,26 @@ class InvoicePenagihanService {
       return { success: true, filename };
     } catch (error) {
       console.error('Error exporting invoice penagihan to Excel:', error);
+      throw error;
+    }
+  }
+
+  async bulkDeleteInvoicePenagihan(ids) {
+    try {
+      const response = await this.api.post('/bulk-delete', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk deleting invoice penagihan:', error);
+      throw error;
+    }
+  }
+
+  async bulkCancelInvoicePenagihan(ids) {
+    try {
+      const response = await this.api.post('/bulk-cancel', { ids });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk cancelling invoice penagihan:', error);
       throw error;
     }
   }

@@ -118,13 +118,6 @@ const TandaTerimaFakturPage = () => {
             <h3 className='text-sm font-semibold text-gray-900'>Tanda Terima Faktur</h3>
             <div className='flex flex-wrap gap-2'>
               <button
-                onClick={openPrintModal}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'
-              >
-                <PrinterIcon className='w-4 h-4 mr-1.5' />
-                Print TTF 1
-              </button>
-              <button
                 onClick={openUploadModal}
                 className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700'
               >

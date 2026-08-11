@@ -46,51 +46,53 @@ const ReportPoSuppliers = () => {
   const totalItems = visibleCount;
 
   return (
-    <Card padding='md' className='shadow-sm'>
-      <header className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-lg font-semibold text-gray-900'>Report PO Suppliers</h1>
-        </div>
-        <div className='flex items-center gap-2'>
-          <span className='text-xs text-gray-500'>
-            <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} data
-          </span>
-          <button
-            type='button'
-            onClick={handleExportExcel}
-            disabled={exportLoading}
-            className='inline-flex items-center justify-center rounded bg-green-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors'
-          >
-            {exportLoading ? (
-              <>
-                <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
-                Exporting...
-              </>
-            ) : (
-              <>
-                <ArrowDownTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
-                Export Excel
-              </>
-            )}
-          </button>
-        </div>
-      </header>
+    <div className='h-full flex flex-col'>
+      <Card padding='md' className='shadow-sm flex-1 flex flex-col min-h-0'>
+        <header className='flex items-center justify-between flex-shrink-0'>
+          <div>
+            <h1 className='text-lg font-semibold text-gray-900'>Report PO Suppliers</h1>
+          </div>
+          <div className='flex items-center gap-2'>
+            <span className='text-xs text-gray-500'>
+              <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} data
+            </span>
+            <button
+              type='button'
+              onClick={handleExportExcel}
+              disabled={exportLoading}
+              className='inline-flex items-center justify-center rounded bg-green-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors'
+            >
+              {exportLoading ? (
+                <>
+                  <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <ArrowDownTrayIcon className='mr-1.5 h-4 w-4' aria-hidden='true' />
+                  Export Excel
+                </>
+              )}
+            </button>
+          </div>
+        </header>
 
-      <div className='my-2 h-px bg-gray-200' />
+        <div className='my-2 h-px bg-gray-200 flex-shrink-0' />
 
-      {error && (
-        <div className='mt-2 flex items-center justify-between rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800'>
-          <span>Error: {error}</span>
-          <button type='button' onClick={fetchData} className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'>
-            Muat ulang
-          </button>
+        {error && (
+          <div className='mt-2 flex items-center justify-between rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800 flex-shrink-0'>
+            <span>Error: {error}</span>
+            <button type='button' onClick={fetchData} className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'>
+              Muat ulang
+            </button>
+          </div>
+        )}
+
+        <div className='mt-3 flex-1 flex flex-col min-h-0'>
+          <ReportPoSuppliersTable data={data} loading={loading} />
         </div>
-      )}
-
-      <div className='mt-3'>
-        <ReportPoSuppliersTable data={data} loading={loading} />
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 };
 

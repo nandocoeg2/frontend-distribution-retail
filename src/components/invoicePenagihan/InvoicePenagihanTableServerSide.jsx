@@ -1,11 +1,11 @@
-import React, { useMemo, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useMemo, useState, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { PencilIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
 import { useInvoicePenagihanQuery } from '../../hooks/useInvoicePenagihanQuery';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
-import { DataTable, DataTablePagination } from '../table';
+import { DataTable, DataTablePagination, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import groupCustomerService from '../../services/groupCustomerService';
 import authService from '../../services/authService';
@@ -75,15 +75,14 @@ const isCancelAllowed = (invoice) => {
 };
 
 const InvoicePenagihanTableServerSide = forwardRef(({
-  onView,
-  onEdit,
-  onDelete,
-  onCancel,
-  deleteLoading = false,
-  cancelLoading = false,
-  initialPage = 1,
-  initialLimit = 10,
-  selectedInvoiceId,
+  selectedInvoices = [],
+  onSelectionChange,
+  onBulkCancel,
+  onBulkDelete,
+  isCancelling = false,
+  isDeleting = false,
+  hasSelectedInvoices = false,
+  selectedInvoiceId = null,
   onRowClick,
 }, ref) => {
   const [groupCustomers, setGroupCustomers] = useState([]);
@@ -166,8 +165,29 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     selectPagination: (response) => response?.pagination,
     initialPage: 1,
     initialLimit: 9999,
-    getQueryParams,
   });
+
+  const handleSelectAllInternalToggle = useCallback(() => {
+    const currentPageInvoiceIds = invoices.map((inv) => inv.id).filter(Boolean);
+
+    const allCurrentPageSelected = currentPageInvoiceIds.every((id) =>
+      selectedInvoices.includes(id)
+    );
+
+    if (allCurrentPageSelected) {
+      currentPageInvoiceIds.forEach((id) => {
+        if (selectedInvoices.includes(id) && onSelectionChange) {
+          onSelectionChange(id, false);
+        }
+      });
+    } else {
+      currentPageInvoiceIds.forEach((id) => {
+        if (!selectedInvoices.includes(id) && onSelectionChange) {
+          onSelectionChange(id, true);
+        }
+      });
+    }
+  }, [invoices, selectedInvoices, onSelectionChange]);
 
   // Expose getFilters method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -209,6 +229,44 @@ const InvoicePenagihanTableServerSide = forwardRef(({
 
   const columns = useMemo(
     () => [
+      columnHelper.display({
+        id: 'select',
+        size: 40,
+        header: () => {
+          const currentPageInvoiceIds = invoices.map((inv) => inv.id).filter(Boolean);
+
+          const isAllSelected =
+            invoices.length > 0 &&
+            currentPageInvoiceIds.length > 0 &&
+            currentPageInvoiceIds.every((id) => selectedInvoices.includes(id));
+
+          const isIndeterminate =
+            currentPageInvoiceIds.some((id) => selectedInvoices.includes(id)) &&
+            !isAllSelected;
+
+          return (
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              ref={(input) => { if (input) input.indeterminate = isIndeterminate; }}
+              onChange={handleSelectAllInternalToggle}
+              onClick={(e) => e.stopPropagation()}
+              className="h-3 w-3 text-blue-600 border-gray-300 rounded"
+            />
+          );
+        },
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={selectedInvoices.includes(row.original.id)}
+            onChange={(e) => onSelectionChange?.(row.original.id, e.target.checked)}
+            onClick={(e) => e.stopPropagation()}
+            className="h-3 w-3 text-blue-600 border-gray-300 rounded"
+          />
+        ),
+        enableSorting: false,
+        enableColumnFilter: false,
+      }),
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
         header: ({ column }) => {
@@ -471,67 +529,11 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         },
         enableSorting: false,
       }),
-      columnHelper.display({
-        id: 'actions',
-        header: 'Aksi',
-        cell: ({ row }) => {
-          const invoice = row.original;
-          const cancelAllowed = isCancelAllowed(invoice);
-          return (
-            <div className="flex items-center justify-end space-x-1">
-              {onEdit && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(invoice);
-                  }}
-                  className="p-1 text-yellow-600 hover:text-yellow-900"
-                  title="Edit"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                </button>
-              )}
-              {cancelAllowed && onCancel && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCancel(invoice.id, invoice.no_invoice_penagihan);
-                  }}
-                  disabled={cancelLoading}
-                  className="p-1 text-orange-600 hover:text-orange-900 disabled:opacity-50"
-                  title="Batalkan"
-                >
-                  <XCircleIcon className="h-4 w-4" />
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(invoice.id);
-                  }}
-                  className="p-1 text-red-600 hover:text-red-900"
-                  title="Hapus"
-                  disabled={deleteLoading}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-      }),
     ],
     [
       invoices,
-      onView,
-      onEdit,
-      onDelete,
-      onCancel,
-      deleteLoading,
-      cancelLoading,
+      selectedInvoices,
+      onSelectionChange,
       setPage,
       groupCustomers,
     ]
@@ -555,14 +557,75 @@ const InvoicePenagihanTableServerSide = forwardRef(({
 
   return (
     <div className="space-y-4">
-      {hasActiveFilters && (
-        <div className="flex justify-end">
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Reset Semua Filter
-          </button>
+      {(hasActiveFilters || hasSelectedInvoices) && (
+        <div className="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-200">
+          {hasSelectedInvoices ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-green-700">
+                {selectedInvoices.length} dipilih
+              </span>
+              {onBulkCancel && (
+                <button
+                  onClick={onBulkCancel}
+                  disabled={isCancelling || isDeleting}
+                  className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white rounded transition-colors ${
+                    isCancelling || isDeleting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-orange-500 hover:bg-orange-600'
+                  }`}
+                >
+                  {isCancelling ? (
+                    <>
+                      <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Membatalkan...
+                    </>
+                  ) : (
+                    <>
+                      <XCircleIcon className="h-3.5 w-3.5 mr-1" />
+                      Cancel
+                    </>
+                  )}
+                </button>
+              )}
+              {onBulkDelete && (
+                <button
+                  onClick={onBulkDelete}
+                  disabled={isCancelling || isDeleting}
+                  className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white rounded transition-colors ${
+                    isCancelling || isDeleting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Menghapus...
+                    </>
+                  ) : (
+                    <>
+                      <TrashIcon className="h-3.5 w-3.5 mr-1" />
+                      Hapus
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          ) : <div />}
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+            >
+              Reset Filter
+            </button>
+          )}
         </div>
       )}
 
@@ -587,6 +650,9 @@ const InvoicePenagihanTableServerSide = forwardRef(({
           if (selectedInvoiceId === row.original.id) {
             return 'bg-blue-50 border-l-4 border-blue-500';
           }
+          if (selectedInvoices.includes(row.original.id)) {
+            return 'bg-green-50';
+          }
           return undefined;
         }}
         onRowClick={(rowData, event) => {
@@ -604,9 +670,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
                 key={column.id}
                 className="px-2 py-1 text-xs border-t border-gray-300 text-center"
               >
-                {column.id === 'grand_total'
-                  ? formatCurrency(totalGrandTotal)
-                  : pagination?.totalItems || 0}
+                <TableFooterCell column={column} table={table} />
               </td>
             ))}
           </tr>
