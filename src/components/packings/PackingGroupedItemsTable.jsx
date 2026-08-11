@@ -128,7 +128,7 @@ const PackingGroupedItemsTable = ({ packingBoxes }) => {
                             <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-900 border-r">{item.qtyPerBox}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-500 border-r">{item.minBox}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-500 border-r">{item.maxBox}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-900 font-medium">{item.totalBoxString}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-900 font-medium">{item.totalBoxCount}</td>
                         </tr>
                     ))}
                     {/* Summary Row */}
