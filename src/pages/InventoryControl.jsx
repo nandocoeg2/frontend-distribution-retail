@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { ArrowDownTrayIcon, MagnifyingGlassIcon, ArrowPathIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { getInventoryControl, exportInventoryControlExcel } from '../services/inventoryControlService';
 import toastService from '../services/toastService';
 
@@ -25,9 +25,35 @@ const getDefaultDates = () => {
   };
 };
 
+const formatDateRangeLabel = (startStr, endStr) => {
+  if (!startStr || !endStr) return '01 - 31 JANUARI';
+  const s = new Date(`${startStr}T00:00:00`);
+  const e = new Date(`${endStr}T00:00:00`);
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return '01 - 31 JANUARI';
+
+  const monthNames = [
+    'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+    'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+  ];
+  const startDay = String(s.getDate()).padStart(2, '0');
+  const endDay = String(e.getDate()).padStart(2, '0');
+  const sMonth = monthNames[s.getMonth()];
+  const eMonth = monthNames[e.getMonth()];
+  const sYear = s.getFullYear();
+  const eYear = e.getFullYear();
+
+  if (sMonth === eMonth && sYear === eYear) {
+    return `${startDay} - ${endDay} ${sMonth} ${sYear}`;
+  } else if (sYear === eYear) {
+    return `${startDay} ${sMonth} - ${endDay} ${eMonth} ${sYear}`;
+  } else {
+    return `${startDay} ${sMonth} ${sYear} - ${endDay} ${eMonth} ${eYear}`;
+  }
+};
+
 /* ─── skeleton row ─── */
 const SkeletonRow = ({ colCount }) => (
-  <tr className="animate-pulse border-b border-gray-100">
+  <tr className="animate-pulse border-b border-gray-200">
     {Array.from({ length: colCount }).map((_, i) => (
       <td key={i} className="px-3 py-2">
         <div className="h-3 rounded bg-gray-200" />
@@ -188,14 +214,14 @@ const InventoryControl = () => {
 
   return (
     <div className="space-y-4">
-      {/* ── Header & Title ── */}
+      {/* ── Title ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-bold uppercase tracking-tight text-gray-900">
             Inventory Control
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Rekap stok per item berdasarkan data Stock In & Stock Out dengan tampilan Weekly & Monthly.
+            Rekap stok per item dengan tampilan Weekly (W1, W2, W3, W4...) & Monthly.
           </p>
         </div>
         <button
@@ -212,10 +238,10 @@ const InventoryControl = () => {
         </button>
       </div>
 
-      {/* ── Top Filters (Date Pickers, View Mode, Search & Reload matching mockup) ── */}
-      <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+      {/* ── Top Control Bar (Startdate, Enddate, View Mode, Reload, Search) ── */}
+      <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm">
         <div className="flex flex-wrap items-end gap-3">
-          {/* View Mode Switcher (Weekly vs Monthly) */}
+          {/* Tampilan Periode Selector */}
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
               Tampilan Periode
@@ -224,18 +250,18 @@ const InventoryControl = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('weekly')}
-                className={`px-3 py-1 text-xs font-semibold rounded ${
+                className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
                   viewMode === 'weekly'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Weekly (Mingguan)
+                Weekly (W1, W2, W3...)
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('monthly')}
-                className={`px-3 py-1 text-xs font-semibold rounded ${
+                className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
                   viewMode === 'monthly'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -246,7 +272,7 @@ const InventoryControl = () => {
             </div>
           </div>
 
-          {/* Date Range Pickers (Startdate & Enddate) */}
+          {/* Date Pickers (Startdate & Enddate) */}
           <div className="flex items-center gap-2">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">
@@ -275,7 +301,7 @@ const InventoryControl = () => {
             </div>
           </div>
 
-          {/* Reload / Refresh Button */}
+          {/* Reload Button */}
           <button
             type="button"
             onClick={fetchData}
@@ -303,71 +329,78 @@ const InventoryControl = () => {
         </div>
       </div>
 
-      {/* ── Table Layout (Matching Mockup Structure) ── */}
+      {/* ── Table Layout (Exact Match with Image Mockup) ── */}
       <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse border border-gray-300 text-xs">
             <thead>
-              {/* Row 1: Main Headers */}
-              <tr className="bg-gray-800 text-white font-bold">
-                <th rowSpan={2} className="sticky left-0 z-20 min-w-[200px] bg-gray-800 border-r border-gray-600 px-3 py-2 text-left uppercase tracking-wider">
+              {/* Row 1: Top Banner with Date Range (e.g. 01 - 15 JANUARI) */}
+              <tr className="bg-slate-800 text-white font-bold text-xs uppercase">
+                <th rowSpan={3} className="sticky left-0 z-20 min-w-[200px] bg-slate-800 border-r border-slate-700 px-3 py-2 text-left">
                   ITEM
                 </th>
-                <th rowSpan={2} className="min-w-[90px] border-r border-gray-600 px-3 py-2 text-left uppercase tracking-wider whitespace-nowrap">
+                <th rowSpan={3} className="min-w-[90px] border-r border-slate-700 px-3 py-2 text-left whitespace-nowrap">
                   PLU
                 </th>
-                <th rowSpan={2} className="min-w-[110px] border-r border-gray-600 px-3 py-2 text-right uppercase tracking-wider whitespace-nowrap bg-emerald-950/40">
+                <th rowSpan={3} className="min-w-[110px] border-r border-slate-700 px-3 py-2 text-right whitespace-nowrap bg-emerald-950/40">
                   STOCK AWAL
                 </th>
 
-                {/* STOCK IN Header */}
+                {/* Date Range Top Banner across all STOCK IN and STOCK OUT columns */}
                 <th
-                  colSpan={subPeriodCount + 1}
-                  className="border-r border-gray-600 px-3 py-1.5 text-center font-bold uppercase tracking-wider bg-blue-900/60"
+                  colSpan={(subPeriodCount + 1) * 2}
+                  className="border-r border-slate-700 px-3 py-1.5 text-center font-extrabold tracking-wider bg-slate-300 text-slate-900 border-b border-slate-400"
                 >
-                  STOCK IN
+                  {formatDateRangeLabel(startDate, endDate)}
                 </th>
 
-                {/* STOCK OUT Header */}
-                <th
-                  colSpan={subPeriodCount + 1}
-                  className="border-r border-gray-600 px-3 py-1.5 text-center font-bold uppercase tracking-wider bg-amber-900/60"
-                >
-                  STOCK OUT
-                </th>
-
-                {/* STOCK AKHIR Header */}
-                <th rowSpan={2} className="min-w-[110px] bg-emerald-900/80 px-3 py-2 text-right font-bold uppercase tracking-wider whitespace-nowrap text-emerald-200">
+                <th rowSpan={3} className="min-w-[110px] bg-emerald-700 px-3 py-2 text-right font-extrabold uppercase whitespace-nowrap text-white">
                   STOCK AKHIR
                 </th>
               </tr>
 
-              {/* Row 2: Sub-Period Headers (W1, W2, W3... TOTAL STOCK IN / TOTAL STOCK OUT) */}
-              <tr className="bg-gray-700 text-white font-semibold">
+              {/* Row 2: STOCK IN & STOCK OUT headers */}
+              <tr className="text-slate-900 font-bold text-xs">
+                <th
+                  colSpan={subPeriodCount + 1}
+                  className="border-r border-slate-400 px-3 py-1.5 text-center uppercase tracking-wider bg-blue-200 text-blue-950 border-b border-slate-400"
+                >
+                  STOCK IN
+                </th>
+                <th
+                  colSpan={subPeriodCount + 1}
+                  className="border-r border-slate-400 px-3 py-1.5 text-center uppercase tracking-wider bg-amber-200 text-amber-950 border-b border-slate-400"
+                >
+                  STOCK OUT
+                </th>
+              </tr>
+
+              {/* Row 3: Sub-Period Headers (W1, W2, W3, W4... TOTAL STOCK IN / TOTAL STOCK OUT) */}
+              <tr className="bg-slate-100 text-slate-800 font-bold text-xs border-b border-slate-300">
                 {/* Under STOCK IN */}
                 {periodRange.map((p, idx) => (
-                  <th key={`in_${p.periodKey || idx}`} className="border-r border-gray-600 px-2.5 py-1 text-center bg-blue-900/40 whitespace-nowrap">
+                  <th key={`in_${p.periodKey || idx}`} className="border-r border-slate-300 px-2.5 py-1 text-center bg-blue-50 whitespace-nowrap">
                     {p.label}
                   </th>
                 ))}
-                <th className="border-r border-gray-600 px-3 py-1 text-right font-bold bg-blue-800 text-blue-100 whitespace-nowrap">
+                <th className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-blue-300 text-blue-950 whitespace-nowrap">
                   TOTAL STOCK IN
                 </th>
 
                 {/* Under STOCK OUT */}
                 {periodRange.map((p, idx) => (
-                  <th key={`out_${p.periodKey || idx}`} className="border-r border-gray-600 px-2.5 py-1 text-center bg-amber-900/40 whitespace-nowrap">
+                  <th key={`out_${p.periodKey || idx}`} className="border-r border-slate-300 px-2.5 py-1 text-center bg-amber-50 whitespace-nowrap">
                     {p.label}
                   </th>
                 ))}
-                <th className="border-r border-gray-600 px-3 py-1 text-right font-bold bg-amber-800 text-amber-100 whitespace-nowrap">
+                <th className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-amber-300 text-amber-950 whitespace-nowrap">
                   TOTAL STOCK OUT
                 </th>
               </tr>
 
-              {/* Row 3: Column Filter Row ("DI BIKIN BISA FILTER") */}
-              <tr className="bg-gray-100 border-b border-gray-300">
-                <th className="sticky left-0 z-20 bg-gray-100 border-r border-gray-300 px-1 py-1">
+              {/* Row 4: Column Filter Row ("DI BIKIN BISA FILTER") */}
+              <tr className="bg-slate-50 border-b border-slate-300">
+                <th className="sticky left-0 z-20 bg-slate-50 border-r border-slate-300 px-1 py-1">
                   <input
                     type="text"
                     value={columnFilters.item}
@@ -376,7 +409,7 @@ const InventoryControl = () => {
                     className="w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none"
                   />
                 </th>
-                <th className="border-r border-gray-300 px-1 py-1">
+                <th className="border-r border-slate-300 px-1 py-1">
                   <input
                     type="text"
                     value={columnFilters.plu}
@@ -385,19 +418,17 @@ const InventoryControl = () => {
                     className="w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none"
                   />
                 </th>
-                <th className="border-r border-gray-300 px-1 py-1">
+                <th className="border-r border-slate-300 px-1 py-1">
                   <input
                     type="text"
                     value={columnFilters.stockAwal}
                     onChange={(e) => setColumnFilters((p) => ({ ...p, stockAwal: e.target.value }))}
-                    placeholder="Filter Awal..."
+                    placeholder="Filter Stock Awal..."
                     className="w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none text-right"
                   />
                 </th>
-                {/* Empty filter cells for dynamic periods */}
-                <th colSpan={subPeriodCount + 1} className="border-r border-gray-300 bg-blue-50/30" />
-                <th colSpan={subPeriodCount + 1} className="border-r border-gray-300 bg-amber-50/30" />
-                <th className="bg-emerald-50/30" />
+                <th colSpan={(subPeriodCount + 1) * 2} className="border-r border-slate-300 bg-slate-100/50" />
+                <th className="bg-emerald-50/50" />
               </tr>
             </thead>
 
@@ -428,30 +459,30 @@ const InventoryControl = () => {
                       {fmt(row.stockAwal)}
                     </td>
 
-                    {/* Stock In per Period */}
+                    {/* Stock In W1, W2, W3, W4... */}
                     {row.months?.map((m, pIdx) => (
                       <td key={`in_${m.periodKey || pIdx}`} className="border-r border-gray-200 px-2.5 py-2 text-right tabular-nums text-blue-700">
-                        {m.stockIn > 0 ? fmt(m.stockIn) : <span className="text-gray-300">—</span>}
+                        {m.stockIn > 0 ? fmt(m.stockIn) : <span className="text-gray-300">0</span>}
                       </td>
                     ))}
                     {/* Total Stock In */}
-                    <td className="border-r border-gray-300 px-3 py-2 text-right font-bold tabular-nums text-blue-900 bg-blue-50/60">
+                    <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-blue-950 bg-blue-100/70">
                       {fmt(row.totalStockIn)}
                     </td>
 
-                    {/* Stock Out per Period */}
+                    {/* Stock Out W1, W2, W3, W4... */}
                     {row.months?.map((m, pIdx) => (
                       <td key={`out_${m.periodKey || pIdx}`} className="border-r border-gray-200 px-2.5 py-2 text-right tabular-nums text-amber-700">
-                        {m.stockOut > 0 ? fmt(m.stockOut) : <span className="text-gray-300">—</span>}
+                        {m.stockOut > 0 ? fmt(m.stockOut) : <span className="text-gray-300">0</span>}
                       </td>
                     ))}
                     {/* Total Stock Out */}
-                    <td className="border-r border-gray-300 px-3 py-2 text-right font-bold tabular-nums text-amber-900 bg-amber-50/60">
+                    <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-amber-950 bg-amber-100/70">
                       {fmt(row.totalStockOut)}
                     </td>
 
                     {/* Stock Akhir */}
-                    <td className="px-3 py-2 text-right font-bold tabular-nums text-emerald-800 bg-emerald-50/60">
+                    <td className="px-3 py-2 text-right font-extrabold tabular-nums text-emerald-950 bg-emerald-100/80">
                       {fmt(row.stockAkhir)}
                     </td>
                   </tr>
@@ -468,28 +499,28 @@ const InventoryControl = () => {
                   {fmt(totalStockAwal)}
                 </td>
 
-                {/* Total Stock In per period */}
+                {/* Total Stock In per W1, W2... */}
                 {totalStockInPerPeriod.map((val, pIdx) => (
                   <td key={`tot_in_${pIdx}`} className="border-r border-gray-300 px-2.5 py-2 text-right text-blue-800">
                     {fmt(val)}
                   </td>
                 ))}
-                <td className="border-r border-gray-300 px-3 py-2 text-right text-blue-950 font-bold bg-blue-100/70">
+                <td className="border-r border-gray-300 px-3 py-2 text-right text-blue-950 font-extrabold bg-blue-200/80">
                   {fmt(grandTotalStockIn)}
                 </td>
 
-                {/* Total Stock Out per period */}
+                {/* Total Stock Out per W1, W2... */}
                 {totalStockOutPerPeriod.map((val, pIdx) => (
                   <td key={`tot_out_${pIdx}`} className="border-r border-gray-300 px-2.5 py-2 text-right text-amber-800">
                     {fmt(val)}
                   </td>
                 ))}
-                <td className="border-r border-gray-300 px-3 py-2 text-right text-amber-950 font-bold bg-amber-100/70">
+                <td className="border-r border-gray-300 px-3 py-2 text-right text-amber-950 font-extrabold bg-amber-200/80">
                   {fmt(grandTotalStockOut)}
                 </td>
 
                 {/* Grand Total Stock Akhir */}
-                <td className="px-3 py-2 text-right text-emerald-950 font-bold bg-emerald-100/80">
+                <td className="px-3 py-2 text-right text-emerald-950 font-extrabold bg-emerald-200">
                   {fmt(grandTotalStockAkhir)}
                 </td>
               </tr>
