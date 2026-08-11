@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/organisms/Sidebar.jsx';
+import CompanySwitcher from '../components/organisms/CompanySwitcher.jsx';
 import NotificationBell from '../components/molecules/NotificationBell.jsx';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
@@ -38,7 +39,8 @@ const MainLayout = ({ children }) => {
       <div className='flex-1 flex flex-col overflow-hidden'>
         <header className='flex justify-between items-center p-4 bg-white border-b'>
           <div>{/* Breadcrumbs or page titles can be added here */}</div>
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-3'>
+            <CompanySwitcher />
             <button
               onClick={() => window.location.reload()}
               className='p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors'
