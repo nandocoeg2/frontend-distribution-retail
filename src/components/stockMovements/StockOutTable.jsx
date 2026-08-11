@@ -115,8 +115,26 @@ const StockOutTable = ({
             ? Number(matchingPoDetail.quantity || matchingPoDetail.qty_po || 0)
             : totalPengiriman;
 
-          const selisih = poQuantity - totalPengiriman;
-          const stokGantung = Number(itemObj?.stokGantung || 0);
+          // Calculate Total Penagihan for this item (from invoicePenagihanDetails if present)
+          const invoicePenagihanList = Array.isArray(movement?.purchaseOrder?.invoicePenagihan)
+            ? movement.purchaseOrder.invoicePenagihan
+            : movement?.purchaseOrder?.invoicePenagihan
+            ? [movement.purchaseOrder.invoicePenagihan]
+            : [];
+
+          const matchingInvoiceDetails = invoicePenagihanList.flatMap(
+            (inv) => inv?.invoicePenagihanDetails || []
+          ).filter(
+            (det) => det?.itemId === itemId || (itemInfo?.plu && det?.PLU === itemInfo?.plu)
+          );
+
+          const totalPenagihan = matchingInvoiceDetails.reduce(
+            (sum, det) => sum + Number(det?.quantity || 0),
+            0
+          );
+
+          // Stok Gantung = Total Penagihan - Total Kirim (totalPengiriman)
+          const stokGantung = totalPenagihan - totalPengiriman;
 
           flatRows.push({
             id: `${movement.id}-${idx}`,
@@ -129,8 +147,8 @@ const StockOutTable = ({
             poQuantity,
             selisih,
             noPo: poNumber,
-            totalPenagihan: totalPenagihanVal,
-            stokGantung: stokGantung > 0 ? -stokGantung : 0, // negative indicator as in mockup
+            totalPenagihan,
+            stokGantung,
             source: movement,
           });
         });
