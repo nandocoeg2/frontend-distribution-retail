@@ -133,6 +133,9 @@ const StockOutTable = ({
             0
           );
 
+          // Selisih = PO Quantity - Total Pengiriman
+          const selisih = poQuantity - totalPengiriman;
+
           // Stok Gantung = Total Penagihan - Total Kirim (totalPengiriman)
           const stokGantung = totalPenagihan - totalPengiriman;
 
