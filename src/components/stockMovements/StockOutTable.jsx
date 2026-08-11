@@ -68,8 +68,14 @@ const StockOutTable = ({
 
       const invoiceNumber =
         movement?.no_invoice ||
-        movement?.suratJalan?.invoicePengiriman?.no_invoice ||
-        movement?.purchaseOrder?.invoicePenagihan?.[0]?.no_invoice ||
+        movement?.suratJalan?.invoice?.no_invoice ||
+        movement?.purchaseOrder?.invoice?.no_invoice ||
+        movement?.purchaseOrder?.invoicePengiriman?.no_invoice ||
+        (Array.isArray(movement?.purchaseOrder?.invoicePenagihan)
+          ? movement.purchaseOrder.invoicePenagihan[0]?.no_invoice_penagihan ||
+            movement.purchaseOrder.invoicePenagihan[0]?.no_invoice
+          : movement?.purchaseOrder?.invoicePenagihan?.no_invoice_penagihan ||
+            movement?.purchaseOrder?.invoicePenagihan?.no_invoice) ||
         '-';
 
       const totalPenagihanVal = Number(
@@ -132,6 +138,9 @@ const StockOutTable = ({
             (sum, det) => sum + Number(det?.quantity || 0),
             0
           );
+
+          // Selisih = PO Quantity - Total Pengiriman
+          const selisih = poQuantity - totalPengiriman;
 
           // Stok Gantung = Total Penagihan - Total Kirim (totalPengiriman)
           const stokGantung = totalPenagihan - totalPengiriman;
