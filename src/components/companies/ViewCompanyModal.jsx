@@ -156,7 +156,6 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
                 <InfoTable
                   data={[
                     { label: 'Phone', value: company?.telp, copyable: true },
-                    { label: 'Fax', value: company?.fax },
                     { label: 'Email', value: company?.email, copyable: true },
                   ]}
                 />

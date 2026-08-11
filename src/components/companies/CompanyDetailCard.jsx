@@ -26,7 +26,6 @@ const getFormDataFromCompany = (company = {}) => ({
   bank_account_name: company.bank_account_name || '',
   bank_cabang: company.bank_cabang || '',
   telp: company.telp || '',
-  fax: company.fax || '',
   email: company.email || '',
   direktur_utama: company.direktur_utama || '',
   npwp: company.npwp || '',
@@ -332,7 +331,6 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
             <InfoTable
               data={[
                 { label: 'Phone', value: company?.telp || '—', copyable: !!company?.telp },
-                { label: 'Fax', value: company?.fax || '—' },
                 { label: 'Email', value: company?.email || '—', copyable: !!company?.email },
               ]}
             />

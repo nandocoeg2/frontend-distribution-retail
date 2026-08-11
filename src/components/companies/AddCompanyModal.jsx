@@ -12,7 +12,6 @@ const createInitialFormData = () => ({
   bank_account_name: '',
   bank_cabang: '',
   telp: '',
-  fax: '',
   email: '',
   direktur_utama: '',
   npwp: '',

@@ -181,7 +181,6 @@ const fieldNameMappings = {
     address: 'Alamat',
     phoneNumber: 'Nomor Telepon',
     email: 'Email',
-    fax: 'Nomor Fax',
     direktur: 'Direktur',
     npwp: 'NPWP',
     id_tku: 'ID TKU',

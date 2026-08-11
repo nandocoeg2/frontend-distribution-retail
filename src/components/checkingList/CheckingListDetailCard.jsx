@@ -946,10 +946,7 @@ const CheckingListDetailCard = ({
                           label: 'Email',
                           value: supplier.email || '-',
                         },
-                        {
-                          label: 'Fax',
-                          value: supplier.fax || '-',
-                        },
+
                         {
                           label: 'Bank Name',
                           value: supplier.bank?.name || '-',

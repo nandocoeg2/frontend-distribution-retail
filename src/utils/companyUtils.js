@@ -9,7 +9,6 @@ export const DEFAULT_COMPANY_PROFILE = {
     'Pergudangan Duta Indah Kapuk 2 Blok. C8',
     'Jakarta Utara, Indonesia',
     'Telp : (021) 2901 8795',
-    'Fax  : (021) 5035 0355',
   ],
   city: 'Jakarta',
   bankInfoLines: [
@@ -127,14 +126,9 @@ const buildAddressLines = (address, sources) => {
   const lines = splitAddressLines(address);
 
   const phone = pickCompanyField(sources, ['telp', 'telepon', 'phone']);
-  const fax = pickCompanyField(sources, ['fax']);
 
   if (phone) {
     lines.push(`Telp : ${phone}`);
-  }
-
-  if (fax) {
-    lines.push(`Fax  : ${fax}`);
   }
 
   return lines.length > 0 ? lines : [...DEFAULT_COMPANY_PROFILE.addressLines];

@@ -27,7 +27,6 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
     phoneNumber: '',
     description: '',
     email: '',
-    fax: '',
     direktur: '',
     npwp: '',
     id_tku: '',
@@ -93,7 +92,6 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
         phoneNumber: supplierData.phoneNumber || '',
         description: supplierData.description || '',
         email: supplierData.email || '',
-        fax: supplierData.fax || '',
         direktur: supplierData.direktur || '',
         npwp: supplierData.npwp || '',
         id_tku: supplierData.id_tku || '',
@@ -130,7 +128,6 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
         phoneNumber: supplierData.phoneNumber || '',
         description: supplierData.description || '',
         email: supplierData.email || '',
-        fax: supplierData.fax || '',
         direktur: supplierData.direktur || '',
         npwp: supplierData.npwp || '',
         id_tku: supplierData.id_tku || '',
@@ -385,20 +382,6 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
                 />
               </div>
 
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>
-                  Fax
-                </label>
-                <input
-                  type='tel'
-                  name='fax'
-                  value={formData.fax}
-                  onChange={handleInputChange}
-                  placeholder='e.g., 021-1234567'
-                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                />
-              </div>
-
               {/* Company Information Section */}
               <div className='border-t pt-4 mt-4'>
                 <h4 className='text-md font-medium text-gray-800 mb-3'>Company Information</h4>
@@ -561,7 +544,6 @@ const SupplierDetailCard = ({ supplier, onClose, onUpdate, handleAuthError }) =>
                 },
                 { label: 'Email', value: supplierData?.email || '—', copyable: !!supplierData?.email },
                 { label: 'Telepon', value: supplierData?.phoneNumber || '—', copyable: !!supplierData?.phoneNumber },
-                { label: 'Fax', value: supplierData?.fax || '—', copyable: !!supplierData?.fax },
                 { label: 'Direktur', value: supplierData?.direktur || '—' },
                 { label: 'NPWP', value: supplierData?.npwp || '—', copyable: !!supplierData?.npwp },
                 { label: 'ID TKU', value: supplierData?.id_tku || '—', copyable: !!supplierData?.id_tku },

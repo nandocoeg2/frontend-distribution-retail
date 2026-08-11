@@ -102,8 +102,7 @@ const ViewSupplierModal = ({ show, onClose, supplier }) => {
               <InfoTable
                 data={[
                   { label: 'Nomor Telepon', value: supplier.phoneNumber },
-                  { label: 'Email', value: supplier.email || '-', copyable: !!supplier.email },
-                  { label: 'Fax', value: supplier.fax || '-' }
+                  { label: 'Email', value: supplier.email || '-', copyable: !!supplier.email }
                 ]}
               />
             </AccordionItem>

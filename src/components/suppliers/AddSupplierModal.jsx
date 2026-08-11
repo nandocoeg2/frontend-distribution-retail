@@ -14,7 +14,6 @@ const initialFormData = {
   phoneNumber: '',
   description: '',
   email: '',
-  fax: '',
   direktur: '',
   npwp: '',
   id_tku: '',
