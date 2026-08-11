@@ -401,14 +401,14 @@ const MutasiBankTableServerSide = ({
       columnHelper.display({
         id: 'actions',
         header: 'Aksi',
-        size: 180,
+        size: 90,
         cell: ({ row }) => {
           const mutation = row.original;
           const mutationId = resolveMutationId(mutation);
           const hasDocument = hasAssignedDocument(mutation);
 
           return (
-            <div className='flex items-center justify-end gap-1'>
+            <div className='flex items-center justify-left gap-1'>
               <button
                 type='button'
                 onClick={() => {
@@ -420,7 +420,6 @@ const MutasiBankTableServerSide = ({
                 title='Detail'
               >
                 <EyeIcon className='w-3.5 h-3.5 mr-0.5' />
-                Detail
               </button>
 
               {hasDocument ? (
@@ -436,7 +435,6 @@ const MutasiBankTableServerSide = ({
                   title='Lepas kaitan dokumen'
                 >
                   <XMarkIcon className='w-3.5 h-3.5 mr-0.5' />
-                  Unbind
                 </button>
               ) : null}
 
@@ -452,7 +450,6 @@ const MutasiBankTableServerSide = ({
                 title='Validasi'
               >
                 <CheckBadgeIcon className='w-3.5 h-3.5 mr-0.5' />
-                Validasi
               </button>
             </div>
           );
