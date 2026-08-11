@@ -1,24 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BuildingStorefrontIcon, ChevronDownIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { BuildingStorefrontIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { getCompanies } from '../../services/companyService';
-import { getActiveCompanyName } from '../../utils/companyUtils';
 
-const CompanySwitcher = () => {
+const CompanySwitcher = ({ companyName, onCompanyChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentCompany, setCurrentCompany] = useState(() => getActiveCompanyName());
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    // Listen for company update events
-    const updateHandler = () => {
-      setCurrentCompany(getActiveCompanyName());
-    };
-    window.addEventListener('company:updated', updateHandler);
-    return () => window.removeEventListener('company:updated', updateHandler);
-  }, []);
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -38,7 +27,7 @@ const CompanySwitcher = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    // Fetch companies when dropdown is opened for the first time
+    // Fetch companies when dropdown is opened
     if (isOpen && companies.length === 0) {
       fetchCompanies();
     }
@@ -49,10 +38,12 @@ const CompanySwitcher = () => {
     setError(null);
     try {
       const response = await getCompanies(1, 100);
+      // Handle different response structures
       let companiesData = [];
       if (Array.isArray(response)) {
         companiesData = response;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
+        // Nested structure: response.data.data
         companiesData = response.data.data;
       } else if (response.data && Array.isArray(response.data)) {
         companiesData = response.data;
@@ -62,7 +53,7 @@ const CompanySwitcher = () => {
       setCompanies(companiesData);
     } catch (err) {
       console.error('Failed to fetch companies:', err);
-      setError('Gagal memuat perusahaan');
+      setError('Failed to load companies');
     } finally {
       setLoading(false);
     }
@@ -70,31 +61,37 @@ const CompanySwitcher = () => {
 
   const handleCompanySelect = (company) => {
     setIsOpen(false);
-    if (company) {
-      localStorage.setItem('company', JSON.stringify(company));
-      setCurrentCompany(company.nama_perusahaan || company.name || getActiveCompanyName());
-      window.dispatchEvent(new Event('company:updated'));
-      window.location.reload();
+    if (onCompanyChange) {
+      onCompanyChange(company);
     }
   };
 
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen);
+  };
+
   return (
-    <div className='relative' ref={dropdownRef}>
-      {/* Trigger Button */}
+    <div className="relative" ref={dropdownRef}>
+      {/* Company Header - Clickable */}
       <button
-        type='button'
-        onClick={() => setIsOpen((prev) => !prev)}
-        className='flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-800 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
-        title='Ganti Perusahaan / Company'
+        type="button"
+        onClick={toggleDropdown}
+        className="flex items-center space-x-3 w-full text-left hover:bg-white/5 rounded-lg transition-all duration-200 group p-1"
       >
-        <div className='flex items-center justify-center w-6 h-6 rounded-md bg-indigo-100 text-indigo-600 flex-shrink-0'>
-          <BuildingStorefrontIcon className='w-4 h-4' aria-hidden='true' />
+        <div className="flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex-shrink-0">
+          <BuildingStorefrontIcon
+            className="w-6 h-6 text-white"
+            aria-hidden="true"
+          />
         </div>
-        <span className='max-w-[140px] sm:max-w-[200px] truncate font-bold text-gray-900'>
-          {currentCompany}
-        </span>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-sm font-bold text-transparent bg-gradient-to-r from-white to-slate-200 bg-clip-text truncate">
+            {companyName}
+          </h1>
+          <p className="text-xs text-slate-400 truncate">Active Company</p>
+        </div>
         <ChevronDownIcon
-          className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 ${
+          className={`w-5 h-5 text-slate-400 transition-transform duration-200 group-hover:text-white flex-shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -102,55 +99,72 @@ const CompanySwitcher = () => {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className='absolute right-0 mt-2 w-64 rounded-xl bg-white border border-gray-200 shadow-xl z-50 overflow-hidden py-1 divide-y divide-gray-100'>
-          <div className='px-3 py-2 bg-gray-50/80 border-b border-gray-100'>
-            <p className='text-[10px] font-bold uppercase tracking-wider text-gray-500'>
-              Pilih Perusahaan / Company
-            </p>
-          </div>
-
-          <div className='max-h-60 overflow-y-auto divide-y divide-gray-50'>
-            {loading ? (
-              <div className='p-4 text-center text-xs text-gray-400'>
-                Memuat daftar perusahaan...
-              </div>
-            ) : error ? (
-              <div className='p-4 text-center text-xs text-red-500'>
-                {error}
-              </div>
-            ) : companies.length === 0 ? (
-              <div className='p-4 text-center text-xs text-gray-400'>
-                Tidak ada perusahaan tersedia
-              </div>
-            ) : (
-              companies.map((comp) => {
-                const compName = comp.nama_perusahaan || comp.name || '';
-                const isSelected = compName === currentCompany;
-                return (
+        <div className="absolute left-0 right-0 mt-2 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+          {loading ? (
+            <div className="p-4 text-center text-slate-400 text-sm">
+              Loading companies...
+            </div>
+          ) : error ? (
+            <div className="p-4 text-center text-red-400 text-sm">
+              {error}
+            </div>
+          ) : (
+            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+              {companies.length === 0 ? (
+                <div className="p-4 text-center text-slate-400 text-sm">
+                  No companies available
+                </div>
+              ) : (
+                companies.map((company) => (
                   <button
-                    key={comp.id || compName}
-                    type='button'
-                    onClick={() => handleCompanySelect(comp)}
-                    className={`w-full text-left px-3 py-2.5 text-xs flex items-center justify-between transition-colors hover:bg-indigo-50/70 ${
-                      isSelected
-                        ? 'bg-indigo-50 font-bold text-indigo-700'
-                        : 'text-gray-700'
+                    key={company.id}
+                    type="button"
+                    onClick={() => handleCompanySelect(company)}
+                    className={`w-full flex items-center space-x-3 p-3 hover:bg-white/10 transition-all duration-150 ${
+                      company.nama_perusahaan === companyName
+                        ? 'bg-blue-500/20 text-white'
+                        : 'text-slate-300'
                     }`}
                   >
-                    <div className='flex items-center gap-2 min-w-0 pr-2'>
-                      <BuildingStorefrontIcon className='w-4 h-4 text-gray-400 flex-shrink-0' />
-                      <span className='truncate'>{compName}</span>
+                    <div className="flex items-center justify-center w-8 h-8 bg-white/10 rounded-lg flex-shrink-0">
+                      <BuildingStorefrontIcon
+                        className="w-5 h-5"
+                        aria-hidden="true"
+                      />
                     </div>
-                    {isSelected && (
-                      <CheckIcon className='w-4 h-4 text-indigo-600 flex-shrink-0' />
-                    )}
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {company.nama_perusahaan}
+                      </p>
+                      {company.kode_company_surat && (
+                        <p className="text-xs text-slate-400 truncate">
+                          {company.kode_company_surat}
+                        </p>
+                      )}
+                    </div>
                   </button>
-                );
-              })
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      `}</style>
     </div>
   );
 };
