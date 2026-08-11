@@ -269,7 +269,7 @@ const MutasiBankTableServerSide = ({
               </div>
             );
           },
-          size: 110,
+          size: 140,
           cell: (info) => {
             const value = info.getValue();
             return value ? formatDate(value) : '-';
@@ -299,7 +299,7 @@ const MutasiBankTableServerSide = ({
         {
           id: 'description',
           header: 'Deskripsi',
-          size: 320,
+          size: 250,
           cell: (info) => {
             const value = info.getValue() || '-';
             return (
@@ -327,7 +327,7 @@ const MutasiBankTableServerSide = ({
             </select>
           </div>
         ),
-        size: 150,
+        size: 140,
         cell: ({ row }) => {
           const matched = resolveMatchedDocument(row.original);
           if (!matched) {
@@ -350,7 +350,7 @@ const MutasiBankTableServerSide = ({
               <RangeColumnFilter column={column} setPage={setPage} />
             </div>
           ),
-          size: 120,
+          size: 150,
           cell: (info) => formatCurrency(info.getValue() || 0),
           enableSorting: true,
         }
@@ -390,7 +390,7 @@ const MutasiBankTableServerSide = ({
             />
           </div>
         ),
-        size: 100,
+        size: 150,
         cell: ({ row }) => {
           const status = row.original.validation_status || '-';
           return (
@@ -401,7 +401,7 @@ const MutasiBankTableServerSide = ({
       columnHelper.display({
         id: 'actions',
         header: 'Aksi',
-        size: 160,
+        size: 180,
         cell: ({ row }) => {
           const mutation = row.original;
           const mutationId = resolveMutationId(mutation);
@@ -507,7 +507,7 @@ const MutasiBankTableServerSide = ({
           emptyMessage='Belum ada mutasi bank.'
           emptyFilteredMessage='Tidak ditemukan mutasi sesuai filter.'
           wrapperClassName='overflow-x-auto'
-          tableClassName='min-w-[1180px] w-full divide-y divide-gray-200 text-xs table-fixed'
+          tableClassName='min-w-[1390px] w-full divide-y divide-gray-200 text-xs table-fixed'
           headerRowClassName='bg-gray-50'
           headerCellClassName='px-2.5 py-1.5 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider'
           bodyClassName='divide-y divide-gray-100 bg-white'
@@ -517,11 +517,19 @@ const MutasiBankTableServerSide = ({
           footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
           footerContent={
             <tr>
-              {table.getVisibleLeafColumns().map((column) => (
-                <td key={column.id} className="px-2.5 py-1 text-xs border-t border-gray-300 text-center">
-                  <TableFooterCell column={column} table={table} />
-                </td>
-              ))}
+              {table.getVisibleLeafColumns().map((column) => {
+                const isFirst = column.id === 'transaction_date';
+                const isAmount = column.id === 'amount';
+                return (
+                  <td key={column.id} className="px-2.5 py-1 text-xs border-t border-gray-300 text-center font-bold">
+                    {isFirst ? (
+                      <span className="text-gray-700 uppercase font-semibold">Total</span>
+                    ) : isAmount ? (
+                      <TableFooterCell column={column} table={table} />
+                    ) : null}
+                  </td>
+                );
+              })}
             </tr>
           }
         />
