@@ -38,7 +38,7 @@ const AddPurchaseOrderModal = ({
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeTab, setActiveTab] = useState('bulk');
   const [uploadMode, setUploadMode] = useState('files');
-  const [processingMethod, setProcessingMethod] = useState('text-extraction');
+  const processingMethod = 'text-extraction';
 
   // Refs for file inputs
   const manualFileInputRef = useRef(null);
@@ -528,40 +528,7 @@ const AddPurchaseOrderModal = ({
                     Upload Bulk Purchase Orders (PDF / EDI)
                   </label>
 
-                  {/* Processing Method Selection */}
-                  <div className='mb-4 p-3 bg-gray-50 border border-gray-200 rounded-md'>
-                    <label className='block mb-2 text-sm font-medium text-gray-700'>
-                      Processing Method
-                    </label>
-                    <div className='flex items-start space-x-6'>
-                      <label className='flex items-start space-x-2 cursor-pointer'>
-                        <input
-                          type='radio'
-                          name='processingMethod'
-                          value='text-extraction'
-                          checked={processingMethod === 'text-extraction'}
-                          onChange={(e) => setProcessingMethod(e.target.value)}
-                          className='w-4 h-4 text-blue-600 mt-0.5'
-                        />
-                        <div>
-                          <span className='text-sm font-medium text-gray-700'>Normal Method</span>
-                        </div>
-                      </label>
-                      <label className='flex items-start space-x-2 cursor-pointer'>
-                        <input
-                          type='radio'
-                          name='processingMethod'
-                          value='ai'
-                          checked={processingMethod === 'ai'}
-                          onChange={(e) => setProcessingMethod(e.target.value)}
-                          className='w-4 h-4 text-blue-600 mt-0.5'
-                        />
-                        <div>
-                          <span className='text-sm font-medium text-gray-700'>AI Method</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
+
 
                   {/* Upload Mode Selection */}
                   <div className='flex items-center space-x-6 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-md'>

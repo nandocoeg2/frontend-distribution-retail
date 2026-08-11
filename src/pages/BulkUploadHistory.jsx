@@ -3,7 +3,7 @@ import bulkPurchaseOrderService from '../services/bulkPurchaseOrderService';
 import toastService from '../services/toastService';
 import { formatDateTime } from '../utils/formatUtils';
 import { truncateText, getStatusVariant } from '../utils/modalUtils';
-import { ArrowPathIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const StatusBadgeInline = ({ status }) => {
   const variant = getStatusVariant(status);
@@ -308,37 +308,14 @@ const BulkUploadHistory = () => {
                             {isFailed && (
                               <div className="relative">
                                 <button
-                                  onClick={() => setShowRetryMenu(showRetryMenu === it.id ? null : it.id)}
+                                  onClick={() => handleRetry(it.id, it.filename, 'text-extraction')}
                                   disabled={isRetrying}
                                   className="px-3 py-1.5 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1.5"
                                   title="Retry processing this file"
                                 >
                                   <ArrowPathIcon className={`w-4 h-4 ${isRetrying ? 'animate-spin' : ''}`} />
                                   {isRetrying ? 'Retrying...' : 'Retry'}
-                                  {!isRetrying && <ChevronDownIcon className="w-3 h-3" />}
                                 </button>
-                                {showRetryMenu === it.id && !isRetrying && (
-                                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                                    <button
-                                      onClick={() => handleRetry(it.id, it.filename, 'ai')}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2"
-                                    >
-                                      <div className="flex-1">
-                                        <div className="font-medium">Retry with AI</div>
-                                        <div className="text-xs text-gray-500">Best for complex documents</div>
-                                      </div>
-                                    </button>
-                                    <button
-                                      onClick={() => handleRetry(it.id, it.filename, 'text-extraction')}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 border-t"
-                                    >
-                                      <div className="flex-1">
-                                        <div className="font-medium">Retry with Text Extraction</div>
-                                        <div className="text-xs text-gray-500">Faster, for standard formats</div>
-                                      </div>
-                                    </button>
-                                  </div>
-                                )}
                               </div>
                             )}
                             <button onClick={() => openDetail(it.id)} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Detail</button>
