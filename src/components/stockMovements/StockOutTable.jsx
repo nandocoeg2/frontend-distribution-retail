@@ -68,8 +68,14 @@ const StockOutTable = ({
 
       const invoiceNumber =
         movement?.no_invoice ||
-        movement?.suratJalan?.invoicePengiriman?.no_invoice ||
-        movement?.purchaseOrder?.invoicePenagihan?.[0]?.no_invoice ||
+        movement?.suratJalan?.invoice?.no_invoice ||
+        movement?.purchaseOrder?.invoice?.no_invoice ||
+        movement?.purchaseOrder?.invoicePengiriman?.no_invoice ||
+        (Array.isArray(movement?.purchaseOrder?.invoicePenagihan)
+          ? movement.purchaseOrder.invoicePenagihan[0]?.no_invoice_penagihan ||
+            movement.purchaseOrder.invoicePenagihan[0]?.no_invoice
+          : movement?.purchaseOrder?.invoicePenagihan?.no_invoice_penagihan ||
+            movement?.purchaseOrder?.invoicePenagihan?.no_invoice) ||
         '-';
 
       const totalPenagihanVal = Number(
