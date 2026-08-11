@@ -50,7 +50,14 @@ const MutasiBankDetailModal = ({
 
   const transactionDate = detail?.tanggal_transaksi;
   const mutationType = detail?.mutation_type || '-';
-  const mutationStatus = detail?.validation_status || '-';
+  const mutationStatus = useMemo(() => {
+    const status = detail?.validation_status || '';
+    const upper = typeof status === 'string' ? status.toUpperCase() : '';
+    if (['VALID', 'MATCHED', 'RECONCILED'].includes(upper)) {
+      return 'MATCHED';
+    }
+    return 'UNMATCHED';
+  }, [detail]);
   const mutationAmount = detail?.jumlah || 0;
   const mutationNotes = detail?.keterangan || '';
   const bankCode = detail?.bank_code || '-';

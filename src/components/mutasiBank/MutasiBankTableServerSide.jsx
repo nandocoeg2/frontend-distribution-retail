@@ -16,12 +16,8 @@ import RangeColumnFilter from '../common/RangeColumnFilter';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const STATUS_OPTIONS = [
-  { id: 'PENDING', name: 'Pending' },
   { id: 'MATCHED', name: 'Matched' },
   { id: 'UNMATCHED', name: 'Unmatched' },
-  { id: 'VALID', name: 'Valid' },
-  { id: 'INVALID', name: 'Invalid' },
-  { id: 'RECONCILED', name: 'Reconciled' },
 ];
 
 const HAS_DOCUMENT_OPTIONS = [
@@ -41,23 +37,13 @@ const resolveMutationId = (mutation) => {
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toUpperCase() : '';
 
-  if (!value) {
-    return 'secondary';
-  }
-
-  if (value.includes('VALID') || value.includes('MATCH')) {
+  if (value === 'MATCHED') {
     return 'success';
   }
-
-  if (value.includes('INVALID') || value.includes('FAIL')) {
-    return 'danger';
-  }
-
-  if (value.includes('PENDING') || value.includes('UNMATCH')) {
+  if (value === 'UNMATCHED') {
     return 'warning';
   }
-
-  return 'info';
+  return 'secondary';
 };
 
 const resolveMutationTypeLabel = (mutation) => {
@@ -292,11 +278,28 @@ const MutasiBankTableServerSide = ({
         }
       ),
       columnHelper.accessor(
+        (row) => row.customer?.namaCustomer || '',
+        {
+          id: 'customer',
+          header: 'Customer',
+          size: 180,
+          cell: ({ row }) => {
+            const customer = row.original.customer;
+            if (!customer) return <span className='text-xs text-gray-400'>-</span>;
+            return (
+              <div className='text-xs leading-tight font-medium text-gray-800'>
+                {customer.namaCustomer} <span className='text-gray-500 font-normal'>({customer.kodeCustomer})</span>
+              </div>
+            );
+          },
+        }
+      ),
+      columnHelper.accessor(
         (row) => row.keterangan || '',
         {
           id: 'description',
           header: 'Deskripsi',
-          size: 410,
+          size: 320,
           cell: (info) => {
             const value = info.getValue() || '-';
             return (
@@ -307,6 +310,36 @@ const MutasiBankTableServerSide = ({
           },
         }
       ),
+      columnHelper.display({
+        id: 'invoice_number',
+        header: ({ column }) => (
+          <div className='space-y-0.5'>
+            <div className='font-medium text-[11px]'>No Invoice</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
+              onClick={(e) => e.stopPropagation()}
+            >
+              {HAS_DOCUMENT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        ),
+        size: 150,
+        cell: ({ row }) => {
+          const matched = resolveMatchedDocument(row.original);
+          if (!matched) {
+            return <span className='text-xs text-gray-400'>-</span>;
+          }
+          return (
+            <div className='text-xs font-semibold text-gray-900' title={`${matched.type}: ${matched.number}`}>
+              {matched.number || '-'}
+            </div>
+          );
+        },
+      }),
       columnHelper.accessor(
         (row) => Number(row.jumlah || 0),
         {
@@ -317,30 +350,27 @@ const MutasiBankTableServerSide = ({
               <RangeColumnFilter column={column} setPage={setPage} />
             </div>
           ),
-          size: 140,
+          size: 120,
           cell: (info) => formatCurrency(info.getValue() || 0),
           enableSorting: true,
         }
       ),
-      columnHelper.display({
-        id: 'mutation_type',
-        header: 'Tipe',
-        size: 80,
-        cell: ({ row }) => {
-          const type = resolveMutationTypeLabel(row.original);
-          const baseClass =
-            type === 'CR'
-              ? 'bg-green-100 text-green-800'
-              : type === 'DB'
-                ? 'bg-amber-100 text-amber-800'
-                : 'bg-gray-100 text-gray-700';
-          return (
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${baseClass}`}>
-              {type || '-'}
-            </span>
-          );
-        },
-      }),
+      columnHelper.accessor(
+        (row) => row.validation_notes || '',
+        {
+          id: 'validation_notes',
+          header: 'Keterangan (Retur/Rebate)',
+          size: 200,
+          cell: (info) => {
+            const value = info.getValue() || '-';
+            return (
+              <div className='w-full truncate text-gray-600' title={value !== '-' ? value : ''}>
+                {value}
+              </div>
+            );
+          },
+        }
+      ),
       columnHelper.display({
         id: 'validation_status',
         header: ({ column }) => (
@@ -365,46 +395,6 @@ const MutasiBankTableServerSide = ({
           const status = row.original.validation_status || '-';
           return (
             <StatusBadge status={status} variant={resolveStatusVariant(status)} size='xs' />
-          );
-        },
-      }),
-
-      columnHelper.display({
-        id: 'matched_document',
-        header: ({ column }) => (
-          <div className='space-y-0.5'>
-            <div className='font-medium text-[11px]'>Dokumen Cocok</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            >
-              {HAS_DOCUMENT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-        ),
-        size: 180,
-        cell: ({ row }) => {
-          const matched = resolveMatchedDocument(row.original);
-          if (!matched) {
-            return <span className='text-xs text-gray-400'>Belum ada</span>;
-          }
-
-          return (
-            <div className='text-xs leading-tight'>
-              <div className='font-medium text-gray-800'>{matched.type}</div>
-              {matched.number && (
-                <div className='text-gray-600'>No: {matched.number}</div>
-              )}
-              {matched.amount ? (
-                <div className='text-gray-600'>
-                  {formatCurrency(matched.amount)}
-                </div>
-              ) : null}
-            </div>
           );
         },
       }),
@@ -448,22 +438,7 @@ const MutasiBankTableServerSide = ({
                   <XMarkIcon className='w-3.5 h-3.5 mr-0.5' />
                   Unbind
                 </button>
-              ) : (
-                <button
-                  type='button'
-                  onClick={() => {
-                    if (typeof onAssignDocument === 'function') {
-                      onAssignDocument(mutation, mutationId);
-                    }
-                  }}
-                  disabled={isAssigning}
-                  className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-40'
-                  title='Kaitkan dokumen ke mutasi'
-                >
-                  <LinkIcon className='w-3.5 h-3.5 mr-0.5' />
-                  Bind
-                </button>
-              )}
+              ) : null}
 
               <button
                 type='button'
@@ -490,10 +465,8 @@ const MutasiBankTableServerSide = ({
   }, [
     onValidateMutation,
     onViewMutation,
-    onAssignDocument,
     onUnassignDocument,
     isValidating,
-    isAssigning,
     isUnassigning,
   ]);
 
