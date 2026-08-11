@@ -113,6 +113,13 @@ const InventoryControl = () => {
 
       if (rows.length > 0 && rows[0].months) {
         setPeriodRange(rows[0].months);
+      } else if (viewMode === 'weekly') {
+        setPeriodRange([
+          { periodKey: 'W1', label: 'W1' },
+          { periodKey: 'W2', label: 'W2' },
+          { periodKey: 'W3', label: 'W3' },
+          { periodKey: 'W4', label: 'W4' },
+        ]);
       } else {
         setPeriodRange([]);
       }
@@ -221,7 +228,7 @@ const InventoryControl = () => {
             Inventory Control
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Rekap stok per item dengan tampilan Weekly (W1, W2, W3, W4...) & Monthly.
+            Rekap stok per item dengan tampilan Weekly & Monthly.
           </p>
         </div>
         <button
@@ -250,22 +257,20 @@ const InventoryControl = () => {
               <button
                 type="button"
                 onClick={() => setViewMode('weekly')}
-                className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
-                  viewMode === 'weekly'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-3 py-1 text-xs font-semibold rounded transition-all ${viewMode === 'weekly'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
-                Weekly (W1, W2, W3...)
+                Weekly (Mingguan)
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('monthly')}
-                className={`px-3 py-1 text-xs font-semibold rounded transition-all ${
-                  viewMode === 'monthly'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`px-3 py-1 text-xs font-semibold rounded transition-all ${viewMode === 'monthly'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 Monthly (Bulanan)
               </button>
