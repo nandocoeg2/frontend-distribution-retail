@@ -314,7 +314,7 @@ const FakturPajakPage = () => {
   }, []);
 
   return (
-    <div className='flex flex-col gap-6 p-6'>
+    <div className='flex flex-col'>
       {/* Table Section */}
       <div className='p-6 bg-white rounded-lg shadow-sm border border-gray-200'>
         <div className='flex flex-col gap-4'>
