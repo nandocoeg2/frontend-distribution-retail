@@ -479,7 +479,7 @@ const ItemForm = ({ onSubmit, onClose, initialData = EMPTY_INITIAL_DATA, loading
             value={formData.companyId}
             onChange={handleChange}
             required
-            disabled={loading || loadingCompanies}
+            disabled={loading || loadingCompanies || !!defaultCompanyId}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             <option value="">{loadingCompanies ? 'Loading companies...' : 'Pilih Company'}</option>
