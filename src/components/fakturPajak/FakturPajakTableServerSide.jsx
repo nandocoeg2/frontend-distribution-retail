@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { createColumnHelper, useReactTable } from "@tanstack/react-table";
-import { TrashIcon, DocumentPlusIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, DocumentPlusIcon, ArchiveBoxIcon } from "@heroicons/react/24/outline";
 import { StatusBadge } from "../ui/Badge";
 import { useFakturPajakQuery } from "../../hooks/useFakturPajakQuery";
 import { formatCurrency, formatDate } from "../../utils/formatUtils";
@@ -64,6 +64,7 @@ const FakturPajakTableServerSide = ({
   initialLimit = 10,
   selectedFakturPajakId = null,
   onBulkGenerate,
+  onBulkExportEFaktur,
   onBulkDelete,
   onQueryParamsChange,
 }) => {
@@ -676,6 +677,15 @@ const FakturPajakTableServerSide = ({
             >
               <DocumentPlusIcon className="h-3 w-3 mr-1" />
               Generate TTF
+            </button>
+          )}
+          {onBulkExportEFaktur && (
+            <button
+              onClick={() => onBulkExportEFaktur(selectedFakturIds)}
+              className="inline-flex items-center px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+            >
+              <ArchiveBoxIcon className="h-3 w-3 mr-1" />
+              Export e-Faktur
             </button>
           )}
           {onBulkDelete && (

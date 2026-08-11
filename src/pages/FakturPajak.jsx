@@ -288,10 +288,36 @@ const FakturPajakPage = () => {
     triggerDeleteFakturPajak(fakturPajak.id);
   };
 
+  const handleBulkExportEFaktur = useCallback(async (selectedIds) => {
+    if (!selectedIds || selectedIds.length === 0) return;
+    try {
+      const response = await fakturPajakService.exportFakturPajak({
+        format: 'xml',
+        ids: selectedIds.join(','),
+      });
+
+      const blob = new Blob([response.data], { type: 'application/xml' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `efaktur-djp-selected-${Date.now()}.xml`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toastService.success(`Berhasil mengekspor ${selectedIds.length} e-Faktur (XML)`);
+    } catch (err) {
+      console.error('Export e-Faktur error:', err);
+      toastService.error(err?.message || 'Gagal mengekspor e-Faktur');
+    }
+  }, []);
+
   return (
-    <div>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-3 py-3 space-y-2'>
+    <div className='flex flex-col gap-6 p-6'>
+      {/* Table Section */}
+      <div className='p-6 bg-white rounded-lg shadow-sm border border-gray-200'>
+        <div className='flex flex-col gap-4'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Faktur Pajak</h3>
             <div className='flex flex-wrap gap-2'>
@@ -312,13 +338,6 @@ const FakturPajakPage = () => {
                   </>
                 )}
               </button>
-              <button
-                onClick={openExportModal}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700'
-              >
-                <ArchiveBoxIcon className='w-3.5 h-3.5 mr-1' />
-                Export e-Faktur
-              </button>
             </div>
           </div>
 
@@ -328,6 +347,7 @@ const FakturPajakPage = () => {
             onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
             generatingTandaTerimaFakturPajakId={generatingTtfFakturPajakId}
             onBulkGenerate={handleBulkGenerateTtfClick}
+            onBulkExportEFaktur={handleBulkExportEFaktur}
             onBulkDelete={handleBulkDeleteClick}
             deleteLoading={deleteFakturPajakConfirmation.loading}
             initialPage={1}
