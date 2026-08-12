@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 import StockMovementItemsInput from './StockMovementItemsInput.jsx';
-import useCompanyAutocomplete from '../../hooks/useCompanyAutocomplete';
+import authService from '../../services/authService';
 import useCustomerSearch from '../../hooks/useCustomerSearch';
 
 const initialFormState = {
@@ -24,11 +24,8 @@ const CreateStockOutModal = ({
   const [formError, setFormError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    options: companyOptions,
-    loading: companySearchLoading,
-    fetchOptions: searchCompanies,
-  } = useCompanyAutocomplete({ selectedValue: form.companyId });
+  const activeCompany = authService.getCompanyData();
+  const activeCompanyId = activeCompany?.id || '';
 
   const {
     searchResults: customerResults = [],
@@ -44,11 +41,14 @@ const CreateStockOutModal = ({
 
   useEffect(() => {
     if (show) {
-      setForm(initialFormState);
+      setForm({
+        ...initialFormState,
+        companyId: activeCompanyId,
+      });
       setFormError('');
       setIsSubmitting(false);
     }
-  }, [show]);
+  }, [show, activeCompanyId]);
 
   const handleItemsChange = (items) => {
     setForm((prev) => ({ ...prev, items }));
@@ -139,12 +139,13 @@ const CreateStockOutModal = ({
               <div>
                 <label htmlFor='companyId' className='block text-xs font-medium text-gray-600 mb-1'>Company</label>
                 <Autocomplete
-                  label='' name='companyId' options={companyOptions}
+                  label='' name='companyId'
+                  options={activeCompany ? [{ id: activeCompany.id, label: activeCompany.nama_perusahaan }] : []}
                   value={form.companyId ? String(form.companyId) : ''}
                   onChange={handleCompanyChange} placeholder='Cari company...'
                   displayKey='label' valueKey='id'
-                  loading={optionsLoading || companySearchLoading}
-                  onSearch={async (q) => { try { await searchCompanies(q); } catch (e) { console.error(e); } }}
+                  loading={false}
+                  disabled={true}
                   showId
                 />
               </div>
