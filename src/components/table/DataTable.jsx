@@ -33,7 +33,7 @@ const DataTable = ({
   errorMessage,
   emptyMessage = 'Tidak ada data.',
   emptyFilteredMessage,
-  wrapperClassName = 'overflow-x-auto',
+  wrapperClassName = 'overflow-x-auto min-h-full',
   tableClassName = 'min-w-full bg-white border border-gray-200',
   headerRowClassName = 'bg-gray-50',
   headerCellClassName = 'px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider',
@@ -84,9 +84,9 @@ const DataTable = ({
   const hasSizing = Object.keys(table.getState().columnSizing || {}).length > 0;
 
   return (
-    <div className={wrapperClassName}>
+    <div className={`flex flex-col ${wrapperClassName}`}>
       <table
-        className={tableClassName}
+        className={`flex-grow min-h-full ${tableClassName}`}
         style={{
           width: hasSizing ? table.getTotalSize() : undefined,
           tableLayout: hasSizing ? 'fixed' : undefined,
