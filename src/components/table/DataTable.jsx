@@ -212,7 +212,12 @@ const DataTable = ({
                 );
               })}
               <tr style={{ height: '100%' }}>
-                <td colSpan={columnCount} className="p-0 border-none bg-transparent" />
+                {table.getVisibleLeafColumns().map((column) => (
+                  <td
+                    key={column.id}
+                    className="p-0 border-none bg-transparent border-r border-gray-100 last:border-r-0"
+                  />
+                ))}
               </tr>
             </>
           )}
