@@ -142,12 +142,6 @@ const StockMovementTable = ({
                 scope='col'
                 className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
               >
-                Movement
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
                 Type
               </th>
               <th
@@ -206,7 +200,7 @@ const StockMovementTable = ({
             {renderedMovements.length === 0 ? (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={9}
                   className='px-2 py-4 text-center text-xs text-gray-500'
                 >
                   {searchLoading
@@ -225,9 +219,6 @@ const StockMovementTable = ({
 
                 return (
                   <tr key={movement.id || movement.movementNumber} className='h-8 hover:bg-gray-50'>
-                    <td className='px-2 py-1 whitespace-nowrap text-xs font-medium text-gray-900'>
-                      {movement.movementNumber}
-                    </td>
                     <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-900'>
                       <StatusBadge
                         status={resolveTypeLabel(movement.type)}
