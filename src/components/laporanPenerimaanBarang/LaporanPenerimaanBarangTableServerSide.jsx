@@ -704,7 +704,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         </div>
       )}
 
-      <div className="min-h-[350px] overflow-visible">
+      <div className="flex flex-col min-h-[350px] overflow-visible">
         <DataTable
           table={table}
           isLoading={isLoading}
@@ -741,7 +741,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
               ))}
             </tr>
           }
-          wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
+          wrapperClassName="flex-grow overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
         />
       </div>
 
