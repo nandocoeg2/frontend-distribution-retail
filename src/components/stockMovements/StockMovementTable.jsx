@@ -126,76 +126,77 @@ const StockMovementTable = ({
 
   if (loading && !searchLoading) {
     return (
-      <div className='bg-white rounded-lg shadow divide-y divide-gray-200'>
+      <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
         <TableLoading rows={5} columns={9} className='p-6' />
       </div>
     );
   }
 
   return (
-    <div className='bg-white rounded-lg shadow'>
-      <div className='overflow-x-auto'>
-        <table className='min-w-full bg-white border border-gray-200 text-xs table-fixed'>
-          <thead className='bg-gray-50'>
-            <tr>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Type
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Status
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Info
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Product
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
-                title='Jumlah jenis barang (karton)'
-              >
-                Items
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
-                title='Total kuantitas (PCS)'
-              >
-                Qty
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Tanggal Surat Jalan
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Notes
-              </th>
-              <th
-                scope='col'
-                className='px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
+    <div className='flex-1 flex flex-col min-h-0 space-y-2'>
+      <div className='flex-1 flex flex-col min-h-0 overflow-hidden rounded-md border border-gray-200 bg-white'>
+        <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px]'>
+          <table className='min-w-[980px] w-full divide-y divide-gray-200 text-xs table-auto'>
+            <thead className='bg-gray-50'>
+              <tr>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Type
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Status
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Info
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Product
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                  title='Jumlah jenis barang (karton)'
+                >
+                  Items
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                  title='Total kuantitas (PCS)'
+                >
+                  Qty
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Tanggal Surat Jalan
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Notes
+                </th>
+                <th
+                  scope='col'
+                  className='sticky top-0 z-10 bg-gray-50 px-2 py-1.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500'
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
           <tbody className='divide-y divide-gray-100 bg-white'>
             {renderedMovements.length === 0 ? (
               <tr>
@@ -235,19 +236,19 @@ const StockMovementTable = ({
                         dot
                       />
                     </td>
-                    <td className='px-2 py-1 text-xs text-gray-500'>
-                      <div className='max-w-[200px]'>
+                    <td className='px-2 py-1 text-xs text-gray-500 whitespace-normal'>
+                      <div>
                         {movement.partyInfoLines.map((line, idx) => (
-                          <div key={idx} className='truncate' title={line}>
+                          <div key={idx} title={line}>
                             {line}
                           </div>
                         ))}
                       </div>
                     </td>
-                    <td className='px-2 py-1 text-xs text-gray-900'>
-                      <div className='max-w-[250px]'>
+                    <td className='px-2 py-1 text-xs text-gray-900 whitespace-normal'>
+                      <div>
                         {movement.productNames.map((name, idx) => (
-                          <div key={idx} className='truncate' title={name}>
+                          <div key={idx} title={name}>
                             {name}
                           </div>
                         ))}
@@ -262,7 +263,7 @@ const StockMovementTable = ({
                     <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500'>
                       {formatDateTime(movement.createdAt)}
                     </td>
-                    <td className='px-2 py-1 text-xs text-gray-500'>
+                    <td className='px-2 py-1 text-xs text-gray-500 whitespace-normal'>
                       {movement.notes || '-'}
                     </td>
                     <td className='px-2 py-1 whitespace-nowrap text-xs text-gray-500 text-right'>
@@ -307,9 +308,9 @@ const StockMovementTable = ({
               })
             )}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
-
     </div>
   );
 };
