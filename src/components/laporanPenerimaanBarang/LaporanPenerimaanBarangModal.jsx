@@ -18,6 +18,7 @@ const defaultFormValues = {
   statusId: '',
   filesText: '',
   files: [],
+  notes: '',
 };
 
 const formatFileSize = (bytes) => {
@@ -232,6 +233,8 @@ const buildPayload = (values) => {
       payload.files = files;
     }
   }
+
+  payload.notes = values.notes || null;
 
   return payload;
 };
@@ -461,6 +464,7 @@ const LaporanPenerimaanBarangModal = ({
         ),
         filesText: extractFileIds(initialValues?.files),
         files: Array.isArray(initialValues?.files) ? initialValues.files : [],
+        notes: initialValues?.notes || '',
       });
       setIsSubmitting(false);
     }
@@ -729,6 +733,20 @@ const LaporanPenerimaanBarangModal = ({
               </option>
             ))}
           </select>
+        </div>
+
+        <div className='md:col-span-2'>
+          <label className='block mb-1 text-sm font-medium text-gray-700'>
+            Notes
+          </label>
+          <textarea
+            name='notes'
+            value={formValues.notes || ''}
+            onChange={handleChange}
+            placeholder='Masukkan catatan LPB...'
+            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+            rows={3}
+          />
         </div>
 
         <div className='md:col-span-2'>

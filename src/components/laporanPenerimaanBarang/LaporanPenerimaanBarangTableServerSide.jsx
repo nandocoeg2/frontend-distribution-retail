@@ -598,8 +598,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
         enableSorting: false,
         enableColumnFilter: false,
       }),
-      columnHelper.accessor((row) => row.purchaseOrder?.remarks ?? null, {
-        id: 'remarks',
+      columnHelper.accessor((row) => row.notes ?? null, {
+        id: 'notes',
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Notes</div>
