@@ -90,7 +90,7 @@ const StokGantungTable = ({
     if (loading && !searchLoading) {
         return (
             <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
-                <TableLoading rows={5} columns={8} className='p-6' />
+                <TableLoading rows={5} columns={7} className='p-6' />
             </div>
         );
     }
@@ -99,15 +99,9 @@ const StokGantungTable = ({
         <div className='flex-1 flex flex-col min-h-0 space-y-2'>
             <div className='flex-1 flex flex-col min-h-0 overflow-hidden rounded-md border border-gray-200 bg-white'>
                 <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px]'>
-                    <table className='min-w-[980px] w-full divide-y divide-gray-200 text-xs table-fixed'>
+                    <table className='min-w-[980px] w-full divide-y divide-gray-200 text-xs'>
                         <thead className='bg-gray-50'>
                             <tr>
-                                <th
-                                    scope='col'
-                                    className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
-                                >
-                                    No. Retur
-                                </th>
                                 <th
                                     scope='col'
                                     className='sticky top-0 z-10 bg-gray-50 px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'
@@ -158,7 +152,7 @@ const StokGantungTable = ({
                             {renderedMovements.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={8}
+                                        colSpan={7}
                                         className='px-3 py-6 text-center text-xs text-gray-500'
                                     >
                                         {searchLoading
@@ -176,9 +170,6 @@ const StokGantungTable = ({
 
                                     return (
                                         <tr key={movement.id || movement.movementNumber} className='transition-colors hover:bg-gray-50'>
-                                            <td className='px-2.5 py-1.5 whitespace-nowrap text-xs font-medium text-gray-900'>
-                                                {movement.movementNumber}
-                                            </td>
                                             <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900'>
                                                 <StatusBadge
                                                     status={resolveTypeLabel(movement.status)}
@@ -188,9 +179,9 @@ const StokGantungTable = ({
                                                 />
                                             </td>
                                             <td className='px-2.5 py-1.5 text-xs text-gray-900'>
-                                                <div className='max-w-[250px]'>
+                                                <div>
                                                     {movement.productNames.map((name, idx) => (
-                                                        <div key={idx} className='truncate' title={name}>
+                                                        <div key={idx} title={name}>
                                                             {name}
                                                         </div>
                                                     ))}
@@ -206,7 +197,7 @@ const StokGantungTable = ({
                                                 {formatDateTime(movement.createdAt)}
                                             </td>
                                             <td className='px-2.5 py-1.5 text-xs text-gray-500'>
-                                                <div className='max-w-[200px] truncate' title={movement.notes}>
+                                                <div title={movement.notes}>
                                                     {movement.notes || '-'}
                                                 </div>
                                             </td>
