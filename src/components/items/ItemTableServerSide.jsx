@@ -17,14 +17,14 @@ const columnHelper = createColumnHelper();
 
 const ItemTableServerSide = forwardRef(({
     onViewDetail,
-    onDelete,
-    deleteLoading = false,
+    selectedItems = [],
+    onSelectionChange,
+    onBulkDelete,
+    isDeleting = false,
+    hasSelectedItems = false,
     selectedItemId = null,
     onRefresh,
 }, ref) => {
-    const [deleteId, setDeleteId] = useState(null);
-    const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
-
     const getQueryParams = useMemo(
         () => ({ filters, ...rest }) => {
             const mappedFilters = { ...filters };
@@ -87,10 +87,32 @@ const ItemTableServerSide = forwardRef(({
         selectData: (response) => response?.items ?? [],
         selectPagination: (response) => response?.pagination,
         initialPage: 1,
-        initialLimit: 10,
+        initialLimit: 9999,
         columnFilterDebounceMs: 0,
         getQueryParams,
     });
+
+    const handleSelectAllInternalToggle = useCallback(() => {
+        const currentPageItemIds = items.map((item) => item.id).filter(Boolean);
+
+        const allCurrentPageSelected = currentPageItemIds.every((id) =>
+            selectedItems.includes(id)
+        );
+
+        if (allCurrentPageSelected) {
+            currentPageItemIds.forEach((id) => {
+                if (selectedItems.includes(id) && onSelectionChange) {
+                    onSelectionChange(id, false);
+                }
+            });
+        } else {
+            currentPageItemIds.forEach((id) => {
+                if (!selectedItems.includes(id) && onSelectionChange) {
+                    onSelectionChange(id, true);
+                }
+            });
+        }
+    }, [items, selectedItems, onSelectionChange]);
 
     const formatCurrency = (value) => {
         const numericValue = Number(value);
@@ -115,6 +137,44 @@ const ItemTableServerSide = forwardRef(({
 
     const columns = useMemo(
         () => [
+            columnHelper.display({
+                id: 'select',
+                size: 40,
+                header: () => {
+                    const currentPageItemIds = items.map((item) => item.id).filter(Boolean);
+
+                    const isAllSelected =
+                        items.length > 0 &&
+                        currentPageItemIds.length > 0 &&
+                        currentPageItemIds.every((id) => selectedItems.includes(id));
+
+                    const isIndeterminate =
+                        currentPageItemIds.some((id) => selectedItems.includes(id)) &&
+                        !isAllSelected;
+
+                    return (
+                        <input
+                            type="checkbox"
+                            checked={isAllSelected}
+                            ref={(input) => { if (input) input.indeterminate = isIndeterminate; }}
+                            onChange={handleSelectAllInternalToggle}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-3 w-3 text-blue-600 border-gray-300 rounded"
+                        />
+                    );
+                },
+                cell: ({ row }) => (
+                    <input
+                        type="checkbox"
+                        checked={selectedItems.includes(row.original.id)}
+                        onChange={(e) => onSelectionChange?.(row.original.id, e.target.checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-3 w-3 text-blue-600 border-gray-300 rounded"
+                    />
+                ),
+                enableSorting: false,
+                enableColumnFilter: false,
+            }),
             columnHelper.accessor('nama_barang', {
                 size: 140,
                 header: ({ column }) => (
@@ -323,39 +383,8 @@ const ItemTableServerSide = forwardRef(({
                     </span>
                 ),
             }),
-            columnHelper.display({
-                id: 'actions',
-                size: 60,
-                header: () => (
-                    <div className="space-y-0.5">
-                        <div className="font-medium text-xs">Action</div>
-                        <div className="h-5"></div>
-                    </div>
-                ),
-                cell: ({ row }) => {
-                    const item = row.original;
-                    return (
-                        <div className="flex gap-0.5">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(item.id);
-                                }}
-                                disabled={deleteLoading}
-                                className="p-0.5 text-red-600 hover:text-red-900 disabled:opacity-50"
-                                title="Delete"
-                            >
-                                <TrashIcon className="h-3.5 w-3.5" />
-                            </button>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-                enableColumnFilter: false,
-            }),
         ],
-        [items, setPage, deleteLoading]
+        [items, setPage, selectedItems, onSelectionChange]
     );
 
     const table = useReactTable({
@@ -375,39 +404,53 @@ const ItemTableServerSide = forwardRef(({
         },
     }));
 
-    const handleDelete = useCallback((itemId) => {
-        setDeleteId(itemId);
-        showDialog({
-            title: 'Hapus Item',
-            message: 'Apakah Anda yakin ingin menghapus item ini?',
-            type: 'danger',
-            confirmText: 'Hapus',
-            cancelText: 'Batal',
-        });
-    }, [showDialog]);
-
-    const handleConfirmDelete = useCallback(async () => {
-        if (deleteId && onDelete) {
-            await onDelete(deleteId);
-            setDeleteId(null);
-            refetch?.();
-        }
-        hideDialog();
-    }, [deleteId, onDelete, hideDialog, refetch]);
-
     const loading = isLoading || isFetching;
 
     return (
         <div className="space-y-2">
-            {hasActiveFilters && (
-                <div className="flex justify-end">
-                    <button
-                        onClick={resetFilters}
-                        className="inline-flex items-center px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
-                    >
-                        <XMarkIcon className="h-3 w-3 mr-1" />
-                        Reset Filter
-                    </button>
+            {(hasActiveFilters || hasSelectedItems) && (
+                <div className="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-200">
+                    {hasSelectedItems ? (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-green-700">
+                                {selectedItems.length} dipilih
+                            </span>
+                            {onBulkDelete && (
+                                <button
+                                    onClick={onBulkDelete}
+                                    disabled={isDeleting}
+                                    className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white rounded transition-colors ${isDeleting
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-red-600 hover:bg-red-700'
+                                        }`}
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Menghapus...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <TrashIcon className="h-3.5 w-3.5 mr-1" />
+                                            Hapus
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                    ) : <div />}
+                    {hasActiveFilters && (
+                        <button
+                            onClick={resetFilters}
+                            className="inline-flex items-center px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50 bg-white"
+                        >
+                            <XMarkIcon className="h-3 w-3 mr-1" />
+                            Reset Filter
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -427,14 +470,13 @@ const ItemTableServerSide = forwardRef(({
                 rowClassName="hover:bg-gray-50 h-7"
                 getRowClassName={({ row }) => {
                     if (selectedItemId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
+                    if (selectedItems.includes(row.original.id)) return 'bg-green-50';
                     return undefined;
                 }}
                 cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
                 emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
                 onRowClick={onViewDetail}
             />
-
-            <ConfirmationDialog onConfirm={handleConfirmDelete} />
         </div>
     );
 });

@@ -389,3 +389,16 @@ export const exportExcel = async (searchQuery = '') => {
   return { success: true, filename };
 };
 
+export const bulkDeleteItems = async (ids) => {
+  const response = await fetch(`${API_URL}/bulk-delete`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ ids })
+  });
+  if (!response.ok) {
+    const errorMessage = await parseErrorMessage(response, 'Failed to bulk delete items');
+    throw new Error(errorMessage);
+  }
+  return response.json();
+};
+

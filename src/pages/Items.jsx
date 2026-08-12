@@ -4,7 +4,7 @@ import AddItemModal from '../components/items/AddItemModal';
 import ItemDetailCard from '../components/items/ItemDetailCard';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { ConfirmationDialog } from '../components/ui';
-import { exportExcel, deleteItem } from '../services/itemService';
+import { exportExcel, deleteItem, bulkDeleteItems } from '../services/itemService';
 import toastService from '../services/toastService';
 
 const Items = () => {
@@ -13,6 +13,10 @@ const Items = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const tableRef = useRef(null);
+
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkDeleteConfirmation, setShowBulkDeleteConfirmation] = useState(false);
 
   const openAddModal = () => setIsAddModalOpen(true);
 
@@ -49,13 +53,54 @@ const Items = () => {
     setSelectedItemForDetail(null);
   };
 
-  const handleDeleteItem = async (id) => {
+  const handleSelectionChange = (id, isSelected) => {
+    setSelectedItems((prev) => {
+      if (isSelected) {
+        return [...prev, id];
+      } else {
+        return prev.filter((itemId) => itemId !== id);
+      }
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) {
+      toastService.warning('Pilih minimal satu item untuk dihapus.');
+      return;
+    }
+    setShowBulkDeleteConfirmation(true);
+  };
+
+  const confirmBulkDelete = async () => {
     try {
-      await deleteItem(id);
-      toastService.success('Item berhasil dihapus');
+      setBulkDeleting(true);
+      const result = await bulkDeleteItems(selectedItems);
+      const resultData = result?.data || result;
+
+      setShowBulkDeleteConfirmation(false);
+
+      const successCount = resultData?.successCount || 0;
+      const failedCount = resultData?.failedIds?.length || 0;
+
+      if (successCount > 0 && failedCount === 0) {
+        toastService.success(`Berhasil menghapus ${successCount} item.`);
+      } else if (successCount > 0 && failedCount > 0) {
+        toastService.warning(`Berhasil menghapus ${successCount} item. ${failedCount} gagal dihapus.`);
+      } else {
+        toastService.error('Gagal menghapus item.');
+      }
+
+      setSelectedItems([]);
+      tableRef.current?.refetch?.();
+      
+      if (selectedItemForDetail && selectedItems.includes(selectedItemForDetail.id)) {
+        setSelectedItemForDetail(null);
+      }
     } catch (err) {
-      console.error('Delete failed:', err);
-      toastService.error(err.message || 'Gagal menghapus item');
+      console.error('Bulk delete failed:', err);
+      toastService.error(err.message || 'Gagal menghapus item.');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -95,7 +140,11 @@ const Items = () => {
           <ItemTableServerSide
             ref={tableRef}
             onViewDetail={handleViewDetail}
-            onDelete={handleDeleteItem}
+            selectedItems={selectedItems}
+            onSelectionChange={handleSelectionChange}
+            onBulkDelete={handleBulkDelete}
+            isDeleting={bulkDeleting}
+            hasSelectedItems={selectedItems.length > 0}
             selectedItemId={selectedItemForDetail?.id}
           />
         </div>
@@ -126,6 +175,19 @@ const Items = () => {
         confirmText="Ya, Export"
         cancelText="Batal"
         loading={exportLoading}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showBulkDeleteConfirmation}
+        onClose={() => setShowBulkDeleteConfirmation(false)}
+        onConfirm={confirmBulkDelete}
+        title="Konfirmasi Hapus"
+        message={`Apakah Anda yakin ingin menghapus ${selectedItems.length} item terpilih?`}
+        type="danger"
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+        loading={bulkDeleting}
       />
     </div>
   );
