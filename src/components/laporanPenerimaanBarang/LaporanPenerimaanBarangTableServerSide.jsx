@@ -734,7 +734,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
               {table.getVisibleLeafColumns().map((column) => (
                 <td
                   key={column.id}
-                  className="px-1.5 py-1 text-xs border-t border-r border-gray-300 border-r-gray-100 last:border-r-0 text-center"
+                  className="px-1.5 py-1 text-xs border-t border-r border-gray-300 border-r-gray-200 last:border-r-0 text-center"
                 >
                   <TableFooterCell column={column} table={table} />
                 </td>

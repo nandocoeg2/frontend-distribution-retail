@@ -201,7 +201,7 @@ const DataTable = ({
                       return (
                         <td
                           key={cell.id}
-                          className={`${computedCellClass} border-r border-gray-100 last:border-r-0`}
+                          className={`${computedCellClass} border-r border-gray-200 last:border-r-0`}
                           style={{ width: cellWidth }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -215,7 +215,7 @@ const DataTable = ({
                 {table.getVisibleLeafColumns().map((column) => (
                   <td
                     key={column.id}
-                    className="p-0 border-none bg-transparent border-r border-gray-100 last:border-r-0"
+                    className="p-0 bg-transparent border-r border-gray-200 last:border-r-0"
                   />
                 ))}
               </tr>
