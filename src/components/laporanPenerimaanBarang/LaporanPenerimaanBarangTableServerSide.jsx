@@ -598,6 +598,16 @@ const LaporanPenerimaanBarangTableServerSide = ({
         enableSorting: false,
         enableColumnFilter: false,
       }),
+      columnHelper.accessor((row) => row.purchaseOrder?.remarks ?? null, {
+        id: 'remarks',
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Notes</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
+        cell: (info) => <span className="text-gray-600 truncate max-w-[150px] inline-block">{info.getValue() || '-'}</span>,
+      }),
       columnHelper.display({
         id: 'actions',
         header: 'Actions',
