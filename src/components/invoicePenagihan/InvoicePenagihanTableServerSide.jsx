@@ -251,7 +251,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
               ref={(input) => { if (input) input.indeterminate = isIndeterminate; }}
               onChange={handleSelectAllInternalToggle}
               onClick={(e) => e.stopPropagation()}
-              className="h-3 w-3 text-blue-600 border-gray-300 rounded"
+              className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           );
         },
@@ -261,7 +261,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
             checked={selectedInvoices.includes(row.original.id)}
             onChange={(e) => onSelectionChange?.(row.original.id, e.target.checked)}
             onClick={(e) => e.stopPropagation()}
-            className="h-3 w-3 text-blue-600 border-gray-300 rounded"
+            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
         ),
         enableSorting: false,

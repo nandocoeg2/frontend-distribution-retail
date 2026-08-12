@@ -261,7 +261,7 @@ const FakturPajakTableServerSide = ({
               selectedFakturIds.length === fakturPajaks.length
             }
             onChange={handleSelectAll}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             onClick={(e) => e.stopPropagation()}
           />
         ),
@@ -270,7 +270,7 @@ const FakturPajakTableServerSide = ({
             type="checkbox"
             checked={selectedFakturIds.includes(row.original.id)}
             onChange={() => handleSelectOne(row.original.id)}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             onClick={(e) => e.stopPropagation()}
           />
         ),
