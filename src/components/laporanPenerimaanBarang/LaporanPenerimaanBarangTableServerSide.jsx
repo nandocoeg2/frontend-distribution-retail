@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  EyeIcon,
   PencilIcon,
   TrashIcon,
   CheckIcon,
@@ -608,14 +607,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
 
           return (
             <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={() => onView(report)}
-                className="text-indigo-600 hover:text-indigo-900"
-                title="View Details"
-              >
-                <EyeIcon className="h-4 w-4" />
-              </button>
               <button
                 type="button"
                 onClick={() => onEdit(report)}
