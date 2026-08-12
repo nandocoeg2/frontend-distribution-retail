@@ -193,7 +193,7 @@ const DataTable = ({
                   >
                     {row.getVisibleCells().map((cell) => {
                       const cellContext = { row, cell };
-                      const computedCellClass = [
+                      const baseCellClass = [
                         resolveClassName(cellClassName, cellContext),
                         resolveClassName(getCellClassName, cellContext),
                       ]
@@ -204,7 +204,7 @@ const DataTable = ({
                       const cellWidth = isSelect ? 32 : (hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined);
                       const computedCellClass = isSelect
                         ? "px-2 py-0.5 whitespace-nowrap text-xs text-gray-900 border-r border-gray-200 last:border-r-0"
-                        : `${resolveClassName(cellClassName, cellContext)} ${resolveClassName(getCellClassName, cellContext)} border-r border-gray-200 last:border-r-0`;
+                        : `${baseCellClass} border-r border-gray-200 last:border-r-0`;
 
                       return (
                         <td
