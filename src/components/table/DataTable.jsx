@@ -104,12 +104,16 @@ const DataTable = ({
                     ? header.column.columnDef.header
                     : flexRender(header.column.columnDef.header, header.getContext());
 
-                const width = hasSizing || header.column.columnDef.size !== 150 ? header.getSize() : undefined;
+                const isSelect = header.column.id === 'select';
+                const width = isSelect ? 32 : (hasSizing || header.column.columnDef.size !== 150 ? header.getSize() : undefined);
+                const computedHeaderCellClass = isSelect
+                  ? "px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-visible border-r border-gray-200 last:border-r-0"
+                  : `${headerCellClassName} border-r border-gray-200 last:border-r-0`;
 
                 return (
                   <th
                     key={header.id}
-                    className={`${headerCellClassName} border-r border-gray-200 last:border-r-0`}
+                    className={computedHeaderCellClass}
                     style={{
                       width,
                       position: 'relative',
@@ -196,12 +200,16 @@ const DataTable = ({
                         .filter(Boolean)
                         .join(' ');
 
-                      const cellWidth = hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined;
+                      const isSelect = cell.column.id === 'select';
+                      const cellWidth = isSelect ? 32 : (hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined);
+                      const computedCellClass = isSelect
+                        ? "px-2 py-0.5 whitespace-nowrap text-xs text-gray-900 border-r border-gray-200 last:border-r-0"
+                        : `${resolveClassName(cellClassName, cellContext)} ${resolveClassName(getCellClassName, cellContext)} border-r border-gray-200 last:border-r-0`;
 
                       return (
                         <td
                           key={cell.id}
-                          className={`${computedCellClass} border-r border-gray-200 last:border-r-0`}
+                          className={computedCellClass}
                           style={{ width: cellWidth }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -212,12 +220,16 @@ const DataTable = ({
                 );
               })}
               <tr style={{ height: '100%' }}>
-                {table.getVisibleLeafColumns().map((column) => (
-                  <td
-                    key={column.id}
-                    className="p-0 bg-transparent border-r border-gray-200 last:border-r-0"
-                  />
-                ))}
+                {table.getVisibleLeafColumns().map((column) => {
+                  const isSelect = column.id === 'select';
+                  return (
+                    <td
+                      key={column.id}
+                      className="p-0 bg-transparent border-r border-gray-200 last:border-r-0"
+                      style={isSelect ? { width: 32 } : undefined}
+                    />
+                  );
+                })}
               </tr>
             </>
           )}
