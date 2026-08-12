@@ -163,53 +163,58 @@ const DataTable = ({
               </td>
             </tr>
           ) : (
-            rows.map((row) => {
-              const context = { row };
-              const computedRowClass = [
-                resolveClassName(rowClassName, context),
-                resolveClassName(getRowClassName, context),
-                onRowClick ? 'cursor-pointer' : '',
-              ]
-                .filter(Boolean)
-                .join(' ');
+            <>
+              {rows.map((row) => {
+                const context = { row };
+                const computedRowClass = [
+                  resolveClassName(rowClassName, context),
+                  resolveClassName(getRowClassName, context),
+                  onRowClick ? 'cursor-pointer' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ');
 
-              const handleRowClick = (e) => {
-                if (onRowClick) {
-                  onRowClick(row.original, e);
-                }
-              };
+                const handleRowClick = (e) => {
+                  if (onRowClick) {
+                    onRowClick(row.original, e);
+                  }
+                };
 
-              return (
-                <tr
-                  key={row.id}
-                  data-row-id={row.original[idAttribute]}
-                  className={computedRowClass}
-                  onClick={handleRowClick}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const cellContext = { row, cell };
-                    const computedCellClass = [
-                      resolveClassName(cellClassName, cellContext),
-                      resolveClassName(getCellClassName, cellContext),
-                    ]
-                      .filter(Boolean)
-                      .join(' ');
+                return (
+                  <tr
+                    key={row.id}
+                    data-row-id={row.original[idAttribute]}
+                    className={computedRowClass}
+                    onClick={handleRowClick}
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      const cellContext = { row, cell };
+                      const computedCellClass = [
+                        resolveClassName(cellClassName, cellContext),
+                        resolveClassName(getCellClassName, cellContext),
+                      ]
+                        .filter(Boolean)
+                        .join(' ');
 
-                    const cellWidth = hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined;
+                      const cellWidth = hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined;
 
-                    return (
-                      <td
-                        key={cell.id}
-                        className={computedCellClass}
-                        style={{ width: cellWidth }}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })
+                      return (
+                        <td
+                          key={cell.id}
+                          className={computedCellClass}
+                          style={{ width: cellWidth }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+              <tr style={{ height: '100%' }}>
+                <td colSpan={columnCount} className="p-0 border-none bg-transparent" />
+              </tr>
+            </>
           )}
         </tbody>
         {footerContent && (
