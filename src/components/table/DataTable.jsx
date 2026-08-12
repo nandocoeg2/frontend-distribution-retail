@@ -109,7 +109,7 @@ const DataTable = ({
                 return (
                   <th
                     key={header.id}
-                    className={headerCellClassName}
+                    className={`${headerCellClassName} border-r border-gray-200 last:border-r-0`}
                     style={{
                       width,
                       position: 'relative',
@@ -201,7 +201,7 @@ const DataTable = ({
                       return (
                         <td
                           key={cell.id}
-                          className={computedCellClass}
+                          className={`${computedCellClass} border-r border-gray-100 last:border-r-0`}
                           style={{ width: cellWidth }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
