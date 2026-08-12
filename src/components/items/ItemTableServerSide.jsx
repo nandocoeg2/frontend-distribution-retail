@@ -169,7 +169,7 @@ const ItemTableServerSide = forwardRef(({
                     const filterValue = column.getFilterValue() || { min: '', max: '' };
                     return (
                         <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">Base Price</div>
+                            <div className="font-medium text-xs">Base price</div>
                             <div className="flex flex-col gap-0.5">
                                 <RangeColumnFilter column={column} setPage={setPage} />
                             </div>
@@ -182,6 +182,95 @@ const ItemTableServerSide = forwardRef(({
                     </span>
                 ),
             }),
+            columnHelper.accessor('itemPrice.pot1', {
+                id: 'pot1',
+                size: 80,
+                enableColumnFilter: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">pot 1</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemPrice?.pot1;
+                    return (
+                        <span className="text-xs text-right block">
+                            {val != null ? `${val}%` : '-'}
+                        </span>
+                    );
+                },
+            }),
+            columnHelper.accessor('itemPrice.harga1', {
+                id: 'hargaSetelahPot1',
+                size: 110,
+                enableColumnFilter: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">harga setelah pot 1</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => (
+                    <span className="text-xs text-right block">
+                        {formatCurrency(info.row.original.itemPrice?.harga1 ?? 0)}
+                    </span>
+                ),
+            }),
+            columnHelper.accessor('itemPrice.pot2', {
+                id: 'pot2',
+                size: 80,
+                enableColumnFilter: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">pot 2</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemPrice?.pot2;
+                    return (
+                        <span className="text-xs text-right block">
+                            {val != null ? `${val}%` : '-'}
+                        </span>
+                    );
+                },
+            }),
+            columnHelper.accessor('itemPrice.harga2', {
+                id: 'hargaSetelahPot2',
+                size: 110,
+                enableColumnFilter: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">harga setelah pot 2</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => (
+                    <span className="text-xs text-right block">
+                        {formatCurrency(info.row.original.itemPrice?.harga2 ?? 0)}
+                    </span>
+                ),
+            }),
+            columnHelper.accessor('itemPrice.ppn', {
+                id: 'ppn',
+                size: 80,
+                enableColumnFilter: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">PPN</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemPrice?.ppn;
+                    return (
+                        <span className="text-xs text-right block">
+                            {val != null ? `${val}%` : '-'}
+                        </span>
+                    );
+                },
+            }),
             columnHelper.accessor('itemStock.stok_quantity', {
                 id: 'stock',
                 size: 100,
@@ -191,7 +280,7 @@ const ItemTableServerSide = forwardRef(({
                     const filterValue = column.getFilterValue() || { min: '', max: '' };
                     return (
                         <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">Stock</div>
+                            <div className="font-medium text-xs">Stok</div>
                             <div className="flex flex-col gap-0.5">
                                 <RangeColumnFilter column={column} setPage={setPage} />
                             </div>
@@ -204,27 +293,6 @@ const ItemTableServerSide = forwardRef(({
                     </span>
                 ),
             }),
-
-            columnHelper.accessor('itemStock.stockAdjustment', {
-                id: 'stockAdjustment',
-                size: 90,
-                enableColumnFilter: false,
-                enableSorting: false,
-                header: () => (
-                    <div className="space-y-0.5">
-                        <div className="font-medium text-xs">Stok Adjustment</div>
-                        <div className="h-5"></div>
-                    </div>
-                ),
-                cell: (info) => {
-                    const val = info.row.original.itemStock?.stockAdjustment;
-                    return (
-                        <span className="text-xs text-right block">
-                            {val != null ? formatNumber(val) : '-'}
-                        </span>
-                    );
-                },
-            }),
             columnHelper.accessor('updatedAt', {
                 size: 65,
                 enableColumnFilter: true,
@@ -233,7 +301,7 @@ const ItemTableServerSide = forwardRef(({
                     const filterValue = column.getFilterValue() || { from: '', to: '' };
                     return (
                         <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-                            <div className="font-medium text-xs">Last Update</div>
+                            <div className="font-medium text-xs">last update</div>
                             <div className="flex flex-col gap-0.5">
                                 <DateFilter
                                     value={filterValue.from ?? ''}
