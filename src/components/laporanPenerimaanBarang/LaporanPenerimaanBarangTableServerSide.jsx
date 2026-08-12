@@ -470,7 +470,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
-      columnHelper.accessor('purchaseOrder.po_number', {
+      columnHelper.accessor((row) => row.purchaseOrder?.po_number ?? null, {
         id: 'po_number',
         header: ({ column }) => (
           <div className="space-y-1">
@@ -490,7 +490,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
-      columnHelper.accessor('customer.namaCustomer', {
+      columnHelper.accessor((row) => row.customer?.namaCustomer ?? null, {
         id: 'customerIds',
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
@@ -520,7 +520,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
       }),
-      columnHelper.accessor('status.status_name', {
+      columnHelper.accessor((row) => row.status?.status_name ?? null, {
         id: 'status_codes',
         header: ({ column }) => (
           <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
