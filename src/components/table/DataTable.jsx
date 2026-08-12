@@ -107,7 +107,7 @@ const DataTable = ({
                 const isSelect = header.column.id === 'select';
                 const width = isSelect ? 32 : (hasSizing || header.column.columnDef.size !== 150 ? header.getSize() : undefined);
                 const computedHeaderCellClass = isSelect
-                  ? "px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-visible border-r border-gray-200 last:border-r-0"
+                  ? "px-2 py-1.5 align-middle text-left text-xs font-medium text-gray-500 uppercase tracking-wider overflow-visible border-r border-gray-200 last:border-r-0"
                   : `${headerCellClassName} border-r border-gray-200 last:border-r-0`;
 
                 return (
@@ -203,7 +203,7 @@ const DataTable = ({
                       const isSelect = cell.column.id === 'select';
                       const cellWidth = isSelect ? 32 : (hasSizing || cell.column.columnDef.size !== 150 ? cell.column.getSize() : undefined);
                       const computedCellClass = isSelect
-                        ? "px-2 py-0.5 whitespace-nowrap text-xs text-gray-900 border-r border-gray-200 last:border-r-0"
+                        ? "px-2 py-0.5 align-middle whitespace-nowrap text-xs text-gray-900 border-r border-gray-200 last:border-r-0"
                         : `${baseCellClass} border-r border-gray-200 last:border-r-0`;
 
                       return (
