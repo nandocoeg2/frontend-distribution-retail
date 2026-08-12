@@ -543,8 +543,8 @@ const SuratJalanTableServerSide = ({
           {hasSelectedSuratJalan ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-blue-700">{selectedSuratJalan.length} dipilih</span>
-              {/* Show Proses button only for unprocessed items */}
-              {selectedSuratJalan.some(item => !item?.checklistSuratJalanId) && (
+              {/* Show Proses button when there is selection */}
+              {selectedSuratJalan.length > 0 && (
                 <button onClick={onProcessSelected} disabled={isProcessing} className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
                   <TruckIcon className="h-3 w-3 mr-1" />{isProcessing ? '...' : 'Proses'}
                 </button>

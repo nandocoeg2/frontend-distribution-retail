@@ -144,16 +144,22 @@ const SuratJalan = () => {
   }, []);
 
   const handleProcessSelected = useCallback(() => {
-    // Filter only unprocessed items
-    const unprocessedItems = selectedSuratJalan.filter(item => !item?.checklistSuratJalanId);
+    // Check if any selected item is already processed
+    const processedItems = selectedSuratJalan.filter(item => item?.checklistSuratJalanId);
 
-    if (unprocessedItems.length === 0) {
+    if (processedItems.length > 0) {
+      const processedNumbers = processedItems.map(item => item.no_surat_jalan).join(', ');
+      toastService.error(`SURAT JALAN NO. ${processedNumbers} sudah diproses`);
+      return;
+    }
+
+    if (selectedSuratJalan.length === 0) {
       toastService.error('Pilih minimal satu surat jalan yang belum diproses');
       return;
     }
 
     // Store items to process and show dialog
-    setItemsToProcess(unprocessedItems);
+    setItemsToProcess(selectedSuratJalan);
     setShowProcessDialog(true);
   }, [selectedSuratJalan]);
 
