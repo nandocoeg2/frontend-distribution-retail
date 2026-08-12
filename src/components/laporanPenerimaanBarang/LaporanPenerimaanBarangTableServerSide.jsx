@@ -39,20 +39,16 @@ const resolveStatusVariant = (status) => {
     return 'secondary';
   }
 
-  if (value.includes('complete')) {
+  if (value.includes('tagih') || value.includes('complete')) {
     return 'success';
   }
 
-  if (value.includes('failed') || value.includes('error') || value.includes('pengganti') || value.includes('indikasi')) {
+  if (value.includes('pengganti') || value.includes('indikasi') || value.includes('failed')) {
     return 'danger';
   }
 
-  if (value.includes('processing') || value.includes('in progress')) {
-    return 'warning';
-  }
-
-  if (value.includes('pending') || value.includes('draft')) {
-    return 'secondary';
+  if (value.includes('normal') || value.includes('pending')) {
+    return 'default';
   }
 
   return 'default';
