@@ -86,13 +86,13 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-xs font-medium text-gray-900'>
                       {customer.kodeCustomer}
                     </td>
-                    <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.groupCustomer?.nama_group || 'N/A'}>
+                    <td className='px-2.5 py-1.5 text-xs text-gray-900' title={customer.groupCustomer?.nama_group || 'N/A'}>
                       {customer.groupCustomer?.nama_group || 'N/A'}
                     </td>
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.region || 'N/A'}>
                       {customer.region || 'N/A'}
                     </td>
-                    <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900 truncate' title={customer.alamatPengiriman || '-'}>
+                    <td className='px-2.5 py-1.5 text-xs text-gray-900' title={customer.alamatPengiriman || '-'}>
                       {customer.alamatPengiriman || '-'}
                     </td>
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-right text-xs'>
