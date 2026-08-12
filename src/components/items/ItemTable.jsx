@@ -6,6 +6,7 @@ import {
 import { formatDate } from '../../utils/formatUtils';
 import { useConfirmationDialog } from '../ui';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 import { getCompanies } from '../../services/companyService';
 
 const ItemTable = ({
@@ -129,6 +130,13 @@ const ItemTable = ({
       return false;
     }
     return true;
+  });
+
+  useTableKeyboardNavigation({
+    items: filteredItems,
+    selectedId: selectedItemId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-item-id',
   });
 
   const handleDelete = (itemId) => {
@@ -286,6 +294,7 @@ const ItemTable = ({
                 return (
                   <tr
                     key={item.id}
+                    data-item-id={item.id}
                     onClick={() => onViewDetail(item)}
                     className={`cursor-pointer transition-colors h-8 ${selectedItemId === item.id
                         ? 'bg-blue-50 border-l-4 border-blue-500'

@@ -593,6 +593,7 @@ const InvoicePengirimanTableServerSide = ({
           return undefined;
         }}
         onRowClick={onViewDetail}
+        selectedRowId={selectedInvoiceId}
         cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
         footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? "z-10" : "z-0"}`}

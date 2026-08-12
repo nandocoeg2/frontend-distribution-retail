@@ -1,6 +1,7 @@
 import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const ParentGroupCustomerTable = ({
     parentGroupCustomers,
@@ -12,6 +13,13 @@ const ParentGroupCustomerTable = ({
     selectedParentGroupCustomerId,
     searchQuery
 }) => {
+    useTableKeyboardNavigation({
+        items: parentGroupCustomers,
+        selectedId: selectedParentGroupCustomerId,
+        onSelect: onViewDetail,
+        dataAttributeName: 'data-parent-group-customer-id',
+    });
+
     return (
         <div className='space-y-2'>
             <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
@@ -54,6 +62,7 @@ const ParentGroupCustomerTable = ({
                                 parentGroupCustomers.map((pgc) => (
                                     <tr
                                         key={pgc.id}
+                                        data-parent-group-customer-id={pgc.id}
                                         onClick={() => onViewDetail(pgc)}
                                         className={`cursor-pointer transition-colors ${selectedParentGroupCustomerId === pgc.id
                                             ? 'bg-blue-50 border-l-4 border-blue-500'

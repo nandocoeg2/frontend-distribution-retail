@@ -2,6 +2,7 @@ import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { useConfirmationDialog } from '../ui';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const MasterParameterTable = ({
   masterParameters,
@@ -37,6 +38,13 @@ const MasterParameterTable = ({
     }
     hideDialog();
   };
+
+  useTableKeyboardNavigation({
+    items: parametersArray,
+    selectedId: selectedParameterId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-parameter-id',
+  });
 
   return (
     <div className="space-y-2">
@@ -74,6 +82,7 @@ const MasterParameterTable = ({
                 parametersArray.map((parameter) => (
                   <tr
                     key={parameter.id}
+                    data-parameter-id={parameter.id}
                     onClick={() => onViewDetail(parameter)}
                     className={`cursor-pointer transition-colors ${selectedParameterId === parameter.id
                         ? 'bg-blue-50 border-l-4 border-blue-500'

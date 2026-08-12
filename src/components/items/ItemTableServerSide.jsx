@@ -476,6 +476,7 @@ const ItemTableServerSide = forwardRef(({
                 cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
                 emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
                 onRowClick={onViewDetail}
+                selectedRowId={selectedItemId}
             />
         </div>
     );

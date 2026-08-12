@@ -3,8 +3,16 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedSupplierId, searchQuery }) => {
+  useTableKeyboardNavigation({
+    items: suppliers,
+    selectedId: selectedSupplierId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-supplier-id',
+  });
+
   return (
     <div className='space-y-2'>
       <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
@@ -67,6 +75,7 @@ const SupplierTable = ({ suppliers = [], pagination, onPageChange, onLimitChange
                 suppliers.map((supplier) => (
                   <tr
                     key={supplier.id}
+                    data-supplier-id={supplier.id}
                     onClick={() => onViewDetail(supplier)}
                     className={`cursor-pointer transition-colors ${selectedSupplierId === supplier.id
                         ? 'bg-blue-50 border-l-4 border-blue-500'

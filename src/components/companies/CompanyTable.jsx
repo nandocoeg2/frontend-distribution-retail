@@ -4,6 +4,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useConfirmationDialog } from '../ui';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange, onDelete, onViewDetail, selectedCompanyId, searchQuery = '', loading = false }) => {
   const [deleteId, setDeleteId] = React.useState(null);
@@ -31,6 +32,14 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
     }
     hideDialog();
   };
+
+  useTableKeyboardNavigation({
+    items: companiesArray,
+    selectedId: selectedCompanyId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-company-id',
+  });
+
   return (
     <div className="space-y-2">
       <div className="overflow-hidden rounded-md border border-gray-200 bg-white">
@@ -73,6 +82,7 @@ const CompanyTable = ({ companies, pagination = {}, onPageChange, onLimitChange,
                 companiesArray.map((company) => (
                   <tr
                     key={company.id}
+                    data-company-id={company.id}
                     onClick={() => onViewDetail(company)}
                     className={`cursor-pointer transition-colors ${
                       selectedCompanyId === company.id

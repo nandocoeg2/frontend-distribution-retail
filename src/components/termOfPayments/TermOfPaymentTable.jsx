@@ -3,8 +3,16 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedTermOfPaymentId, searchQuery }) => {
+  useTableKeyboardNavigation({
+    items: termOfPayments,
+    selectedId: selectedTermOfPaymentId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-term-of-payment-id',
+  });
+
   return (
     <div className='space-y-2'>
       <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
@@ -47,6 +55,7 @@ const TermOfPaymentTable = ({ termOfPayments, pagination, onPageChange, onLimitC
                 termOfPayments.map((top) => (
                   <tr
                     key={top.id}
+                    data-term-of-payment-id={top.id}
                     onClick={() => onViewDetail(top)}
                     className={`cursor-pointer transition-colors ${selectedTermOfPaymentId === top.id
                         ? 'bg-blue-50 border-l-4 border-blue-500'

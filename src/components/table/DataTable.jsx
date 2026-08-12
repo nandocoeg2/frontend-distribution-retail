@@ -1,6 +1,7 @@
 import React from 'react';
 import { flexRender } from '@tanstack/react-table';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const defaultLoading = (message) => (
   <div className="flex items-center justify-center p-8 text-gray-500">
@@ -48,6 +49,8 @@ const DataTable = ({
   footerContent,
   footerRowClassName = 'bg-gray-50',
   footerCellClassName = 'px-2 py-1.5 text-xs',
+  selectedRowId = null,
+  idAttribute = 'id',
 }) => {
   if (!table) {
     return null;
@@ -64,6 +67,14 @@ const DataTable = ({
 
   const headerGroups = table.getHeaderGroups();
   const rows = table.getRowModel().rows;
+
+  useTableKeyboardNavigation({
+    items: rows,
+    selectedId: selectedRowId,
+    onSelect: onRowClick,
+    idAttribute,
+  });
+
   const columnCount = table.getVisibleLeafColumns().length || table.getAllLeafColumns().length || 1;
 
   const noDataMessage = hasActiveFilters && emptyFilteredMessage
@@ -169,7 +180,12 @@ const DataTable = ({
               };
 
               return (
-                <tr key={row.id} className={computedRowClass} onClick={handleRowClick}>
+                <tr
+                  key={row.id}
+                  data-row-id={row.original[idAttribute]}
+                  className={computedRowClass}
+                  onClick={handleRowClick}
+                >
                   {row.getVisibleCells().map((cell) => {
                     const cellContext = { row, cell };
                     const computedCellClass = [

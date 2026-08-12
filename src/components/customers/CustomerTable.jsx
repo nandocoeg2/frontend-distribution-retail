@@ -4,6 +4,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 import { useConfirmationDialog } from '../ui';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedCustomerId, searchQuery }) => {
   const [deleteId, setDeleteId] = React.useState(null);
@@ -27,6 +28,14 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
     }
     hideDialog();
   };
+
+  useTableKeyboardNavigation({
+    items: customers,
+    selectedId: selectedCustomerId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-customer-id',
+  });
+
   return (
     <div className='space-y-2'>
       <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
@@ -75,6 +84,7 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
                   return (
                   <tr
                     key={customer.id}
+                    data-customer-id={customer.id}
                     onClick={() => onViewDetail && onViewDetail(customer)}
                     className={`cursor-pointer transition-colors ${
                       isSelected ? 'bg-blue-50 border-l-4 border-blue-500' : 'hover:bg-gray-50'

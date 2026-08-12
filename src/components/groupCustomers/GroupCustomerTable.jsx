@@ -1,8 +1,16 @@
 import React from 'react';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
+import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
 const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedGroupCustomerId, searchQuery }) => {
+  useTableKeyboardNavigation({
+    items: groupCustomers,
+    selectedId: selectedGroupCustomerId,
+    onSelect: onViewDetail,
+    dataAttributeName: 'data-group-customer-id',
+  });
+
   return (
     <div className='space-y-2'>
       <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
@@ -53,6 +61,7 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
                 groupCustomers.map((gc) => (
                   <tr
                     key={gc.id}
+                    data-group-customer-id={gc.id}
                     onClick={() => onViewDetail(gc)}
                     className={`cursor-pointer transition-colors ${selectedGroupCustomerId === gc.id
                         ? 'bg-blue-50 border-l-4 border-blue-500'
