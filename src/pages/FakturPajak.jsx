@@ -6,9 +6,10 @@ import {
   FakturPajakModal,
   FakturPajakDetailCard,
   FakturPajakExportModal,
+  FakturPajakBulkUploadModal,
 } from '@/components/fakturPajak';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import { ArchiveBoxIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArchiveBoxIcon, ArrowDownTrayIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import fakturPajakService from '@/services/fakturPajakService';
 import toastService from '@/services/toastService';
 
@@ -26,6 +27,7 @@ const FakturPajakPage = () => {
   const [selectedFakturPajakForDetail, setSelectedFakturPajakForDetail] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [generateTtfConfirmation, setGenerateTtfConfirmation] = useState({
     show: false,
@@ -338,6 +340,13 @@ const FakturPajakPage = () => {
                   </>
                 )}
               </button>
+              <button
+                onClick={() => setIsBulkUploadModalOpen(true)}
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'
+              >
+                <ArrowUpTrayIcon className='w-3.5 h-3.5 mr-1' />
+                Bulk Upload DJP PDF
+              </button>
             </div>
           </div>
 
@@ -368,6 +377,14 @@ const FakturPajakPage = () => {
       <FakturPajakExportModal
         isOpen={isExportModalOpen}
         onClose={closeExportModal}
+      />
+
+      <FakturPajakBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onSuccess={async () => {
+          await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
+        }}
       />
 
       <ConfirmationDialog

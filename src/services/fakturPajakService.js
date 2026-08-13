@@ -377,6 +377,28 @@ class FakturPajakService {
       throw error;
     }
   }
+
+  async uploadBulkFakturPajakTextExtraction({ files } = {}) {
+    try {
+      const fileList = Array.isArray(files) ? files : Array.from(files || []);
+      const formData = new FormData();
+      fileList.forEach((file) => {
+        if (file) {
+          formData.append('files', file);
+        }
+      });
+
+      const response = await this.api.post('/bulk-text-extraction', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading bulk Faktur Pajak files:', error);
+      throw error;
+    }
+  }
 }
 
 export default new FakturPajakService();

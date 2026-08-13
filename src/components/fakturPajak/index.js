@@ -5,3 +5,5 @@ export { default as FakturPajakModal } from './FakturPajakModal';
 export { default as FakturPajakDetailModal } from './FakturPajakDetailModal';
 export { default as FakturPajakDetailCard } from './FakturPajakDetailCard';
 export { default as FakturPajakExportModal } from './FakturPajakExportModal';
+export { default as FakturPajakBulkUploadModal } from './FakturPajakBulkUploadModal';
+
