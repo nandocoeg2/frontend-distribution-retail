@@ -354,8 +354,8 @@ const CheckingListDetailCard = ({
                         value: checklist?.checker || '-',
                       },
                       {
-                        label: 'Driver',
-                        value: checklist?.driver || '-',
+                        label: 'Ekspedisi',
+                        value: checklist?.ekspedisi || '-',
                       },
                       {
                         label: 'Nomor Kendaraan',

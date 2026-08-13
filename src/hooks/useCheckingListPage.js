@@ -20,7 +20,7 @@ const DEFAULT_FILTERS = {
   deliver_to: '',
   PIC: '',
   checker: '',
-  driver: '',
+  ekspedisi: '',
   mobil: '',
   kota: '',
   tanggal_from: '',
@@ -451,7 +451,7 @@ const useCheckingListPage = () => {
       active.deliver_to ||
       active.PIC ||
       active.checker ||
-      active.driver ||
+      active.ekspedisi ||
       active.mobil ||
       active.kota ||
       active.statusId ||

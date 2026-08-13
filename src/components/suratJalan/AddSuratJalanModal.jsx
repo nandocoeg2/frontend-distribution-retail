@@ -13,7 +13,7 @@ const defaultFormValues = {
   checklistSuratJalan: {
     tanggal: '',
     checker: '',
-    driver: '',
+    ekspedisi: '',
     mobil: '',
     kota: ''
   },
@@ -202,18 +202,18 @@ const AddSuratJalanModal = ({ show, onClose, onSuratJalanAdded, handleAuthError 
           </div>
 
           <div>
-            <label htmlFor="driver" className="block mb-1 text-sm font-medium text-gray-700">
-              Driver <span className="text-red-500">*</span>
+            <label htmlFor="ekspedisi" className="block mb-1 text-sm font-medium text-gray-700">
+              Ekspedisi <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              id="driver"
-              name="driver"
-              value={formData.checklistSuratJalan.driver}
+              id="ekspedisi"
+              name="ekspedisi"
+              value={formData.checklistSuratJalan.ekspedisi}
               onChange={handleChecklistChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               required
-              placeholder="Nama driver"
+              placeholder="Nama ekspedisi"
             />
           </div>
 

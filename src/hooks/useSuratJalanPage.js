@@ -350,7 +350,7 @@ const useSuratJalanPage = () => {
           'status_code',
           'tanggal',
           'checker',
-          'driver',
+          'ekspedisi',
           'mobil',
           'kota',
         ];

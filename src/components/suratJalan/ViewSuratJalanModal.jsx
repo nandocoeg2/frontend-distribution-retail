@@ -741,7 +741,7 @@ const ViewSuratJalanModal = ({ show, onClose, suratJalan }) => {
                             value: formatDateTime(checklist.tanggal),
                           },
                           { label: 'Checker', value: checklist.checker },
-                          { label: 'Driver', value: checklist.driver },
+                          { label: 'Ekspedisi', value: checklist.ekspedisi },
                           { label: 'Mobil', value: checklist.mobil },
                           { label: 'Kota', value: checklist.kota },
                           {

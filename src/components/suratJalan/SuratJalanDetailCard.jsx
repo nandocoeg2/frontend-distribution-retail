@@ -300,7 +300,7 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
                       </div>
                       <InfoTable compact data={[
                         { label: 'Checker', value: checklist.checker },
-                        { label: 'Driver', value: checklist.driver },
+                        { label: 'Ekspedisi', value: checklist.ekspedisi },
                         { label: 'Mobil', value: checklist.mobil },
                         { label: 'Kota', value: checklist.kota },
                       ]} />

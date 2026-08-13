@@ -6,7 +6,7 @@ const defaultValues = {
     statusId: '',
     tanggal: '',
     checker: '',
-    driver: '',
+    ekspedisi: '',
     mobil: '',
     kota: '',
 };
@@ -47,7 +47,7 @@ const normalizeInitialValues = (initialValues) => {
         statusId: initialValues.statusId || initialValues.status?.id || '',
         tanggal: toDateTimeLocalValue(initialValues.tanggal),
         checker: initialValues.checker || '',
-        driver: initialValues.driver || '',
+        ekspedisi: initialValues.ekspedisi || '',
         mobil: initialValues.mobil || '',
         kota: initialValues.kota || '',
     };
@@ -107,7 +107,7 @@ const CheckingListForm = ({
         const payload = {
             statusId: formData.statusId?.trim(),
             checker: formData.checker?.trim(),
-            driver: formData.driver?.trim(),
+            ekspedisi: formData.ekspedisi?.trim(),
             mobil: formData.mobil?.trim(),
             kota: formData.kota?.trim(),
         };
@@ -176,20 +176,20 @@ const CheckingListForm = ({
 
                 <div>
                     <label
-                        htmlFor='driver'
+                        htmlFor='ekspedisi'
                         className='mb-1 block text-sm font-medium text-gray-700'
                     >
-                        Nama Driver <span className='text-red-500'>*</span>
+                        Nama Ekspedisi <span className='text-red-500'>*</span>
                     </label>
                     <input
-                        id='driver'
-                        name='driver'
+                        id='ekspedisi'
+                        name='ekspedisi'
                         type='text'
-                        value={formData.driver}
+                        value={formData.ekspedisi}
                         onChange={handleChange}
                         required
                         disabled={isSubmitting}
-                        placeholder='Nama driver'
+                        placeholder='Nama ekspedisi'
                         className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100'
                     />
                 </div>

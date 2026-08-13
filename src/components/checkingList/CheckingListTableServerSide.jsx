@@ -335,10 +335,10 @@ const CheckingListTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
-      columnHelper.accessor('driver', {
+      columnHelper.accessor('ekspedisi', {
         header: ({ column }) => (
           <div className="space-y-1">
-            <div className="font-medium text-xs">Driver</div>
+            <div className="font-medium text-xs">Ekspedisi</div>
             <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),

@@ -18,7 +18,7 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
         checklistSuratJalan: {
             tanggal: '',
             checker: '',
-            driver: '',
+            ekspedisi: '',
             mobil: '',
             kota: ''
         }
@@ -38,13 +38,13 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
                 checklistSuratJalan: hasChecklist ? {
                     tanggal: suratJalan.checklistSuratJalan.tanggal ? new Date(suratJalan.checklistSuratJalan.tanggal).toISOString().slice(0, 16) : '',
                     checker: suratJalan.checklistSuratJalan.checker || '',
-                    driver: suratJalan.checklistSuratJalan.driver || '',
+                    ekspedisi: suratJalan.checklistSuratJalan.ekspedisi || '',
                     mobil: suratJalan.checklistSuratJalan.mobil || '',
                     kota: suratJalan.checklistSuratJalan.kota || ''
                 } : {
                     tanggal: '',
                     checker: '',
-                    driver: '',
+                    ekspedisi: '',
                     mobil: '',
                     kota: ''
                 }
@@ -215,18 +215,18 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
                     </div>
 
                     <div>
-                        <label htmlFor="driver" className="block mb-1 text-sm font-medium text-gray-700">
-                            Driver <span className="text-red-500">*</span>
+                        <label htmlFor="ekspedisi" className="block mb-1 text-sm font-medium text-gray-700">
+                            Ekspedisi <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
-                            id="driver"
-                            name="driver"
-                            value={formData.checklistSuratJalan.driver}
+                            id="ekspedisi"
+                            name="ekspedisi"
+                            value={formData.checklistSuratJalan.ekspedisi}
                             onChange={handleChecklistChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                             required
-                            placeholder="Nama driver"
+                            placeholder="Nama ekspedisi"
                         />
                     </div>
 

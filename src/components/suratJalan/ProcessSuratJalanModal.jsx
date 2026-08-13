@@ -12,7 +12,7 @@ const createDefaultFormValues = () => {
     status_code: STATUS_CODE_PLACEHOLDER,
     tanggal: localDate.toISOString().slice(0, 16),
     checker: '',
-    driver: '',
+    ekspedisi: '',
     mobil: '',
     kota: '',
   };
@@ -22,7 +22,7 @@ const fieldLabels = {
   status_code: 'Status Checklist',
   tanggal: 'Tanggal Checking List',
   checker: 'Checker',
-  driver: 'Driver',
+  ekspedisi: 'Ekspedisi',
   mobil: 'Kendaraan',
   kota: 'Kota',
 };
@@ -93,8 +93,8 @@ const ProcessSuratJalanModal = ({
       nextErrors.checker = 'Nama checker wajib diisi.';
     }
 
-    if (!formValues.driver?.trim()) {
-      nextErrors.driver = 'Nama driver wajib diisi.';
+    if (!formValues.ekspedisi?.trim()) {
+      nextErrors.ekspedisi = 'Nama ekspedisi wajib diisi.';
     }
 
     if (!formValues.mobil?.trim()) {
@@ -131,7 +131,7 @@ const ProcessSuratJalanModal = ({
       status_code: formValues.status_code.trim(),
       tanggal: checklistDate.toISOString(),
       checker: formValues.checker.trim(),
-      driver: formValues.driver.trim(),
+      ekspedisi: formValues.ekspedisi.trim(),
       mobil: formValues.mobil.trim(),
       kota: formValues.kota.trim(),
     };
@@ -216,20 +216,20 @@ const ProcessSuratJalanModal = ({
             </div>
 
             <div>
-              <label className='mb-1 block text-sm font-medium text-gray-700' htmlFor='driver'>
-                {fieldLabels.driver} <span className='text-red-500'>*</span>
+              <label className='mb-1 block text-sm font-medium text-gray-700' htmlFor='ekspedisi'>
+                {fieldLabels.ekspedisi} <span className='text-red-500'>*</span>
               </label>
               <input
-                id='driver'
-                name='driver'
-                value={formValues.driver}
+                id='ekspedisi'
+                name='ekspedisi'
+                value={formValues.ekspedisi}
                 onChange={handleInputChange}
                 className='w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                placeholder='Masukkan nama driver'
+                placeholder='Masukkan nama ekspedisi'
                 required
               />
-              {errors.driver && (
-                <p className='mt-1 text-xs text-red-600'>{errors.driver}</p>
+              {errors.ekspedisi && (
+                <p className='mt-1 text-xs text-red-600'>{errors.ekspedisi}</p>
               )}
             </div>
 
