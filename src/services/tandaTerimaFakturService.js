@@ -199,8 +199,13 @@ class TandaTerimaFakturService {
 
   async getGrouped(params = {}) {
     try {
+      const activeCompanyId = authService.getCompanyData()?.id;
+      const mergedParams = {
+        ...params,
+        ...(activeCompanyId && !params.companyId ? { companyId: activeCompanyId } : {}),
+      };
       const response = await this.api.get('/grouped', {
-        params: sanitizeParams(params),
+        params: sanitizeParams(mergedParams),
       });
       return response.data;
     } catch (error) {
@@ -211,10 +216,15 @@ class TandaTerimaFakturService {
 
   async getGroupedDetail(groupCustomerId, params = {}) {
     try {
+      const activeCompanyId = authService.getCompanyData()?.id;
+      const mergedParams = {
+        ...params,
+        ...(activeCompanyId && !params.companyId ? { companyId: activeCompanyId } : {}),
+      };
       const response = await this.api.get(
         `/grouped/${groupCustomerId}/detail`,
         {
-          params: sanitizeParams(params),
+          params: sanitizeParams(mergedParams),
         }
       );
       return response.data;
@@ -230,7 +240,12 @@ class TandaTerimaFakturService {
   async exportByGroup(params = {}) {
     try {
       const token = authService.getToken();
-      const queryParams = new URLSearchParams(sanitizeParams(params)).toString();
+      const activeCompanyId = authService.getCompanyData()?.id;
+      const mergedParams = {
+        ...params,
+        ...(activeCompanyId && !params.companyId ? { companyId: activeCompanyId } : {}),
+      };
+      const queryParams = new URLSearchParams(sanitizeParams(mergedParams)).toString();
       const response = await fetch(
         `${API_BASE_URL}/export?${queryParams}`,
         {

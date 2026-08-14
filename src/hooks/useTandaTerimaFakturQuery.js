@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import tandaTerimaFakturService from '../services/tandaTerimaFakturService';
+import authService from '../services/authService';
 
 const sanitizeParams = (params = {}) => {
   const sanitized = {};
@@ -89,14 +90,20 @@ export const useTandaTerimaFakturQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['tandaTerimaFaktur', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['tandaTerimaFaktur', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for backend
       const params = {
         page,
         limit,
       };
+
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting
       if (sorting.length > 0) {

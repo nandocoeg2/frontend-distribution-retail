@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { searchItemsWithFilters } from '../services/itemService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching items with server-side filtering, sorting, and pagination
@@ -19,14 +20,19 @@ export const useItemsQuery = ({
     filters = {},
     globalFilter = '',
 }) => {
+    const companyId = authService.getCompanyData()?.id;
+
     return useQuery({
-        queryKey: ['items', { page, limit, sorting, filters, globalFilter }],
+        queryKey: ['items', { page, limit, sorting, filters, globalFilter, companyId }],
         queryFn: async () => {
             // Build query parameters for backend
             const params = {
                 page,
                 limit,
             };
+            if (companyId) {
+                params.companyId = companyId;
+            }
 
             // Add sorting
             if (sorting.length > 0) {

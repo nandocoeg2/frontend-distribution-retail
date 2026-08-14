@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import fakturPajakService from '../services/fakturPajakService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching faktur pajak with server-side filtering, sorting, and pagination
@@ -36,14 +37,20 @@ export const useFakturPajakQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['fakturPajak', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['fakturPajak', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for unified endpoint
       const params = {
         page,
         limit,
       };
+
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting (default: createdAt desc)
       if (sorting.length > 0) {
