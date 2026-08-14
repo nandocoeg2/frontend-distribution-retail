@@ -85,12 +85,13 @@ const InvoicePenagihanTableServerSide = forwardRef(({
   selectedInvoiceId = null,
   onRowClick,
 }, ref) => {
+  const companyId = authService.getCompanyData()?.id;
   const [groupCustomers, setGroupCustomers] = useState([]);
 
   useEffect(() => {
     const fetchGroupCustomers = async () => {
       try {
-        const response = await groupCustomerService.getAllGroupCustomers(1, 100);
+        const response = await groupCustomerService.getAllGroupCustomers(1, 100, companyId);
         const data = response?.data?.data || response?.data || [];
         setGroupCustomers(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -98,7 +99,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       }
     };
     fetchGroupCustomers();
-  }, []);
+  }, [companyId]);
 
   const getQueryParams = useMemo(
     () => ({ filters, ...rest }) => {
@@ -136,8 +137,6 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         }
       }
 
-      const companyId = authService.getCompanyData()?.id;
-
       return {
         ...rest,
         filters: {
@@ -146,7 +145,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         },
       };
     },
-    []
+    [companyId]
   );
 
   const {
@@ -165,6 +164,9 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     selectPagination: (response) => response?.pagination,
     initialPage: 1,
     initialLimit: 9999,
+    getQueryParams,
+    columnFilterDebounceMs: 0,
+    storageKey: 'invoice-penagihan',
   });
 
   const handleSelectAllInternalToggle = useCallback(() => {
@@ -218,14 +220,13 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         }
       });
 
-      const companyId = authService.getCompanyData()?.id;
       if (companyId) {
         filters.companyId = companyId;
       }
 
       return filters;
     },
-  }), [tableOptions?.state?.columnFilters]);
+  }));
 
   const columns = useMemo(
     () => [

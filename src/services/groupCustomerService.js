@@ -53,8 +53,10 @@ export const groupCustomerService = {
   ...baseService,
 
   // Alias untuk getAll dengan nama yang lebih spesifik
-  getAllGroupCustomers: (page = 1, limit = 10) => {
-    return baseService.getAll(page, limit);
+  getAllGroupCustomers: (page = 1, limit = 10, companyId) => {
+    const activeCompanyId = companyId || authService.getCompanyData()?.id;
+    const query = activeCompanyId ? `&companyId=${encodeURIComponent(activeCompanyId)}` : '';
+    return baseService.getAll ? baseService.getAll(page, limit) : api.get(`/group-customers?page=${page}&limit=${limit}${query}`);
   },
 
   // Alias untuk create
