@@ -11,6 +11,7 @@ import TextColumnFilter from '../common/TextColumnFilter';
 import { useSuratJalanQuery } from '../../hooks/useSuratJalanQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, TableFooterCell } from '../table';
+import { formatDate } from '../../utils/formatUtils';
 import authService from '../../services/authService';
 import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
@@ -346,7 +347,7 @@ const SuratJalanTableServerSide = ({
             </div>
           );
         },
-        cell: (info) => <span className="font-medium">{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : '-'}</span>,
+        cell: (info) => <span className="font-medium">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor('no_surat_jalan', {
         header: ({ column }) => (
