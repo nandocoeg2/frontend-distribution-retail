@@ -8,7 +8,7 @@ import {
 } from 'react-router-dom';
 
 import { ToastContainer } from 'react-toastify';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -434,26 +434,53 @@ const AppRoutes = () => {
   );
 };
 
+const AppContent = () => {
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'F5' || e.keyCode === 116) {
+        e.preventDefault();
+        // Invalidate all React Query cached data
+        queryClient.invalidateQueries();
+        // Dispatch custom refresh event for any component listening
+        window.dispatchEvent(new CustomEvent('page:refresh'));
+        // Trigger page re-render/refetch
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [queryClient]);
+
+  return (
+    <div className='App'>
+      <ToastContainer
+        position='bottom-right'
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme='light'
+      />
+      <AppRoutes />
+    </div>
+  );
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router>
-          <div className='App'>
-            <ToastContainer
-              position='bottom-right'
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme='light'
-            />
-            <AppRoutes />
-          </div>
+          <AppContent />
         </Router>
       </AuthProvider>
     </QueryClientProvider>
