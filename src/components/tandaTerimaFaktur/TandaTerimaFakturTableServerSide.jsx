@@ -23,24 +23,20 @@ const resolveStatusVariant = (status) => {
     return 'secondary';
   }
 
-  if (value.includes('delivered') || value.includes('complete') || value.includes('received')) {
+  if (value.includes('lunas') || value.includes('paid') || value.includes('complete')) {
     return 'success';
+  }
+
+  if (value.includes('menunggu') || value.includes('pending')) {
+    return 'warning';
+  }
+
+  if (value.includes('processing') || value.includes('progress')) {
+    return 'primary';
   }
 
   if (value.includes('cancelled') || value.includes('failed') || value.includes('error')) {
     return 'danger';
-  }
-
-  if (value.includes('shipped') || value.includes('packed')) {
-    return 'primary';
-  }
-
-  if (value.includes('processing') || value.includes('in progress')) {
-    return 'warning';
-  }
-
-  if (value.includes('pending') || value.includes('draft')) {
-    return 'secondary';
   }
 
   return 'default';
