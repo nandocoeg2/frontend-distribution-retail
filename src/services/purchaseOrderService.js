@@ -1,3 +1,5 @@
+import authService from './authService';
+
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/purchase-orders`;
 
 const purchaseOrderService = {
@@ -25,6 +27,11 @@ const purchaseOrderService = {
       }
     });
 
+    const activeCompanyId = authService.getCompanyData()?.id;
+    if (activeCompanyId && !url.searchParams.has('companyId')) {
+      url.searchParams.append('companyId', activeCompanyId);
+    }
+
     return fetch(url, {
       headers: {
         'Accept': 'application/json',
@@ -41,13 +48,16 @@ const purchaseOrderService = {
   },
 
   // Get all purchase orders dengan pagination
-  getAllPurchaseOrders: async (page = 1, limit = 10) => {
+  getAllPurchaseOrders: async (page = 1, limit = 10, companyId) => {
     const accessToken = localStorage.getItem('token');
     if (!accessToken) {
       throw new Error('No access token found');
     }
 
-    const response = await fetch(`${API_URL}/?page=${page}&limit=${limit}`, {
+    const activeCompanyId = companyId || authService.getCompanyData()?.id;
+    const query = activeCompanyId ? `&companyId=${encodeURIComponent(activeCompanyId)}` : '';
+
+    const response = await fetch(`${API_URL}/?page=${page}&limit=${limit}${query}`, {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
@@ -393,6 +403,11 @@ printDocuments: async (id, documents) => {
         url.searchParams.append(key, params[key]);
       }
     });
+
+    const activeCompanyId = authService.getCompanyData()?.id;
+    if (activeCompanyId && !url.searchParams.has('companyId')) {
+      url.searchParams.append('companyId', activeCompanyId);
+    }
 
     const response = await fetch(url, {
       method: 'GET',
