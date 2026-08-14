@@ -64,10 +64,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
   );
 
   // Get companyId from logged-in user's localStorage
-  const companyId = useMemo(() => {
-    const companyData = authService.getCompanyData();
-    return companyData?.id || null;
-  }, []);
+  const companyId = authService.getCompanyData()?.id || null;
 
   const getQueryParams = useMemo(
     () => ({ filters, ...rest }) => {
@@ -189,7 +186,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
   useEffect(() => {
     const fetchTermOfPayments = async () => {
       try {
-        const response = await termOfPaymentService.getAllTermOfPayments(1, 100);
+        const response = await termOfPaymentService.getAllTermOfPayments(1, 100, companyId);
         const data = response?.data?.data || response?.data || [];
         setTermOfPayments(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -198,13 +195,16 @@ const PurchaseOrderTableServerSide = forwardRef(({
       }
     };
     fetchTermOfPayments();
-  }, []);
+  }, [companyId]);
 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        // Filter only customers that have purchase orders
-        const response = await customerService.getAllCustomers(1, 9999, { hasPurchaseOrder: true });
+        // Filter only customers that have purchase orders and belong to active company
+        const response = await customerService.getAllCustomers(1, 9999, {
+          hasPurchaseOrder: true,
+          ...(companyId ? { companyId } : {}),
+        });
         const data = response?.data?.data || response?.data || [];
         setCustomers(Array.isArray(data) ? data : []);
       } catch (error) {
@@ -213,7 +213,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
       }
     };
     fetchCustomers();
-  }, []);
+  }, [companyId]);
 
 
 

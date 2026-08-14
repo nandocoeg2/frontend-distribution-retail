@@ -1,3 +1,5 @@
+import authService from './authService';
+
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/term-of-payments`;
 
 const getHeaders = () => {
@@ -68,9 +70,11 @@ const parseErrorMessage = async (response, fallbackMessage) => {
 
 export const termOfPaymentService = {
   // Get all term of payments with pagination
-  getAllTermOfPayments: async (page = 1, limit = 10) => {
+  getAllTermOfPayments: async (page = 1, limit = 10, companyId) => {
     try {
-      const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const query = activeCompanyId ? `&companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const response = await fetch(`${API_URL}?page=${page}&limit=${limit}${query}`, {
         headers: getHeaders(),
       });
 
