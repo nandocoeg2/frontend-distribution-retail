@@ -129,7 +129,6 @@ const TandaTerimaFakturPage = () => {
 
           <TandaTerimaFakturTableServerSide
             onView={handleViewDetail}
-            onEdit={handleEdit}
             onDelete={handleDelete}
             deleteLoading={deleteTandaTerimaFakturConfirmation.loading}
             initialPage={1}
@@ -144,7 +143,6 @@ const TandaTerimaFakturPage = () => {
         <TandaTerimaFakturDetailCard
           tandaTerimaFaktur={selectedTTFForDetail}
           onClose={handleCloseDetail}
-          onEdit={handleEdit}
           loading={detailLoading}
         />
       )}
