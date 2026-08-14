@@ -20,6 +20,10 @@ class CheckingListService {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      const companyData = authService.getCompanyData();
+      if (companyData?.id) {
+        config.headers['x-company-id'] = companyData.id;
+      }
       return config;
     });
   }
