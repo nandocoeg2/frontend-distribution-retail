@@ -23,7 +23,7 @@ const SuratJalan = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
-  const tableFiltersRef = useRef({});
+  const tableRef = useRef(null);
 
   // Process dialog state
   const [showProcessDialog, setShowProcessDialog] = useState(false);
@@ -355,10 +355,6 @@ const SuratJalan = () => {
     }
   }, [queryClient, selectedSuratJalanForDetail]);
 
-  const handleFiltersChange = useCallback((filters) => {
-    tableFiltersRef.current = filters;
-  }, []);
-
   const handleExportExcel = () => {
     setShowExportConfirmation(true);
   };
@@ -367,7 +363,8 @@ const SuratJalan = () => {
     try {
       setShowExportConfirmation(false);
       setExportLoading(true);
-      await suratJalanService.exportExcel(tableFiltersRef.current);
+      const filters = tableRef.current?.getFilters?.() || {};
+      await suratJalanService.exportExcel(filters);
       toastService.success('Data berhasil diexport ke Excel');
     } catch (err) {
       console.error('Export failed:', err);
@@ -403,6 +400,7 @@ const SuratJalan = () => {
           </div>
 
           <SuratJalanTableServerSide
+            ref={tableRef}
             onDelete={handleDelete}
             onCancel={handleCancel}
             cancelLoading={cancelLoading}
@@ -416,7 +414,6 @@ const SuratJalan = () => {
             hasSelectedSuratJalan={selectedSuratJalan.length > 0}
             onRowClick={handleViewDetail}
             selectedSuratJalanId={selectedSuratJalanForDetail?.id}
-            onFiltersChange={handleFiltersChange}
           />
         </div>
       </div>
