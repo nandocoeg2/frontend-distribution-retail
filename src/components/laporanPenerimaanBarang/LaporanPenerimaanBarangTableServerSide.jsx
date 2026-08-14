@@ -532,7 +532,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
               }))}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder="Aktif"
+              placeholder="Semua"
               displayKey="name"
               valueKey="id"
               limitTags={1}
