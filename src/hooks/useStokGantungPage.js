@@ -88,9 +88,29 @@ const parseStokGantungResponse = (response) => {
 
         const customerName =
             movement?.customer?.namaCustomer ||
+            movement?.purchaseOrder?.customer?.namaCustomer ||
             movement?.customerName ||
             movement?.customer_name ||
             null;
+
+        const poNumber =
+            movement?.purchaseOrder?.po_number ||
+            movement?.no_po ||
+            movement?.po_number ||
+            null;
+
+        const lpb = movement?.purchaseOrder?.laporanPenerimaanBarang || null;
+        const tanggalLpb = lpb?.tanggal_po || lpb?.createdAt || null;
+        const noLpb = lpb?.no_lpb || null;
+
+        const checklist =
+            movement?.suratJalan?.checklistSuratJalan ||
+            movement?.purchaseOrder?.suratJalan?.checklistSuratJalan ||
+            null;
+        const expedisi = checklist?.ekspedisi || null;
+        const mobil = checklist?.mobil || null;
+        const expedisiDriver =
+            [expedisi, mobil].filter(Boolean).join(' - ') || null;
 
         return {
             ...movement,
@@ -103,9 +123,15 @@ const parseStokGantungResponse = (response) => {
                 movement.document_number ||
                 '-',
             notes: movement.notes || movement.description || '',
+            poNumber,
+            customerName,
+            tanggalLpb,
+            noLpb,
+            expedisi,
+            mobil,
+            expedisiDriver,
             supplierName,
             companyName,
-            customerName,
             createdAt: movement.createdAt || movement.created_at || null,
             updatedAt: movement.updatedAt || movement.updated_at || null,
             totalItems: movementItems.length,

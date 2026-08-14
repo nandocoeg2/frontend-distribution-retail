@@ -8,7 +8,9 @@ const buildHeaders = () => ({
 });
 
 const buildQuery = (params = {}) => {
+  const companyId = authService.getCompanyData()?.id;
   const q = new URLSearchParams();
+  if (companyId) q.set('companyId', companyId);
   Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
   });

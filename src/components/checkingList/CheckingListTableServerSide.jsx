@@ -2,7 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { TrashIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
-import { formatDateTime } from '../../utils/formatUtils';
+import { formatDate } from '../../utils/formatUtils';
 import checkingListService from '../../services/checkingListService';
 import toastService from '../../services/toastService';
 import authService from '../../services/authService';
@@ -291,7 +291,11 @@ const CheckingListTableServerSide = ({
             />
           </div>
         ),
-        cell: (info) => formatDateTime(info.getValue()),
+        cell: (info) => (
+          <span className="text-xs text-gray-600">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
+          </span>
+        ),
       }),
       columnHelper.accessor('suratJalan', {
         id: 'surat_jalan',

@@ -20,14 +20,19 @@ export const usePurchaseOrdersQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['purchaseOrders', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['purchaseOrders', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for backend
       const params = {
         page,
         limit,
       };
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting
       if (sorting.length > 0) {

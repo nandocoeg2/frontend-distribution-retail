@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import kwitansiService from '../services/kwitansiService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching kwitansi with server-side filtering, sorting, and pagination
@@ -19,11 +20,16 @@ export const useKwitansiQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['kwitansi', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['kwitansi', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for backend
       const params = {};
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting
       if (sorting.length > 0) {

@@ -23,10 +23,17 @@ class LaporanPenerimaanBarangService {
     });
   }
 
-  async getAllReports(page = 1, limit = 10) {
+  async getAllReports(page = 1, limit = 10, companyId) {
     try {
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const params = new URLSearchParams();
+      params.set('page', page);
+      params.set('limit', limit);
+      if (activeCompanyId) {
+        params.set('companyId', activeCompanyId);
+      }
       const response = await this.api.get(
-        '/laporan-penerimaan-barang?page=' + page + '&limit=' + limit
+        '/laporan-penerimaan-barang?' + params.toString()
       );
       return response.data;
     } catch (error) {
@@ -90,6 +97,7 @@ class LaporanPenerimaanBarangService {
 
   async searchReports(criteria = '', page = 1, limit = 10) {
     try {
+      const activeCompanyId = authService.getCompanyData()?.id;
       const params = new URLSearchParams();
       const isObjectCriteria =
         criteria && typeof criteria === 'object' && !Array.isArray(criteria);
@@ -111,8 +119,17 @@ class LaporanPenerimaanBarangService {
 
           params.append(key, value);
         });
+
+        if (activeCompanyId && !params.has('companyId')) {
+          params.append('companyId', activeCompanyId);
+        }
       } else if (typeof criteria === 'string' && criteria.trim()) {
         params.append('q', criteria.trim());
+        if (activeCompanyId) {
+          params.append('companyId', activeCompanyId);
+        }
+      } else if (activeCompanyId) {
+        params.append('companyId', activeCompanyId);
       }
 
       params.set('page', page);
@@ -216,11 +233,15 @@ class LaporanPenerimaanBarangService {
     }
   }
 
-  async getBulkFiles({ status } = {}) {
+  async getBulkFiles({ status, companyId } = {}) {
     try {
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
       const params = new URLSearchParams();
       if (status) {
         params.append('status', status);
+      }
+      if (activeCompanyId) {
+        params.append('companyId', activeCompanyId);
       }
       const query = params.toString();
       const url = '/laporan-penerimaan-barang/bulk-files' + (query ? '?' + query : '');
@@ -435,6 +456,7 @@ class LaporanPenerimaanBarangService {
    */
   async exportExcel(filters = {}) {
     try {
+      const activeCompanyId = authService.getCompanyData()?.id;
       const params = new URLSearchParams();
 
       Object.entries(filters).forEach(([key, value]) => {
@@ -461,6 +483,10 @@ class LaporanPenerimaanBarangService {
 
         params.append(key, value);
       });
+
+      if (activeCompanyId && !params.has('companyId')) {
+        params.append('companyId', activeCompanyId);
+      }
 
       const queryString = params.toString();
       const url = '/laporan-penerimaan-barang/export-excel' + (queryString ? '?' + queryString : '');

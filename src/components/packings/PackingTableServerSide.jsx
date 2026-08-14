@@ -12,6 +12,7 @@ import { StatusBadge } from '../ui/Badge';
 import { usePackingsQuery } from '../../hooks/usePackingsQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, TableFooterCell } from '../table';
+import { formatDate } from '../../utils/formatUtils';
 import { exportPackingStickerBulk, exportPackingTandaTerimaGroupedBulk, exportExcel, previewExportExcel, bulkUpdateTanggalPacking } from '../../services/packingService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
@@ -531,7 +532,7 @@ const PackingTableServerSide = forwardRef(({
             </div>
           );
         },
-        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : '-'}</span>,
+        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor('purchaseOrder.delivery_date', {
         id: 'tanggal_expired',
@@ -555,7 +556,7 @@ const PackingTableServerSide = forwardRef(({
             </div>
           );
         },
-        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? new Date(info.getValue()).toLocaleDateString() : 'N/A'}</span>,
+        cell: (info) => <span className='text-xs text-gray-600'>{info.getValue() ? formatDate(info.getValue()) : 'N/A'}</span>,
       }),
       columnHelper.display({
         id: 'is_printed',
