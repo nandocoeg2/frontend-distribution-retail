@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { PencilIcon, TrashIcon, TruckIcon, PrinterIcon, XCircleIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
@@ -60,7 +60,7 @@ const isCancelAllowed = (suratJalan) => {
   return !normalizedCode.includes('cancelled') && !normalizedCode.includes('delivered');
 };
 
-const SuratJalanTableServerSide = ({
+const SuratJalanTableServerSide = forwardRef(({
   onDelete,
   onCancel,
   cancelLoading = false,
@@ -74,8 +74,7 @@ const SuratJalanTableServerSide = ({
   hasSelectedSuratJalan = false,
   onRowClick,
   selectedSuratJalanId,
-  onFiltersChange,
-}) => {
+}, ref) => {
   const queryClient = useQueryClient();
   const [isPrinting, setIsPrinting] = useState(false);
   const [unprocessDialog, setUnprocessDialog] = useState({
@@ -515,6 +514,8 @@ const SuratJalanTableServerSide = ({
       onCancel,
       cancelLoading,
       setPage,
+      poOptions,
+      deliverOptions,
     ]
   );
 
@@ -523,17 +524,16 @@ const SuratJalanTableServerSide = ({
     columns,
   });
 
-  // Expose column filters to parent component
-  useEffect(() => {
-    if (onFiltersChange && table) {
-      const columnFilters = table.getState().columnFilters || [];
+  useImperativeHandle(ref, () => ({
+    getFilters: () => {
+      const columnFilters = table?.getState()?.columnFilters || [];
       const filters = {};
       columnFilters.forEach((filter) => {
         filters[filter.id] = filter.value;
       });
-      onFiltersChange(filters);
-    }
-  }, [table?.getState().columnFilters, onFiltersChange]);
+      return filters;
+    },
+  }));
 
   const loading = isLoading || isFetching;
 
@@ -636,6 +636,8 @@ const SuratJalanTableServerSide = ({
       />
     </div>
   );
-};
+});
+
+SuratJalanTableServerSide.displayName = 'SuratJalanTableServerSide';
 
 export default SuratJalanTableServerSide;
