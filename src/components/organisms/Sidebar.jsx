@@ -300,8 +300,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
     const isChildActive =
       hasChildren && menu.children.some((child) => isPathMatch(child.url));
     const isActive = isPathMatch(menu.url) || isChildActive;
-    const isExpanded =
-      expandedMenus.has(menu.id) || (isChildActive && !isCollapsed);
+    const isExpanded = expandedMenus.has(menu.id);
     const iconName = normalizeIconName(menu);
     const iconWrapperClasses = `${
       level > 0 ? 'p-1.5' : 'p-2'
