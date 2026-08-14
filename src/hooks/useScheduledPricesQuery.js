@@ -1,5 +1,6 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import scheduledPriceService from '../services/scheduledPriceService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching scheduled prices with server-side filtering, sorting, and pagination
@@ -19,14 +20,19 @@ export const useScheduledPricesQuery = ({
     filters = {},
     globalFilter = '',
 }) => {
+    const companyId = authService.getCompanyData()?.id;
+
     return useQuery({
-        queryKey: ['scheduled-prices', { page, limit, sorting, filters, globalFilter }],
+        queryKey: ['scheduled-prices', { page, limit, sorting, filters, globalFilter, companyId }],
         queryFn: async () => {
             // Build query parameters for backend
             const params = {
                 page,
                 limit,
             };
+            if (companyId) {
+                params.companyId = companyId;
+            }
 
             // Add sorting
             if (sorting.length > 0) {

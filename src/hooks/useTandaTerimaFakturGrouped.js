@@ -1,9 +1,11 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import tandaTerimaFakturService from '@/services/tandaTerimaFakturService';
+import authService from '@/services/authService';
 
 export const useTandaTerimaFakturGrouped = (params = {}) => {
+  const companyId = authService.getCompanyData()?.id;
   return useQuery({
-    queryKey: ['tandaTerimaFaktur', 'grouped', params],
+    queryKey: ['tandaTerimaFaktur', 'grouped', params, companyId],
     queryFn: async () => {
       const response = await tandaTerimaFakturService.getGrouped(params);
       return response.data || [];
@@ -17,8 +19,9 @@ export const useTandaTerimaFakturGroupedDetail = (
   groupCustomerId,
   params = {}
 ) => {
+  const companyId = authService.getCompanyData()?.id;
   return useQuery({
-    queryKey: ['tandaTerimaFaktur', 'groupedDetail', groupCustomerId, params],
+    queryKey: ['tandaTerimaFaktur', 'groupedDetail', groupCustomerId, params, companyId],
     queryFn: async () => {
       if (!groupCustomerId) return null;
       const response = await tandaTerimaFakturService.getGroupedDetail(

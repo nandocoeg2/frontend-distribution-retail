@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import checkingListService from '../services/checkingListService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching checklist surat jalan with server-side filtering, sorting, and pagination
@@ -19,14 +20,19 @@ export const useCheckingListQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['checkingList', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['checkingList', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for backend
       const params = {
         page,
         limit,
       };
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting
       if (sorting.length > 0) {
@@ -48,12 +54,12 @@ export const useCheckingListQuery = ({
       }
 
       // Determine if we need to use search or getAllChecklists
-      const hasFilters = Object.keys(filters).length > 0 || globalFilter;
+      const hasFilters = Object.keys(filters).length > 0 || globalFilter || companyId;
       
       // Call backend API
       const response = hasFilters
         ? await checkingListService.searchChecklists(params, page, limit)
-        : await checkingListService.getAllChecklists(page, limit);
+        : await checkingListService.getAllChecklists(page, limit, companyId);
 
       // Handle nested response format: { success: true, data: { checklistSuratJalans: [...], pagination: {...} } }
       const responseData = response?.data || response;

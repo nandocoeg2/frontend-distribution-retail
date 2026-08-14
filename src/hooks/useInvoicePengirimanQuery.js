@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import invoicePengirimanService from '../services/invoicePengirimanService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching invoice pengiriman with server-side filtering, sorting, and pagination
@@ -19,14 +20,19 @@ export const useInvoicePengirimanQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['invoicePengiriman', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['invoicePengiriman', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for backend
       const params = {
         page,
         limit,
       };
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting
       if (sorting.length > 0) {

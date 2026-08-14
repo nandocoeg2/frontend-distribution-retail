@@ -28,9 +28,12 @@ export const reportPoSupplierService = {
 
   exportExcel: async (searchQuery = '') => {
     const token = authService.getToken();
-    const url = searchQuery
-      ? `${API_BASE_URL}/export-excel?q=${encodeURIComponent(searchQuery)}`
-      : `${API_BASE_URL}/export-excel`;
+    const companyId = authService.getCompanyData()?.id;
+    const params = new URLSearchParams();
+    if (searchQuery) params.append('q', searchQuery);
+    if (companyId) params.append('companyId', companyId);
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/export-excel${queryString ? '?' + queryString : ''}`;
 
     const response = await fetch(url, {
       method: 'GET',

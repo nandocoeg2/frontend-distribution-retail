@@ -62,13 +62,20 @@ class CheckingListService {
       params.set('limit', limit);
     }
 
+    const activeCompanyId = authService.getCompanyData()?.id;
+    if (activeCompanyId && !params.has('companyId')) {
+      params.append('companyId', activeCompanyId);
+    }
+
     return params;
   }
 
-  async getAllChecklists(page = 1, limit = 10) {
+  async getAllChecklists(page = 1, limit = 10, companyId) {
     try {
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const query = activeCompanyId ? `&companyId=${encodeURIComponent(activeCompanyId)}` : '';
       const response = await this.api.get(
-        `${RESOURCE_PATH}?page=${page}&limit=${limit}`
+        `${RESOURCE_PATH}?page=${page}&limit=${limit}${query}`
       );
       return response.data;
     } catch (error) {

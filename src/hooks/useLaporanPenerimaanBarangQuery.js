@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import laporanPenerimaanBarangService from '../services/laporanPenerimaanBarangService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching laporan penerimaan barang with server-side filtering, sorting, and pagination
@@ -19,14 +20,19 @@ export const useLaporanPenerimaanBarangQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const activeCompanyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['laporanPenerimaanBarang', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['laporanPenerimaanBarang', { page, limit, sorting, filters, globalFilter, companyId: activeCompanyId }],
     queryFn: async () => {
-      // If we have filters or globalFilter, use search endpoint
-      const hasFilters = Object.keys(filters).length > 0 || globalFilter;
+      // If we have filters, globalFilter, or activeCompanyId, use search endpoint
+      const hasFilters = Object.keys(filters).length > 0 || globalFilter || activeCompanyId;
       
       if (hasFilters) {
         const searchCriteria = { ...filters };
+        if (activeCompanyId && !searchCriteria.companyId) {
+          searchCriteria.companyId = activeCompanyId;
+        }
         
         // Handle special status_code value for showing all including completed
         if (searchCriteria.status_code === '__ALL__') {
@@ -159,7 +165,7 @@ export const useLaporanPenerimaanBarangQuery = ({
         };
       }
 
-      const response = await laporanPenerimaanBarangService.getAllReports(page, limit);
+      const response = await laporanPenerimaanBarangService.getAllReports(page, limit, activeCompanyId);
       
       // Handle nested response format
       const responseData = response?.data || response;

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import suratJalanService from '../services/suratJalanService';
+import authService from '../services/authService';
 
 /**
  * Custom hook for fetching surat jalan with server-side filtering, sorting, and pagination
@@ -19,14 +20,19 @@ export const useSuratJalanQuery = ({
   filters = {},
   globalFilter = '',
 }) => {
+  const companyId = authService.getCompanyData()?.id;
+
   return useQuery({
-    queryKey: ['surat-jalan', { page, limit, sorting, filters, globalFilter }],
+    queryKey: ['surat-jalan', { page, limit, sorting, filters, globalFilter, companyId }],
     queryFn: async () => {
       // Build query parameters for backend
       const params = {
         page,
         limit,
       };
+      if (companyId) {
+        params.companyId = companyId;
+      }
 
       // Add sorting
       if (sorting.length > 0) {
