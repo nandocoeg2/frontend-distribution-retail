@@ -651,14 +651,16 @@ const TandaTerimaFakturTableServerSide = ({
               >
                 <LinkSlashIcon className="h-3.5 w-3.5" />
               </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                className="p-0.5 text-green-600 hover:text-green-900"
-                title="Ubah"
-              >
-                <PencilIcon className="h-3.5 w-3.5" />
-              </button>
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+                  className="p-0.5 text-green-600 hover:text-green-900"
+                  title="Ubah"
+                >
+                  <PencilIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
