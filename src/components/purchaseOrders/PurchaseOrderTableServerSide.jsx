@@ -427,6 +427,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
   });
 
   useImperativeHandle(ref, () => ({
+    getOrders: () => orders || [],
     getFilters: () => {
       const state = table.getState();
       const filters = {};
