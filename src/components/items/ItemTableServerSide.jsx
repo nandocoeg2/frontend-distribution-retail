@@ -353,6 +353,25 @@ const ItemTableServerSide = forwardRef(({
                     </span>
                 ),
             }),
+            columnHelper.accessor('itemStock.qty_per_carton', {
+                id: 'qty_per_carton',
+                size: 90,
+                enableColumnFilter: false,
+                header: () => (
+                    <div className="space-y-0.5">
+                        <div className="font-medium text-xs">Isi / Karton</div>
+                        <div className="h-5"></div>
+                    </div>
+                ),
+                cell: (info) => {
+                    const val = info.row.original.itemStock?.qty_per_carton ?? info.row.original.qty_per_carton;
+                    return (
+                        <span className="text-xs text-right block font-mono">
+                            {formatNumber(val ?? 0)}
+                        </span>
+                    );
+                },
+            }),
             columnHelper.accessor('updatedAt', {
                 size: 65,
                 enableColumnFilter: true,
