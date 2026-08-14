@@ -32,6 +32,10 @@ const InvoicePengirimanPage = () => {
     nama_barang: '',
     quantity: '',
     harga: '',
+    potongan_a: '',
+    harga_after_potongan_a: '',
+    potongan_b: '',
+    harga_after_potongan_b: '',
     total: '',
     sub_total: '',
     total_discount: '',
@@ -53,6 +57,10 @@ const InvoicePengirimanPage = () => {
         String(row.nama_barang || '').toLowerCase().includes(localFilters.nama_barang.toLowerCase()) &&
         String(row.quantity ?? '').toLowerCase().includes(localFilters.quantity.toLowerCase()) &&
         String(row.harga ?? '').toLowerCase().includes(localFilters.harga.toLowerCase()) &&
+        String(row.potongan_a ?? '').toLowerCase().includes(localFilters.potongan_a.toLowerCase()) &&
+        String(row.harga_after_potongan_a ?? '').toLowerCase().includes(localFilters.harga_after_potongan_a.toLowerCase()) &&
+        String(row.potongan_b ?? '').toLowerCase().includes(localFilters.potongan_b.toLowerCase()) &&
+        String(row.harga_after_potongan_b ?? '').toLowerCase().includes(localFilters.harga_after_potongan_b.toLowerCase()) &&
         String(row.total ?? '').toLowerCase().includes(localFilters.total.toLowerCase()) &&
         String(row.sub_total ?? '').toLowerCase().includes(localFilters.sub_total.toLowerCase()) &&
         String(row.total_discount ?? '').toLowerCase().includes(localFilters.total_discount.toLowerCase()) &&
@@ -236,6 +244,10 @@ const InvoicePengirimanPage = () => {
       nama_barang: '',
       quantity: '',
       harga: '',
+      potongan_a: '',
+      harga_after_potongan_a: '',
+      potongan_b: '',
+      harga_after_potongan_b: '',
       total: '',
       sub_total: '',
       total_discount: '',
@@ -387,13 +399,12 @@ const InvoicePengirimanPage = () => {
                               <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{row.tanggal_invoice}</td>
                               <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap font-mono">{row.top}</td>
                               <td className="px-4 py-2.5 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                                  row.status?.includes('LUNAS') || row.status?.includes('PAID')
-                                    ? 'bg-green-50 text-green-700'
-                                    : row.status?.includes('POSTED')
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${row.status?.includes('LUNAS') || row.status?.includes('PAID')
+                                  ? 'bg-green-50 text-green-700'
+                                  : row.status?.includes('POSTED')
                                     ? 'bg-blue-50 text-blue-700'
                                     : 'bg-gray-100 text-gray-700'
-                                }`}>
+                                  }`}>
                                   {row.status}
                                 </span>
                               </td>
@@ -401,6 +412,10 @@ const InvoicePengirimanPage = () => {
                               <td className="px-4 py-2.5 text-gray-800 font-medium max-w-xs truncate" title={row.nama_barang}>{row.nama_barang}</td>
                               <td className="px-4 py-2.5 text-gray-900 font-semibold text-right pr-6">{row.quantity}</td>
                               <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.harga.toLocaleString('id-ID')}</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{(row.potongan_a ?? 0)}%</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{(row.harga_after_potongan_a ?? 0).toLocaleString('id-ID')}</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{(row.potongan_b ?? 0)}%</td>
+                              <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{(row.harga_after_potongan_b ?? 0).toLocaleString('id-ID')}</td>
                               <td className="px-4 py-2.5 text-gray-900 font-medium text-right pr-6">{row.total.toLocaleString('id-ID')}</td>
                               <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.sub_total.toLocaleString('id-ID')}</td>
                               <td className="px-4 py-2.5 text-gray-700 text-right pr-6">{row.total_discount.toLocaleString('id-ID')}</td>
