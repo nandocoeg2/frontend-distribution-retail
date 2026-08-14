@@ -458,6 +458,9 @@ const TandaTerimaFakturTableServerSide = ({
         size: 90,
       }),
       columnHelper.accessor((row) => {
+        if (row.tanggal_jatuh_tempo) {
+          return new Date(row.tanggal_jatuh_tempo);
+        }
         const tanggal = row.tanggal ? new Date(row.tanggal) : null;
         const batasHari = row.termOfPayment?.batas_hari || 0;
         if (!tanggal) return null;
