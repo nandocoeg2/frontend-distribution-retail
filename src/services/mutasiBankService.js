@@ -188,8 +188,42 @@ class MutasiBankService {
       throw error;
     }
   }
+
+  async exportExcelBankMutation(filters = {}) {
+    try {
+      const response = await this.api.get('/export-excel', {
+        params: filters,
+        paramsSerializer: serializeParams,
+        responseType: 'blob',
+      });
+
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `Mutasi_Bank_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return { success: true, filename };
+    } catch (error) {
+      console.error('Error exporting bank mutations to Excel:', error);
+      throw error;
+    }
+  }
 }
 
 const mutasiBankService = new MutasiBankService();
 
 export default mutasiBankService;
+

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowPathIcon,
   PlusIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import {
   MutasiBankTableServerSide,
@@ -45,6 +46,8 @@ const MutasiBank = () => {
     assigning,
     unassignDocument,
     unassigning,
+    exportExcel,
+    exporting,
   } = useMutasiBankPage();
 
   const [isUploadModalOpen, setUploadModalOpen] = useState(false);
@@ -265,6 +268,16 @@ const MutasiBank = () => {
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Mutasi Bank</h3>
             <div className='flex flex-wrap items-center gap-2'>
+              <button
+                type='button'
+                onClick={() => exportExcel()}
+                disabled={exporting}
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs border border-gray-200 bg-white text-gray-700 rounded hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50'
+                title='Export data mutasi bank ke Excel'
+              >
+                <ArrowDownTrayIcon className='w-4 h-4 mr-1.5 text-green-600' />
+                {exporting ? 'Exporting...' : 'Export Excel'}
+              </button>
               <button
                 type='button'
                 onClick={() => setUploadModalOpen(true)}

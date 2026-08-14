@@ -16,7 +16,7 @@ import RangeColumnFilter from '../common/RangeColumnFilter';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const STATUS_OPTIONS = [
-  { id: 'MATCHED', name: 'Matched' },
+  { id: 'MATCHED', name: 'Match' },
   { id: 'UNMATCHED', name: 'Unmatched' },
 ];
 
@@ -28,8 +28,6 @@ const HAS_DOCUMENT_OPTIONS = [
 
 const columnHelper = createColumnHelper();
 
-
-
 const resolveMutationId = (mutation) => {
   return mutation?.id ?? null;
 };
@@ -37,13 +35,25 @@ const resolveMutationId = (mutation) => {
 const resolveStatusVariant = (status) => {
   const value = typeof status === 'string' ? status.toUpperCase() : '';
 
-  if (value === 'MATCHED') {
+  if (value === 'MATCHED' || value === 'VALID' || value === 'MATCH') {
     return 'success';
   }
-  if (value === 'UNMATCHED') {
+  if (value === 'UNMATCHED' || value === 'INVALID') {
     return 'warning';
   }
   return 'secondary';
+};
+
+const resolveStatusLabel = (status) => {
+  const value = typeof status === 'string' ? status.toUpperCase() : '';
+
+  if (value === 'MATCHED' || value === 'VALID' || value === 'MATCH') {
+    return 'Match';
+  }
+  if (value === 'UNMATCHED' || value === 'INVALID') {
+    return 'Unmatched';
+  }
+  return status || '-';
 };
 
 const resolveMutationTypeLabel = (mutation) => {
@@ -67,37 +77,97 @@ const hasAssignedDocument = (mutation) => {
   );
 };
 
+const resolveCustomer = (mutation) => {
+  if (mutation?.customer) {
+    return {
+      name: mutation.customer.namaCustomer,
+      code: mutation.customer.kodeCustomer,
+    };
+  }
+
+  const invCust = mutation?.invoicePenagihan?.purchaseOrder?.customer;
+  if (invCust) {
+    return {
+      name: invCust.namaCustomer,
+      code: invCust.kodeCustomer,
+    };
+  }
+
+  const ttfCust = mutation?.tandaTerimaFaktur?.invoicePenagihan?.purchaseOrder?.customer;
+  if (ttfCust) {
+    return {
+      name: ttfCust.namaCustomer,
+      code: ttfCust.kodeCustomer,
+    };
+  }
+
+  const groupCust = mutation?.tandaTerimaFaktur?.groupCustomer;
+  if (groupCust) {
+    return {
+      name: groupCust.nama_group,
+      code: groupCust.kode_group,
+    };
+  }
+
+  return null;
+};
+
 const resolveMatchedDocument = (mutation) => {
   const invoicePenagihan = mutation?.invoicePenagihan;
   const invoicePengiriman = mutation?.invoicePengiriman;
   const tandaTerimaFaktur = mutation?.tandaTerimaFaktur;
 
-  if (invoicePenagihan) {
+  if (invoicePenagihan?.no_invoice_penagihan) {
     return {
       type: 'Invoice Penagihan',
-      number: invoicePenagihan.id || invoicePenagihan.nomor_invoice || '',
-      amount: invoicePenagihan.grandTotal || null,
+      number: invoicePenagihan.no_invoice_penagihan,
+      amount: invoicePenagihan.grand_total || invoicePenagihan.grandTotal || null,
     };
   }
 
-  if (invoicePengiriman) {
+  if (tandaTerimaFaktur?.invoicePenagihan?.no_invoice_penagihan) {
+    return {
+      type: 'Tanda Terima Faktur',
+      number: tandaTerimaFaktur.invoicePenagihan.no_invoice_penagihan,
+      amount: tandaTerimaFaktur.grand_total || tandaTerimaFaktur.totalAmount || null,
+    };
+  }
+
+  if (invoicePengiriman?.no_invoice) {
     return {
       type: 'Invoice Pengiriman',
-      number: invoicePengiriman.id || invoicePengiriman.nomor_invoice || '',
-      amount: invoicePengiriman.grandTotal || null,
+      number: invoicePengiriman.no_invoice,
+      amount: invoicePengiriman.grand_total || invoicePengiriman.grandTotal || null,
+    };
+  }
+
+  if (invoicePenagihan) {
+    return {
+      type: 'Invoice Penagihan',
+      number: invoicePenagihan.no_invoice_penagihan || invoicePenagihan.id || '',
+      amount: invoicePenagihan.grand_total || null,
     };
   }
 
   if (tandaTerimaFaktur) {
     return {
       type: 'Tanda Terima Faktur',
-      number: tandaTerimaFaktur.id || tandaTerimaFaktur.nomor_ttf || '',
-      amount: tandaTerimaFaktur.totalAmount || null,
+      number: tandaTerimaFaktur.id || '',
+      amount: tandaTerimaFaktur.grand_total || null,
+    };
+  }
+
+  if (invoicePengiriman) {
+    return {
+      type: 'Invoice Pengiriman',
+      number: invoicePengiriman.no_invoice || invoicePengiriman.id || '',
+      amount: invoicePengiriman.grand_total || null,
     };
   }
 
   return null;
 };
+
 
 const sanitizeFilters = (filters = {}) => {
   const sanitized = {};
@@ -277,23 +347,20 @@ const MutasiBankTableServerSide = ({
           enableSorting: true,
         }
       ),
-      columnHelper.accessor(
-        (row) => row.customer?.namaCustomer || '',
-        {
-          id: 'customer',
-          header: 'Customer',
-          size: 180,
-          cell: ({ row }) => {
-            const customer = row.original.customer;
-            if (!customer) return <span className='text-xs text-gray-400'>-</span>;
-            return (
-              <div className='text-xs leading-tight font-medium text-gray-800'>
-                {customer.namaCustomer} <span className='text-gray-500 font-normal'>({customer.kodeCustomer})</span>
-              </div>
-            );
-          },
-        }
-      ),
+      columnHelper.display({
+        id: 'customer',
+        header: 'Customer',
+        size: 180,
+        cell: ({ row }) => {
+          const customer = resolveCustomer(row.original);
+          if (!customer?.name) return <span className='text-xs text-gray-400'>-</span>;
+          return (
+            <div className='text-xs leading-tight font-medium text-gray-800'>
+              {customer.name} {customer.code ? <span className='text-gray-500 font-normal'>({customer.code})</span> : null}
+            </div>
+          );
+        },
+      }),
       columnHelper.accessor(
         (row) => row.keterangan || '',
         {
@@ -392,9 +459,11 @@ const MutasiBankTableServerSide = ({
         ),
         size: 150,
         cell: ({ row }) => {
-          const status = row.original.validation_status || '-';
+          const rawStatus = row.original.validation_status || '-';
+          const label = resolveStatusLabel(rawStatus);
+          const variant = resolveStatusVariant(rawStatus);
           return (
-            <StatusBadge status={status} variant={resolveStatusVariant(status)} size='xs' />
+            <StatusBadge status={label} variant={variant} size='xs' />
           );
         },
       }),

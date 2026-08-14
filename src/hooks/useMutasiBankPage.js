@@ -20,6 +20,7 @@ const useMutasiBankPage = () => {
   const [validating, setValidating] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [unassigning, setUnassigning] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const handleAuthError = useCallback(
     (error) => {
@@ -33,6 +34,27 @@ const useMutasiBankPage = () => {
       return false;
     },
     [navigate]
+  );
+
+  const exportExcel = useCallback(
+    async (filters = {}) => {
+      setExporting(true);
+      try {
+        const result = await mutasiBankService.exportExcelBankMutation(filters);
+        toastService.success(`Berhasil mengunduh ${result.filename || 'file Excel'}.`);
+        return result;
+      } catch (error) {
+        if (!handleAuthError(error)) {
+          toastService.error(
+            resolveErrorMessage(error, 'Gagal mengekspor data mutasi bank.')
+          );
+        }
+        throw error;
+      } finally {
+        setExporting(false);
+      }
+    },
+    [handleAuthError]
   );
 
   const uploadMutationFile = useCallback(
@@ -193,8 +215,11 @@ const useMutasiBankPage = () => {
     assigning,
     unassignDocument,
     unassigning,
+    exportExcel,
+    exporting,
     handleAuthError,
   };
 };
 
 export default useMutasiBankPage;
+
