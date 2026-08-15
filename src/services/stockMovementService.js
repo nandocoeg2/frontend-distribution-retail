@@ -52,11 +52,18 @@ const parseErrorMessage = async (response, fallbackMessage) => {
 
 const buildHeaders = () => {
   const token = authService.getToken();
+  const companyData = authService.getCompanyData();
 
-  return {
+  const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
   };
+
+  if (companyData && companyData.id) {
+    headers['x-company-id'] = companyData.id;
+  }
+
+  return headers;
 };
 
 const buildQueryString = (params = {}) => {
