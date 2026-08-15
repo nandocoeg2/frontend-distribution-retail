@@ -87,11 +87,14 @@ const StockInTable = ({
   // Filter rows according to per-column header inputs
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      if (
-        columnFilters.tgl &&
-        !row.tgl.toLowerCase().includes(columnFilters.tgl.toLowerCase())
-      ) {
-        return false;
+      if (columnFilters.tgl) {
+        const filterVal = columnFilters.tgl; // e.g. "2026-06-12"
+        const rowTglStr = String(row.tgl || '');
+        const matches =
+          rowTglStr.includes(filterVal) ||
+          new Date(filterVal).toLocaleDateString('id-ID') === rowTglStr ||
+          new Date(filterVal).toLocaleDateString('en-GB') === rowTglStr;
+        if (!matches) return false;
       }
       if (
         columnFilters.noSuratJalan &&
@@ -194,11 +197,10 @@ const StockInTable = ({
             <tr className='bg-gray-50 border-b border-gray-300'>
               <th className='border-r border-gray-300 px-1 py-1'>
                 <input
-                  type='text'
+                  type='date'
                   value={columnFilters.tgl}
                   onChange={(e) => handleFilterChange('tgl', e.target.value)}
-                  placeholder='Filter Tgl...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+                  className='w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
                 />
               </th>
               <th className='border-r border-gray-300 px-1 py-1'>
