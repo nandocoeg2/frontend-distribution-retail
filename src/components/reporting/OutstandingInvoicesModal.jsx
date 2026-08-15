@@ -73,9 +73,9 @@ const OutstandingInvoicesModal = ({
 
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200'>
-      <div className='flex flex-col w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100'>
+      <div className='flex flex-col w-full max-w-4xl h-[640px] max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100'>
         {/* Header */}
-        <div className='flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50/60 to-orange-50/40'>
+        <div className='flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50/60 to-orange-50/40 shrink-0'>
           <div className='flex items-center space-x-3'>
             <div className='p-2 bg-amber-100 rounded-xl text-amber-600'>
               <BanknotesIcon className='w-6 h-6' />
@@ -100,7 +100,7 @@ const OutstandingInvoicesModal = ({
         </div>
 
         {/* Summary Card Banner */}
-        <div className='px-6 py-3 bg-amber-50 border-b border-amber-100 flex flex-wrap items-center justify-between gap-4'>
+        <div className='px-6 py-3 bg-amber-50 border-b border-amber-100 flex flex-wrap items-center justify-between gap-4 shrink-0'>
           <div>
             <span className='text-xs font-semibold text-amber-800 uppercase tracking-wider'>
               Total Nilai Outstanding:
@@ -115,7 +115,7 @@ const OutstandingInvoicesModal = ({
         </div>
 
         {/* Search */}
-        <div className='p-4 border-b border-gray-100 bg-white flex items-center justify-between'>
+        <div className='p-4 border-b border-gray-100 bg-white flex items-center justify-between shrink-0'>
           <div className='relative w-full sm:w-80'>
             <MagnifyingGlassIcon className='absolute left-3 top-2.5 w-4 h-4 text-gray-400' />
             <input
@@ -144,45 +144,45 @@ const OutstandingInvoicesModal = ({
         </div>
 
         {/* Table Content */}
-        <div className='flex-1 overflow-y-auto min-h-[250px] max-h-[55vh] p-4 bg-gray-50/30'>
+        <div className='flex-1 overflow-y-auto p-4 bg-gray-50/30'>
           {paginatedList.length > 0 ? (
             <div className='overflow-x-auto rounded-lg border border-gray-300 shadow-sm bg-white'>
               <table className='w-full text-left text-xs border-collapse'>
-                <thead className='bg-gray-100 text-gray-700 font-bold uppercase tracking-wider border-b border-gray-300'>
+                <thead className='bg-gray-100 text-gray-700 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]'>
                   <tr>
                     <th
                       scope='col'
-                      className='px-3 py-2 w-14 text-center border-r border-gray-200 font-bold'
+                      className='sticky top-0 bg-gray-100 px-3 py-2 w-14 text-center border-r border-b border-gray-300 font-bold z-10'
                     >
                       NO
                     </th>
                     <th
                       scope='col'
-                      className='px-4 py-2 border-r border-gray-200 font-bold'
+                      className='sticky top-0 bg-gray-100 px-4 py-2 border-r border-b border-gray-300 font-bold z-10'
                     >
                       CUSTOMER
                     </th>
                     <th
                       scope='col'
-                      className='px-4 py-2 border-r border-gray-200 font-bold'
+                      className='sticky top-0 bg-gray-100 px-4 py-2 border-r border-b border-gray-300 font-bold z-10'
                     >
                       NO. INVOICE
                     </th>
                     <th
                       scope='col'
-                      className='px-4 py-2 border-r border-gray-200 font-bold'
+                      className='sticky top-0 bg-gray-100 px-4 py-2 border-r border-b border-gray-300 font-bold z-10'
                     >
                       TANGGAL
                     </th>
                     <th
                       scope='col'
-                      className='px-4 py-2 border-r border-gray-200 font-bold text-right'
+                      className='sticky top-0 bg-gray-100 px-4 py-2 border-r border-b border-gray-300 font-bold text-right z-10'
                     >
                       NOMINAL OUTSTANDING
                     </th>
                     <th
                       scope='col'
-                      className='px-4 py-2 w-36 text-center font-bold'
+                      className='sticky top-0 bg-gray-100 px-4 py-2 w-36 text-center border-b border-gray-300 font-bold z-10'
                     >
                       STATUS
                     </th>
