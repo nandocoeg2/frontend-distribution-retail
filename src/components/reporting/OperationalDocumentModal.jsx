@@ -180,7 +180,6 @@ const OperationalDocumentModal = ({
                   setActiveTab(key);
                   setStatusFilter('');
                   setSearchQuery('');
-                  setCurrentPage(1);
                 }}
                 className={`flex items-center space-x-2 py-3 px-4 text-sm font-semibold border-b-2 transition-all ${
                   isActive
@@ -211,10 +210,7 @@ const OperationalDocumentModal = ({
             <input
               type='text'
               value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder='Cari nomor dokumen...'
               className='w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition'
             />
@@ -224,10 +220,7 @@ const OperationalDocumentModal = ({
             <FunnelIcon className='w-4 h-4 text-gray-400 shrink-0' />
             <select
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className='px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
             >
               <option value=''>Semua Status</option>
@@ -244,7 +237,6 @@ const OperationalDocumentModal = ({
                 onClick={() => {
                   setStatusFilter('');
                   setSearchQuery('');
-                  setCurrentPage(1);
                 }}
                 className='text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1'
               >
@@ -256,7 +248,7 @@ const OperationalDocumentModal = ({
 
         {/* Table Content */}
         <div className='flex-1 overflow-y-auto p-4 bg-gray-50/30'>
-          {paginatedList.length > 0 ? (
+          {filteredList.length > 0 ? (
             <div className='overflow-x-auto rounded-lg border border-gray-300 shadow-sm bg-white'>
               <table className='w-full text-left text-xs border-collapse'>
                 <thead className='bg-gray-100 text-gray-700 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]'>
