@@ -265,60 +265,71 @@ const OperationalDocumentModal = ({
         </div>
 
         {/* Table Content */}
-        <div className='flex-1 overflow-y-auto min-h-[300px] max-h-[50vh] p-6'>
+        <div className='flex-1 overflow-y-auto min-h-[250px] max-h-[55vh] p-4 bg-gray-50/30'>
           {paginatedList.length > 0 ? (
-            <div className='overflow-x-auto rounded-xl border border-gray-200'>
-              <table className='w-full text-left text-sm divide-y divide-gray-200'>
-                <thead className='bg-gray-50/80 text-xs font-semibold text-gray-600 uppercase tracking-wider'>
+            <div className='overflow-x-auto rounded-lg border border-gray-300 shadow-sm bg-white'>
+              <table className='w-full text-left text-xs border-collapse'>
+                <thead className='bg-gray-100 text-gray-700 font-bold uppercase tracking-wider border-b border-gray-300'>
                   <tr>
-                    <th scope='col' className='px-4 py-3 w-16 text-center'>
-                      No
+                    <th
+                      scope='col'
+                      className='px-3 py-2 w-14 text-center border-r border-gray-200 font-bold'
+                    >
+                      NO
                     </th>
-                    <th scope='col' className='px-6 py-3'>
-                      Dokumen
+                    <th
+                      scope='col'
+                      className='px-4 py-2 border-r border-gray-200 font-bold'
+                    >
+                      DOKUMEN
                     </th>
-                    <th scope='col' className='px-6 py-3'>
-                      Status
+                    <th
+                      scope='col'
+                      className='px-4 py-2 w-44 text-center font-bold'
+                    >
+                      STATUS
                     </th>
                   </tr>
                 </thead>
-                <tbody className='divide-y divide-gray-100 bg-white'>
+                <tbody className='divide-y divide-gray-200 bg-white font-sans'>
                   {paginatedList.map((item, index) => {
-                    const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                    const rowNumber =
+                      (currentPage - 1) * itemsPerPage + index + 1;
                     return (
                       <tr
                         key={item.id || item.documentNumber || index}
-                        className='hover:bg-blue-50/30 transition-colors'
+                        className='hover:bg-blue-50/60 even:bg-gray-50/40 transition-colors'
                       >
-                        <td className='px-4 py-3.5 text-center text-xs font-medium text-gray-500'>
+                        <td className='px-3 py-2 text-center text-xs font-mono text-gray-500 border-r border-gray-200'>
                           {rowNumber}
                         </td>
-                        <td className='px-6 py-3.5'>
-                          <div className='font-semibold text-gray-900'>
-                            {activeTab === 'packing'
-                              ? item.poNumber || item.documentNumber || '-'
-                              : item.documentNumber || '-'}
-                          </div>
-                          <div className='text-xs text-gray-500 mt-0.5 flex flex-wrap gap-2 items-center'>
-                            {item.date && (
-                              <span>Tanggal: {formatDate(item.date)}</span>
-                            )}
+                        <td className='px-4 py-2 text-xs font-semibold text-gray-900 border-r border-gray-200'>
+                          <div className='flex items-center gap-2'>
+                            <span>
+                              {activeTab === 'packing'
+                                ? item.poNumber || item.documentNumber || '-'
+                                : item.documentNumber || '-'}
+                            </span>
                             {item.poNumber && activeTab === 'suratJalan' && (
-                              <span className='inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px]'>
+                              <span className='inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-normal'>
                                 PO: {item.poNumber}
                               </span>
                             )}
                             {item.deliverTo && (
-                              <span className='text-gray-500'>
-                                Tujuan: {item.deliverTo}
+                              <span className='text-gray-500 text-[11px] font-normal'>
+                                ({item.deliverTo})
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className='px-6 py-3.5'>
+                        <td className='px-4 py-2 text-center'>
                           <StatusBadge
-                            status={item.statusName || item.statusCode || 'UNKNOWN'}
-                            variant={getStatusVariant(item.statusCode || item.statusName)}
+                            status={
+                              item.statusName || item.statusCode || 'UNKNOWN'
+                            }
+                            variant={getStatusVariant(
+                              item.statusCode || item.statusName
+                            )}
                             size='sm'
                           />
                         </td>
@@ -329,12 +340,12 @@ const OperationalDocumentModal = ({
               </table>
             </div>
           ) : (
-            <div className='flex flex-col items-center justify-center h-48 text-center text-gray-400'>
-              <DocumentTextIcon className='w-12 h-12 stroke-1 mb-2 text-gray-300' />
-              <p className='text-sm font-medium text-gray-600'>
+            <div className='flex flex-col items-center justify-center h-44 text-center text-gray-400'>
+              <DocumentTextIcon className='w-10 h-10 stroke-1 mb-2 text-gray-300' />
+              <p className='text-xs font-semibold text-gray-600'>
                 Tidak ada dokumen ditemukan
               </p>
-              <p className='text-xs text-gray-400 mt-1'>
+              <p className='text-[11px] text-gray-400 mt-0.5'>
                 {statusFilter || searchQuery
                   ? 'Coba sesuaikan kata kunci pencarian atau filter status Anda'
                   : 'Belum ada dokumen pada periode ini'}
