@@ -463,13 +463,13 @@ const CheckingListTableServerSide = ({
         }}
         selectedRowId={selectedChecklistId}
         emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
-        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+        footerRowClassName={`bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
         footerContent={
           <tr>
             {table.getVisibleLeafColumns().map((column) => (
               <td
                 key={column.id}
-                className="px-2 py-1 text-xs border-t border-gray-300 text-center"
+                className="px-2 py-1 text-xs border-t border-gray-300 border-r border-gray-200 last:border-r-0"
               >
                 <TableFooterCell column={column} table={table} />
               </td>

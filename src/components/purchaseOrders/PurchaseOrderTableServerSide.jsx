@@ -566,12 +566,12 @@ const PurchaseOrderTableServerSide = forwardRef(({
         emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
         onRowClick={onViewDetail}
         selectedRowId={selectedOrderId}
-        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+        footerRowClassName={`bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
         footerCellClassName="px-1.5 py-1 text-xs border-t border-gray-300"
         footerContent={
           <tr>
             {table.getVisibleLeafColumns().map((column) => (
-              <td key={column.id} className="px-1.5 py-1 text-xs border-t border-gray-300 text-center">
+              <td key={column.id} className="px-1.5 py-1 text-xs border-t border-gray-300 border-r border-gray-200 last:border-r-0">
                 <TableFooterCell column={column} table={table} />
               </td>
             ))}

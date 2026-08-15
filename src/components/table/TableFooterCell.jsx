@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { formatCurrency } from "../../utils/formatUtils";
 
 const TableFooterCell = ({ column, table, data = [] }) => {
   // Check if this column is an action/select/id/status column where mathematical operations make no sense
@@ -34,7 +33,18 @@ const TableFooterCell = ({ column, table, data = [] }) => {
     columnIdLower.includes("mutasi") ||
     columnIdLower.includes("kwitansi") ||
     columnIdLower.includes("value") ||
-    columnIdLower.includes("selisih");
+    columnIdLower.includes("selisih") ||
+    columnIdLower.includes("qty") ||
+    columnIdLower.includes("quantity") ||
+    columnIdLower.includes("box") ||
+    columnIdLower.includes("dus") ||
+    columnIdLower.includes("carton") ||
+    columnIdLower.includes("berat") ||
+    columnIdLower.includes("potongan") ||
+    columnIdLower.includes("diskon") ||
+    columnIdLower.includes("discount") ||
+    columnIdLower.includes("tax") ||
+    columnIdLower.includes("rate");
 
   // Default operation is Sum for numeric columns and Count for others
   const [operation, setOperation] = useState(isNumericColumn ? "sum" : "count");
@@ -64,7 +74,7 @@ const TableFooterCell = ({ column, table, data = [] }) => {
       .map((val) => {
         if (val === null || val === undefined || val === "") return null;
         if (typeof val === "object" || typeof val === "boolean") return null;
-        // Clean currency prefixes if we encounter formatted values (e.g. "Rp. 5.000")
+        // Clean formatted values (e.g. "Rp. 5.000" or "5.000")
         let cleanVal = val;
         if (typeof val === "string") {
           cleanVal = val
@@ -84,22 +94,23 @@ const TableFooterCell = ({ column, table, data = [] }) => {
 
     switch (operation) {
       case "sum": {
+        if (numericValues.length === 0) return "0";
         const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
-        return isNumericColumn ? formatCurrency(sum) : sum.toLocaleString("id-ID");
+        return Number.isInteger(sum)
+          ? sum.toLocaleString("id-ID")
+          : sum.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       }
       case "avg": {
         if (numericValues.length === 0) return "0";
         const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
         const avg = sum / numericValues.length;
-        return isNumericColumn
-          ? formatCurrency(avg)
-          : avg.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+        return avg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       }
       case "count":
       default:
         return values.length.toLocaleString("id-ID");
     }
-  }, [operation, values, numericValues, isNumericColumn, isActionOrSelect]);
+  }, [operation, values, numericValues, isActionOrSelect]);
 
   if (isActionOrSelect) {
     return null;
