@@ -170,9 +170,25 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 
   const allMenus = menus.length > 0 ? menus : defaultMenuItems;
 
+  const sanitizeMenuTree = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((item) => {
+        const isParentGroupCustomer =
+          item.name === 'Parent Group Customer' ||
+          item.url === '/master/parent-group-customer';
+        return !isParentGroupCustomer;
+      })
+      .map((item) => ({
+        ...item,
+        children: item.children ? sanitizeMenuTree(item.children) : [],
+      }));
+  };
+
   const filteredMenus = useMemo(() => {
+    const sanitized = sanitizeMenuTree(allMenus);
     if (!menuFilterQuery.trim()) {
-      return allMenus;
+      return sanitized;
     }
     const q = menuFilterQuery.toLowerCase().trim();
 
@@ -199,7 +215,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       return result;
     };
 
-    return filterMenuTree(allMenus);
+    return filterMenuTree(sanitized);
   }, [allMenus, menuFilterQuery]);
 
   useEffect(() => {

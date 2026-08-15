@@ -56,7 +56,6 @@ import ReturnDetail from './pages/ReturnDetail.jsx';
 import SuratJalan from './pages/SuratJalan.jsx';
 import TermOfPayments from './pages/TermOfPayments.jsx';
 import GroupCustomers from './pages/GroupCustomers.jsx';
-import ParentGroupCustomers from './pages/ParentGroupCustomers.jsx';
 import Companies from './pages/Companies.jsx';
 import MasterParameter from './pages/MasterParameter.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -348,14 +347,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path='/master/parent-group-customer'
-        element={
-          <ProtectedRoute>
-            <ParentGroupCustomers />
-          </ProtectedRoute>
-        }
-      />
+
       <Route
         path='/master/company'
         element={

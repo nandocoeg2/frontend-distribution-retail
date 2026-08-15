@@ -272,27 +272,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                           Format 16 digit. NPWP 15 digit akan otomatis ditambah 0 di depan.
                         </p>
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Parent Group Customer</label>
-                        <select
-                          name="parentGroupCustomerId"
-                          value={formData?.parentGroupCustomerId || ''}
-                          onChange={handleInputChange}
-                          disabled={loadingParentGroups}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                        >
-                          <option value="">-- Pilih Parent Group (Opsional) --</option>
-                          {parentGroupOptions.map((parent) => (
-                            <option key={parent.id} value={parent.id}>
-                              {parent.kode_parent} - {parent.nama_parent}
-                            </option>
-                          ))}
-                        </select>
-                        {loadingParentGroups && (
-                          <p className="mt-1 text-sm text-gray-500">Loading parent groups...</p>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -309,16 +288,6 @@ const GroupCustomerDetailCard = ({ groupCustomer, onClose, onUpdate, loading = f
                       data={[
                         { label: 'Group Name', value: groupCustomer?.nama_group },
                         { label: 'Group Code', value: groupCustomer?.kode_group, copyable: true },
-                        {
-                          label: 'Parent Group',
-                          component: groupCustomer?.parentGroupCustomer ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {groupCustomer.parentGroupCustomer.kode_parent} - {groupCustomer.parentGroupCustomer.nama_parent}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">No Parent Group</span>
-                          ),
-                        },
                         {
                           label: 'Status',
                           component: (

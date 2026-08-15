@@ -17,12 +17,11 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
         <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]'>
           <table className='min-w-full w-full divide-y divide-gray-200 text-xs table-fixed'>
             <colgroup>
-              <col style={{ width: '160px' }} />
-              <col style={{ width: '100px' }} />
-              <col style={{ width: '150px' }} />
               <col style={{ width: '180px' }} />
-              <col style={{ width: '130px' }} />
-              <col style={{ width: '90px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '220px' }} />
+              <col style={{ width: '140px' }} />
+              <col style={{ width: '100px' }} />
               <col style={{ width: '60px' }} />
             </colgroup>
             <thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
@@ -32,9 +31,6 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
                 </th>
                 <th className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'>
                   Group Code
-                </th>
-                <th className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'>
-                  Parent Group
                 </th>
                 <th className='px-2.5 py-1.5 text-left text-[11px] font-medium uppercase tracking-wider text-gray-500'>
                   Address
@@ -53,7 +49,7 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
             <tbody className='divide-y divide-gray-100 bg-white'>
               {groupCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className='px-3 py-6 text-center text-xs text-gray-500'>
+                  <td colSpan="6" className='px-3 py-6 text-center text-xs text-gray-500'>
                     {searchQuery ? 'No group customers found matching your search.' : 'No group customers available.'}
                   </td>
                 </tr>
@@ -73,15 +69,6 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
                     </td>
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-xs font-medium text-gray-900'>
                       {gc.kode_group}
-                    </td>
-                    <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-600 truncate' title={gc.parentGroupCustomer?.nama_parent}>
-                      {gc.parentGroupCustomer ? (
-                        <span className='inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800'>
-                          {gc.parentGroupCustomer.kode_parent}
-                        </span>
-                      ) : (
-                        <span className='text-gray-400'>-</span>
-                      )}
                     </td>
                     <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900 truncate' title={gc.alamat}>
                       {gc.alamat || '-'}
