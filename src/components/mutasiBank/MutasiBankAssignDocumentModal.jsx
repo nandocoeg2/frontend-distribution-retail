@@ -114,7 +114,6 @@ const MutasiBankAssignDocumentModal = ({
               name='tandaTerimaFakturId'
               loading={ttfLoading || loading}
               onSearch={searchTTF}
-              showId
               required
             />
           </div>

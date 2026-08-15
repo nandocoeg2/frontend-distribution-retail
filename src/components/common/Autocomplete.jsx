@@ -195,9 +195,11 @@ const Autocomplete = ({
               className={optionClassName}
             >
               <div className="font-medium">{option[displayKey]}</div>
-              {showId && option.id && (
+              {option.subtitle ? (
+                <div className="text-xs text-gray-400 mt-0.5">{option.subtitle}</div>
+              ) : showId && option.id ? (
                 <div className="text-sm text-gray-500">{option.id}</div>
-              )}
+              ) : null}
             </li>
           ))
         ) : (
@@ -228,9 +230,11 @@ const Autocomplete = ({
             className={optionClassName}
           >
             <div className="font-medium">{option[displayKey]}</div>
-            {showId && option.id && (
+            {option.subtitle ? (
+              <div className="text-xs text-gray-400 mt-0.5">{option.subtitle}</div>
+            ) : showId && option.id ? (
               <div className="text-sm text-gray-500">{option.id}</div>
-            )}
+            ) : null}
           </li>
         ))
       ) : (

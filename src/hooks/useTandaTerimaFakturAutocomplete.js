@@ -65,12 +65,17 @@ const mapTtfOption = (ttf) => {
     '';
   const amountStr = ttf.grand_total ? `Rp ${Number(ttf.grand_total).toLocaleString('id-ID')}` : '';
 
-  const details = [groupName, invoiceNo, amountStr].filter(Boolean).join(' • ');
-  const label = details ? `${idString} (${details})` : idString;
+  // Main text is document number (No Invoice or TTF Code)
+  const mainTitle = invoiceNo || idString;
+
+  // Subtitle is group customer name & total amount
+  const subtitleParts = [groupName, amountStr].filter(Boolean);
+  const subtitle = subtitleParts.join(' • ');
 
   return {
     id: idString,
-    label,
+    label: mainTitle,
+    subtitle: subtitle || undefined,
     raw: ttf,
   };
 };
