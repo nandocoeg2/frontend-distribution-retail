@@ -295,13 +295,15 @@ const OperationalDocumentModal = ({
                         </td>
                         <td className='px-6 py-3.5'>
                           <div className='font-semibold text-gray-900'>
-                            {item.documentNumber || '-'}
+                            {activeTab === 'packing'
+                              ? item.poNumber || item.documentNumber || '-'
+                              : item.documentNumber || '-'}
                           </div>
                           <div className='text-xs text-gray-500 mt-0.5 flex flex-wrap gap-2 items-center'>
                             {item.date && (
                               <span>Tanggal: {formatDate(item.date)}</span>
                             )}
-                            {item.poNumber && activeTab !== 'purchaseOrders' && (
+                            {item.poNumber && activeTab === 'suratJalan' && (
                               <span className='inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px]'>
                                 PO: {item.poNumber}
                               </span>
