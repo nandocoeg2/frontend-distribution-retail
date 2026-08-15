@@ -551,17 +551,23 @@ const MutasiBankTableServerSide = forwardRef(({
         invoice: row[3] || '',
         jumlah: String(row[4] || ''),
         notes: row[5] || '',
-        status: row[6] || '',
         raw: row,
       }))
       .filter((item) => {
-        const matchTanggal = !localFilters.tanggal || String(item.tanggal).toLowerCase().includes(localFilters.tanggal.toLowerCase());
+        let matchTanggal = true;
+        if (localFilters.tanggal) {
+          // Format selected date (YYYY-MM-DD) to compare with formatted date or raw date
+          const selectedDateStr = localFilters.tanggal; // e.g. "2026-06-12"
+          const itemDateStr = String(item.tanggal);
+          matchTanggal = itemDateStr.includes(selectedDateStr) ||
+            new Date(selectedDateStr).toLocaleDateString('id-ID') === itemDateStr ||
+            new Date(selectedDateStr).toLocaleDateString('en-GB') === itemDateStr;
+        }
         const matchCustomer = !localFilters.customer || String(item.customer).toLowerCase().includes(localFilters.customer.toLowerCase());
         const matchKeterangan = !localFilters.keterangan || String(item.keterangan).toLowerCase().includes(localFilters.keterangan.toLowerCase());
         const matchInvoice = !localFilters.invoice || String(item.invoice).toLowerCase().includes(localFilters.invoice.toLowerCase());
         const matchJumlah = !localFilters.jumlah || String(item.jumlah).toLowerCase().includes(localFilters.jumlah.toLowerCase());
-        const matchStatus = !localFilters.status || String(item.status).toLowerCase().includes(localFilters.status.toLowerCase());
-        return matchTanggal && matchCustomer && matchKeterangan && matchInvoice && matchJumlah && matchStatus;
+        return matchTanggal && matchCustomer && matchKeterangan && matchInvoice && matchJumlah;
       });
   }, [previewData, localFilters]);
 
@@ -675,10 +681,9 @@ const MutasiBankTableServerSide = forwardRef(({
                         <tr className="bg-gray-100/50">
                           <th className="px-3 py-1.5 border-b border-gray-200">
                             <input
-                              type="text"
+                              type="date"
                               value={localFilters.tanggal}
                               onChange={(e) => setLocalFilters({ ...localFilters, tanggal: e.target.value })}
-                              placeholder="Filter Tgl..."
                               className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
                             />
                           </th>
@@ -719,21 +724,12 @@ const MutasiBankTableServerSide = forwardRef(({
                             />
                           </th>
                           <th className="px-3 py-1.5 border-b border-gray-200"></th>
-                          <th className="px-3 py-1.5 border-b border-gray-200">
-                            <input
-                              type="text"
-                              value={localFilters.status}
-                              onChange={(e) => setLocalFilters({ ...localFilters, status: e.target.value })}
-                              placeholder="Filter Status..."
-                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
-                            />
-                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
                         {filteredPreviewData.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="px-4 py-8 text-center text-gray-500 font-medium bg-gray-50/50">
+                            <td colSpan={6} className="px-4 py-8 text-center text-gray-500 font-medium bg-gray-50/50">
                               Tidak ada data yang cocok dengan filter pencarian.
                             </td>
                           </tr>
@@ -746,15 +742,6 @@ const MutasiBankTableServerSide = forwardRef(({
                               <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-mono">{item.invoice}</td>
                               <td className="px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap text-right pr-4">{formatCurrency(Number(item.jumlah) || 0)}</td>
                               <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{item.notes || '-'}</td>
-                              <td className="px-4 py-2.5 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                                  item.status === 'Match' 
-                                    ? 'bg-green-50 text-green-700' 
-                                    : 'bg-yellow-50 text-yellow-700'
-                                }`}>
-                                  {item.status}
-                                </span>
-                              </td>
                             </tr>
                           ))
                         )}

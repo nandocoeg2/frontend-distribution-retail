@@ -216,7 +216,6 @@ class MutasiBankService {
         'NO INVOICE',
         'NOMINAL',
         'KETERANGAN (RETUR/REBATE)',
-        'STATUS',
       ];
 
       const rows = mutations.map((item) => {
@@ -232,11 +231,6 @@ class MutasiBankService {
           item.invoicePengiriman?.no_invoice ||
           '-';
 
-        const statusLabel =
-          item.validation_status === 'MATCHED'
-            ? 'Match'
-            : 'Unmatched';
-
         const tanggalStr = item.tanggal_transaksi
           ? new Date(item.tanggal_transaksi).toLocaleDateString('id-ID')
           : '-';
@@ -248,7 +242,6 @@ class MutasiBankService {
           invoiceNumber,
           Number(item.jumlah) || 0,
           item.validation_notes || '',
-          statusLabel,
         ];
       });
 
