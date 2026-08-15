@@ -191,7 +191,15 @@ const AssignPurchaseOrderModal = ({
                   ) : (
                     purchaseOrders.map((po) => {
                       const isSelected = selectedPurchaseOrderId === po.id;
-                      const grandTotal = po.invoice?.grand_total ?? null;
+                      const grandTotal =
+                        po.grand_total ??
+                        po.grandTotal ??
+                        po.total_amount ??
+                        po.invoice?.grand_total ??
+                        (po.purchaseOrderDetails && Array.isArray(po.purchaseOrderDetails) && po.purchaseOrderDetails.length > 0
+                          ? po.purchaseOrderDetails.reduce((acc, item) => acc + (Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.qty) || 0)), 0)
+                          : null);
+                      const expiredDate = po.tanggal_batas_kirim || po.delivery_date || po.tanggal_expired || po.expired_date || null;
                       return (
                         <tr
                           key={po.id}
@@ -218,11 +226,7 @@ const AssignPurchaseOrderModal = ({
                             {po.customer?.namaCustomer || '-'}
                           </td>
                           <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                            {po.tanggal_batas_kirim
-                              ? formatDate(po.tanggal_batas_kirim)
-                              : po.delivery_date
-                              ? formatDate(po.delivery_date)
-                              : '-'}
+                            {expiredDate ? formatDate(expiredDate) : '-'}
                           </td>
                           <td className="px-3 py-2 text-right font-medium text-gray-900 whitespace-nowrap">
                             {grandTotal != null ? formatCurrency(grandTotal) : '-'}
@@ -236,20 +240,37 @@ const AssignPurchaseOrderModal = ({
             </div>
 
             {/* Selected PO summary */}
-            {selectedPO && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                <span className="text-blue-600 font-semibold text-xs">PO Terpilih:</span>
-                <span className="text-blue-900 font-bold text-xs">{selectedPO.po_number}</span>
-                <span className="text-blue-600 text-xs">—</span>
-                <span className="text-blue-800 text-xs">{selectedPO.customer?.namaCustomer || '-'}</span>
-                {selectedPO.invoice?.grand_total != null && (
-                  <>
-                    <span className="text-blue-600 text-xs">—</span>
-                    <span className="text-blue-900 font-semibold text-xs">{formatCurrency(selectedPO.invoice.grand_total)}</span>
-                  </>
-                )}
-              </div>
-            )}
+            {selectedPO && (() => {
+              const selectedGrandTotal =
+                selectedPO.grand_total ??
+                selectedPO.grandTotal ??
+                selectedPO.total_amount ??
+                selectedPO.invoice?.grand_total ??
+                (selectedPO.purchaseOrderDetails && Array.isArray(selectedPO.purchaseOrderDetails) && selectedPO.purchaseOrderDetails.length > 0
+                  ? selectedPO.purchaseOrderDetails.reduce((acc, item) => acc + (Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.qty) || 0)), 0)
+                  : null);
+              const selectedExpiredDate = selectedPO.tanggal_batas_kirim || selectedPO.delivery_date || selectedPO.tanggal_expired || selectedPO.expired_date || null;
+              return (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-blue-600 font-semibold">PO Terpilih:</span>
+                    <span className="text-blue-900 font-bold">{selectedPO.po_number}</span>
+                    <span className="text-blue-600">—</span>
+                    <span className="text-blue-800">{selectedPO.customer?.namaCustomer || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-blue-600">—</span>
+                    <span className="text-blue-600 font-semibold">Exp:</span>
+                    <span className="text-blue-900 font-semibold">{selectedExpiredDate ? formatDate(selectedExpiredDate) : '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-blue-600">—</span>
+                    <span className="text-blue-600 font-semibold">Grand Total PO:</span>
+                    <span className="text-blue-900 font-bold">{selectedGrandTotal != null ? formatCurrency(selectedGrandTotal) : '-'}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Footer */}
             <div className="flex justify-end gap-2 pt-1 border-t border-gray-100">
