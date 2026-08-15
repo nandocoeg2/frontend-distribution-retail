@@ -206,7 +206,8 @@ class MutasiBankService {
   async previewExportExcel(params = {}) {
     try {
       const response = await this.listMutations({ ...params, page: 1, limit: 1000 });
-      const mutations = response?.data || response?.mutations || [];
+      const rawData = response?.data?.data || response?.data?.mutations || response?.data || response?.mutations || [];
+      const mutations = Array.isArray(rawData) ? rawData : [];
 
       const headers = [
         'TANGGAL',
