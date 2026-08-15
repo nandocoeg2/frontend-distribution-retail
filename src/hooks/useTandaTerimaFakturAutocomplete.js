@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import tandaTerimaFakturService from '@/services/tandaTerimaFakturService';
 
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 50;
 
 const normalizeId = (value) => {
   if (value === null || value === undefined) {
@@ -54,16 +54,19 @@ const mapTtfOption = (ttf) => {
   }
 
   const idString = normalizeId(id);
-  const number = ttf.id || idString;
   const groupName =
     ttf.groupCustomer?.nama_group ??
     ttf.customer?.namaCustomer ??
     ttf.invoicePenagihan?.kepada ??
     '';
+  const invoiceNo =
+    ttf.invoicePenagihan?.no_invoice_penagihan ??
+    ttf.invoicePenagihan?.noInvoicePenagihan ??
+    '';
   const amountStr = ttf.grand_total ? `Rp ${Number(ttf.grand_total).toLocaleString('id-ID')}` : '';
 
-  const parts = [groupName, amountStr].filter(Boolean);
-  const label = parts.length > 0 ? `TTF (${parts.join(' • ')})` : `TTF ${idString}`;
+  const details = [groupName, invoiceNo, amountStr].filter(Boolean).join(' • ');
+  const label = details ? `${idString} (${details})` : idString;
 
   return {
     id: idString,
@@ -126,6 +129,7 @@ const useTandaTerimaFakturAutocomplete = ({
           page: 1,
           limit: pageSize,
           search: query || undefined,
+          status_codes: ['PENDING PAYMENT', 'Menunggu Pembayaran'],
         });
 
         const records = extractRecords(response);

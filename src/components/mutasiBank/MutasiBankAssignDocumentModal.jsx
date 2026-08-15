@@ -23,14 +23,15 @@ const MutasiBankAssignDocumentModal = ({
     fetchOptions: searchTTF,
   } = useTandaTerimaFakturAutocomplete({
     selectedValue: tandaTerimaFakturId,
-    initialFetch: false,
+    initialFetch: true,
   });
 
   useEffect(() => {
     if (open) {
       setTandaTerimaFakturId('');
+      searchTTF('');
     }
-  }, [open]);
+  }, [open, searchTTF]);
 
   if (!open) {
     return null;
