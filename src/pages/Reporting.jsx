@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import toastService from '../services/toastService';
@@ -16,6 +16,8 @@ import {
   getFinancialReporting,
   getItemReporting,
 } from '../services/reportingService';
+import OperationalDocumentModal from '../components/reporting/OperationalDocumentModal.jsx';
+import OutstandingInvoicesModal from '../components/reporting/OutstandingInvoicesModal.jsx';
 import {
   ChartBarIcon,
   ClipboardDocumentListIcon,
@@ -28,6 +30,7 @@ import {
   Squares2X2Icon,
   SquaresPlusIcon,
   ArrowPathIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 
 const numberFormatter = new Intl.NumberFormat('id-ID');
@@ -62,10 +65,10 @@ const calculatePercentage = (value, total) => {
 };
 
 const periodLabels = {
-  daily: 'Harian',
   weekly: 'Mingguan',
   monthly: 'Bulanan',
   yearly: 'Tahunan',
+  custom: 'Custom',
 };
 
 const getPeriodLabel = (period) => {
@@ -140,15 +143,15 @@ const tabs = [
   {
     id: 'items',
     label: 'Items',
-    description: 'Stok, peringatan, dan pergerakan',
+    description: 'Stok dan peringatan level stok',
   },
 ];
 
 const periodOptions = [
-  { value: 'daily', label: 'Harian' },
   { value: 'weekly', label: 'Mingguan' },
   { value: 'monthly', label: 'Bulanan' },
   { value: 'yearly', label: 'Tahunan' },
+  { value: 'custom', label: 'Custom' },
 ];
 const Reporting = () => {
   const [userData, setUserData] = useState(null);
@@ -169,6 +172,15 @@ const Reporting = () => {
     financial: '',
     items: '',
   });
+
+  // Modal states
+  const [operationalModal, setOperationalModal] = useState({
+    show: false,
+    tab: 'purchaseOrders',
+    statusFilter: '',
+  });
+  const [outstandingModalShow, setOutstandingModalShow] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -182,7 +194,7 @@ const Reporting = () => {
 
   const ensureValidDateRange = useCallback(
     (scope) => {
-      if (startDate && endDate && startDate > endDate) {
+      if (period === 'custom' && startDate && endDate && startDate > endDate) {
         const message = 'Tanggal mulai tidak boleh setelah tanggal akhir.';
         setErrorState((prev) => ({ ...prev, [scope]: message }));
         toastService.error(message);
@@ -190,7 +202,7 @@ const Reporting = () => {
       }
       return true;
     },
-    [startDate, endDate]
+    [period, startDate, endDate]
   );
 
   const fetchOperational = useCallback(async () => {
@@ -205,8 +217,8 @@ const Reporting = () => {
     try {
       const response = await getOperationalReporting({
         period,
-        startDate,
-        endDate,
+        startDate: period === 'custom' ? startDate : undefined,
+        endDate: period === 'custom' ? endDate : undefined,
       });
       if (!response?.success) {
         throw new Error(
@@ -238,8 +250,8 @@ const Reporting = () => {
     try {
       const response = await getFinancialReporting({
         period,
-        startDate,
-        endDate,
+        startDate: period === 'custom' ? startDate : undefined,
+        endDate: period === 'custom' ? endDate : undefined,
       });
       if (!response?.success) {
         throw new Error(
@@ -301,53 +313,91 @@ const Reporting = () => {
     setEndDate('');
   };
 
+  const openOperationalModal = (tab = 'purchaseOrders', statusFilter = '') => {
+    setOperationalModal({
+      show: true,
+      tab,
+      statusFilter,
+    });
+  };
+
+  const closeOperationalModal = () => {
+    setOperationalModal((prev) => ({ ...prev, show: false }));
+  };
+
   const renderStatusBreakdown = (
     title,
+    typeKey,
     statuses = [],
     total = 0,
     accent = 'bg-blue-500'
   ) => (
-    <Card padding='lg' className='h-full'>
-      <CardHeader
-        title={`Status ${title}`}
-        subtitle={`Total ${formatNumber(total)}`}
-      />
-      <div className='space-y-4'>
-        {Array.isArray(statuses) && statuses.length > 0 ? (
-          statuses.map((status) => {
-            const percentage = calculatePercentage(status.count, total);
-            return (
-              <div key={status.statusCode} className='space-y-2'>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <p className='font-semibold text-gray-800'>
-                      {status.statusName}
-                    </p>
-                    <p className='text-xs text-gray-500'>
-                      {formatNumber(status.count)} dokumen
-                    </p>
+    <Card padding='md' className='h-full flex flex-col justify-between'>
+      <div>
+        <div className='flex items-center justify-between pb-3 mb-3 border-b border-gray-100'>
+          <div>
+            <h3 className='text-base font-bold text-gray-900'>
+              Status {title}
+            </h3>
+            <p className='text-xs text-gray-500'>
+              Total {formatNumber(total)} dokumen
+            </p>
+          </div>
+          <button
+            type='button'
+            onClick={() => openOperationalModal(typeKey, '')}
+            className='text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center'
+          >
+            Lihat Semua
+            <ChevronRightIcon className='w-3.5 h-3.5 ml-0.5' />
+          </button>
+        </div>
+
+        <div className='space-y-3'>
+          {Array.isArray(statuses) && statuses.length > 0 ? (
+            statuses.map((status) => {
+              const percentage = calculatePercentage(status.count, total);
+              return (
+                <div
+                  key={status.statusCode || status.statusName}
+                  onClick={() =>
+                    openOperationalModal(typeKey, status.statusName)
+                  }
+                  className='p-2 -mx-2 rounded-xl transition-all hover:bg-gray-100/70 cursor-pointer group'
+                  title={`Klik untuk melihat dokumen status ${status.statusName}`}
+                >
+                  <div className='flex items-center justify-between mb-1.5'>
+                    <div>
+                      <p className='text-sm font-semibold text-gray-800 group-hover:text-blue-600 transition-colors'>
+                        {status.statusName}
+                      </p>
+                      <p className='text-xs text-gray-500'>
+                        {formatNumber(status.count)} dokumen
+                      </p>
+                    </div>
+                    <span className='text-sm font-bold text-gray-700 group-hover:text-blue-600 transition-colors'>
+                      {percentage.toFixed(1)}%
+                    </span>
                   </div>
-                  <span className='text-sm font-semibold text-gray-700'>
-                    {percentage.toFixed(1)}%
-                  </span>
+                  <div className='w-full h-2 bg-gray-200 rounded-full overflow-hidden'>
+                    <div
+                      className={`h-2 rounded-full ${accent} transition-all duration-300`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className='w-full h-2 bg-gray-200 rounded-full'>
-                  <div
-                    className={`h-2 rounded-full ${accent}`}
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })
-        ) : (
-          <p className='text-sm text-gray-500'>
-            Belum ada data status untuk periode ini.
-          </p>
-        )}
+              );
+            })
+          ) : (
+            <p className='text-xs text-gray-500 py-4 text-center'>
+              Belum ada data status untuk periode ini.
+            </p>
+          )}
+        </div>
       </div>
     </Card>
   );
+
   const renderOperationalSection = () => {
     if (loadingState.operational) {
       return (
@@ -409,169 +459,126 @@ const Reporting = () => {
       purchaseOrders = {},
       packing = {},
       suratJalan = {},
-      deliveryStatus = {},
-      documentTracking = {},
     } = metrics;
 
-    const trackingItems = [
-      { key: 'packing', label: 'Packing', metrics: documentTracking.packing },
-      {
-        key: 'invoicePengiriman',
-        label: 'Invoice Pengiriman',
-        metrics: documentTracking.invoicePengiriman,
-      },
-      {
-        key: 'suratJalan',
-        label: 'Surat Jalan',
-        metrics: documentTracking.suratJalan,
-      },
-    ].filter((item) => item.metrics);
+    const documentsData = {
+      purchaseOrders: purchaseOrders.documents || [],
+      packing: packing.documents || [],
+      suratJalan: suratJalan.documents || [],
+    };
 
-    const latestDeliveries = deliveryStatus.latestDeliveries || [];
+    const totals = {
+      purchaseOrders: purchaseOrders.total || 0,
+      packing: packing.total || 0,
+      suratJalan: suratJalan.total || 0,
+    };
 
     return (
       <div className='space-y-6'>
+        {/* Ringkasan Operasional */}
         <Card padding='lg'>
-          <CardHeader
-            title='Ringkasan Operasional'
-            subtitle={`${getPeriodLabel(responsePeriod || period)} • ${formatDateRangeLabel(responseStartDate, responseEndDate)}`}
-          />
+          <div className='flex items-center justify-between pb-3 mb-4 border-b border-gray-100'>
+            <div>
+              <h2 className='text-lg font-bold text-gray-900'>
+                Ringkasan Operasional
+              </h2>
+              <p className='text-xs text-gray-500'>
+                {getPeriodLabel(responsePeriod || period)} •{' '}
+                {formatDateRangeLabel(responseStartDate, responseEndDate)}
+              </p>
+            </div>
+            <span className='text-xs text-gray-400 font-medium'>
+              * Klik kartu untuk melihat daftar dokumen
+            </span>
+          </div>
 
           <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-            <StatCard
-              title='Total Purchase Order'
-              value={formatNumber(purchaseOrders.total || 0)}
-              icon={<ChartBarIcon className='w-8 h-8 text-blue-600' />}
-              variant='primary'
-            />
-            <StatCard
-              title='Total Packing'
-              value={formatNumber(packing.total || 0)}
-              icon={
-                <ClipboardDocumentListIcon className='w-8 h-8 text-green-600' />
-              }
-              variant='success'
-            />
-            <StatCard
-              title='Total Surat Jalan'
-              value={formatNumber(suratJalan.total || 0)}
-              icon={<TruckIcon className='w-8 h-8 text-purple-600' />}
-              variant='warning'
-            />
+            <div
+              onClick={() => openOperationalModal('purchaseOrders')}
+              className='cursor-pointer group transition-transform duration-150 active:scale-95'
+              title='Klik untuk melihat daftar Purchase Order'
+            >
+              <StatCard
+                title='Total Purchase Order'
+                value={formatNumber(purchaseOrders.total || 0)}
+                icon={
+                  <ChartBarIcon className='w-8 h-8 text-blue-600 group-hover:scale-110 transition-transform' />
+                }
+                variant='primary'
+                className='hover:border-blue-400 hover:shadow-md transition-all'
+              />
+            </div>
+            <div
+              onClick={() => openOperationalModal('packing')}
+              className='cursor-pointer group transition-transform duration-150 active:scale-95'
+              title='Klik untuk melihat daftar Packing'
+            >
+              <StatCard
+                title='Total Packing'
+                value={formatNumber(packing.total || 0)}
+                icon={
+                  <ClipboardDocumentListIcon className='w-8 h-8 text-green-600 group-hover:scale-110 transition-transform' />
+                }
+                variant='success'
+                className='hover:border-green-400 hover:shadow-md transition-all'
+              />
+            </div>
+            <div
+              onClick={() => openOperationalModal('suratJalan')}
+              className='cursor-pointer group transition-transform duration-150 active:scale-95'
+              title='Klik untuk melihat daftar Surat Jalan'
+            >
+              <StatCard
+                title='Total Surat Jalan'
+                value={formatNumber(suratJalan.total || 0)}
+                icon={
+                  <TruckIcon className='w-8 h-8 text-purple-600 group-hover:scale-110 transition-transform' />
+                }
+                variant='warning'
+                className='hover:border-purple-400 hover:shadow-md transition-all'
+              />
+            </div>
           </div>
         </Card>
 
+        {/* Status Breakdowns */}
         <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
           {renderStatusBreakdown(
             'Purchase Order',
+            'purchaseOrders',
             purchaseOrders.byStatus,
             purchaseOrders.total,
             'bg-blue-500'
           )}
           {renderStatusBreakdown(
             'Packing',
+            'packing',
             packing.byStatus,
             packing.total,
             'bg-green-500'
           )}
           {renderStatusBreakdown(
             'Surat Jalan',
+            'suratJalan',
             suratJalan.byStatus,
             suratJalan.total,
             'bg-purple-500'
           )}
         </div>
 
-        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
-          <Card padding='lg' className='h-full'>
-            <CardHeader
-              title='Pengiriman Terbaru'
-              subtitle='10 update terbaru'
-            />
-            <div className='space-y-4'>
-              {latestDeliveries.length > 0 ? (
-                latestDeliveries.map((delivery) => (
-                  <div
-                    key={delivery.id || delivery.suratJalanNumber}
-                    className='p-4 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
-                  >
-                    <div className='flex items-center justify-between'>
-                      <div>
-                        <p className='text-sm font-semibold text-gray-900'>
-                          {delivery.suratJalanNumber}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          {delivery.deliverTo}
-                        </p>
-                      </div>
-                      <StatusBadge
-                        status={delivery.statusName || delivery.statusCode}
-                        variant={getStatusVariant(delivery.statusCode)}
-                        size='sm'
-                      />
-                    </div>
-                    <p className='mt-2 text-xs text-gray-500'>
-                      Pembaruan terakhir:{' '}
-                      {formatDateTime(delivery.deliveryDate)}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className='text-sm text-gray-500'>
-                  Belum ada aktivitas pengiriman pada periode ini.
-                </p>
-              )}
-            </div>
-          </Card>
-
-          <Card padding='lg' className='h-full'>
-            <CardHeader
-              title='Document Tracking'
-              subtitle='Perbandingan cetak dokumen'
-            />
-            <div className='space-y-5'>
-              {trackingItems.length > 0 ? (
-                trackingItems.map(
-                  ({ key, label, metrics: trackingMetrics }) => {
-                    const printed = trackingMetrics.totalPrinted || 0;
-                    const total = trackingMetrics.totalPrintCount || 0;
-                    const percentage = calculatePercentage(printed, total);
-
-                    return (
-                      <div key={key} className='space-y-2'>
-                        <div className='flex items-center justify-between'>
-                          <p className='text-sm font-semibold text-gray-800'>
-                            {label}
-                          </p>
-                          <span className='text-xs text-gray-500'>
-                            {formatNumber(printed)} / {formatNumber(total)}{' '}
-                            cetak
-                          </span>
-                        </div>
-                        <div className='w-full h-2 bg-gray-200 rounded-full'>
-                          <div
-                            className='h-2 transition-all bg-blue-500 rounded-full'
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                        <p className='text-xs font-medium text-gray-500'>
-                          {percentage.toFixed(1)}% dokumen berhasil dicetak
-                        </p>
-                      </div>
-                    );
-                  }
-                )
-              ) : (
-                <p className='text-sm text-gray-500'>
-                  Belum ada data pencetakan dokumen.
-                </p>
-              )}
-            </div>
-          </Card>
-        </div>
+        {/* Operational Document Modal */}
+        <OperationalDocumentModal
+          show={operationalModal.show}
+          onClose={closeOperationalModal}
+          initialTab={operationalModal.tab}
+          initialStatusFilter={operationalModal.statusFilter}
+          documentsData={documentsData}
+          totals={totals}
+        />
       </div>
     );
   };
+
   const renderFinancialSection = () => {
     if (loadingState.financial) {
       return (
@@ -629,18 +636,11 @@ const Reporting = () => {
       startDate: responseStartDate,
       endDate: responseEndDate,
     } = financialData;
-    const {
-      overview = {},
-      outstandingPayments = {},
-      revenueByCustomer = [],
-      revenueByCompany = [], // Changed from revenueBySupplier
-    } = metrics;
-
-    const topCustomers = revenueByCustomer.slice(0, 5);
-    const topCompanies = revenueByCompany.slice(0, 5); // Changed from topSuppliers
+    const { overview = {}, outstandingPayments = {} } = metrics;
 
     return (
       <div className='space-y-6'>
+        {/* Ringkasan Finansial */}
         <Card padding='lg'>
           <CardHeader
             title='Ringkasan Finansial'
@@ -674,113 +674,72 @@ const Reporting = () => {
           </div>
         </Card>
 
-        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+        {/* Outstanding Payments Section */}
+        <div className='grid grid-cols-1 gap-6'>
           <Card padding='lg' className='h-full'>
-            <CardHeader
-              title='Outstanding Payments'
-              subtitle='Invoice yang belum lunas'
-            />
-            <div className='space-y-4'>
-              <div className='p-4 border rounded-lg border-amber-200 bg-amber-50'>
-                <p className='text-xs font-semibold tracking-wide uppercase text-amber-600'>
-                  Total Outstanding
-                </p>
-                <p className='mt-1 text-2xl font-bold text-amber-700'>
-                  {formatCurrency(outstandingPayments.total)}
-                </p>
-                <p className='mt-1 text-sm text-amber-700'>
-                  {formatNumber(outstandingPayments.count || 0)} invoice
-                  menunggu pembayaran
+            <div className='flex items-center justify-between pb-3 mb-4 border-b border-gray-100'>
+              <div>
+                <h3 className='text-lg font-bold text-gray-900'>
+                  Outstanding Payments
+                </h3>
+                <p className='text-xs text-gray-500'>
+                  Tagihan invoice yang belum lunas
                 </p>
               </div>
-              <p className='text-xs text-gray-500'>
-                Gunakan data ini untuk memprioritaskan penagihan dan menjaga
-                arus kas tetap sehat.
-              </p>
+              <button
+                type='button'
+                onClick={() => setOutstandingModalShow(true)}
+                className='text-xs font-semibold text-amber-700 bg-amber-100/80 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center'
+              >
+                Lihat Daftar Outstanding
+                <ChevronRightIcon className='w-3.5 h-3.5 ml-1' />
+              </button>
+            </div>
+
+            <div
+              onClick={() => setOutstandingModalShow(true)}
+              className='p-5 border-2 border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-2xl cursor-pointer hover:border-amber-400 hover:shadow-md transition-all group'
+              title='Klik untuk melihat siapa saja yang memiliki tagihan outstanding'
+            >
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-xs font-bold tracking-wider uppercase text-amber-700'>
+                    Total Outstanding
+                  </p>
+                  <p className='mt-1 text-3xl font-extrabold text-amber-800 tracking-tight'>
+                    {formatCurrency(outstandingPayments.total)}
+                  </p>
+                  <p className='mt-1 text-sm font-medium text-amber-700'>
+                    {formatNumber(outstandingPayments.count || 0)} invoice
+                    menunggu pembayaran
+                  </p>
+                </div>
+                <div className='p-3 bg-amber-100 rounded-xl text-amber-700 group-hover:scale-110 transition-transform'>
+                  <BanknotesIcon className='w-8 h-8' />
+                </div>
+              </div>
+              <div className='mt-4 pt-3 border-t border-amber-200/60 flex items-center justify-between text-xs text-amber-800 font-medium'>
+                <span>Klik untuk melihat rincian customer & invoice</span>
+                <span className='font-bold group-hover:translate-x-1 transition-transform'>
+                  Buka Rincian →
+                </span>
+              </div>
             </div>
           </Card>
-
-          <div className='space-y-6'>
-            <Card padding='lg'>
-              <CardHeader
-                title='Top Customer'
-                subtitle='Kontributor revenue terbesar'
-              />
-              <div className='space-y-3'>
-                {topCustomers.length > 0 ? (
-                  topCustomers.map((customer, index) => (
-                    <div
-                      key={
-                        customer.customerId ||
-                        `${customer.customerName}-${index}`
-                      }
-                      className='flex items-center justify-between p-3 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
-                    >
-                      <div>
-                        <p className='text-sm font-semibold text-gray-900'>
-                          {customer.customerName}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          Peringkat #{index + 1}
-                        </p>
-                      </div>
-                      <div className='text-right'>
-                        <p className='text-sm font-semibold text-gray-900'>
-                          {formatCurrency(customer.totalRevenue)}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className='text-sm text-gray-500'>
-                    Belum ada data revenue per customer.
-                  </p>
-                )}
-              </div>
-            </Card>
-
-            <Card padding='lg'>
-              <CardHeader
-                title='Top Company'
-                subtitle='Company dengan nilai transaksi terbesar'
-              />
-              <div className='space-y-3'>
-                {topCompanies.length > 0 ? (
-                  topCompanies.map((company, index) => (
-                    <div
-                      key={
-                        company.companyId ||
-                        `${company.companyName}-${index}`
-                      }
-                      className='flex items-center justify-between p-3 transition border border-gray-100 rounded-lg hover:border-blue-200 hover:bg-blue-50/40'
-                    >
-                      <div>
-                        <p className='text-sm font-semibold text-gray-900'>
-                          {company.companyName}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          Peringkat #{index + 1}
-                        </p>
-                      </div>
-                      <div className='text-right'>
-                        <p className='text-sm font-semibold text-gray-900'>
-                          {formatCurrency(company.totalRevenue)}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className='text-sm text-gray-500'>
-                    Belum ada data revenue per company.
-                  </p>
-                )}
-              </div>
-            </Card>
-          </div>
         </div>
+
+        {/* Outstanding Invoices Modal */}
+        <OutstandingInvoicesModal
+          show={outstandingModalShow}
+          onClose={() => setOutstandingModalShow(false)}
+          invoices={outstandingPayments.invoices || []}
+          totalAmount={outstandingPayments.total || 0}
+          totalCount={outstandingPayments.count || 0}
+        />
       </div>
     );
   };
+
   const renderItemSection = () => {
     if (loadingState.items) {
       return (
@@ -833,12 +792,7 @@ const Reporting = () => {
     }
 
     const { metrics = {} } = itemMetrics;
-    const {
-      overview = {},
-      stockStatus = {},
-      lowStockAlerts = [],
-      recentMovements = [],
-    } = metrics;
+    const { overview = {}, stockStatus = {}, lowStockAlerts = [] } = metrics;
 
     const stockTotal =
       (stockStatus.zeroStock || 0) +
@@ -987,61 +941,6 @@ const Reporting = () => {
             )}
           </Card>
         </div>
-
-        <Card padding='lg'>
-          <CardHeader
-            title='Pergerakan Stok Terbaru'
-            subtitle='Aktivitas stok dalam 30 hari terakhir'
-          />
-
-          {recentMovements.length > 0 ? (
-            <div className='overflow-x-auto'>
-              <table className='min-w-full text-sm divide-y divide-gray-200'>
-                <thead className='text-xs tracking-wide text-gray-500 uppercase bg-gray-50'>
-                  <tr>
-                    <th className='px-4 py-2 text-left'>PLU</th>
-                    <th className='px-4 py-2 text-left'>Nama Produk</th>
-                    <th className='px-4 py-2 text-left'>Stok (Karton)</th>
-                    <th className='px-4 py-2 text-left'>Stok (Pieces)</th>
-                    <th className='px-4 py-2 text-left'>Harga / Unit</th>
-                    <th className='px-4 py-2 text-left'>Terakhir diperbarui</th>
-                  </tr>
-                </thead>
-                <tbody className='divide-y divide-gray-100'>
-                  {recentMovements.map((movement) => (
-                    <tr
-                      key={movement.id || movement.plu}
-                      className='hover:bg-blue-50/40'
-                    >
-                      <td className='px-4 py-2 font-medium text-gray-900'>
-                        {movement.plu}
-                      </td>
-                      <td className='px-4 py-2 text-gray-700'>
-                        {movement.name}
-                      </td>
-                      <td className='px-4 py-2 text-gray-700'>
-                        {formatNumber(movement.currentStockCartons)}
-                      </td>
-                      <td className='px-4 py-2 text-gray-700'>
-                        {formatNumber(movement.currentStockPieces)}
-                      </td>
-                      <td className='px-4 py-2 text-gray-700'>
-                        {formatCurrency(movement.unitPrice)}
-                      </td>
-                      <td className='px-4 py-2 text-gray-700'>
-                        {formatDateTime(movement.lastUpdated)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className='text-sm text-gray-500'>
-              Belum ada pergerakan stok dalam 30 hari terakhir.
-            </p>
-          )}
-        </Card>
       </div>
     );
   };
@@ -1054,97 +953,121 @@ const Reporting = () => {
     );
   }
 
-  const displayName = userData.firstName || userData.name || 'Pengguna';
   const isDefaultFilter = period === 'monthly' && !startDate && !endDate;
 
   return (
     <>
       <div className='p-6 space-y-6'>
-        <Card padding='lg' className='bg-white/70 backdrop-blur'>
-          <CardHeader
-            title='Filter Laporan'
-            subtitle='Pilih periode analitik dan rentang tanggal yang relevan'
-          />
+        {/* Compact Filter Container */}
+        <div className='p-4 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4'>
+          {/* Top Row: Tabs navigation & Period Filter in a compact bar */}
+          <div className='flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-gray-100 pb-3'>
+            {/* Tabs */}
+            <div className='flex flex-wrap gap-1.5 p-1 bg-gray-100/80 rounded-xl'>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type='button'
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold tracking-wide text-gray-600 uppercase'>
-                Periode
-              </label>
-              <select
-                value={period}
-                onChange={(event) => setPeriod(event.target.value)}
-                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
-              >
+            {/* Period selector & quick actions */}
+            <div className='flex flex-wrap items-center gap-2'>
+              <span className='text-xs font-semibold text-gray-500 uppercase tracking-wider'>
+                Periode:
+              </span>
+              <div className='inline-flex p-0.5 bg-gray-100/80 rounded-lg'>
                 {periodOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <button
+                    key={option.value}
+                    type='button'
+                    onClick={() => {
+                      setPeriod(option.value);
+                      if (option.value !== 'custom') {
+                        setStartDate('');
+                        setEndDate('');
+                      }
+                    }}
+                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                      period === option.value
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
                     {option.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </div>
+              </div>
 
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold tracking-wide text-gray-600 uppercase'>
-                Tanggal Mulai
-              </label>
-              <input
-                type='date'
-                value={startDate}
-                onChange={(event) => setStartDate(event.target.value)}
-                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
-                max={endDate || undefined}
-              />
-            </div>
-
-            <div className='space-y-2'>
-              <label className='text-xs font-semibold tracking-wide text-gray-600 uppercase'>
-                Tanggal Selesai
-              </label>
-              <input
-                type='date'
-                value={endDate}
-                onChange={(event) => setEndDate(event.target.value)}
-                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
-                min={startDate || undefined}
-              />
-            </div>
-
-            <div className='flex items-end'>
-              <button
-                type='button'
-                onClick={handleResetFilters}
-                disabled={isDefaultFilter}
-                className={`w-full rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                  isDefaultFilter
-                    ? 'cursor-not-allowed border-gray-200 text-gray-400'
-                    : 'border-blue-500 text-blue-600 hover:bg-blue-50'
-                }`}
-              >
-                Atur ulang filter
-              </button>
+              {!isDefaultFilter && (
+                <button
+                  type='button'
+                  onClick={handleResetFilters}
+                  className='px-2.5 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition border border-blue-200'
+                >
+                  Reset
+                </button>
+              )}
             </div>
           </div>
 
-          <div className='grid grid-cols-1 gap-3 mt-6 md:grid-cols-3'>
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type='button'
-                onClick={() => setActiveTab(tab.id)}
-                className={`rounded-lg border px-4 py-3 text-left transition ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:text-blue-700'
-                }`}
-              >
-                <p className='text-sm font-semibold'>{tab.label}</p>
-                <p className='mt-1 text-xs text-gray-500'>{tab.description}</p>
-              </button>
-            ))}
-          </div>
-        </Card>
+          {/* Conditional Custom Date Inputs (only appears when period === 'custom') */}
+          {period === 'custom' && (
+            <div className='flex flex-wrap items-center gap-3 pt-1 animate-in fade-in duration-200 bg-blue-50/50 p-3 rounded-xl border border-blue-100'>
+              <span className='text-xs font-bold text-blue-900'>
+                Rentang Tanggal Kustom:
+              </span>
+              <div className='flex items-center gap-2'>
+                <label className='text-xs text-gray-600 font-medium'>
+                  Mulai:
+                </label>
+                <input
+                  type='date'
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate || undefined}
+                  className='px-2.5 py-1 text-xs bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                />
+              </div>
 
+              <div className='flex items-center gap-2'>
+                <label className='text-xs text-gray-600 font-medium'>
+                  Selesai:
+                </label>
+                <input
+                  type='date'
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate || undefined}
+                  className='px-2.5 py-1 text-xs bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200'
+                />
+              </div>
+
+              <button
+                type='button'
+                onClick={() => {
+                  if (activeTab === 'operational') fetchOperational();
+                  else if (activeTab === 'financial') fetchFinancial();
+                  else if (activeTab === 'items') fetchItemMetrics();
+                }}
+                className='px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition'
+              >
+                Terapkan
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Tab Contents */}
         {activeTab === 'operational' && renderOperationalSection()}
         {activeTab === 'financial' && renderFinancialSection()}
         {activeTab === 'items' && renderItemSection()}
