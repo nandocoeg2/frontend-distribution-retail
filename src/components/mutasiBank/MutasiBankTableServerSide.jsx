@@ -527,6 +527,7 @@ const MutasiBankTableServerSide = forwardRef(({
   }, [
     onValidateMutation,
     onViewMutation,
+    onAssignDocument,
     onUnassignDocument,
     isValidating,
     isAssigning,
