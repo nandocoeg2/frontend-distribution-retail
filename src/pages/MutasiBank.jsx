@@ -298,16 +298,6 @@ const MutasiBank = () => {
               </button>
               <button
                 type='button'
-                onClick={() => exportExcel()}
-                disabled={exporting}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs border border-gray-200 bg-white text-gray-700 rounded hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50'
-                title='Export data mutasi bank ke Excel'
-              >
-                <ArrowDownTrayIcon className='w-4 h-4 mr-1.5 text-green-600' />
-                {exporting ? 'Exporting...' : 'Export Excel'}
-              </button>
-              <button
-                type='button'
                 onClick={() => setUploadModalOpen(true)}
                 className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
               >

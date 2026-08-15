@@ -461,14 +461,18 @@ const MutasiBankTableServerSide = forwardRef(({
             </select>
           </div>
         ),
-        size: 140,
+        size: 210,
+        minSize: 180,
         cell: ({ row }) => {
           const matched = resolveMatchedDocument(row.original);
           if (!matched) {
             return <span className='text-xs text-gray-400'>-</span>;
           }
           return (
-            <div className='text-xs font-semibold text-gray-900' title={`${matched.type}: ${matched.number}`}>
+            <div
+              className='text-xs font-semibold text-gray-900 truncate'
+              title={`${matched.type}: ${matched.number}`}
+            >
               {matched.number || '-'}
             </div>
           );
