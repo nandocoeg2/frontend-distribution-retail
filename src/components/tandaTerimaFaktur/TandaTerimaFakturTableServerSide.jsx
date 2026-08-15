@@ -405,6 +405,35 @@ const TandaTerimaFakturTableServerSide = ({
         enableColumnFilter: true,
         size: 110,
       }),
+      columnHelper.accessor((row) => {
+        const totalTTF = Number(row.grand_total) || 0;
+        const payment = Number(row.bankMutation?.jumlah) || 0;
+        return totalTTF - payment;
+      }, {
+        id: 'selisih',
+        header: () => <div className="font-medium text-xs text-right">Selisih</div>,
+        cell: (info) => {
+          const value = info.getValue();
+          return (
+            <div className={`text-xs font-semibold text-right ${value !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              {formatCurrency(value)}
+            </div>
+          );
+        },
+        enableSorting: false,
+        size: 100,
+      }),
+      columnHelper.accessor('bankMutation.keterangan', {
+        id: 'keterangan',
+        header: () => <div className="font-medium text-xs">Keterangan</div>,
+        cell: (info) => (
+          <div className="text-xs text-gray-700 max-w-[200px] truncate" title={info.getValue() ?? ''}>
+            {info.getValue() || '-'}
+          </div>
+        ),
+        enableSorting: false,
+        size: 150,
+      }),
       columnHelper.accessor('tanggal_print_ttf1', {
         id: 'tanggal_print_ttf1',
         header: ({ column }) => {
@@ -555,24 +584,6 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: true,
         size: 100,
       }),
-      columnHelper.accessor((row) => {
-        const totalTTF = Number(row.grand_total) || 0;
-        const payment = Number(row.bankMutation?.jumlah) || 0;
-        return totalTTF - payment;
-      }, {
-        id: 'selisih',
-        header: () => <div className="font-medium text-xs text-right">Selisih</div>,
-        cell: (info) => {
-          const value = info.getValue();
-          return (
-            <div className={`text-xs font-semibold text-right ${value !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
-              {formatCurrency(value)}
-            </div>
-          );
-        },
-        enableSorting: false,
-        size: 100,
-      }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
         header: ({ column }) => (
@@ -602,17 +613,6 @@ const TandaTerimaFakturTableServerSide = ({
         ),
         enableSorting: true,
         size: 85,
-      }),
-      columnHelper.accessor('bankMutation.keterangan', {
-        id: 'keterangan',
-        header: () => <div className="font-medium text-xs">Keterangan</div>,
-        cell: (info) => (
-          <div className="text-xs text-gray-700 max-w-[200px] truncate" title={info.getValue() ?? ''}>
-            {info.getValue() || '-'}
-          </div>
-        ),
-        enableSorting: false,
-        size: 150,
       }),
       columnHelper.display({
         id: 'actions',

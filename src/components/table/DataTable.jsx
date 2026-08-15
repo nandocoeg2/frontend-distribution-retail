@@ -236,7 +236,9 @@ const DataTable = ({
         </tbody>
         {footerContent && (
           <tfoot className={footerRowClassName}>
-            {footerContent}
+            <tr>
+              {footerContent}
+            </tr>
           </tfoot>
         )}
       </table>

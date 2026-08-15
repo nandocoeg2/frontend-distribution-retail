@@ -5,7 +5,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
-import useInvoicePenagihanAutocomplete from '../../hooks/useInvoicePenagihanAutocomplete';
+import useTandaTerimaFakturAutocomplete from '../../hooks/useTandaTerimaFakturAutocomplete';
 
 const MutasiBankAssignDocumentModal = ({
   open,
@@ -15,22 +15,23 @@ const MutasiBankAssignDocumentModal = ({
   mutation,
   submitError = null,
 }) => {
-  const [invoicePenagihanId, setInvoicePenagihanId] = useState('');
+  const [tandaTerimaFakturId, setTandaTerimaFakturId] = useState('');
 
   const {
-    options: invoiceOptions,
-    loading: invoiceLoading,
-    fetchOptions: searchInvoices,
-  } = useInvoicePenagihanAutocomplete({
-    selectedValue: invoicePenagihanId,
-    initialFetch: false,
+    options: ttfOptions,
+    loading: ttfLoading,
+    fetchOptions: searchTTF,
+  } = useTandaTerimaFakturAutocomplete({
+    selectedValue: tandaTerimaFakturId,
+    initialFetch: true,
   });
 
   useEffect(() => {
     if (open) {
-      setInvoicePenagihanId('');
+      setTandaTerimaFakturId('');
+      searchTTF('');
     }
-  }, [open]);
+  }, [open, searchTTF]);
 
   if (!open) {
     return null;
@@ -38,23 +39,23 @@ const MutasiBankAssignDocumentModal = ({
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!invoicePenagihanId.trim()) {
+    if (!tandaTerimaFakturId.trim()) {
       return;
     }
     onSubmit?.({
-      invoicePenagihanId: invoicePenagihanId.trim(),
+      tandaTerimaFakturId: tandaTerimaFakturId.trim(),
     });
   };
 
-  const handleInvoiceChange = (event) => {
+  const handleTTFChange = (event) => {
     const value = event?.target ? event.target.value : event || '';
-    setInvoicePenagihanId(value);
+    setTandaTerimaFakturId(value);
   };
 
   const hasDocument = Boolean(
+    mutation?.tandaTerimaFakturId ||
     mutation?.invoicePenagihanId ||
-    mutation?.invoicePengirimanId ||
-    mutation?.tandaTerimaFakturId
+    mutation?.invoicePengirimanId
   );
 
   return (
@@ -101,19 +102,18 @@ const MutasiBankAssignDocumentModal = ({
 
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>
-              Invoice Penagihan
+              Tanda Terima Faktur (TTF)
             </label>
             <Autocomplete
-              options={invoiceOptions}
-              value={invoicePenagihanId || ''}
-              onChange={handleInvoiceChange}
-              placeholder='Cari Invoice Penagihan'
+              options={ttfOptions}
+              value={tandaTerimaFakturId || ''}
+              onChange={handleTTFChange}
+              placeholder='Cari Tanda Terima Faktur (TTF)...'
               displayKey='label'
               valueKey='id'
-              name='invoicePenagihanId'
-              loading={invoiceLoading || loading}
-              onSearch={searchInvoices}
-              showId
+              name='tandaTerimaFakturId'
+              loading={ttfLoading || loading}
+              onSearch={searchTTF}
               required
             />
           </div>
@@ -127,6 +127,7 @@ const MutasiBankAssignDocumentModal = ({
                 {mutation?.reference_number ||
                   mutation?.referenceNumber ||
                   mutation?.description ||
+                  mutation?.keterangan ||
                   'Referensi tidak tersedia'}
               </p>
             </div>
@@ -143,7 +144,7 @@ const MutasiBankAssignDocumentModal = ({
             </button>
             <button
               type='submit'
-              disabled={loading || !invoicePenagihanId.trim()}
+              disabled={loading || !tandaTerimaFakturId.trim()}
               className='inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300'
             >
               {loading ? 'Memproses...' : 'Kaitkan Dokumen'}

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Modal Utilities
  * Common utility functions used across modal components
  */
@@ -101,6 +101,14 @@ export const resolveStatusVariant = (status) => {
     value.includes('shipping')
   ) {
     return 'warning';
+  }
+
+  // Indikasi Pengganti = Info (Cyan)
+  if (
+    value.includes('indikasi') ||
+    value.includes('pengganti')
+  ) {
+    return 'info';
   }
 
   // Pending/Draft = Netral/Abu-abu

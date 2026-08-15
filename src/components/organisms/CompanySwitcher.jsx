@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BuildingStorefrontIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { getCompanies } from '../../services/companyService';
+import authService from '../../services/authService';
 
 const CompanySwitcher = ({ companyName, onCompanyChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,6 +9,8 @@ const CompanySwitcher = ({ companyName, onCompanyChange }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
+
+  const activeCompany = authService.getCompanyData();
 
   useEffect(() => {
     // Close dropdown when clicking outside
@@ -70,6 +73,8 @@ const CompanySwitcher = ({ companyName, onCompanyChange }) => {
     setIsOpen(!isOpen);
   };
 
+  const activeCompanyLogo = activeCompany?.logo || null;
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Company Header - Clickable */}
@@ -78,11 +83,19 @@ const CompanySwitcher = ({ companyName, onCompanyChange }) => {
         onClick={toggleDropdown}
         className="flex items-center space-x-3 w-full text-left hover:bg-white/5 rounded-lg transition-all duration-200 group p-1"
       >
-        <div className="flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex-shrink-0">
-          <BuildingStorefrontIcon
-            className="w-6 h-6 text-white"
-            aria-hidden="true"
-          />
+        <div className="flex items-center justify-center w-10 h-10 shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex-shrink-0 overflow-hidden">
+          {activeCompanyLogo ? (
+            <img
+              src={activeCompanyLogo}
+              alt={companyName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <BuildingStorefrontIcon
+              className="w-6 h-6 text-white"
+              aria-hidden="true"
+            />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-sm font-bold text-transparent bg-gradient-to-r from-white to-slate-200 bg-clip-text truncate">
@@ -126,11 +139,19 @@ const CompanySwitcher = ({ companyName, onCompanyChange }) => {
                         : 'text-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-center w-8 h-8 bg-white/10 rounded-lg flex-shrink-0">
-                      <BuildingStorefrontIcon
-                        className="w-5 h-5"
-                        aria-hidden="true"
-                      />
+                    <div className="flex items-center justify-center w-8 h-8 bg-white/10 rounded-lg flex-shrink-0 overflow-hidden">
+                      {company.logo ? (
+                        <img
+                          src={company.logo}
+                          alt={company.nama_perusahaan}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <BuildingStorefrontIcon
+                          className="w-5 h-5"
+                          aria-hidden="true"
+                        />
+                      )}
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-medium truncate">

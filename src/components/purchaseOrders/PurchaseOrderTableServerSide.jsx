@@ -177,10 +177,9 @@ const PurchaseOrderTableServerSide = forwardRef(({
   const statusOptions = useMemo(() => [
     { id: 'PENDING PURCHASE ORDER', name: 'Pending' },
     { id: 'PROCESSING PURCHASE ORDER', name: 'Processing' },
-    { id: 'PROCESSED PURCHASE ORDER', name: 'Processed' },
     { id: 'COMPLETED PURCHASE ORDER', name: 'Complete' },
-    { id: 'FAILED PURCHASE ORDER', name: 'Failed' },
     { id: 'CANCELED PURCHASE ORDER', name: 'Canceled' },
+    { id: 'INDIKASI PENGGANTI', name: 'Indikasi Pengganti' },
   ], []);
 
   useEffect(() => {

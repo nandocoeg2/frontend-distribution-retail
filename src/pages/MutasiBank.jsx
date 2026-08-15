@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowPathIcon,
   PlusIcon,
+  EyeIcon,
   ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -34,6 +35,7 @@ const resolveErrorMessage = (error, fallback) => {
 
 const MutasiBank = () => {
   const queryClient = useQueryClient();
+  const tableRef = useRef(null);
 
   const {
     uploadMutationFile,
@@ -59,6 +61,18 @@ const MutasiBank = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignTarget, setAssignTarget] = useState(null);
   const [assignError, setAssignError] = useState(null);
+
+  const handleExportExcel = useCallback(() => {
+    if (tableRef.current) {
+      tableRef.current.openExportDialog();
+    }
+  }, []);
+
+  const handlePreviewExcel = useCallback(() => {
+    if (tableRef.current) {
+      tableRef.current.openPreviewDialog();
+    }
+  }, []);
 
   const invalidateMutations = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['mutasiBank'] });
@@ -269,6 +283,20 @@ const MutasiBank = () => {
             <h3 className='text-sm font-semibold text-gray-900'>Mutasi Bank</h3>
             <div className='flex flex-wrap items-center gap-2'>
               <button
+                onClick={handlePreviewExcel}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <EyeIcon className="h-4 w-4 mr-1.5" />
+                Preview Excel
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                Export Excel
+              </button>
+              <button
                 type='button'
                 onClick={() => exportExcel()}
                 disabled={exporting}
@@ -298,6 +326,7 @@ const MutasiBank = () => {
           </div>
 
           <MutasiBankTableServerSide
+            ref={tableRef}
             onViewMutation={handleViewMutation}
             onValidateMutation={handleOpenValidateModal}
             onAssignDocument={handleOpenAssignModal}

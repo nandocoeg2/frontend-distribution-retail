@@ -152,8 +152,8 @@ const useMutasiBankPage = () => {
         return null;
       }
 
-      if (!payload?.invoicePenagihanId) {
-        toastService.error('ID Invoice Penagihan wajib diisi.');
+      if (!payload?.tandaTerimaFakturId && !payload?.invoicePenagihanId) {
+        toastService.error('Dokumen wajib diisi.');
         return null;
       }
 

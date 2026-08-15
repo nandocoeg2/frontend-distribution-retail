@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getActiveCompanyName } from '../../utils/companyUtils';
 import CompanySwitcher from './CompanySwitcher.jsx';
+import authService from '../../services/authService';
 import {
   ArchiveBoxIcon,
   BanknotesIcon,
@@ -169,9 +170,25 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
 
   const allMenus = menus.length > 0 ? menus : defaultMenuItems;
 
+  const sanitizeMenuTree = (items) => {
+    if (!Array.isArray(items)) return [];
+    return items
+      .filter((item) => {
+        const isParentGroupCustomer =
+          item.name === 'Parent Group Customer' ||
+          item.url === '/master/parent-group-customer';
+        return !isParentGroupCustomer;
+      })
+      .map((item) => ({
+        ...item,
+        children: item.children ? sanitizeMenuTree(item.children) : [],
+      }));
+  };
+
   const filteredMenus = useMemo(() => {
+    const sanitized = sanitizeMenuTree(allMenus);
     if (!menuFilterQuery.trim()) {
-      return allMenus;
+      return sanitized;
     }
     const q = menuFilterQuery.toLowerCase().trim();
 
@@ -198,7 +215,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       return result;
     };
 
-    return filterMenuTree(allMenus);
+    return filterMenuTree(sanitized);
   }, [allMenus, menuFilterQuery]);
 
   useEffect(() => {
@@ -425,11 +442,19 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
             </div>
           )}
           {isCollapsed && (
-            <div className='flex items-center justify-center w-10 h-10 mx-auto shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl'>
-              <BuildingStorefrontIcon
-                className='w-6 h-6 text-white'
-                aria-hidden='true'
-              />
+            <div className='flex items-center justify-center w-10 h-10 mx-auto shadow-lg bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl overflow-hidden'>
+              {authService.getCompanyData()?.logo ? (
+                <img
+                  src={authService.getCompanyData().logo}
+                  alt={companyName}
+                  className='w-full h-full object-cover'
+                />
+              ) : (
+                <BuildingStorefrontIcon
+                  className='w-6 h-6 text-white'
+                  aria-hidden='true'
+                />
+              )}
             </div>
           )}
         </div>
