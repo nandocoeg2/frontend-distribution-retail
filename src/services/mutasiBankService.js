@@ -166,8 +166,8 @@ class MutasiBankService {
       throw new Error('Mutation ID is required');
     }
 
-    if (!payload.invoicePenagihanId) {
-      throw new Error('Invoice Penagihan ID is required');
+    if (!payload.tandaTerimaFakturId && !payload.invoicePenagihanId) {
+      throw new Error('Dokumen (TTF / Invoice Penagihan) wajib diisi');
     }
 
     try {
