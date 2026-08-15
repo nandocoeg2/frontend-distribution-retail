@@ -81,8 +81,14 @@ const AssignPurchaseOrderModal = ({
 
   const selectedPO = purchaseOrders.find((po) => po.id === selectedPurchaseOrderId);
 
-  // LPB grand total from detailInvoice
-  const lpbGrandTotal = lpbData?.detailInvoice?.grand_total ?? null;
+  // LPB grand total from detailInvoice or fallback properties
+  const lpbGrandTotal =
+    lpbData?.detailInvoice?.grand_total ??
+    lpbData?.grand_total ??
+    lpbData?.total_amount ??
+    (lpbData?.detailItems && Array.isArray(lpbData.detailItems) && lpbData.detailItems.length > 0
+      ? lpbData.detailItems.reduce((acc, item) => acc + (Number(item.total_pembelian) || Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.total_qty) || Number(item.qty_pcs) || 0)), 0)
+      : null);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
