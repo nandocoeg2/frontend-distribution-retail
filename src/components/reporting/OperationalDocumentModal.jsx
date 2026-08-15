@@ -303,24 +303,26 @@ const OperationalDocumentModal = ({
                         <td className='px-3 py-2 text-center text-xs font-mono text-gray-500 border-r border-gray-200'>
                           {rowNumber}
                         </td>
-                        <td className='px-4 py-2 text-xs font-semibold text-gray-900 border-r border-gray-200'>
-                          <div className='flex flex-col space-y-0.5 leading-tight'>
-                            <span>
-                              {activeTab === 'packing'
-                                ? item.poNumber ? `PO: ${item.poNumber}` : item.documentNumber || '-'
-                                : item.documentNumber || '-'}
-                            </span>
-                            {activeTab === 'suratJalan' && item.poNumber && (
-                              <span className='text-[11px] font-medium text-gray-700'>
-                                PO: {item.poNumber}
-                              </span>
-                            )}
-                            {item.deliverTo && (
-                              <span className='text-[11px] font-normal text-gray-500'>
-                                ({item.deliverTo})
-                              </span>
-                            )}
+                        <td className='px-4 py-2.5 text-xs border-r border-gray-200'>
+                          <div className='font-semibold text-gray-900'>
+                            {activeTab === 'packing'
+                              ? item.poNumber || item.documentNumber || '-'
+                              : item.documentNumber || '-'}
                           </div>
+                          {(item.poNumber && activeTab === 'suratJalan' || item.deliverTo) && (
+                            <div className='text-xs text-gray-500 mt-0.5 flex flex-wrap gap-1.5 items-center'>
+                              {activeTab === 'suratJalan' && item.poNumber && (
+                                <span className='inline-flex items-center px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-medium'>
+                                  PO: {item.poNumber}
+                                </span>
+                              )}
+                              {item.deliverTo && (
+                                <span className='text-gray-500 text-[11px] font-normal'>
+                                  ({item.deliverTo})
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className='px-4 py-2 text-center'>
                           <StatusBadge
