@@ -14,6 +14,7 @@ import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import DateFilter from '../common/DateFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 
 const STATUS_OPTIONS = [
   { id: 'MATCHED', name: 'Matched' },
@@ -195,6 +196,18 @@ const MutasiBankTableServerSide = forwardRef(({
   initialPage = 1,
   initialLimit = 999999,
 }, ref) => {
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [localFilters, setLocalFilters] = useState({
+    tanggal: '',
+    customer: '',
+    keterangan: '',
+    invoice: '',
+    jumlah: '',
+    status: '',
+  });
 
   const {
     data: mutations,
@@ -242,6 +255,58 @@ const MutasiBankTableServerSide = forwardRef(({
       [filters]
     ),
   });
+
+  const activeQueryFilters = useMemo(() => {
+    const state = tableOptions?.state?.columnFilters || [];
+    const filterObj = {};
+    state.forEach((f) => {
+      filterObj[f.id] = f.value;
+    });
+    return filterObj;
+  }, [tableOptions?.state?.columnFilters]);
+
+  const handleConfirmExport = async () => {
+    try {
+      setShowExportConfirmation(false);
+      toastService.info('Mengunduh file Excel...');
+
+      const blob = await mutasiBankService.exportExcel(activeQueryFilters);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Mutasi_Bank_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toastService.success('Berhasil mendownload Excel Mutasi Bank');
+    } catch (err) {
+      console.error('Error exporting excel:', err);
+      toastService.error('Gagal memproses export excel');
+    }
+  };
+
+  const handleConfirmPreview = async () => {
+    setShowPreviewModal(true);
+    setPreviewLoading(true);
+    try {
+      const res = await mutasiBankService.previewExportExcel(activeQueryFilters);
+      setPreviewData(res);
+    } catch (err) {
+      console.error('Error loading preview:', err);
+      toastService.error('Gagal memuat preview data excel');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    openExportDialog: () => {
+      setShowExportConfirmation(true);
+    },
+    openPreviewDialog: () => {
+      handleConfirmPreview();
+    },
+  }));
 
   const tableColumns = useMemo(() => {
     return [
