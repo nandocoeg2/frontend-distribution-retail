@@ -18,6 +18,7 @@ import {
 } from '../services/reportingService';
 import OperationalDocumentModal from '../components/reporting/OperationalDocumentModal.jsx';
 import OutstandingInvoicesModal from '../components/reporting/OutstandingInvoicesModal.jsx';
+import StockStatusModal from '../components/reporting/StockStatusModal.jsx';
 import {
   ChartBarIcon,
   ClipboardDocumentListIcon,
@@ -180,6 +181,17 @@ const Reporting = () => {
     statusFilter: '',
   });
   const [outstandingModalShow, setOutstandingModalShow] = useState(false);
+  const [stockStatusModal, setStockStatusModal] = useState({
+    show: false,
+    statusKey: 'all',
+  });
+
+  const openStockStatusModal = (statusKey = 'all') => {
+    setStockStatusModal({ show: true, statusKey });
+  };
+  const closeStockStatusModal = () => {
+    setStockStatusModal({ show: false, statusKey: 'all' });
+  };
 
   const navigate = useNavigate();
 
@@ -804,10 +816,10 @@ const Reporting = () => {
         <Card padding='lg'>
           <CardHeader
             title='Ringkasan Item'
-            subtitle='Gambaran umum stok dan nilai aset'
+            subtitle='Gambaran umum ketersediaan stok'
           />
 
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
             <StatCard
               title='Total Item'
               value={formatNumber(overview.totalItems || 0)}
@@ -826,21 +838,28 @@ const Reporting = () => {
               icon={<SquaresPlusIcon className='w-8 h-8 text-green-600' />}
               variant='success'
             />
-            <StatCard
-              title='Nilai Stok'
-              value={formatCurrency(overview.totalInventoryValue)}
-              icon={<CurrencyDollarIcon className='w-8 h-8 text-emerald-600' />}
-            />
           </div>
         </Card>
 
         <div className='grid grid-cols-1 gap-6 lg:grid-cols-3'>
           <Card padding='lg' className='h-full'>
-            <CardHeader
-              title='Status Stok'
-              subtitle='Distribusi stok saat ini'
-            />
-            <div className='space-y-4'>
+            <div className='flex items-center justify-between pb-3 mb-4 border-b border-gray-100'>
+              <div>
+                <h3 className='text-lg font-bold text-gray-900'>Status Stok</h3>
+                <p className='text-xs text-gray-500'>
+                  Distribusi stok saat ini
+                </p>
+              </div>
+              <button
+                type='button'
+                onClick={() => openStockStatusModal('all')}
+                className='text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors inline-flex items-center'
+              >
+                Lihat Detail
+                <ChevronRightIcon className='w-3.5 h-3.5 ml-1' />
+              </button>
+            </div>
+            <div className='space-y-3'>
               {[
                 {
                   key: 'normalStock',
@@ -866,10 +885,15 @@ const Reporting = () => {
                   stockTotal
                 );
                 return (
-                  <div key={status.key} className='space-y-2'>
+                  <div
+                    key={status.key}
+                    onClick={() => openStockStatusModal(status.key)}
+                    className='p-2.5 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/40 transition-all cursor-pointer space-y-2'
+                  >
                     <div className='flex items-center justify-between'>
-                      <p className='text-sm font-semibold text-gray-800'>
+                      <p className='text-sm font-semibold text-gray-800 flex items-center'>
                         {status.label}
+                        <ChevronRightIcon className='w-3.5 h-3.5 ml-1 text-gray-400' />
                       </p>
                       <span className='text-xs text-gray-500'>
                         {formatNumber(status.value || 0)} item ·{' '}
@@ -885,7 +909,7 @@ const Reporting = () => {
                   </div>
                 );
               })}
-              <p className='text-xs text-gray-500'>
+              <p className='text-xs text-gray-500 pt-1'>
                 Total item yang dipantau: {formatNumber(stockTotal)}.
               </p>
             </div>
@@ -941,6 +965,14 @@ const Reporting = () => {
             )}
           </Card>
         </div>
+
+        {/* Stock Status Detail Modal */}
+        <StockStatusModal
+          show={stockStatusModal.show}
+          onClose={closeStockStatusModal}
+          initialStatusKey={stockStatusModal.statusKey}
+          stockStatus={stockStatus}
+        />
       </div>
     );
   };
