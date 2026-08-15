@@ -591,21 +591,19 @@ const MutasiBankTableServerSide = forwardRef(({
           emptyCellClassName='px-3 py-6 text-center text-xs text-gray-500'
           footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
           footerContent={
-            <tr>
-              {table.getVisibleLeafColumns().map((column) => {
-                const isFirst = column.id === 'transaction_date';
-                const isAmount = column.id === 'amount';
-                return (
-                  <td key={column.id} className="px-2.5 py-1 text-xs border-t border-gray-300 text-center font-bold">
-                    {isFirst ? (
-                      <span className="text-gray-700 uppercase font-semibold">Total</span>
-                    ) : isAmount ? (
-                      <TableFooterCell column={column} table={table} />
-                    ) : null}
-                  </td>
-                );
-              })}
-            </tr>
+            table.getVisibleLeafColumns().map((column) => {
+              const isFirst = column.id === 'transaction_date';
+              const isAmount = column.id === 'amount';
+              return (
+                <td key={column.id} className="px-2.5 py-1 text-xs border-t border-gray-300 text-center font-bold">
+                  {isFirst ? (
+                    <span className="text-gray-700 uppercase font-semibold">Total</span>
+                  ) : isAmount ? (
+                    <TableFooterCell column={column} table={table} />
+                  ) : null}
+                </td>
+              );
+            })
           }
         />
       </div>
