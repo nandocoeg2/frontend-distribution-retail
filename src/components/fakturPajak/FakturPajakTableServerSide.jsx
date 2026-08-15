@@ -281,7 +281,7 @@ const FakturPajakTableServerSide = ({
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { from: "", to: "" };
           return (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <div className="font-medium text-xs">Tgl Invoice</div>
               <div className="flex flex-col gap-0.5">
                 <DateFilter
@@ -305,7 +305,6 @@ const FakturPajakTableServerSide = ({
           );
         },
         cell: (info) => {
-          // invoicePenagihan is now one-to-one (single object)
           const invoice = info.getValue();
           if (!invoice) {
             return <div className="text-xs text-gray-900">-</div>;
@@ -321,7 +320,7 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor("no_pajak", {
         id: "no_pajak",
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">No Faktur</div>
             <input
               type="text"
@@ -330,8 +329,8 @@ const FakturPajakTableServerSide = ({
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter nomor faktur..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Filter no faktur..."
+              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             />
           </div>
@@ -350,7 +349,7 @@ const FakturPajakTableServerSide = ({
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: "no_invoice_penagihan",
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">No Invoice</div>
             <input
               type="text"
@@ -359,14 +358,13 @@ const FakturPajakTableServerSide = ({
                 column.setFilterValue(event.target.value);
                 setPage(1);
               }}
-              placeholder="Filter nomor invoice..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Filter no invoice..."
+              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               onClick={(event) => event.stopPropagation()}
             />
           </div>
         ),
         cell: (info) => {
-          // invoicePenagihan is now one-to-one (single object)
           const invoice = info.getValue();
           if (!invoice) {
             return <div className="text-xs text-gray-900">-</div>;
@@ -386,7 +384,7 @@ const FakturPajakTableServerSide = ({
         {
           id: "no_lpb",
           header: ({ column }) => (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <div className="font-medium text-xs">No LPB</div>
               <input
                 type="text"
@@ -395,8 +393,8 @@ const FakturPajakTableServerSide = ({
                   column.setFilterValue(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Filter nomor LPB..."
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Filter no LPB..."
+                className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 onClick={(event) => event.stopPropagation()}
               />
             </div>
@@ -505,8 +503,10 @@ const FakturPajakTableServerSide = ({
           );
         },
         cell: (info) => (
-          <div className="text-sm text-gray-900 text-right">
-            {formatCurrency(info.getValue())}
+          <div className="text-right">
+            <div className="text-xs text-gray-900">
+              {formatCurrency(info.getValue())}
+            </div>
           </div>
         ),
         enableSorting: true,
@@ -552,7 +552,57 @@ const FakturPajakTableServerSide = ({
           );
         },
         cell: (info) => {
-          const item = info.row.original;
+          return (
+            <div className="text-right">
+              <div className="text-xs text-gray-900">
+                {formatCurrency(info.getValue())}
+              </div>
+            </div>
+          );
+        },
+        enableSorting: true,
+      }),
+      columnHelper.accessor("total_faktur_pajak", {
+        id: "total_faktur_pajak",
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { min: "", max: "" };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Total</div>
+              <div className="flex flex-col gap-0.5">
+                <input
+                  type="number"
+                  value={filterValue.min ?? ""}
+                  onChange={(e) => {
+                    column.setFilterValue({
+                      ...filterValue,
+                      min: e.target.value,
+                    });
+                    setPage(1);
+                  }}
+                  placeholder="Min"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="number"
+                  value={filterValue.max ?? ""}
+                  onChange={(e) => {
+                    column.setFilterValue({
+                      ...filterValue,
+                      max: e.target.value,
+                    });
+                    setPage(1);
+                  }}
+                  placeholder="Max"
+                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => {
           return (
             <div className="text-right">
               <div className="text-xs text-gray-900">
@@ -664,51 +714,52 @@ const FakturPajakTableServerSide = ({
   });
 
   return (
-    <div className="space-y-4">
-      {selectedFakturIds.length > 0 && (
-        <div className="flex items-center gap-2 mb-2 p-2 bg-blue-50 rounded border border-blue-100">
-          <span className="text-xs font-medium text-blue-700">
-            {selectedFakturIds.length} dipilih
-          </span>
-          {onBulkGenerate && (
+    <div className="space-y-2">
+      {(hasActiveFilters || selectedFakturIds.length > 0) && (
+        <div className="flex justify-between items-center">
+          {selectedFakturIds.length > 0 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-blue-700">
+                {selectedFakturIds.length} dipilih
+              </span>
+              {onBulkGenerate && (
+                <button
+                  onClick={() => onBulkGenerate(selectedFakturIds)}
+                  className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+                >
+                  <DocumentPlusIcon className="h-3.5 w-3.5 mr-1" />
+                  Generate TTF
+                </button>
+              )}
+              {onBulkExportEFaktur && (
+                <button
+                  onClick={() => onBulkExportEFaktur(selectedFakturIds)}
+                  className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors"
+                >
+                  <ArchiveBoxIcon className="h-3.5 w-3.5 mr-1" />
+                  Export e-Faktur
+                </button>
+              )}
+              {onBulkDelete && (
+                <button
+                  onClick={() => onBulkDelete(selectedFakturIds)}
+                  className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors disabled:bg-gray-400"
+                  disabled={deleteLoading}
+                >
+                  <TrashIcon className="h-3.5 w-3.5 mr-1" />
+                  Hapus
+                </button>
+              )}
+            </div>
+          ) : <div />}
+          {hasActiveFilters && (
             <button
-              onClick={() => onBulkGenerate(selectedFakturIds)}
-              className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              onClick={resetFilters}
+              className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
             >
-              <DocumentPlusIcon className="h-3 w-3 mr-1" />
-              Generate TTF
+              Reset Filter
             </button>
           )}
-          {onBulkExportEFaktur && (
-            <button
-              onClick={() => onBulkExportEFaktur(selectedFakturIds)}
-              className="inline-flex items-center px-2 py-1 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
-            >
-              <ArchiveBoxIcon className="h-3 w-3 mr-1" />
-              Export e-Faktur
-            </button>
-          )}
-          {onBulkDelete && (
-            <button
-              onClick={() => onBulkDelete(selectedFakturIds)}
-              className="inline-flex items-center px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-              disabled={deleteLoading}
-            >
-              <TrashIcon className="h-3 w-3 mr-1" />
-              Hapus
-            </button>
-          )}
-        </div>
-      )}
-
-      {hasActiveFilters && (
-        <div className="flex justify-end">
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Reset Semua Filter
-          </button>
         </div>
       )}
 
@@ -733,6 +784,9 @@ const FakturPajakTableServerSide = ({
           if (row.original.id === selectedFakturPajakId) {
             return "bg-blue-50 border-l-4 border-blue-500";
           }
+          if (selectedFakturIds.includes(row.original.id)) {
+            return "bg-green-50";
+          }
           return undefined;
         }}
         onRowClick={(rowData, event) => {
@@ -743,11 +797,11 @@ const FakturPajakTableServerSide = ({
         selectedRowId={selectedFakturPajakId}
         cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"
         emptyCellClassName="px-2 py-1 text-center text-xs text-gray-500"
-        footerRowClassName={`bg-gray-200 font-bold sticky bottom-0 ${(pagination?.totalItems || 0) > 0 ? "z-10" : "z-0"}`}
+        footerRowClassName={`bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 ${(pagination?.totalItems || 0) > 0 ? "z-10" : "z-0"}`}
         footerContent={
           <tr>
             {table.getVisibleLeafColumns().map((column) => (
-              <td key={column.id} className="px-2 py-1 text-xs border-t border-gray-300 text-center">
+              <td key={column.id} className="px-2 py-1 text-xs border-t border-gray-300 border-r border-gray-200 last:border-r-0">
                 <TableFooterCell column={column} table={table} />
               </td>
             ))}

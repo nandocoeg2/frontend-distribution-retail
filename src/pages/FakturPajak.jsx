@@ -316,13 +316,12 @@ const FakturPajakPage = () => {
   }, []);
 
   return (
-    <div className='flex flex-col'>
-      {/* Table Section */}
-      <div className='p-6 bg-white rounded-lg shadow-sm border border-gray-200'>
-        <div className='flex flex-col gap-4'>
+    <div>
+      <div className='bg-white shadow rounded-lg overflow-hidden'>
+        <div className='px-3 py-3 space-y-2'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Faktur Pajak</h3>
-            <div className='flex flex-wrap gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
@@ -330,12 +329,12 @@ const FakturPajakPage = () => {
               >
                 {exportLoading ? (
                   <>
-                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1'></div>
+                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
                     Exporting...
                   </>
                 ) : (
                   <>
-                    <ArrowDownTrayIcon className='w-3.5 h-3.5 mr-1' />
+                    <ArrowDownTrayIcon className='h-4 w-4 mr-1.5' />
                     Export Excel
                   </>
                 )}
@@ -344,7 +343,7 @@ const FakturPajakPage = () => {
                 onClick={() => setIsBulkUploadModalOpen(true)}
                 className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'
               >
-                <ArrowUpTrayIcon className='w-3.5 h-3.5 mr-1' />
+                <ArrowUpTrayIcon className='h-4 w-4 mr-1.5' />
                 Bulk Upload DJP PDF
               </button>
             </div>

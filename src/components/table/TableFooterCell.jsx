@@ -15,36 +15,61 @@ const TableFooterCell = ({ column, table, data = [] }) => {
     "status_name"
   ].includes(column.id);
 
-  // Determine if column is numeric based on its ID or name
+  // Determine if column is an identifier, reference number, date, or text
   const columnIdLower = (column.id || "").toLowerCase();
+  const isIdentifierOrText =
+    columnIdLower.startsWith("no_") ||
+    columnIdLower.startsWith("nomor_") ||
+    columnIdLower.startsWith("kode_") ||
+    columnIdLower.startsWith("code_") ||
+    columnIdLower.startsWith("id_") ||
+    columnIdLower.endsWith("_no") ||
+    columnIdLower.endsWith("_number") ||
+    columnIdLower.endsWith("_code") ||
+    columnIdLower.endsWith("_id") ||
+    columnIdLower.includes("npwp") ||
+    columnIdLower.includes("plu") ||
+    columnIdLower.includes("barcode") ||
+    columnIdLower.includes("nik") ||
+    columnIdLower.includes("telepon") ||
+    columnIdLower.includes("telp") ||
+    columnIdLower.includes("phone") ||
+    columnIdLower.includes("name") ||
+    columnIdLower.includes("nama") ||
+    columnIdLower.includes("customer") ||
+    columnIdLower.includes("supplier") ||
+    columnIdLower.includes("tanggal") ||
+    columnIdLower.includes("date") ||
+    columnIdLower.includes("top");
+
+  // Determine if column is numeric based on its ID or name
   const isNumericColumn =
-    columnIdLower.includes("total") ||
-    columnIdLower.includes("jumlah") ||
-    columnIdLower.includes("nominal") ||
-    columnIdLower.includes("amount") ||
-    columnIdLower.includes("debit") ||
-    columnIdLower.includes("kredit") ||
-    columnIdLower.includes("pajak") ||
-    columnIdLower.includes("saldo") ||
-    columnIdLower.includes("dpp") ||
-    columnIdLower.includes("ppn") ||
-    columnIdLower.includes("biaya") ||
-    columnIdLower.includes("harga") ||
-    columnIdLower.includes("mutasi") ||
-    columnIdLower.includes("kwitansi") ||
-    columnIdLower.includes("value") ||
-    columnIdLower.includes("selisih") ||
-    columnIdLower.includes("qty") ||
-    columnIdLower.includes("quantity") ||
-    columnIdLower.includes("box") ||
-    columnIdLower.includes("dus") ||
-    columnIdLower.includes("carton") ||
-    columnIdLower.includes("berat") ||
-    columnIdLower.includes("potongan") ||
-    columnIdLower.includes("diskon") ||
-    columnIdLower.includes("discount") ||
-    columnIdLower.includes("tax") ||
-    columnIdLower.includes("rate");
+    !isIdentifierOrText &&
+    (columnIdLower.includes("total") ||
+      columnIdLower.includes("jumlah") ||
+      columnIdLower.includes("nominal") ||
+      columnIdLower.includes("amount") ||
+      columnIdLower.includes("debit") ||
+      columnIdLower.includes("kredit") ||
+      columnIdLower.includes("saldo") ||
+      columnIdLower.includes("dpp") ||
+      columnIdLower.includes("ppn") ||
+      columnIdLower.includes("biaya") ||
+      columnIdLower.includes("harga") ||
+      columnIdLower.includes("mutasi") ||
+      columnIdLower.includes("value") ||
+      columnIdLower.includes("selisih") ||
+      columnIdLower.includes("qty") ||
+      columnIdLower.includes("quantity") ||
+      columnIdLower.includes("box") ||
+      columnIdLower.includes("dus") ||
+      columnIdLower.includes("carton") ||
+      columnIdLower.includes("berat") ||
+      columnIdLower.includes("potongan") ||
+      columnIdLower.includes("diskon") ||
+      columnIdLower.includes("discount") ||
+      columnIdLower.includes("tax") ||
+      columnIdLower.includes("rate"));
 
   // Default operation is Sum for numeric columns and Count for others
   const [operation, setOperation] = useState(isNumericColumn ? "sum" : "count");
