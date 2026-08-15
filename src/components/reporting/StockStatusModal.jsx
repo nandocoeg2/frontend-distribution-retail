@@ -5,7 +5,7 @@ import {
   FunnelIcon,
   CubeIcon,
 } from '@heroicons/react/24/outline';
-import StatusBadge from '../common/StatusBadge';
+import { StatusBadge } from '../ui/Badge.jsx';
 
 const formatNumber = (num) =>
   new Intl.NumberFormat('id-ID').format(num || 0);
