@@ -183,7 +183,7 @@ const formatSummaryValue = (keyPath, value) => {
   return String(value);
 };
 
-const MutasiBankTableServerSide = ({
+const MutasiBankTableServerSide = forwardRef(({
   filters = {},
   onViewMutation,
   onValidateMutation,
@@ -194,7 +194,7 @@ const MutasiBankTableServerSide = ({
   isUnassigning = false,
   initialPage = 1,
   initialLimit = 999999,
-}) => {
+}, ref) => {
 
   const {
     data: mutations,
@@ -464,6 +464,7 @@ const MutasiBankTableServerSide = ({
     onViewMutation,
     onUnassignDocument,
     isValidating,
+    isAssigning,
     isUnassigning,
   ]);
 
@@ -472,26 +473,29 @@ const MutasiBankTableServerSide = ({
     columns: tableColumns,
   });
 
-  const summaryData = useMemo(() => {
-    const meta = queryResult?.data?.meta;
-    if (!meta) {
-      return null;
-    }
-
-    const summary =
-      meta.summary || meta.appliedFilters?.summary || meta.stats || null;
-
-    if (!summary || typeof summary !== 'object') {
-      return null;
-    }
-
-    return summary;
-  }, [queryResult?.data?.meta]);
-
-  const totalAmount = useMemo(() => {
-    if (!mutations || !Array.isArray(mutations)) return 0;
-    return mutations.reduce((acc, row) => acc + (Number(row.jumlah) || 0), 0);
-  }, [mutations]);
+  const filteredPreviewData = useMemo(() => {
+    if (!previewData || !previewData.data) return [];
+    return previewData.data
+      .map((row) => ({
+        tanggal: row[0] || '',
+        customer: row[1] || '',
+        keterangan: row[2] || '',
+        invoice: row[3] || '',
+        jumlah: String(row[4] || ''),
+        notes: row[5] || '',
+        status: row[6] || '',
+        raw: row,
+      }))
+      .filter((item) => {
+        const matchTanggal = !localFilters.tanggal || String(item.tanggal).toLowerCase().includes(localFilters.tanggal.toLowerCase());
+        const matchCustomer = !localFilters.customer || String(item.customer).toLowerCase().includes(localFilters.customer.toLowerCase());
+        const matchKeterangan = !localFilters.keterangan || String(item.keterangan).toLowerCase().includes(localFilters.keterangan.toLowerCase());
+        const matchInvoice = !localFilters.invoice || String(item.invoice).toLowerCase().includes(localFilters.invoice.toLowerCase());
+        const matchJumlah = !localFilters.jumlah || String(item.jumlah).toLowerCase().includes(localFilters.jumlah.toLowerCase());
+        const matchStatus = !localFilters.status || String(item.status).toLowerCase().includes(localFilters.status.toLowerCase());
+        return matchTanggal && matchCustomer && matchKeterangan && matchInvoice && matchJumlah && matchStatus;
+      });
+  }, [previewData, localFilters]);
 
   return (
     <div className='space-y-2'>
@@ -530,11 +534,199 @@ const MutasiBankTableServerSide = ({
             </tr>
           }
         />
-
-
       </div>
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={handleConfirmExport}
+        title="Export Excel Mutasi Bank"
+        message="Apakah Anda yakin ingin meng-export data mutasi bank ke Excel berdasarkan filter saat ini?"
+        confirmText="Export Excel"
+        cancelText="Batal"
+        type="info"
+      />
+
+      {/* Excel Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" onClick={() => setShowPreviewModal(false)}></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full border border-gray-100">
+              <div className="bg-white px-6 pt-6 pb-4 sm:pb-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+                  <h3 className="text-lg leading-6 font-bold text-gray-900 flex items-center gap-2">
+                    <span className="p-1.5 bg-green-50 text-green-600 rounded-lg">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </span>
+                    Preview Hasil Export Excel Mutasi Bank
+                  </h3>
+                  <button
+                    onClick={() => setShowPreviewModal(false)}
+                    className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {previewLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                    <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm font-medium text-gray-500 animate-pulse">Menyiapkan preview data...</p>
+                  </div>
+                ) : !previewData || previewData.data?.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p className="text-sm font-semibold text-gray-900">Tidak ada data untuk diexport</p>
+                    <p className="text-xs text-gray-500 mt-1">Silakan sesuaikan filter pencarian Anda.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto max-h-[55vh] border border-gray-200 rounded-lg shadow-sm">
+                    <table className="min-w-full divide-y divide-gray-200 text-xs">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          {previewData.headers?.map((header, idx) => (
+                            <th
+                              key={idx}
+                              className="px-4 py-3 text-left font-bold text-gray-700 uppercase tracking-wider border-b border-gray-200"
+                            >
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                        <tr className="bg-gray-100/50">
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.tanggal}
+                              onChange={(e) => setLocalFilters({ ...localFilters, tanggal: e.target.value })}
+                              placeholder="Filter Tgl..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.customer}
+                              onChange={(e) => setLocalFilters({ ...localFilters, customer: e.target.value })}
+                              placeholder="Filter Customer..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.keterangan}
+                              onChange={(e) => setLocalFilters({ ...localFilters, keterangan: e.target.value })}
+                              placeholder="Filter Deskripsi..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.invoice}
+                              onChange={(e) => setLocalFilters({ ...localFilters, invoice: e.target.value })}
+                              placeholder="Filter Invoice..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.jumlah}
+                              onChange={(e) => setLocalFilters({ ...localFilters, jumlah: e.target.value })}
+                              placeholder="Filter Nominal..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                          <th className="px-3 py-1.5 border-b border-gray-200"></th>
+                          <th className="px-3 py-1.5 border-b border-gray-200">
+                            <input
+                              type="text"
+                              value={localFilters.status}
+                              onChange={(e) => setLocalFilters({ ...localFilters, status: e.target.value })}
+                              placeholder="Filter Status..."
+                              className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500 font-normal bg-white"
+                            />
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-100">
+                        {filteredPreviewData.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-gray-500 font-medium bg-gray-50/50">
+                              Tidak ada data yang cocok dengan filter pencarian.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredPreviewData.map((item, rowIdx) => (
+                            <tr key={rowIdx} className="hover:bg-gray-50/70 transition-colors odd:bg-white even:bg-gray-50/30">
+                              <td className="px-4 py-2.5 font-medium text-gray-900 whitespace-nowrap">{item.tanggal}</td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap">{item.customer}</td>
+                              <td className="px-4 py-2.5 text-gray-600 max-w-xs truncate" title={item.keterangan}>{item.keterangan}</td>
+                              <td className="px-4 py-2.5 text-gray-700 whitespace-nowrap font-mono">{item.invoice}</td>
+                              <td className="px-4 py-2.5 text-gray-900 font-semibold whitespace-nowrap text-right pr-4">{formatCurrency(Number(item.jumlah) || 0)}</td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{item.notes || '-'}</td>
+                              <td className="px-4 py-2.5 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
+                                  item.status === 'Match' 
+                                    ? 'bg-green-50 text-green-700' 
+                                    : 'bg-yellow-50 text-yellow-700'
+                                }`}>
+                                  {item.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
+                  <div>
+                    Menampilkan <span className="font-semibold text-gray-700">{filteredPreviewData.length}</span> dari <span className="font-semibold text-gray-700">{previewData?.totalItems || 0}</span> total baris.
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowPreviewModal(false)}
+                      className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      onClick={handleConfirmExport}
+                      disabled={!previewData || previewData.data?.length === 0}
+                      className="px-4 py-2 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm inline-flex items-center gap-1.5"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download Excel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+});
+
+MutasiBankTableServerSide.displayName = 'MutasiBankTableServerSide';
 
 export default MutasiBankTableServerSide;

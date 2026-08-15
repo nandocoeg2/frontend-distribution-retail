@@ -188,6 +188,79 @@ class MutasiBankService {
       throw error;
     }
   }
+
+  async exportExcel(params = {}) {
+    try {
+      const response = await this.api.get('/export-excel', {
+        params,
+        paramsSerializer: serializeParams,
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting bank mutations to excel:', error);
+      throw error;
+    }
+  }
+
+  async previewExportExcel(params = {}) {
+    try {
+      const response = await this.listMutations({ ...params, page: 1, limit: 1000 });
+      const mutations = response?.data || response?.mutations || [];
+
+      const headers = [
+        'TANGGAL',
+        'CUSTOMER',
+        'DESKRIPSI',
+        'NO INVOICE',
+        'NOMINAL',
+        'KETERANGAN (RETUR/REBATE)',
+        'STATUS',
+      ];
+
+      const rows = mutations.map((item) => {
+        const customerName =
+          item.customer?.namaCustomer ||
+          item.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer ||
+          item.tandaTerimaFaktur?.groupCustomer?.nama_group ||
+          '-';
+
+        const invoiceNumber =
+          item.invoicePenagihan?.no_invoice_penagihan ||
+          item.tandaTerimaFaktur?.invoicePenagihan?.no_invoice_penagihan ||
+          item.invoicePengiriman?.no_invoice ||
+          '-';
+
+        const statusLabel =
+          item.validation_status === 'MATCHED'
+            ? 'Match'
+            : 'Unmatched';
+
+        const tanggalStr = item.tanggal_transaksi
+          ? new Date(item.tanggal_transaksi).toLocaleDateString('id-ID')
+          : '-';
+
+        return [
+          tanggalStr,
+          customerName,
+          item.keterangan || '-',
+          invoiceNumber,
+          Number(item.jumlah) || 0,
+          item.validation_notes || '',
+          statusLabel,
+        ];
+      });
+
+      return {
+        headers,
+        data: rows,
+        totalItems: response?.pagination?.totalItems || mutations.length,
+      };
+    } catch (error) {
+      console.error('Error previewing bank mutations excel:', error);
+      throw error;
+    }
+  }
 }
 
 const mutasiBankService = new MutasiBankService();
