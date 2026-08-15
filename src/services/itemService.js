@@ -21,21 +21,21 @@ const getHeaders = () => {
 export const getItems = async (page = 1, limit = 10, filters = {}) => {
   // Build query params, only include filters if they have values
   const params = new URLSearchParams();
-  params.append('page', page);
-  params.append('limit', limit);
-
-  // Always include companyId to filter items by current company
-  const companyId = getCompanyId();
-  if (companyId) {
-    params.append('companyId', companyId);
-  }
+  params.set('page', page);
+  params.set('limit', limit);
 
   // Add filters only if they exist and have values
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
-      params.append(key, value);
+      params.set(key, value);
     }
   });
+
+  // Always include companyId to filter items by current company if not explicitly provided
+  const companyId = getCompanyId();
+  if (companyId && !params.has('companyId')) {
+    params.set('companyId', companyId);
+  }
 
   const response = await fetch(`${API_URL}?${params}`, {
     headers: getHeaders()
@@ -120,14 +120,14 @@ export const getItemById = async (id) => {
 
 export const searchItems = async (query, page = 1, limit = 10) => {
   const params = new URLSearchParams();
-  params.append('q', query);
-  params.append('page', page);
-  params.append('limit', limit);
+  params.set('q', query);
+  params.set('page', page);
+  params.set('limit', limit);
 
   // Always include companyId to filter items by current company
   const companyId = getCompanyId();
   if (companyId) {
-    params.append('companyId', companyId);
+    params.set('companyId', companyId);
   }
 
   const response = await fetch(`${API_URL}/search?${params}`, {
@@ -154,18 +154,18 @@ export const searchItems = async (query, page = 1, limit = 10) => {
 export const searchItemsWithFilters = async (params = {}) => {
   const searchParams = new URLSearchParams();
 
-  // Always include companyId to filter items by current company
-  const companyId = getCompanyId();
-  if (companyId) {
-    searchParams.append('companyId', companyId);
-  }
-
-  // Add all provided params
+  // Add all provided params first
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, value);
+      searchParams.set(key, value);
     }
   });
+
+  // Always include companyId to filter items by current company if not explicitly provided
+  const companyId = getCompanyId();
+  if (companyId && !searchParams.has('companyId')) {
+    searchParams.set('companyId', companyId);
+  }
 
   const response = await fetch(`${API_URL}/search?${searchParams}`, {
     headers: getHeaders()
