@@ -14,6 +14,7 @@ const createInitialFormData = () => ({
   telp: '',
   email: '',
   direktur_utama: '',
+  contact_person_ttf: '',
   npwp: '',
   id_tku: '',
   logo: null,

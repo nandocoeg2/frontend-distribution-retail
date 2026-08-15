@@ -28,6 +28,7 @@ const getFormDataFromCompany = (company = {}) => ({
   telp: company.telp || '',
   email: company.email || '',
   direktur_utama: company.direktur_utama || '',
+  contact_person_ttf: company.contact_person_ttf || '',
   npwp: company.npwp || '',
   id_tku: company.id_tku || '',
   logo: company.logo || null,
@@ -332,6 +333,7 @@ const CompanyDetailCard = ({ company, onClose, onUpdate, updateCompany }) => {
               data={[
                 { label: 'Phone', value: company?.telp || '—', copyable: !!company?.telp },
                 { label: 'Email', value: company?.email || '—', copyable: !!company?.email },
+                { label: 'Contact Person TTF', value: company?.contact_person_ttf || '—' },
               ]}
             />
           </div>

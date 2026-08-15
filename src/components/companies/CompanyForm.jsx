@@ -218,6 +218,18 @@ const CompanyForm = ({
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person TTF</label>
+          <input
+            type="text"
+            name="contact_person_ttf"
+            value={formData.contact_person_ttf || ''}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="cth. Nama PIC TTF"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
           <input
             type="text"

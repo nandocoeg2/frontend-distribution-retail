@@ -157,6 +157,7 @@ const ViewCompanyModal = ({ show, onClose, company }) => {
                   data={[
                     { label: 'Phone', value: company?.telp, copyable: true },
                     { label: 'Email', value: company?.email, copyable: true },
+                    { label: 'Contact Person TTF', value: company?.contact_person_ttf },
                   ]}
                 />
               </div>
