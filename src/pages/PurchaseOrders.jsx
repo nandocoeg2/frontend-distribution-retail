@@ -54,14 +54,14 @@ const extractDuplicateGroups = (failedItems = []) => {
 
 const formatDuplicateMessage = (groups = []) => {
   if (!groups.length) {
-    return 'Ditemukan nomor PO duplikat. Tandai duplikat sebagai FAILED (menyisakan data paling awal) lalu lanjutkan proses?';
+    return 'Ditemukan nomor PO duplikat. Batalkan duplikat (menyisakan data paling awal) lalu lanjutkan proses?';
   }
 
   const details = groups
     .map((group) => `"${group.poNumber}" (${group.ids.length} data)`)
     .join(', ');
 
-  return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin menandai duplikat sebagai FAILED (menyisakan data paling awal) lalu melanjutkan proses?`;
+  return `Ditemukan ${groups.length} nomor PO duplikat: ${details}. Apakah Anda ingin membatalkan duplikat (menyisakan data paling awal) lalu melanjutkan proses?`;
 };
 
 const PurchaseOrders = () => {
@@ -364,7 +364,7 @@ const PurchaseOrders = () => {
       const messageParts = [];
 
       if (failedCount > 0) {
-        messageParts.push(`Berhasil mengupdate ${failedCount} purchase order duplikat menjadi FAILED.`);
+        messageParts.push(`Berhasil membatalkan ${failedCount} purchase order duplikat.`);
       }
 
       messageParts.push(`Berhasil memproses ${successCount} purchase order.`);
@@ -392,9 +392,9 @@ const PurchaseOrders = () => {
     const idsSnapshot = [...ids];
 
     openConfirmationDialog({
-      title: "Tandai Duplikat Purchase Order sebagai FAILED",
+      title: "Batalkan Duplikat Purchase Order",
       message: formatDuplicateMessage(duplicateGroups),
-      confirmText: "Tandai FAILED & Proses",
+      confirmText: "Batalkan Duplikat & Proses",
       cancelText: "Batal",
       type: "danger"
     }, () => handleDuplicateCleanup(duplicateGroups, idsSnapshot, options));
@@ -416,7 +416,7 @@ const PurchaseOrders = () => {
         const displayIds = resultData.failedIds.slice(0, maxDisplay).join(', ');
         const remaining = resultData.failedIds.length - maxDisplay;
         const failedIds = remaining > 0 ? `${displayIds}, ... dan ${remaining} lainnya` : displayIds;
-        showError(`Gagal mengupdate ${resultData.failedIds.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
+        showError(`Gagal membatalkan ${resultData.failedIds.length} purchase order duplikat (${failedIds}). Periksa kembali sebelum melanjutkan.`);
         return;
       }
 
@@ -433,7 +433,7 @@ const PurchaseOrders = () => {
       const idsToProcess = Array.from(idsToProcessSet);
 
       if (idsToProcess.length === 0) {
-        showSuccess(`Berhasil mengupdate ${idsMarkedFailed.length} purchase order duplikat menjadi FAILED. Tidak ada data tersisa untuk diproses.`);
+        showSuccess(`Berhasil membatalkan ${idsMarkedFailed.length} purchase order duplikat. Tidak ada data tersisa untuk diproses.`);
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
         hideDialog();

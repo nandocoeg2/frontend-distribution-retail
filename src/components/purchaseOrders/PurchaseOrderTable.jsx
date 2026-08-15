@@ -75,12 +75,10 @@ const PurchaseOrderTable = ({
     return (
       normalizedName === 'processing purchase order' ||
       normalizedCode === 'processing purchase order' ||
-      normalizedName === 'failed purchase order' ||
-      normalizedCode === 'failed purchase order' ||
-      normalizedName === 'processed purchase order' ||
-      normalizedCode === 'processed purchase order' ||
       normalizedName === 'completed purchase order' ||
-      normalizedCode === 'completed purchase order'
+      normalizedCode === 'completed purchase order' ||
+      normalizedName === 'canceled purchase order' ||
+      normalizedCode === 'canceled purchase order'
     );
   };
 
