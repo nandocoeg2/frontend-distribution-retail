@@ -81,15 +81,12 @@ const OperationalDocumentModal = ({
   const [activeTab, setActiveTab] = useState(initialTab);
   const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   useEffect(() => {
     if (show) {
       setActiveTab(initialTab || 'purchaseOrders');
       setStatusFilter(initialStatusFilter || '');
       setSearchQuery('');
-      setCurrentPage(1);
     }
   }, [show, initialTab, initialStatusFilter]);
 
@@ -115,7 +112,7 @@ const OperationalDocumentModal = ({
     return Array.from(statuses);
   }, [rawList]);
 
-  // Filtered documents
+  // Filtered documents (renders all matching documents directly)
   const filteredList = useMemo(() => {
     return rawList.filter((item) => {
       const matchStatus =
@@ -137,13 +134,6 @@ const OperationalDocumentModal = ({
       return matchStatus && matchSearch;
     });
   }, [rawList, statusFilter, searchQuery]);
-
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage));
-  const paginatedList = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredList.slice(start, start + itemsPerPage);
-  }, [filteredList, currentPage, itemsPerPage]);
 
   if (!show) return null;
 
@@ -292,9 +282,8 @@ const OperationalDocumentModal = ({
                   </tr>
                 </thead>
                 <tbody className='divide-y divide-gray-200 bg-white font-sans'>
-                  {paginatedList.map((item, index) => {
-                    const rowNumber =
-                      (currentPage - 1) * itemsPerPage + index + 1;
+                  {filteredList.map((item, index) => {
+                    const rowNumber = index + 1;
                     return (
                       <tr
                         key={item.id || item.documentNumber || index}
@@ -356,60 +345,23 @@ const OperationalDocumentModal = ({
           )}
         </div>
 
-        {/* Footer & Pagination */}
-        <div className='flex flex-col sm:flex-row items-center justify-between px-6 py-3.5 border-t border-gray-100 bg-gray-50/50 gap-3'>
+        {/* Footer */}
+        <div className='flex items-center justify-between px-6 py-3.5 border-t border-gray-100 bg-gray-50/50 shrink-0'>
           <div className='text-xs text-gray-500'>
-            Menampilkan{' '}
-            <span className='font-semibold text-gray-700'>
-              {filteredList.length === 0
-                ? 0
-                : (currentPage - 1) * itemsPerPage + 1}
-            </span>{' '}
-            -{' '}
-            <span className='font-semibold text-gray-700'>
-              {Math.min(currentPage * itemsPerPage, filteredList.length)}
-            </span>{' '}
-            dari{' '}
+            Total{' '}
             <span className='font-semibold text-gray-700'>
               {filteredList.length}
             </span>{' '}
             dokumen
           </div>
 
-          <div className='flex items-center space-x-2'>
-            {totalPages > 1 && (
-              <div className='flex items-center space-x-1'>
-                <button
-                  type='button'
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className='px-2.5 py-1 text-xs font-medium border border-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white'
-                >
-                  Sebelumnya
-                </button>
-                <span className='text-xs px-2 text-gray-600'>
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  type='button'
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                  className='px-2.5 py-1 text-xs font-medium border border-gray-300 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white'
-                >
-                  Selanjutnya
-                </button>
-              </div>
-            )}
-            <button
-              type='button'
-              onClick={onClose}
-              className='px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition'
-            >
-              Tutup
-            </button>
-          </div>
+          <button
+            type='button'
+            onClick={onClose}
+            className='px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition shadow-sm'
+          >
+            Tutup
+          </button>
         </div>
       </div>
     </div>
