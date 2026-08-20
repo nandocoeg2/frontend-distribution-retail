@@ -158,6 +158,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     error,
     resetFilters,
     tableOptions,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useInvoicePenagihanQuery,
     selectData: (response) => response?.invoices ?? [],
@@ -168,6 +169,30 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     columnFilterDebounceMs: 0,
     storageKey: 'invoice-penagihan',
   });
+
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    (invoices || []).forEach((item) => {
+      const code = item.status?.status_code;
+      const name = item.status?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { id: code, name: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status_codes');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = STATUS_OPTIONS.find((s) => s.id === val);
+        map.set(val, { id: val, name: fallback?.name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [invoices, columnFilters]);
 
   const handleSelectAllInternalToggle = useCallback(() => {
     const currentPageInvoiceIds = invoices.map((inv) => inv.id).filter(Boolean);
@@ -432,7 +457,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
           <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
-              options={STATUS_OPTIONS}
+              options={statusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -536,6 +561,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       selectedInvoices,
       onSelectionChange,
       setPage,
+      statusOptions,
       groupCustomers,
     ]
   );

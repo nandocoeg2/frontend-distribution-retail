@@ -8,6 +8,7 @@ import {
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
 import { AccordionItem, InfoTable } from '../ui';
 import InvoicePenagihanForm from './InvoicePenagihanForm';
+import InvoicePenagihanDetailsTable from './InvoicePenagihanDetailsTable';
 import toastService from '../../services/toastService';
 
 const InvoicePenagihanDetailCard = ({
@@ -243,43 +244,9 @@ const InvoicePenagihanDetailCard = ({
 
             {activeTab === 'details' && (
               <div className='overflow-hidden bg-white border border-gray-200 rounded'>
-                {invoice.invoicePenagihanDetails && invoice.invoicePenagihanDetails.length > 0 ? (
-                  <div className='overflow-x-auto'>
-                    <table className='min-w-full divide-y divide-gray-200 text-xs'>
-                      <thead className='bg-gray-50'>
-                        <tr>
-                          <th className='px-2 py-1.5 text-left font-medium text-gray-500'>Barang</th>
-                          <th className='px-2 py-1.5 text-left font-medium text-gray-500'>PLU</th>
-                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Qty</th>
-                          <th className='px-2 py-1.5 text-left font-medium text-gray-500'>Sat</th>
-                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Harga</th>
-                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Disc%</th>
-                          <th className='px-2 py-1.5 text-right font-medium text-gray-500'>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className='bg-white divide-y divide-gray-100'>
-                        {invoice.invoicePenagihanDetails.map((detail, index) => (
-                          <tr key={detail.id || index} className='hover:bg-gray-50'>
-                            <td className='px-2 py-1.5 text-gray-900'>{detail.nama_barang}</td>
-                            <td className='px-2 py-1.5 text-gray-600'>{detail.PLU}</td>
-                            <td className='px-2 py-1.5 text-right text-gray-900'>{detail.quantity}</td>
-                            <td className='px-2 py-1.5 text-gray-600'>{detail.satuan}</td>
-                            <td className='px-2 py-1.5 text-right text-gray-900'>{formatCurrency(detail.harga)}</td>
-                            <td className='px-2 py-1.5 text-right text-gray-600'>
-                              {typeof detail.discount_percentage === 'number' ? `${detail.discount_percentage}%` : '-'}
-                            </td>
-                            <td className='px-2 py-1.5 text-right font-medium text-gray-900'>{formatCurrency(detail.total)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className='py-6 text-center'>
-                    <DocumentTextIcon className='w-8 h-8 mx-auto text-gray-300 mb-2' />
-                    <p className='text-xs text-gray-500'>Tidak ada detail barang</p>
-                  </div>
-                )}
+                <InvoicePenagihanDetailsTable
+                  details={invoice.invoicePenagihanDetails || invoice.invoiceDetails || []}
+                />
               </div>
             )}
           </>

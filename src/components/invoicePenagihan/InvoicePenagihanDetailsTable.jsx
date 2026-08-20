@@ -18,7 +18,7 @@ const formatNumber = (val) => {
   });
 };
 
-const InvoicePengirimanDetailsTable = ({ details = [] }) => {
+const InvoicePenagihanDetailsTable = ({ details = [] }) => {
   const [columnSizing, setColumnSizing] = useState({});
 
   const columns = useMemo(
@@ -197,7 +197,7 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
       ),
       columnHelper.accessor(
         (row) => {
-          const ppn = row.ppnRupiah ?? row.ppn_rupiah;
+          const ppn = row.ppn_rupiah ?? row.ppnRupiah;
           if (ppn !== undefined && ppn !== null && ppn !== '') {
             return Number(ppn);
           }
@@ -228,7 +228,7 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
             const harga = Number(row.harga_after_potongan_b ?? row.harga_after_potongan_a ?? row.harga ?? 0) || 0;
             total = qty * harga;
           }
-          const ppnRaw = row.ppnRupiah ?? row.ppn_rupiah;
+          const ppnRaw = row.ppn_rupiah ?? row.ppnRupiah;
           const ppn =
             ppnRaw !== undefined && ppnRaw !== null && ppnRaw !== ''
               ? Number(ppnRaw)
@@ -298,4 +298,4 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
   );
 };
 
-export default InvoicePengirimanDetailsTable;
+export default InvoicePenagihanDetailsTable;

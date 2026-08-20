@@ -268,6 +268,7 @@ const SuratJalanTableServerSide = forwardRef(({
     error,
     resetFilters,
     tableOptions,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useSuratJalanQuery,
     selectData: (response) => response?.suratJalan ?? [],
@@ -279,6 +280,50 @@ const SuratJalanTableServerSide = forwardRef(({
     initialSorting: [{ id: 'no_surat_jalan', desc: true }],
     storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
+
+  const dynamicPoOptions = useMemo(() => {
+    const map = new Map();
+    (suratJalan || []).forEach((item) => {
+      const poNumber = item.purchaseOrder?.po_number || item.po_number;
+      if (poNumber && !map.has(poNumber)) {
+        map.set(poNumber, { id: poNumber, name: poNumber });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'po_number');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [suratJalan, columnFilters]);
+
+  const dynamicDeliverOptions = useMemo(() => {
+    const map = new Map();
+    (suratJalan || []).forEach((item) => {
+      const deliver = item.deliver_to;
+      if (deliver && !map.has(deliver)) {
+        map.set(deliver, { id: deliver, name: deliver });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'deliver_to');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [suratJalan, columnFilters]);
 
   const columns = useMemo(
     () => [
