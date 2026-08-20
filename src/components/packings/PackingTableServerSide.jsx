@@ -446,6 +446,54 @@ const PackingTableServerSide = forwardRef(({
     },
   }));
 
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    (packings || []).forEach((item) => {
+      const id = item.purchaseOrder?.customer?.id || item.customerId;
+      const name = item.purchaseOrder?.customer?.namaCustomer;
+      if (id && name && !map.has(id)) {
+        map.set(id, { id, namaCustomer: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'customer_name');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = customers.find((c) => c.id === val);
+        map.set(val, { id: val, namaCustomer: fallback?.namaCustomer || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.namaCustomer.localeCompare(b.namaCustomer)
+    );
+  }, [packings, columnFilters, customers]);
+
+  const dynamicStatusOptions = useMemo(() => {
+    const map = new Map();
+    (packings || []).forEach((item) => {
+      const code = item.status?.status_code;
+      const name = item.status?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { id: code, name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = statusOptions.find((s) => s.id === val);
+        map.set(val, { id: val, name: fallback?.name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [packings, columnFilters, statusOptions]);
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -497,7 +545,7 @@ const PackingTableServerSide = forwardRef(({
           <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-xs'>Customer</div>
             <AutocompleteCheckboxLimitTag
-              options={customers}
+              options={customerOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder='Semua'
@@ -612,7 +660,7 @@ const PackingTableServerSide = forwardRef(({
           <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-xs'>Status</div>
             <AutocompleteCheckboxLimitTag
-              options={statusOptions}
+              options={dynamicStatusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder='Semua'
@@ -714,8 +762,8 @@ const PackingTableServerSide = forwardRef(({
       onDelete,
       deleteLoading,
       setPage,
-      customers,
-      statusOptions,
+      customerOptions,
+      dynamicStatusOptions,
     ]
   );
 
