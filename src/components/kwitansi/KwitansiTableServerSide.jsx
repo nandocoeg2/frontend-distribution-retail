@@ -150,6 +150,7 @@ const KwitansiTableServerSide = ({
     isLoading,
     error,
     tableOptions,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useKwitansiQuery,
     selectData: (response) => response?.kwitansis ?? [],
@@ -159,6 +160,52 @@ const KwitansiTableServerSide = ({
     globalFilter: globalFilterConfig,
     getQueryParams,
   });
+
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    (kwitansis || []).forEach((item) => {
+      const name = item.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer;
+      if (name && !map.has(name)) {
+        map.set(name, { namaCustomer: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'customer_name');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { namaCustomer: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.namaCustomer.localeCompare(b.namaCustomer)
+    );
+  }, [kwitansis, columnFilters]);
+
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    (kwitansis || []).forEach((item) => {
+      const code = item.status?.status_code;
+      const name = item.status?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { id: code, name: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status_code');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = STATUS_OPTIONS.find((s) => s.id === val);
+        map.set(val, { id: val, name: fallback?.name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [kwitansis, columnFilters]);
 
   const totalGrandTotal = useMemo(() => {
     if (!kwitansis || !Array.isArray(kwitansis)) return 0;
@@ -497,7 +544,7 @@ const KwitansiTableServerSide = ({
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
             <AutocompleteCheckboxLimitTag
-              options={customers}
+              options={customerOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -530,7 +577,7 @@ const KwitansiTableServerSide = ({
           <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
-              options={STATUS_OPTIONS}
+              options={statusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -560,7 +607,8 @@ const KwitansiTableServerSide = ({
       selectedKwitansis,
       onSelectKwitansi,
       handleSelectAllInternalToggle,
-      customers,
+      customerOptions,
+      statusOptions,
     ]
   );
 

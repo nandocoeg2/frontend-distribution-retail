@@ -245,6 +245,7 @@ const InvoicePengirimanTableServerSide = ({
     error,
     resetFilters,
     tableOptions,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useInvoicePengirimanQuery,
     selectData,
@@ -256,6 +257,55 @@ const InvoicePengirimanTableServerSide = ({
     columnFilterDebounceMs: 0,
     storageKey: "invoice-pengiriman", // Persist filter state to sessionStorage
   });
+
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    (invoices || []).forEach((item) => {
+      const id = item.purchaseOrder?.customer?.id || item.customerId;
+      const name = item.purchaseOrder?.customer?.namaCustomer;
+      if (id && name && !map.has(id)) {
+        map.set(id, { id, namaCustomer: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === "customerIds");
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = customers.find((c) => c.id === val);
+        map.set(val, { id: val, namaCustomer: fallback?.namaCustomer || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.namaCustomer.localeCompare(b.namaCustomer)
+    );
+  }, [invoices, columnFilters, customers]);
+
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    (invoices || []).forEach((item) => {
+      const statusObj = item.status || item.statusPembayaran;
+      const code = statusObj?.status_code;
+      const name = statusObj?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { id: code, name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === "status_codes");
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = STATUS_OPTIONS.find((s) => s.id === val);
+        map.set(val, { id: val, name: fallback?.name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [invoices, columnFilters]);
 
   const totalGrandTotal = useMemo(() => {
     if (!invoices || !Array.isArray(invoices)) return 0;
@@ -392,7 +442,7 @@ const InvoicePengirimanTableServerSide = ({
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
             <AutocompleteCheckboxLimitTag
-              options={customers}
+              options={customerOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
@@ -431,7 +481,7 @@ const InvoicePengirimanTableServerSide = ({
           >
             <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
-              options={STATUS_OPTIONS}
+              options={statusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
@@ -474,7 +524,8 @@ const InvoicePengirimanTableServerSide = ({
       onSelectInvoice,
       onSelectAllInvoices,
       setPage,
-      customers,
+      customerOptions,
+      statusOptions,
     ],
   );
 

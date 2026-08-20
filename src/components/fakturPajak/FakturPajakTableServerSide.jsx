@@ -182,7 +182,15 @@ const FakturPajakTableServerSide = ({
 
   // Stabilize selectData to prevent unnecessary useMemo recomputation in useServerSideTable
   const selectData = useCallback(
-    (response) => response?.fakturPajaks ?? [],
+    (response) => {
+      const items = response?.fakturPajaks ?? [];
+      return items.map((item) => ({
+        ...item,
+        total_faktur_pajak:
+          (parseFloat(item.dasar_pengenaan_pajak) || 0) +
+          (parseFloat(item.ppnRupiah) || 0),
+      }));
+    },
     [],
   );
 
@@ -199,6 +207,7 @@ const FakturPajakTableServerSide = ({
     error,
     tableOptions,
     queryParams,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useFakturPajakQuery,
     selectData,
@@ -207,6 +216,79 @@ const FakturPajakTableServerSide = ({
     initialLimit: 9999,
     getQueryParams,
   });
+
+  // Dynamic filter options based on current filtered fakturPajaks data
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    // 1. Add all customers from current filtered fakturPajaks
+    (fakturPajaks || []).forEach((item) => {
+      if (item.customer?.namaCustomer) {
+        map.set(item.customer.namaCustomer, item.customer);
+      }
+    });
+
+    // 2. Keep any currently selected customers so they don't disappear from the selection tags/checkboxes
+    const selectedCustomers =
+      columnFilters?.find((f) => f.id === "customer_names")?.value || [];
+    selectedCustomers.forEach((name) => {
+      if (!map.has(name)) {
+        const found = customers.find((c) => c.namaCustomer === name);
+        map.set(name, found || { namaCustomer: name, kodeCustomer: name });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      (a.namaCustomer || "").localeCompare(b.namaCustomer || "")
+    );
+  }, [fakturPajaks, customers, columnFilters]);
+
+  const topOptions = useMemo(() => {
+    const map = new Map();
+    // 1. Add all TOPs from current filtered fakturPajaks
+    (fakturPajaks || []).forEach((item) => {
+      if (item.termOfPayment?.kode_top) {
+        map.set(item.termOfPayment.kode_top, item.termOfPayment);
+      }
+    });
+
+    // 2. Keep any currently selected TOPs
+    const selectedTops =
+      columnFilters?.find((f) => f.id === "top_codes")?.value || [];
+    selectedTops.forEach((code) => {
+      if (!map.has(code)) {
+        const found = termOfPayments.find((t) => t.kode_top === code);
+        map.set(code, found || { kode_top: code });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      (a.kode_top || "").localeCompare(b.kode_top || "")
+    );
+  }, [fakturPajaks, termOfPayments, columnFilters]);
+
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    // 1. Add all statuses from current filtered fakturPajaks
+    (fakturPajaks || []).forEach((item) => {
+      const statusCode = item.status?.status_code;
+      const statusName = item.status?.status_name;
+      if (statusCode) {
+        map.set(statusCode, { id: statusCode, name: statusName || statusCode });
+      }
+    });
+
+    // 2. Keep any currently selected statuses
+    const selectedStatuses =
+      columnFilters?.find((f) => f.id === "status_codes")?.value || [];
+    selectedStatuses.forEach((code) => {
+      if (!map.has(code)) {
+        const found = STATUS_OPTIONS.find((s) => s.id === code);
+        map.set(code, found || { id: code, name: code });
+      }
+    });
+
+    return STATUS_OPTIONS.filter((s) => map.has(s.id));
+  }, [fakturPajaks, columnFilters]);
 
   const totals = useMemo(() => {
     if (!fakturPajaks || !Array.isArray(fakturPajaks)) return { dpp: 0, ppn: 0 };
@@ -432,7 +514,7 @@ const FakturPajakTableServerSide = ({
           >
             <div className="font-medium text-xs">Customer</div>
             <AutocompleteCheckboxLimitTag
-              options={customers}
+              options={customerOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
@@ -622,7 +704,7 @@ const FakturPajakTableServerSide = ({
           >
             <div className="font-medium text-xs">TOP</div>
             <AutocompleteCheckboxLimitTag
-              options={termOfPayments}
+              options={topOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
@@ -665,7 +747,7 @@ const FakturPajakTableServerSide = ({
             >
               <div className="font-medium text-xs">Status</div>
               <AutocompleteCheckboxLimitTag
-                options={STATUS_OPTIONS}
+                options={statusOptions}
                 value={column.getFilterValue() ?? []}
                 onChange={(e) => {
                   column.setFilterValue(e.target.value);

@@ -138,6 +138,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     error,
     tableOptions,
     filters,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useLaporanPenerimaanBarangQuery,
     selectData: (response) => response?.reports ?? [],
@@ -161,6 +162,54 @@ const LaporanPenerimaanBarangTableServerSide = ({
     }, []),
     storageKey: 'laporan-penerimaan-barang', // Persist filter state to sessionStorage
   });
+
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const id = item.customer?.id || item.customerId;
+      const name = item.customer?.namaCustomer;
+      if (id && name && !map.has(id)) {
+        map.set(id, { id, namaCustomer: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'customerIds');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = customers.find((c) => c.id === val);
+        map.set(val, { id: val, namaCustomer: fallback?.namaCustomer || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.namaCustomer.localeCompare(b.namaCustomer)
+    );
+  }, [reports, columnFilters, customers]);
+
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const code = item.status?.status_code;
+      const name = item.status?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { id: code, name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status_codes');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = lpbStatuses.find((s) => s.status_code === val);
+        map.set(val, { id: val, name: fallback?.status_name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [reports, columnFilters, lpbStatuses]);
 
   const totals = useMemo(() => {
     if (!reports || !Array.isArray(reports)) {
@@ -496,7 +545,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
             <AutocompleteCheckboxLimitTag
-              options={customers}
+              options={customerOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -526,10 +575,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
           <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
-              options={lpbStatuses.map((status) => ({
-                id: status.status_code,
-                name: status.status_name,
-              }))}
+              options={statusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="Semua"
@@ -558,85 +604,64 @@ const LaporanPenerimaanBarangTableServerSide = ({
             <RangeColumnFilter column={column} setPage={setPage} />
           </div>
         ),
-        cell: (info) => {
-          const value = info.getValue();
-          return <span className="font-medium">{value != null ? formatCurrency(value) : '-'}</span>;
-        },
+        cell: (info) => <span className="font-medium">{info.getValue() ? formatCurrency(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.grand_total ?? null, {
         id: 'grandtotal_invoice',
         header: ({ column }) => (
           <div className="space-y-0.5">
-            <div className="font-medium text-xs">Grandtotal Invoice</div>
+            <div className="font-medium text-xs">Grandtotal Inv</div>
             <RangeColumnFilter column={column} setPage={setPage} />
           </div>
         ),
-        cell: (info) => {
-          const value = info.getValue();
-          return <span className="font-medium">{value != null ? formatCurrency(value) : '-'}</span>;
-        },
+        cell: (info) => <span className="font-medium">{info.getValue() ? formatCurrency(info.getValue()) : '-'}</span>,
       }),
       columnHelper.display({
         id: 'selisih',
-        header: () => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Selisih</div>
-          </div>
-        ),
+        header: () => <div className="font-medium text-xs">Selisih</div>,
         cell: ({ row }) => {
-          const grandtotalLpb = parseFloat(row.original?.detailInvoice?.grand_total) || 0;
-          const grandtotalInvoice = parseFloat(row.original?.purchaseOrder?.invoice?.grand_total) || 0;
-          const selisih = grandtotalLpb - grandtotalInvoice;
-          const isNegative = selisih < 0;
-          const isPositive = selisih > 0;
+          const lpb = parseFloat(row.original.detailInvoice?.grand_total) || 0;
+          const inv = parseFloat(row.original.purchaseOrder?.invoice?.grand_total) || 0;
+          const diff = lpb - inv;
           return (
-            <span className={`font-medium ${isNegative ? 'text-red-600' : isPositive ? 'text-green-600' : 'text-gray-500'}`}>
-              {formatCurrency(selisih)}
+            <span className={`font-medium ${diff > 0 ? 'text-red-600' : diff < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+              {formatCurrency(diff)}
             </span>
           );
         },
-        enableSorting: false,
-        enableColumnFilter: false,
-      }),
-      columnHelper.accessor((row) => row.notes ?? null, {
-        id: 'notes',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Notes</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
-        cell: (info) => <span className="text-gray-600 truncate max-w-[150px] inline-block">{info.getValue() || '-'}</span>,
       }),
       columnHelper.display({
         id: 'actions',
-        header: 'Actions',
+        header: () => <div className="font-medium text-xs">Aksi</div>,
         cell: ({ row }) => {
           const report = row.original;
-          const hasPurchaseOrder = report.purchaseOrderId || report.purchaseOrder;
+          const hasAssignedPO = Boolean(report.purchaseOrderId || report.purchaseOrder?.id);
 
           return (
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-1">
               <button
-                type="button"
-                onClick={() => onEdit(report)}
-                className="text-green-600 hover:text-green-900"
-                title="Edit"
+                onClick={() => onView(report)}
+                className="text-blue-600 hover:text-blue-900"
+                title="Lihat Detail"
               >
-                <PencilIcon className="h-4 w-4" />
+                <EyeIcon className="h-4 w-4" />
               </button>
-              {!hasPurchaseOrder ? (
+              <button
+                onClick={() => onEdit(report)}
+                className="text-yellow-600 hover:text-yellow-900"
+                title="Edit LPB"
+              >
+                <PencilSquareIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => handleOpenAssignModal(report)}
+                className="text-green-600 hover:text-green-900"
+                title={hasAssignedPO ? 'Ubah Assign Purchase Order' : 'Assign Purchase Order'}
+              >
+                <LinkIcon className="h-4 w-4" />
+              </button>
+              {hasAssignedPO && (
                 <button
-                  type="button"
-                  onClick={() => handleOpenAssignModal(report)}
-                  className="text-blue-600 hover:text-blue-900"
-                  title="Assign Purchase Order"
-                >
-                  <LinkIcon className="h-4 w-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
                   onClick={() => handleUnassignClick(report)}
                   className="text-orange-600 hover:text-orange-900"
                   title="Unassign Purchase Order"
@@ -660,8 +685,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       setPage,
       handleOpenAssignModal,
       handleUnassignClick,
-      lpbStatuses,
-      customers,
+      customerOptions,
+      statusOptions,
     ]
   );
 

@@ -13,15 +13,15 @@ const PackingGroupedItemsTable = ({ packingBoxes }) => {
 
             if (box.packingBoxItems) {
                 box.packingBoxItems.forEach((boxItem) => {
-                    // Group strictly by itemId to show 1 row per item as requested
-                    const key = boxItem.itemId;
+                    // Group by itemId, item.id, or nama_barang as robust fallback
+                    const key = boxItem.itemId || boxItem.item?.id || boxItem.nama_barang || boxItem.id;
 
                     if (!groups[key]) {
                         groups[key] = {
-                            itemId: boxItem.itemId,
-                            nama_barang: boxItem.nama_barang || boxItem.item?.nama_barang,
-                            plu: boxItem.item?.plu || '-',
-                            satuan: boxItem.item?.uom || 'PCS',
+                            itemId: boxItem.itemId || boxItem.item?.id,
+                            nama_barang: boxItem.nama_barang || boxItem.item?.nama_barang || '-',
+                            plu: boxItem.item?.plu || boxItem.plu || '-',
+                            satuan: boxItem.item?.uom || boxItem.satuan || 'PCS',
                             keterangan: boxItem.keterangan || '-',
                             qtyPerBoxValues: [],
                             totalQty: 0,

@@ -8,6 +8,16 @@ import { DataTable, TableFooterCell } from '../table';
 
 const columnHelper = createColumnHelper();
 
+const formatNumber = (val) => {
+  if (val === null || val === undefined || val === '') return '-';
+  const num = Number(val);
+  if (Number.isNaN(num)) return String(val);
+  return num.toLocaleString('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+};
+
 const PurchaseOrderDetailsTable = ({ details = [] }) => {
   const [columnSizing, setColumnSizing] = useState({});
 
@@ -32,23 +42,23 @@ const PurchaseOrderDetailsTable = ({ details = [] }) => {
           );
         },
       }),
-      columnHelper.accessor('total_quantity_order', {
+      columnHelper.accessor((row) => Number(row.total_quantity_order ?? row.qty ?? 0) || 0, {
         id: 'total_quantity_order',
         size: 70,
         header: () => <div className="text-right">Qty</div>,
         cell: (info) => (
           <div className="text-right">
-            {(info.getValue() || 0).toLocaleString('id-ID')}
+            {formatNumber(info.getValue())}
           </div>
         ),
       }),
-      columnHelper.accessor('harga', {
+      columnHelper.accessor((row) => Number(row.harga) || 0, {
         id: 'harga',
         size: 95,
         header: () => <div className="text-right">Harga</div>,
         cell: (info) => (
           <div className="text-right">
-            {(info.getValue() || 0).toLocaleString('id-ID')}
+            {formatNumber(info.getValue())}
           </div>
         ),
       }),
@@ -56,61 +66,67 @@ const PurchaseOrderDetailsTable = ({ details = [] }) => {
         id: 'potongan_a',
         size: 70,
         header: () => <div className="text-right">Pot A</div>,
-        cell: (info) => <div className="text-right">{info.getValue() || '-'}</div>,
+        cell: (info) => {
+          const val = info.getValue();
+          if (val === null || val === undefined || val === '') return <div className="text-right">-</div>;
+          const num = Number(val);
+          if (!Number.isNaN(num)) return <div className="text-right">{num}%</div>;
+          return <div className="text-right">{val.toString().endsWith('%') ? val : `${val}%`}</div>;
+        },
       }),
-      columnHelper.accessor('harga_after_potongan_a', {
+      columnHelper.accessor((row) => Number(row.harga_after_potongan_a ?? row.harga) || 0, {
         id: 'harga_after_potongan_a',
         size: 95,
         header: () => <div className="text-right">H. Pot A</div>,
-        cell: (info) => {
-          const val = info.getValue();
-          return (
-            <div className="text-right">
-              {typeof val === 'number' ? val.toLocaleString('id-ID') : (val || '-')}
-            </div>
-          );
-        },
+        cell: (info) => (
+          <div className="text-right">
+            {formatNumber(info.getValue())}
+          </div>
+        ),
       }),
       columnHelper.accessor('potongan_b', {
         id: 'potongan_b',
         size: 70,
         header: () => <div className="text-right">Pot B</div>,
-        cell: (info) => <div className="text-right">{info.getValue() || '-'}</div>,
+        cell: (info) => {
+          const val = info.getValue();
+          if (val === null || val === undefined || val === '') return <div className="text-right">-</div>;
+          const num = Number(val);
+          if (!Number.isNaN(num)) return <div className="text-right">{num}%</div>;
+          return <div className="text-right">{val.toString().endsWith('%') ? val : `${val}%`}</div>;
+        },
       }),
-      columnHelper.accessor('harga_after_potongan_b', {
+      columnHelper.accessor((row) => Number(row.harga_after_potongan_b ?? row.harga_after_potongan_a ?? row.harga) || 0, {
         id: 'harga_after_potongan_b',
         size: 95,
         header: () => <div className="text-right">H. Pot B</div>,
-        cell: (info) => {
-          const val = info.getValue();
-          return (
-            <div className="text-right">
-              {typeof val === 'number' ? val.toLocaleString('id-ID') : (val || '-')}
-            </div>
-          );
-        },
+        cell: (info) => (
+          <div className="text-right">
+            {formatNumber(info.getValue())}
+          </div>
+        ),
       }),
-      columnHelper.accessor('harga_netto', {
+      columnHelper.accessor((row) => Number(row.harga_netto ?? row.harga_after_potongan_b ?? row.harga_after_potongan_a ?? row.harga) || 0, {
         id: 'harga_netto',
         size: 95,
         header: () => <div className="text-right">Netto</div>,
         cell: (info) => (
           <div className="text-right">
-            {(info.getValue() || 0).toLocaleString('id-ID')}
+            {formatNumber(info.getValue())}
           </div>
         ),
       }),
-      columnHelper.accessor('total_pembelian', {
+      columnHelper.accessor((row) => Number(row.total_pembelian) || 0, {
         id: 'total_pembelian',
         size: 105,
         header: () => <div className="text-right">Total</div>,
         cell: (info) => (
           <div className="text-right">
-            {(info.getValue() || 0).toLocaleString('id-ID')}
+            {formatNumber(info.getValue())}
           </div>
         ),
       }),
-      columnHelper.accessor((row) => row.vatRate ?? 0, {
+      columnHelper.accessor((row) => Number(row.vatRate ?? 0) || 0, {
         id: 'vatRate',
         size: 70,
         header: () => <div className="text-right">PPN %</div>,
@@ -118,8 +134,8 @@ const PurchaseOrderDetailsTable = ({ details = [] }) => {
       }),
       columnHelper.accessor(
         (row) => {
-          const rate = row.vatRate || 0;
-          return (row.total_pembelian || 0) * (rate / 100);
+          const rate = Number(row.vatRate) || 0;
+          return (Number(row.total_pembelian) || 0) * (rate / 100);
         },
         {
           id: 'ppnAmount',
@@ -127,16 +143,17 @@ const PurchaseOrderDetailsTable = ({ details = [] }) => {
           header: () => <div className="text-right">PPN</div>,
           cell: (info) => (
             <div className="text-right">
-              {Math.round(info.getValue() || 0).toLocaleString('id-ID')}
+              {formatNumber(info.getValue())}
             </div>
           ),
         }
       ),
       columnHelper.accessor(
         (row) => {
-          const rate = row.vatRate || 0;
-          const ppn = (row.total_pembelian || 0) * (rate / 100);
-          return (row.total_pembelian || 0) + ppn;
+          const rate = Number(row.vatRate) || 0;
+          const total = Number(row.total_pembelian) || 0;
+          const ppn = total * (rate / 100);
+          return total + ppn;
         },
         {
           id: 'grandTotal',
@@ -144,7 +161,7 @@ const PurchaseOrderDetailsTable = ({ details = [] }) => {
           header: () => <div className="text-right">Grand Total</div>,
           cell: (info) => (
             <div className="text-right font-semibold">
-              {Math.round(info.getValue() || 0).toLocaleString('id-ID')}
+              {formatNumber(info.getValue())}
             </div>
           ),
         }

@@ -99,14 +99,15 @@ const TableFooterCell = ({ column, table, data = [] }) => {
       .map((val) => {
         if (val === null || val === undefined || val === "") return null;
         if (typeof val === "object" || typeof val === "boolean") return null;
-        // Clean formatted values (e.g. "Rp. 5.000" or "5.000")
-        let cleanVal = val;
-        if (typeof val === "string") {
-          cleanVal = val
-            .replace(/Rp\.?\s*/i, "")
-            .replace(/\./g, "")
-            .replace(/,/g, ".")
-            .trim();
+        if (typeof val === "number") return isNaN(val) ? null : val;
+        // Clean formatted values (e.g. "Rp. 5.000", "1.469,72", or "722.73")
+        let cleanVal = String(val).replace(/Rp\.?\s*/i, "").trim();
+        if (cleanVal.includes(",")) {
+          // Indonesian format with comma decimal: 1.234,56 -> 1234.56
+          cleanVal = cleanVal.replace(/\./g, "").replace(/,/g, ".");
+        } else if ((cleanVal.match(/\./g) || []).length > 1) {
+          // Multiple dots without comma (thousands separator only): 1.234.567 -> 1234567
+          cleanVal = cleanVal.replace(/\./g, "");
         }
         const num = Number(cleanVal);
         return isNaN(num) ? null : num;
@@ -123,13 +124,15 @@ const TableFooterCell = ({ column, table, data = [] }) => {
         const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
         return Number.isInteger(sum)
           ? sum.toLocaleString("id-ID")
-          : sum.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+          : sum.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
       }
       case "avg": {
         if (numericValues.length === 0) return "0";
         const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
         const avg = sum / numericValues.length;
-        return avg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        return Number.isInteger(avg)
+          ? avg.toLocaleString("id-ID")
+          : avg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
       }
       case "count":
       default:

@@ -220,6 +220,7 @@ const TandaTerimaFakturTableServerSide = ({
     error,
     resetFilters,
     tableOptions,
+    columnFilters,
   } = useServerSideTable({
     queryHook: useTandaTerimaFakturQuery,
     selectData: (response) => response?.tandaTerimaFakturs ?? [],
@@ -229,6 +230,74 @@ const TandaTerimaFakturTableServerSide = ({
     globalFilter: globalFilterConfig,
     getQueryParams,
   });
+
+  const groupCustomerOptions = useMemo(() => {
+    const map = new Map();
+    (tandaTerimaFakturs || []).forEach((item) => {
+      const group = item?.invoicePenagihan?.purchaseOrder?.customer?.groupCustomer?.nama_group || item?.groupCustomer?.nama_group;
+      if (group && !map.has(group)) {
+        map.set(group, { nama_group: group });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'group_customer_name');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { nama_group: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.nama_group.localeCompare(b.nama_group)
+    );
+  }, [tandaTerimaFakturs, columnFilters]);
+
+  const topOptions = useMemo(() => {
+    const map = new Map();
+    (tandaTerimaFakturs || []).forEach((item) => {
+      const kode = item.termOfPayment?.kode_top;
+      if (kode && !map.has(kode)) {
+        map.set(kode, { kode_top: kode });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'top_codes');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { kode_top: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.kode_top.localeCompare(b.kode_top)
+    );
+  }, [tandaTerimaFakturs, columnFilters]);
+
+  const statusOptions = useMemo(() => {
+    const map = new Map();
+    (tandaTerimaFakturs || []).forEach((item) => {
+      const code = item.status?.status_code;
+      const name = item.status?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { status_code: code, status_name: name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = statuses.find((s) => s.status_code === val);
+        map.set(val, { status_code: val, status_name: fallback?.status_name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.status_name.localeCompare(b.status_name)
+    );
+  }, [tandaTerimaFakturs, columnFilters, statuses]);
 
   const totals = useMemo(() => {
     if (!tandaTerimaFakturs || !Array.isArray(tandaTerimaFakturs)) {
@@ -284,7 +353,7 @@ const TandaTerimaFakturTableServerSide = ({
             <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
               <div className="font-medium text-xs">Customer</div>
               <AutocompleteCheckboxLimitTag
-                options={groupCustomers}
+                options={groupCustomerOptions}
                 value={column.getFilterValue() ?? []}
                 onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
                 placeholder="All"
@@ -346,7 +415,7 @@ const TandaTerimaFakturTableServerSide = ({
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">TOP</div>
             <AutocompleteCheckboxLimitTag
-              options={termOfPayments}
+              options={topOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -404,35 +473,6 @@ const TandaTerimaFakturTableServerSide = ({
         cell: (info) => <div className="text-xs font-semibold text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
         enableColumnFilter: true,
         size: 110,
-      }),
-      columnHelper.accessor((row) => {
-        const totalTTF = Number(row.grand_total) || 0;
-        const payment = Number(row.bankMutation?.jumlah) || 0;
-        return totalTTF - payment;
-      }, {
-        id: 'selisih',
-        header: () => <div className="font-medium text-xs text-right">Selisih</div>,
-        cell: (info) => {
-          const value = info.getValue();
-          return (
-            <div className={`text-xs font-semibold text-right ${value !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
-              {formatCurrency(value)}
-            </div>
-          );
-        },
-        enableSorting: false,
-        size: 100,
-      }),
-      columnHelper.accessor('bankMutation.keterangan', {
-        id: 'keterangan',
-        header: () => <div className="font-medium text-xs">Keterangan</div>,
-        cell: (info) => (
-          <div className="text-xs text-gray-700 max-w-[200px] truncate" title={info.getValue() ?? ''}>
-            {info.getValue() || '-'}
-          </div>
-        ),
-        enableSorting: false,
-        size: 150,
       }),
       columnHelper.accessor('tanggal_print_ttf1', {
         id: 'tanggal_print_ttf1',
@@ -584,13 +624,42 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: true,
         size: 100,
       }),
+      columnHelper.accessor((row) => {
+        const totalTTF = Number(row.grand_total) || 0;
+        const payment = Number(row.bankMutation?.jumlah) || 0;
+        return totalTTF - payment;
+      }, {
+        id: 'selisih',
+        header: () => <div className="font-medium text-xs text-right">Selisih</div>,
+        cell: (info) => {
+          const value = info.getValue();
+          return (
+            <div className={`text-xs font-semibold text-right ${value !== 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              {formatCurrency(value)}
+            </div>
+          );
+        },
+        enableSorting: false,
+        size: 100,
+      }),
+      columnHelper.accessor('bankMutation.keterangan', {
+        id: 'keterangan',
+        header: () => <div className="font-medium text-xs">Keterangan</div>,
+        cell: (info) => (
+          <div className="text-xs text-gray-700 max-w-[200px] truncate" title={info.getValue() ?? ''}>
+            {info.getValue() || '-'}
+          </div>
+        ),
+        enableSorting: false,
+        size: 150,
+      }),
       columnHelper.accessor('status.status_name', {
         id: 'status',
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
-              options={statuses}
+              options={statusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -685,10 +754,10 @@ const TandaTerimaFakturTableServerSide = ({
       assignLoading,
       unassignLoading,
       setPage,
-      termOfPayments,
-      groupCustomers,
+      topOptions,
+      groupCustomerOptions,
+      statusOptions,
       companies,
-      statuses,
     ]
   );
 

@@ -12,10 +12,15 @@ const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/items`;
 
 const getHeaders = () => {
   const token = authService.getToken();
-  return {
+  const companyId = getCompanyId();
+  const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   };
+  if (companyId) {
+    headers['x-company-id'] = companyId;
+  }
+  return headers;
 };
 
 export const getItems = async (page = 1, limit = 10, filters = {}) => {
@@ -108,7 +113,12 @@ export const getMixableItems = async () => {
 };
 
 export const getItemById = async (id) => {
-  const response = await fetch(`${API_URL}/${id}`, {
+  const companyId = getCompanyId();
+  const url = companyId
+    ? `${API_URL}/${id}?companyId=${encodeURIComponent(companyId)}`
+    : `${API_URL}/${id}`;
+
+  const response = await fetch(url, {
     headers: getHeaders()
   });
   if (!response.ok) {
@@ -235,12 +245,14 @@ export const deleteItem = async (id) => {
 // Bulk Upload Methods
 
 export const downloadBulkTemplate = async () => {
-  const token = authService.getToken();
-  const response = await fetch(`${API_URL}/bulk/template`, {
+  const companyId = getCompanyId();
+  const url = companyId
+    ? `${API_URL}/bulk/template?companyId=${encodeURIComponent(companyId)}`
+    : `${API_URL}/bulk/template`;
+
+  const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+    headers: getHeaders()
   });
 
   if (!response.ok) {
@@ -261,14 +273,14 @@ export const downloadBulkTemplate = async () => {
 
   // Convert response to blob and trigger download
   const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
+  const urlBlob = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.style.display = 'none';
-  a.href = url;
+  a.href = urlBlob;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
-  window.URL.revokeObjectURL(url);
+  window.URL.revokeObjectURL(urlBlob);
   document.body.removeChild(a);
 
   return { success: true, filename };
@@ -285,11 +297,14 @@ export const uploadBulkItem = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
 
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'x-company-id': companyId
+  };
+
   const response = await fetch(`${API_URL}/bulk/upload?companyId=${encodeURIComponent(companyId)}`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
+    headers,
     body: formData
   });
 
@@ -336,7 +351,6 @@ export const getAllBulkFiles = async (status = null) => {
  * @param {string} searchQuery - Optional search query to filter data
  */
 export const exportExcel = async (searchQuery = '') => {
-  const token = authService.getToken();
   const companyId = getCompanyId();
 
   const params = new URLSearchParams();
@@ -353,9 +367,7 @@ export const exportExcel = async (searchQuery = '') => {
 
   const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+    headers: getHeaders()
   });
 
   if (!response.ok) {

@@ -134,6 +134,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
     error,
     resetFilters,
     tableOptions,
+    columnFilters,
   } = useServerSideTable({
     queryHook: usePurchaseOrdersQuery,
     selectData: (response) => response?.purchaseOrders ?? [],
@@ -214,7 +215,77 @@ const PurchaseOrderTableServerSide = forwardRef(({
     fetchCustomers();
   }, [companyId]);
 
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    (orders || []).forEach((item) => {
+      const id = item.customer?.id || item.customerId;
+      const name = item.customer?.namaCustomer;
+      if (id && name && !map.has(id)) {
+        map.set(id, { id, namaCustomer: name });
+      }
+    });
 
+    const activeFilter = columnFilters.find((f) => f.id === 'customer');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = customers.find((c) => c.id === val);
+        map.set(val, { id: val, namaCustomer: fallback?.namaCustomer || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.namaCustomer.localeCompare(b.namaCustomer)
+    );
+  }, [orders, columnFilters, customers]);
+
+  const topOptions = useMemo(() => {
+    const map = new Map();
+    (orders || []).forEach((item) => {
+      const id = item.termOfPayment?.id || item.termin_bayar_id;
+      const kode = item.termOfPayment?.kode_top;
+      if (id && kode && !map.has(id)) {
+        map.set(id, { id, kode_top: kode });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'top');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = termOfPayments.find((t) => t.id === val);
+        map.set(val, { id: val, kode_top: fallback?.kode_top || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.kode_top.localeCompare(b.kode_top)
+    );
+  }, [orders, columnFilters, termOfPayments]);
+
+  const dynamicStatusOptions = useMemo(() => {
+    const map = new Map();
+    (orders || []).forEach((item) => {
+      const code = item.status?.status_code;
+      const name = item.status?.status_name || code;
+      if (code && !map.has(code)) {
+        map.set(code, { id: code, name });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = statusOptions.find((s) => s.id === val);
+        map.set(val, { id: val, name: fallback?.name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [orders, columnFilters, statusOptions]);
 
   const columns = useMemo(
     () => [
@@ -273,7 +344,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Customer</div>
             <AutocompleteCheckboxLimitTag
-              options={customers}
+              options={customerOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -342,7 +413,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
           <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">TOP</div>
             <AutocompleteCheckboxLimitTag
-              options={termOfPayments}
+              options={topOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -388,7 +459,7 @@ const PurchaseOrderTableServerSide = forwardRef(({
           <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Status</div>
             <AutocompleteCheckboxLimitTag
-              options={statusOptions}
+              options={dynamicStatusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder="All"
@@ -414,9 +485,9 @@ const PurchaseOrderTableServerSide = forwardRef(({
       onSelectionChange,
       handleSelectAllInternalToggle,
       setPage,
-      termOfPayments,
-      customers,
-      statusOptions,
+      topOptions,
+      customerOptions,
+      dynamicStatusOptions,
     ]
   );
 

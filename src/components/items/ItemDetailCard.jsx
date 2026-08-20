@@ -326,8 +326,19 @@ const ItemDetailCard = ({ item, onClose, onUpdate, loading: parentLoading = fals
         /* VIEW MODE */
         <div>
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-800">{error}</p>
+                <p className="text-xs text-red-600 mt-0.5">Item mungkin telah dihapus atau berada pada company yang berbeda.</p>
+              </div>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="px-3 py-1 bg-white border border-red-300 text-xs text-red-700 rounded hover:bg-red-50"
+                >
+                  Tutup
+                </button>
+              )}
             </div>
           )}
 
