@@ -319,7 +319,12 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
         return;
       }
 
-      const errorMessage = errorData?.error?.message || error?.message || 'Gagal upload bukti e-Faktur DJP';
+      const errorMessage =
+        errorData?.error?.message ||
+        errorData?.message ||
+        (typeof errorData?.error === 'string' ? errorData.error : null) ||
+        error?.message ||
+        'Gagal upload bukti e-Faktur DJP';
       toastService.error(errorMessage);
     } finally {
       setUploading(false);
@@ -359,8 +364,11 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
       }
     } catch (error) {
       console.error('Error forcing e-Faktur upload:', error);
+      const errorData = error?.response?.data;
       const errorMessage =
-        error?.response?.data?.error?.message ||
+        errorData?.error?.message ||
+        errorData?.message ||
+        (typeof errorData?.error === 'string' ? errorData.error : null) ||
         error?.message ||
         'Gagal upload bukti e-Faktur DJP';
       toastService.error(errorMessage);

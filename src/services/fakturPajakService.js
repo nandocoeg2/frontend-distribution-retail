@@ -21,6 +21,37 @@ class FakturPajakService {
       }
       return config;
     });
+
+    this.api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const errorData = error?.response?.data;
+        let errorMessage = null;
+
+        if (typeof errorData === 'string') {
+          try {
+            const parsed = JSON.parse(errorData);
+            errorMessage =
+              parsed.error?.message ||
+              parsed.message ||
+              (typeof parsed.error === 'string' ? parsed.error : null);
+          } catch {
+            if (errorData.trim()) errorMessage = errorData;
+          }
+        } else if (errorData && typeof errorData === 'object') {
+          errorMessage =
+            errorData.error?.message ||
+            errorData.message ||
+            (typeof errorData.error === 'string' ? errorData.error : null);
+        }
+
+        if (errorMessage) {
+          error.message = errorMessage;
+        }
+
+        return Promise.reject(error);
+      }
+    );
   }
 
   /**
