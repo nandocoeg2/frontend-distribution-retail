@@ -21,6 +21,7 @@ const createWindow = () => {
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
+    title: 'ERP PT DOVEN TRADECO',
     width: 800,
     height: 600,
     webPreferences: {

@@ -1,8 +1,8 @@
 {
   "name": "frontend-distribution-retail",
-  "productName": "frontend-distribution-retail",
+  "productName": "ERP PT DOVEN TRADECO",
   "version": "1.0.1",
-  "description": "Frontend Distribution Retail",
+  "description": "ERP PT DOVEN TRADECO",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
