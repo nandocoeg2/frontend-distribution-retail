@@ -153,6 +153,17 @@ const SuratJalan = () => {
       return;
     }
 
+    // Check if any selected item is not in DRAFT status
+    const nonDraftItems = selectedSuratJalan.filter(
+      item => item?.status?.status_code && item.status.status_code !== 'DRAFT SURAT JALAN'
+    );
+
+    if (nonDraftItems.length > 0) {
+      const nonDraftNumbers = nonDraftItems.map(item => item.no_surat_jalan).join(', ');
+      toastService.error(`SURAT JALAN NO. ${nonDraftNumbers} bukan berstatus DRAFT SURAT JALAN`);
+      return;
+    }
+
     if (selectedSuratJalan.length === 0) {
       toastService.error('Pilih minimal satu surat jalan yang belum diproses');
       return;

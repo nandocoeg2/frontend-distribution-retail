@@ -447,6 +447,42 @@ const SuratJalanTableServerSide = forwardRef(({
         cell: (info) => info.getValue() || 'N/A',
       }),
 
+      columnHelper.accessor('status', {
+        id: 'status_code',
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">Status</div>
+            <select
+              value={column.getFilterValue() ?? ''}
+              onChange={(event) => {
+                column.setFilterValue(event.target.value);
+                setPage(1);
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <option value="">Semua</option>
+              <option value="DRAFT SURAT JALAN">Draft</option>
+              <option value="READY TO SHIP SURAT JALAN">Ready To Ship</option>
+              <option value="DELIVERED SURAT JALAN">Delivered</option>
+              <option value="CANCELLED SURAT JALAN">Cancelled</option>
+            </select>
+          </div>
+        ),
+        cell: ({ row }) => {
+          const statusObj = row.original?.status;
+          const statusText = statusObj?.status_name || statusObj?.status_code || 'Draft';
+          return (
+            <StatusBadge
+              status={statusText}
+              variant={resolveStatusVariant(statusObj?.status_code || statusText)}
+              size="sm"
+              dot
+            />
+          );
+        },
+        enableColumnFilter: false,
+      }),
 
       columnHelper.accessor('is_printed', {
         header: ({ column }) => (
