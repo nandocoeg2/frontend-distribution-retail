@@ -208,8 +208,8 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-4xl overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
-        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-gray-200 flex flex-col">
+        <div className="flex justify-between items-center px-5 py-3 border-b border-gray-200 flex-shrink-0">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Create Price Schedule</h2>
           </div>
@@ -222,7 +222,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-1 border-b border-gray-200 px-5">
+        <div className="flex space-x-1 border-b border-gray-200 px-5 flex-shrink-0">
           <button
             onClick={() => setActiveTab('single')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'single'
