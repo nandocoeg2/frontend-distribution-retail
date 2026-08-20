@@ -11,6 +11,7 @@ import { AccordionItem } from '../ui';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import toastService from '../../services/toastService';
 import InvoicePengirimanForm from './InvoicePengirimanForm';
+import InvoicePengirimanDetailsTable from './InvoicePengirimanDetailsTable';
 
 const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpdate }) => {
   const [activeTab, setActiveTab] = useState('details');
@@ -160,34 +161,9 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
             </TabPanel>
 
             <TabPanel tabId='details'>
-              <div className='flex items-center justify-between mb-2'>
-                <span className='text-xs font-medium text-gray-700'>Rincian Barang</span>
-                <span className='px-2 py-0.5 text-xs font-medium text-blue-800 bg-blue-100 rounded-full'>{detailCount} item</span>
+              <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+                <InvoicePengirimanDetailsTable details={invoice.invoiceDetails || []} />
               </div>
-              {invoice.invoiceDetails && invoice.invoiceDetails.length > 0 ? (
-                <div className='overflow-x-auto'>
-                  <table className='min-w-full divide-y divide-gray-200 text-xs'>
-                    <thead className='bg-gray-50'>
-                      <tr>
-                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Barang</th>
-                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Qty</th>
-                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Harga</th>
-                        <th className='px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase'>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className='bg-white divide-y divide-gray-100'>
-                      {invoice.invoiceDetails.map((d, i) => (
-                        <tr key={d.id || i} className='hover:bg-gray-50'>
-                          <td className='px-2 py-1 text-xs text-gray-900'>{d.nama_barang}</td>
-                          <td className='px-2 py-1 text-xs text-gray-900'>{d.quantity}</td>
-                          <td className='px-2 py-1 text-xs text-gray-900'>{formatCurrency(d.harga)}</td>
-                          <td className='px-2 py-1 text-xs font-medium text-gray-900'>{formatCurrency(d.total)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : <div className='py-4 text-center text-xs text-gray-500'>Tidak ada detail barang</div>}
             </TabPanel>
           </TabContent>
         </div>
