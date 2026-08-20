@@ -408,13 +408,12 @@ const SuratJalanTableServerSide = forwardRef(({
           <div className="space-y-1">
             <div className="font-medium text-xs">No PO</div>
             <AutocompleteCheckboxLimitTag
-              options={poOptions}
+              options={dynamicPoOptions}
               value={column.getFilterValue() || []}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
                 setPage(1);
               }}
-              onSearchChange={(val) => setPoSearch(val)}
               placeholder="Filter..."
               limitTags={1}
               size="small"
@@ -431,13 +430,12 @@ const SuratJalanTableServerSide = forwardRef(({
           <div className="space-y-1">
             <div className="font-medium text-xs">Deliver</div>
             <AutocompleteCheckboxLimitTag
-              options={deliverOptions}
+              options={dynamicDeliverOptions}
               value={column.getFilterValue() || []}
               onChange={(e) => {
                 column.setFilterValue(e.target.value);
                 setPage(1);
               }}
-              onSearchChange={(val) => setDeliverSearch(val)}
               placeholder="Filter..."
               limitTags={1}
               size="small"
@@ -529,8 +527,8 @@ const SuratJalanTableServerSide = forwardRef(({
       onCancel,
       cancelLoading,
       setPage,
-      poOptions,
-      deliverOptions,
+      dynamicPoOptions,
+      dynamicDeliverOptions,
     ]
   );
 
