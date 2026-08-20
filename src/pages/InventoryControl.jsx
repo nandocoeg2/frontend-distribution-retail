@@ -151,20 +151,22 @@ const InventoryControl = () => {
     }
   };
 
-  // Group weeks by Month Name for multi-month weekly header row
+  // Group weeks by Month Name for per-month grouped layout
   const groupedMonths = useMemo(() => {
     const map = new Map();
-    periodRange.forEach((p) => {
+    periodRange.forEach((p, originalIdx) => {
+      const monthKey = p.month && p.year ? `${p.year}-${p.month}` : p.monthName || 'PERIODE';
       const monthTitle = p.monthName || (p.month && p.year ? `BULAN ${p.month}/${p.year}` : 'PERIODE');
-      if (!map.has(monthTitle)) {
-        map.set(monthTitle, []);
+      if (!map.has(monthKey)) {
+        map.set(monthKey, {
+          monthKey,
+          monthName: monthTitle,
+          periods: [],
+        });
       }
-      map.get(monthTitle).push(p);
+      map.get(monthKey).periods.push({ ...p, originalIdx });
     });
-    return Array.from(map.entries()).map(([monthName, weeks]) => ({
-      monthName,
-      weeks,
-    }));
+    return Array.from(map.values());
   }, [periodRange]);
 
   // Filter rows according to header inputs ("DI BIKIN BISA FILTER")
@@ -198,42 +200,44 @@ const InventoryControl = () => {
     });
   }, [data, columnFilters]);
 
-  /* ─── computed totals ─── */
+  /* ─── computed totals per month ─── */
   const totalStockAwal = useMemo(
     () => filteredData.reduce((acc, row) => acc + (row.stockAwal || 0), 0),
     [filteredData]
   );
 
-  const totalStockInPerPeriod = useMemo(() => {
-    return periodRange.map((_, pIdx) =>
-      filteredData.reduce((sum, row) => sum + (row.months?.[pIdx]?.stockIn || 0), 0)
-    );
-  }, [filteredData, periodRange]);
+  const monthSummary = useMemo(() => {
+    let runningGrandStock = totalStockAwal;
+    return groupedMonths.map((g) => {
+      const stockInPerPeriod = g.periods.map((p) =>
+        filteredData.reduce((sum, row) => sum + (row.months?.[p.originalIdx]?.stockIn || 0), 0)
+      );
+      const totalStockIn = stockInPerPeriod.reduce((sum, v) => sum + v, 0);
 
-  const grandTotalStockIn = useMemo(
-    () => totalStockInPerPeriod.reduce((acc, val) => acc + val, 0),
-    [totalStockInPerPeriod]
-  );
+      const stockOutPerPeriod = g.periods.map((p) =>
+        filteredData.reduce((sum, row) => sum + (row.months?.[p.originalIdx]?.stockOut || 0), 0)
+      );
+      const totalStockOut = stockOutPerPeriod.reduce((sum, v) => sum + v, 0);
 
-  const totalStockOutPerPeriod = useMemo(() => {
-    return periodRange.map((_, pIdx) =>
-      filteredData.reduce((sum, row) => sum + (row.months?.[pIdx]?.stockOut || 0), 0)
-    );
-  }, [filteredData, periodRange]);
+      runningGrandStock = runningGrandStock + totalStockIn - totalStockOut;
 
-  const grandTotalStockOut = useMemo(
-    () => totalStockOutPerPeriod.reduce((acc, val) => acc + val, 0),
-    [totalStockOutPerPeriod]
-  );
+      return {
+        monthKey: g.monthKey,
+        stockInPerPeriod,
+        totalStockIn,
+        stockOutPerPeriod,
+        totalStockOut,
+        stockAkhir: runningGrandStock,
+      };
+    });
+  }, [filteredData, groupedMonths, totalStockAwal]);
 
-  const grandTotalStockAkhir = useMemo(
-    () => totalStockAwal + grandTotalStockIn - grandTotalStockOut,
-    [totalStockAwal, grandTotalStockIn, grandTotalStockOut]
-  );
+  /* ─── column count for skeleton & top banner ─── */
+  const totalPeriodCols = useMemo(() => {
+    return groupedMonths.reduce((acc, g) => acc + (g.periods.length * 2 + 3), 0);
+  }, [groupedMonths]);
 
-  /* ─── column count for skeleton ─── */
-  const subPeriodCount = periodRange.length;
-  const colCount = 3 + (subPeriodCount + 1) + (subPeriodCount + 1) + 1;
+  const colCount = 3 + totalPeriodCols;
 
   return (
     <div className="space-y-4">
@@ -244,7 +248,7 @@ const InventoryControl = () => {
             Inventory Control
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Rekap stok per item dengan tampilan Weekly & Monthly.
+            Rekap stok per item dengan tampilan grouping per bulan (Weekly & Monthly).
           </p>
         </div>
         <button
@@ -350,12 +354,12 @@ const InventoryControl = () => {
         </div>
       </div>
 
-      {/* ── Table Layout (Exact Match with Image Mockup) ── */}
+      {/* ── Table Layout (Grouped Per Bulan) ── */}
       <div className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse border border-gray-300 text-xs">
             <thead>
-              {/* Row 1: Top Banner with Date Range (e.g. 28 JULI - 12 AGUSTUS 2026) */}
+              {/* Row 1: Top Banner with Date Range */}
               <tr className="bg-slate-800 text-white font-bold text-xs uppercase">
                 <th rowSpan={4} className="sticky left-0 z-20 min-w-[200px] bg-slate-800 border-r border-slate-700 px-3 py-2 text-left">
                   ITEM
@@ -367,80 +371,95 @@ const InventoryControl = () => {
                   STOCK AWAL
                 </th>
 
-                {/* Date Range Top Banner across all STOCK IN and STOCK OUT columns */}
+                {/* Date Range Top Banner spanning across all month groups */}
                 <th
-                  colSpan={(subPeriodCount + 1) * 2}
+                  colSpan={totalPeriodCols || 1}
                   className="border-r border-slate-700 px-3 py-1.5 text-center font-extrabold tracking-wider bg-slate-300 text-slate-900 border-b border-slate-400"
                 >
                   {formatDateRangeLabel(startDate, endDate)}
                 </th>
-
-                <th rowSpan={4} className="min-w-[110px] bg-emerald-700 px-3 py-2 text-right font-extrabold uppercase whitespace-nowrap text-white">
-                  STOCK AKHIR
-                </th>
               </tr>
 
-              {/* Row 2: STOCK IN & STOCK OUT headers */}
-              <tr className="text-slate-900 font-bold text-xs">
-                <th
-                  colSpan={subPeriodCount + 1}
-                  className="border-r border-slate-400 px-3 py-1.5 text-center uppercase tracking-wider bg-blue-200 text-blue-950 border-b border-slate-400"
-                >
-                  STOCK IN
-                </th>
-                <th
-                  colSpan={subPeriodCount + 1}
-                  className="border-r border-slate-400 px-3 py-1.5 text-center uppercase tracking-wider bg-amber-200 text-amber-950 border-b border-slate-400"
-                >
-                  STOCK OUT
-                </th>
+              {/* Row 2: Per-Month Headers (JULI, AGUSTUS, etc.) */}
+              <tr className="text-slate-900 font-bold text-xs border-b border-slate-400">
+                {groupedMonths.map((g) => (
+                  <th
+                    key={`m_head_${g.monthKey}`}
+                    colSpan={g.periods.length * 2 + 3}
+                    className="border-r border-rose-300 px-3 py-1.5 text-center font-extrabold tracking-wider bg-rose-100/90 text-rose-950 uppercase border-b border-slate-300"
+                  >
+                    {g.monthName}
+                  </th>
+                ))}
               </tr>
 
-              {/* Row 3: Baris Nama Bulan (JULI 2026, AGUSTUS 2026) */}
+              {/* Row 3: STOCK IN, TOTAL STOCK IN, STOCK OUT, TOTAL STOCK, STOCK AKHIR */}
               <tr className="text-slate-900 font-bold text-xs border-b border-slate-300">
-                {/* Under STOCK IN */}
-                {groupedMonths.map((g, idx) => (
-                  <th
-                    key={`in_m_${g.monthName || idx}`}
-                    colSpan={g.weeks.length}
-                    className="border-r border-slate-300 px-2 py-1 text-center bg-blue-100 text-blue-950 font-extrabold uppercase tracking-wide whitespace-nowrap"
-                  >
-                    {g.monthName}
-                  </th>
-                ))}
-                <th rowSpan={2} className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-blue-300 text-blue-950 whitespace-nowrap align-middle">
-                  TOTAL STOCK IN
-                </th>
+                {groupedMonths.map((g) => (
+                  <React.Fragment key={`sub_head_${g.monthKey}`}>
+                    {/* STOCK IN */}
+                    <th
+                      colSpan={g.periods.length}
+                      className="border-r border-slate-300 px-2 py-1 text-center bg-blue-100 text-blue-950 font-extrabold uppercase tracking-wide whitespace-nowrap border-b border-slate-300"
+                    >
+                      STOCK IN
+                    </th>
+                    <th
+                      rowSpan={2}
+                      className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-blue-200 text-blue-950 whitespace-nowrap align-middle"
+                    >
+                      TOTAL STOCK IN
+                    </th>
 
-                {/* Under STOCK OUT */}
-                {groupedMonths.map((g, idx) => (
-                  <th
-                    key={`out_m_${g.monthName || idx}`}
-                    colSpan={g.weeks.length}
-                    className="border-r border-slate-300 px-2 py-1 text-center bg-amber-100 text-amber-950 font-extrabold uppercase tracking-wide whitespace-nowrap"
-                  >
-                    {g.monthName}
-                  </th>
+                    {/* STOCK OUT */}
+                    <th
+                      colSpan={g.periods.length}
+                      className="border-r border-slate-300 px-2 py-1 text-center bg-amber-100 text-amber-950 font-extrabold uppercase tracking-wide whitespace-nowrap border-b border-slate-300"
+                    >
+                      STOCK OUT
+                    </th>
+                    <th
+                      rowSpan={2}
+                      className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-rose-200/90 text-rose-950 whitespace-nowrap align-middle"
+                    >
+                      TOTAL STOCK
+                    </th>
+
+                    {/* STOCK AKHIR */}
+                    <th
+                      rowSpan={2}
+                      className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-emerald-200 text-emerald-950 whitespace-nowrap align-middle"
+                    >
+                      STOCK AKHIR
+                    </th>
+                  </React.Fragment>
                 ))}
-                <th rowSpan={2} className="border-r border-slate-400 px-3 py-1 text-right font-extrabold bg-amber-300 text-amber-950 whitespace-nowrap align-middle">
-                  TOTAL STOCK OUT
-                </th>
               </tr>
 
               {/* Row 4: Sub-Period Headers (W1, W2, W3, W4...) */}
               <tr className="bg-slate-100 text-slate-800 font-bold text-xs border-b border-slate-300">
-                {/* Under STOCK IN */}
-                {periodRange.map((p, idx) => (
-                  <th key={`in_${p.periodKey || idx}`} className="border-r border-slate-300 px-2.5 py-1 text-center bg-blue-50 whitespace-nowrap">
-                    {p.label}
-                  </th>
-                ))}
+                {groupedMonths.map((g) => (
+                  <React.Fragment key={`weeks_head_${g.monthKey}`}>
+                    {/* Weeks under STOCK IN */}
+                    {g.periods.map((p) => (
+                      <th
+                        key={`in_w_${p.periodKey}`}
+                        className="border-r border-slate-300 px-2.5 py-1 text-center bg-blue-50 whitespace-nowrap"
+                      >
+                        {p.label}
+                      </th>
+                    ))}
 
-                {/* Under STOCK OUT */}
-                {periodRange.map((p, idx) => (
-                  <th key={`out_${p.periodKey || idx}`} className="border-r border-slate-300 px-2.5 py-1 text-center bg-amber-50 whitespace-nowrap">
-                    {p.label}
-                  </th>
+                    {/* Weeks under STOCK OUT */}
+                    {g.periods.map((p) => (
+                      <th
+                        key={`out_w_${p.periodKey}`}
+                        className="border-r border-slate-300 px-2.5 py-1 text-center bg-amber-50 whitespace-nowrap"
+                      >
+                        {p.label}
+                      </th>
+                    ))}
+                  </React.Fragment>
                 ))}
               </tr>
 
@@ -473,8 +492,7 @@ const InventoryControl = () => {
                     className="w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-indigo-500 focus:outline-none text-right"
                   />
                 </th>
-                <th colSpan={(subPeriodCount + 1) * 2} className="border-r border-slate-300 bg-slate-100/50" />
-                <th className="bg-emerald-50/50" />
+                <th colSpan={totalPeriodCols || 1} className="border-r border-slate-300 bg-slate-100/50" />
               </tr>
             </thead>
 
@@ -491,48 +509,73 @@ const InventoryControl = () => {
                   </td>
                 </tr>
               ) : (
-                filteredData.map((row, idx) => (
-                  <tr
-                    key={row.itemId}
-                    className={`transition-colors hover:bg-blue-50/40 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
-                  >
-                    {/* Item name — sticky */}
-                    <td className={`sticky left-0 z-10 border-r border-gray-200 px-3 py-2 font-medium text-gray-900 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                      {row.namaBarang || '—'}
-                    </td>
-                    <td className="border-r border-gray-200 px-3 py-2 text-gray-700 tabular-nums">{row.plu || '—'}</td>
-                    <td className="border-r border-gray-200 px-3 py-2 text-right font-bold tabular-nums text-gray-900 bg-gray-50/30">
-                      {fmt(row.stockAwal)}
-                    </td>
+                filteredData.map((row, idx) => {
+                  let runningStock = row.stockAwal || 0;
 
-                    {/* Stock In W1, W2, W3, W4... */}
-                    {row.months?.map((m, pIdx) => (
-                      <td key={`in_${m.periodKey || pIdx}`} className="border-r border-gray-200 px-2.5 py-2 text-right tabular-nums text-blue-700">
-                        {m.stockIn > 0 ? fmt(m.stockIn) : <span className="text-gray-300">0</span>}
+                  return (
+                    <tr
+                      key={row.itemId}
+                      className={`transition-colors hover:bg-blue-50/40 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                    >
+                      {/* Item name — sticky */}
+                      <td className={`sticky left-0 z-10 border-r border-gray-200 px-3 py-2 font-medium text-gray-900 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                        {row.namaBarang || '—'}
                       </td>
-                    ))}
-                    {/* Total Stock In */}
-                    <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-blue-950 bg-blue-100/70">
-                      {fmt(row.totalStockIn)}
-                    </td>
-
-                    {/* Stock Out W1, W2, W3, W4... */}
-                    {row.months?.map((m, pIdx) => (
-                      <td key={`out_${m.periodKey || pIdx}`} className="border-r border-gray-200 px-2.5 py-2 text-right tabular-nums text-amber-700">
-                        {m.stockOut > 0 ? fmt(m.stockOut) : <span className="text-gray-300">0</span>}
+                      <td className="border-r border-gray-200 px-3 py-2 text-gray-700 tabular-nums">{row.plu || '—'}</td>
+                      <td className="border-r border-gray-200 px-3 py-2 text-right font-bold tabular-nums text-gray-900 bg-gray-50/30">
+                        {fmt(row.stockAwal)}
                       </td>
-                    ))}
-                    {/* Total Stock Out */}
-                    <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-amber-950 bg-amber-100/70">
-                      {fmt(row.totalStockOut)}
-                    </td>
 
-                    {/* Stock Akhir */}
-                    <td className="px-3 py-2 text-right font-extrabold tabular-nums text-emerald-950 bg-emerald-100/80">
-                      {fmt(row.stockAkhir)}
-                    </td>
-                  </tr>
-                ))
+                      {/* Grouped Month Columns */}
+                      {groupedMonths.map((g) => {
+                        const stockInList = g.periods.map((p) => row.months?.[p.originalIdx]?.stockIn || 0);
+                        const totalStockIn = stockInList.reduce((a, b) => a + b, 0);
+
+                        const stockOutList = g.periods.map((p) => row.months?.[p.originalIdx]?.stockOut || 0);
+                        const totalStockOut = stockOutList.reduce((a, b) => a + b, 0);
+
+                        runningStock = runningStock + totalStockIn - totalStockOut;
+
+                        return (
+                          <React.Fragment key={`m_row_${row.itemId}_${g.monthKey}`}>
+                            {/* Stock In per week */}
+                            {stockInList.map((val, pIdx) => (
+                              <td
+                                key={`in_cell_${pIdx}`}
+                                className="border-r border-gray-200 px-2.5 py-2 text-right tabular-nums text-blue-700"
+                              >
+                                {val > 0 ? fmt(val) : <span className="text-gray-300">0</span>}
+                              </td>
+                            ))}
+                            {/* Total Stock In */}
+                            <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-blue-950 bg-blue-100/70">
+                              {fmt(totalStockIn)}
+                            </td>
+
+                            {/* Stock Out per week */}
+                            {stockOutList.map((val, pIdx) => (
+                              <td
+                                key={`out_cell_${pIdx}`}
+                                className="border-r border-gray-200 px-2.5 py-2 text-right tabular-nums text-amber-700"
+                              >
+                                {val > 0 ? fmt(val) : <span className="text-gray-300">0</span>}
+                              </td>
+                            ))}
+                            {/* Total Stock Out */}
+                            <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-rose-950 bg-rose-100/70">
+                              {fmt(totalStockOut)}
+                            </td>
+
+                            {/* Stock Akhir for this Month */}
+                            <td className="border-r border-gray-300 px-3 py-2 text-right font-extrabold tabular-nums text-emerald-950 bg-emerald-100/80">
+                              {fmt(runningStock)}
+                            </td>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
 
@@ -545,30 +588,35 @@ const InventoryControl = () => {
                   {fmt(totalStockAwal)}
                 </td>
 
-                {/* Total Stock In per W1, W2... */}
-                {totalStockInPerPeriod.map((val, pIdx) => (
-                  <td key={`tot_in_${pIdx}`} className="border-r border-gray-300 px-2.5 py-2 text-right text-blue-800">
-                    {fmt(val)}
-                  </td>
-                ))}
-                <td className="border-r border-gray-300 px-3 py-2 text-right text-blue-950 font-extrabold bg-blue-200/80">
-                  {fmt(grandTotalStockIn)}
-                </td>
+                {/* Per Month Summary Totals */}
+                {monthSummary.map((summary) => (
+                  <React.Fragment key={`foot_${summary.monthKey}`}>
+                    {/* Stock In per week */}
+                    {summary.stockInPerPeriod.map((val, pIdx) => (
+                      <td key={`tot_in_${pIdx}`} className="border-r border-gray-300 px-2.5 py-2 text-right text-blue-800">
+                        {fmt(val)}
+                      </td>
+                    ))}
+                    <td className="border-r border-gray-300 px-3 py-2 text-right text-blue-950 font-extrabold bg-blue-200/80">
+                      {fmt(summary.totalStockIn)}
+                    </td>
 
-                {/* Total Stock Out per W1, W2... */}
-                {totalStockOutPerPeriod.map((val, pIdx) => (
-                  <td key={`tot_out_${pIdx}`} className="border-r border-gray-300 px-2.5 py-2 text-right text-amber-800">
-                    {fmt(val)}
-                  </td>
-                ))}
-                <td className="border-r border-gray-300 px-3 py-2 text-right text-amber-950 font-extrabold bg-amber-200/80">
-                  {fmt(grandTotalStockOut)}
-                </td>
+                    {/* Stock Out per week */}
+                    {summary.stockOutPerPeriod.map((val, pIdx) => (
+                      <td key={`tot_out_${pIdx}`} className="border-r border-gray-300 px-2.5 py-2 text-right text-amber-800">
+                        {fmt(val)}
+                      </td>
+                    ))}
+                    <td className="border-r border-gray-300 px-3 py-2 text-right text-rose-950 font-extrabold bg-rose-200/80">
+                      {fmt(summary.totalStockOut)}
+                    </td>
 
-                {/* Grand Total Stock Akhir */}
-                <td className="px-3 py-2 text-right text-emerald-950 font-extrabold bg-emerald-200">
-                  {fmt(grandTotalStockAkhir)}
-                </td>
+                    {/* Stock Akhir for this Month */}
+                    <td className="border-r border-gray-300 px-3 py-2 text-right text-emerald-950 font-extrabold bg-emerald-200">
+                      {fmt(summary.stockAkhir)}
+                    </td>
+                  </React.Fragment>
+                ))}
               </tr>
             </tfoot>
           </table>
