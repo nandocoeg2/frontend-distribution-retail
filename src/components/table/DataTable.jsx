@@ -52,6 +52,15 @@ const DataTable = ({
   selectedRowId = null,
   idAttribute = 'id',
 }) => {
+  const rows = table?.getRowModel?.()?.rows || [];
+
+  useTableKeyboardNavigation({
+    items: rows,
+    selectedId: selectedRowId,
+    onSelect: onRowClick,
+    idAttribute,
+  });
+
   if (!table) {
     return null;
   }
@@ -66,14 +75,6 @@ const DataTable = ({
   }
 
   const headerGroups = table.getHeaderGroups();
-  const rows = table.getRowModel().rows;
-
-  useTableKeyboardNavigation({
-    items: rows,
-    selectedId: selectedRowId,
-    onSelect: onRowClick,
-    idAttribute,
-  });
 
   const columnCount = table.getVisibleLeafColumns().length || table.getAllLeafColumns().length || 1;
 
