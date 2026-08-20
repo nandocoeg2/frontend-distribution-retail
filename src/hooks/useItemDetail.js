@@ -86,7 +86,12 @@ const useItemDetail = (itemId) => {
   };
 
   const loadItem = useCallback(async () => {
-    if (!itemId) return;
+    if (!itemId) {
+      setItem(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -100,6 +105,7 @@ const useItemDetail = (itemId) => {
         throw new Error(response.error?.message || 'Failed to load item');
       }
     } catch (err) {
+      setItem(null);
       if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
         handleAuthError();
       } else {
