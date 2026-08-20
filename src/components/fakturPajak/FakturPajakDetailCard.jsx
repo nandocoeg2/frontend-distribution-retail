@@ -7,7 +7,7 @@ import {
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import { formatCurrency, formatDate, formatDateTime } from '@/utils/formatUtils';
-import { InfoTable, StatusBadge, AccordionItem } from '../ui';
+import { InfoTable, StatusBadge, AccordionItem, ConfirmationDialog } from '../ui';
 import Autocomplete from '../common/Autocomplete';
 import ActivityTimeline from '../common/ActivityTimeline';
 import toastService from '@/services/toastService';
@@ -49,6 +49,14 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
   };
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [mismatchDialog, setMismatchDialog] = useState({
+    show: false,
+    file: null,
+    pdfInvoice: '',
+    targetInvoice: '',
+    fakturPajakNo: '',
+    loading: false,
+  });
   const [isDppTouched, setIsDppTouched] = useState(false);
   const [isPpnTouched, setIsPpnTouched] = useState(false);
   const isDppTouchedRef = useRef(false);
@@ -277,7 +285,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
 
     try {
       setUploading(true);
-      const result = await fakturPajakService.uploadEvidencePdf(fakturPajak.id, file);
+      const result = await fakturPajakService.uploadEvidencePdf(fakturPajak.id, file, { force: false });
 
       if (result?.success) {
         const filename = result?.data?.filename || file.name;
@@ -292,11 +300,85 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
       }
     } catch (error) {
       console.error('Error uploading e-Faktur evidence:', error);
-      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Gagal upload bukti e-Faktur DJP';
+
+      const errorData = error?.response?.data;
+      if (errorData?.mismatch) {
+        // Tampilkan Dialog Konfirmasi Mismatch
+        const pdfInvoice = errorData?.data?.pdfInvoice || '-';
+        const targetInvoice = errorData?.data?.targetInvoice || detail?.invoicePenagihan?.no_invoice_penagihan || '-';
+        const fakturPajakNo = errorData?.data?.fakturPajakNo || detail?.no_pajak || fakturPajak.no_pajak || '-';
+
+        setMismatchDialog({
+          show: true,
+          file: file,
+          pdfInvoice,
+          targetInvoice,
+          fakturPajakNo,
+          loading: false,
+        });
+        return;
+      }
+
+      const errorMessage = errorData?.error?.message || error?.message || 'Gagal upload bukti e-Faktur DJP';
       toastService.error(errorMessage);
     } finally {
       setUploading(false);
       event.target.value = ''; // Reset input for next upload
+    }
+  };
+
+  const handleConfirmMismatchUpload = async () => {
+    if (!mismatchDialog.file) return;
+
+    try {
+      setMismatchDialog((prev) => ({ ...prev, loading: true }));
+      const result = await fakturPajakService.uploadEvidencePdf(
+        fakturPajak.id,
+        mismatchDialog.file,
+        { force: true }
+      );
+
+      if (result?.success) {
+        const filename = result?.data?.filename || mismatchDialog.file.name;
+        toastService.success(`Berhasil upload e-Faktur evidence: ${filename}`);
+
+        if (onUpdate) {
+          onUpdate();
+        }
+
+        setMismatchDialog({
+          show: false,
+          file: null,
+          pdfInvoice: '',
+          targetInvoice: '',
+          fakturPajakNo: '',
+          loading: false,
+        });
+      } else {
+        throw new Error(result?.error?.message || 'Upload gagal');
+      }
+    } catch (error) {
+      console.error('Error forcing e-Faktur upload:', error);
+      const errorMessage =
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        'Gagal upload bukti e-Faktur DJP';
+      toastService.error(errorMessage);
+      setMismatchDialog((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleCancelMismatchUpload = () => {
+    setMismatchDialog({
+      show: false,
+      file: null,
+      pdfInvoice: '',
+      targetInvoice: '',
+      fakturPajakNo: '',
+      loading: false,
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -574,6 +656,18 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
           </div>
         )}
       </div>
+
+      <ConfirmationDialog
+        show={mismatchDialog.show}
+        title="Konfirmasi Nomor Invoice Mismatch"
+        message={`Nomor invoice pada dokumen PDF (${mismatchDialog.pdfInvoice}) tidak sesuai dengan nomor invoice Faktur Pajak ini (${mismatchDialog.targetInvoice}).\n\nApakah Anda yakin akan proses faktur pajak ${mismatchDialog.fakturPajakNo} untuk no invoice ${mismatchDialog.targetInvoice}?`}
+        confirmText="Ya, Proses"
+        cancelText="Batal"
+        type="warning"
+        loading={mismatchDialog.loading}
+        onConfirm={handleConfirmMismatchUpload}
+        onClose={handleCancelMismatchUpload}
+      />
     </div>
   );
 };

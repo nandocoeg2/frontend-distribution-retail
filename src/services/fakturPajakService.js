@@ -148,9 +148,11 @@ class FakturPajakService {
    * 
    * @param {string} id - Faktur Pajak ID
    * @param {File} file - PDF file from CoreTax DJP
+   * @param {Object} [options] - Upload options
+   * @param {boolean} [options.force=false] - Force upload even if invoice number mismatches
    * @returns {Promise} Upload result with file metadata
    */
-  async uploadEvidencePdf(id, file) {
+  async uploadEvidencePdf(id, file, options = {}) {
     try {
       // Validate file type
       if (!file || file.type !== 'application/pdf') {
@@ -161,7 +163,13 @@ class FakturPajakService {
       const formData = new FormData();
       formData.append('file', file);
 
+      const params = {};
+      if (options?.force) {
+        params.force = true;
+      }
+
       const response = await this.api.post(`/${id}/upload-evidence`, formData, {
+        params,
         headers: {
           'Content-Type': 'multipart/form-data',
         },
