@@ -686,27 +686,6 @@ const PackingTableServerSide = forwardRef(({
           );
         },
       }),
-      columnHelper.accessor('packingBoxes', {
-        id: 'total_boxes',
-        header: 'Total Boxes',
-        cell: (info) => info.getValue()?.length || 0,
-        enableColumnFilter: false,
-        enableSorting: false,
-      }),
-      columnHelper.display({
-        id: 'total_items',
-        header: 'Total Items',
-        cell: ({ row }) => {
-          const boxes = row.original.packingBoxes || [];
-          const totalItems = boxes.reduce(
-            (sum, box) => sum + (box.packingBoxItems?.length || 0),
-            0
-          );
-          return totalItems;
-        },
-        enableColumnFilter: false,
-        enableSorting: false,
-      }),
       columnHelper.display({
         id: 'actions',
         header: 'Actions',
