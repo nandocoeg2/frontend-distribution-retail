@@ -4,3 +4,5 @@ export { default as SuratJalanTable } from './SuratJalanTable';
 export { default as SuratJalanTableServerSide } from './SuratJalanTableServerSide';
 export { default as ViewSuratJalanModal } from './ViewSuratJalanModal';
 export { default as ProcessSuratJalanModal } from './ProcessSuratJalanModal';
+export { default as SuratJalanDetailsTable } from './SuratJalanDetailsTable';
+

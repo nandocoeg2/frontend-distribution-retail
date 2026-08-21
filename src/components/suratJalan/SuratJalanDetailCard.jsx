@@ -52,39 +52,12 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
     try {
       setSaving(true);
 
-      // Normalize payload to match API contract
-      const sanitizedChecklist = (() => {
-        if (!formData.checklistSuratJalan) {
-          return null;
-        }
-
-        const { id, suratJalanId, createdAt, updatedAt, ...restChecklist } = formData.checklistSuratJalan;
-        let tanggalValue = restChecklist.tanggal;
-
-        if (tanggalValue) {
-          if (!tanggalValue.endsWith('Z')) {
-            if (tanggalValue.length === 16) {
-              tanggalValue += ':00Z';
-            } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(tanggalValue)) {
-              tanggalValue += '.000Z';
-            }
-          }
-          tanggalValue = new Date(tanggalValue).toISOString();
-        }
-
-        return {
-          ...restChecklist,
-          tanggal: tanggalValue || null
-        };
-      })();
-
       const submitData = {
         no_surat_jalan: formData.no_surat_jalan,
         deliver_to: formData.deliver_to,
         PIC: formData.PIC,
         alamat_tujuan: formData.alamat_tujuan,
         invoiceId: formData.invoiceId || null,
-        checklistSuratJalan: sanitizedChecklist
       };
 
       const result = await suratJalanService.updateSuratJalan(suratJalan.id, submitData);

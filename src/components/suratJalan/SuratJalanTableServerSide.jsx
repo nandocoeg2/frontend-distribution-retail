@@ -588,7 +588,7 @@ const SuratJalanTableServerSide = forwardRef(({
   return (
     <div className="space-y-2">
       {(hasActiveFilters || hasSelectedSuratJalan) && (
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-100">
           {hasSelectedSuratJalan ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-blue-700">{selectedSuratJalan.length} dipilih</span>
@@ -613,7 +613,7 @@ const SuratJalanTableServerSide = forwardRef(({
             </div>
           ) : <div />}
           {hasActiveFilters && (
-            <button onClick={resetFilters} className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50">Reset Filter</button>
+            <button onClick={resetFilters} className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors">Reset Filter</button>
           )}
         </div>
       )}

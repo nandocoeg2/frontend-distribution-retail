@@ -585,7 +585,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
   return (
     <div className="space-y-4">
       {(hasActiveFilters || hasSelectedInvoices) && (
-        <div className="flex justify-between items-center bg-gray-50 p-2 rounded-lg border border-gray-200">
+        <div className="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-100">
           {hasSelectedInvoices ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-green-700">

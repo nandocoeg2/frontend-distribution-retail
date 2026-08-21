@@ -1,8 +1,6 @@
 import React, { useEffect } from 'react';
-import Autocomplete from '../common/Autocomplete';
 import usePackingForm from '../../hooks/usePackingForm';
 import usePackingOperations from '../../hooks/usePackingOperations';
-import usePurchaseOrderAutocomplete from '../../hooks/usePurchaseOrderAutocomplete';
 import useMixedCartonValidation from '../../hooks/useMixedCartonValidation';
 import { MixedBadge } from '../ui';
 
@@ -30,13 +28,6 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
 
   const { isCreating, isUpdating, createPackingData, updatePackingData } =
     usePackingOperations();
-  const {
-    options: purchaseOrderOptions,
-    loading: purchaseOrderLoading,
-    fetchOptions: searchPurchaseOrders,
-  } = usePurchaseOrderAutocomplete({
-    selectedValue: formData.purchaseOrderId,
-  });
   
   const {
     loadItemsRelationships,
@@ -59,13 +50,6 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items?.length]); // Only re-run when items length changes
-
-  const handlePurchaseOrderChange = (eventOrValue) => {
-    const value = eventOrValue?.target
-      ? eventOrValue.target.value
-      : eventOrValue || '';
-    handleInputChange('purchaseOrderId', value);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,109 +85,13 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
   // Don't include relationshipsLoading in main isLoading to prevent blocking the entire form
   const isLoading =
     statusLoading ||
-    purchaseOrderLoading ||
     itemsLoading ||
     isSubmitting ||
     isCreating ||
     isUpdating;
 
-  // Check if packing date should be editable based on status
-  const currentStatus = packingStatuses.find(
-    (status) => status.id === formData.statusId
-  );
-  const isDateEditable =
-    !currentStatus ||
-    currentStatus.status_code === 'PENDING PACKING' ||
-    currentStatus.status_code === 'PROCESSING PACKING';
-
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        {/* Tanggal Packing */}
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Tanggal Packing *
-          </label>
-          <input
-            type='date'
-            value={formData.tanggal_packing}
-            onChange={(e) =>
-              handleInputChange('tanggal_packing', e.target.value)
-            }
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.tanggal_packing ? 'border-red-500' : 'border-gray-300'
-            } ${!isDateEditable ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-            disabled={isLoading || !isDateEditable}
-            title={
-              !isDateEditable
-                ? 'Tanggal packing tidak dapat diubah karena status sudah Complete'
-                : ''
-            }
-          />
-          {errors.tanggal_packing && (
-            <p className='mt-1 text-sm text-red-600'>
-              {errors.tanggal_packing}
-            </p>
-          )}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Status *
-          </label>
-          <select
-            value={formData.statusId}
-            onChange={(e) => handleInputChange('statusId', e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              errors.statusId ? 'border-red-500' : 'border-gray-300'
-            }`}
-            disabled={isLoading}
-          >
-            <option value=''>Pilih Status</option>
-            {Array.isArray(packingStatuses) &&
-              packingStatuses.map((status) => (
-                <option key={status.id} value={status.id}>
-                  {status.status_name}
-                </option>
-              ))}
-          </select>
-          {errors.statusId && (
-            <p className='mt-1 text-sm text-red-600'>{errors.statusId}</p>
-          )}
-        </div>
-
-        {/* Purchase Order */}
-        <div className='md:col-span-2'>
-          <label className='block text-sm font-medium text-gray-700 mb-1'>
-            Purchase Order *
-          </label>
-          <Autocomplete
-            label=''
-            options={purchaseOrderOptions}
-            value={formData.purchaseOrderId || ''}
-            onChange={handlePurchaseOrderChange}
-            placeholder='Cari Purchase Order'
-            displayKey='label'
-            valueKey='id'
-            name='purchaseOrderId'
-            loading={purchaseOrderLoading}
-            onSearch={searchPurchaseOrders}
-            showId
-            disabled={isLoading}
-            inputClassName={
-              errors.purchaseOrderId
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                : ''
-            }
-          />
-          {errors.purchaseOrderId && (
-            <p className='mt-1 text-sm text-red-600'>
-              {errors.purchaseOrderId}
-            </p>
-          )}
-        </div>
-      </div>
 
       {/* Packing Boxes */}
       <div>

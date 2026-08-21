@@ -55,9 +55,29 @@ const PackingsPage = () => {
 
   const tableLoading = Boolean(loading && !error);
 
-  const openEditModal = useCallback((packing) => {
-    setEditingPacking(packing);
-    setIsEditModalOpen(true);
+  const openEditModal = useCallback(async (packing) => {
+    if (!packing?.id) return;
+
+    const hasDetailedBoxes = packing.packingBoxes?.some(
+      (b) => b.packingBoxItems?.length > 0 && b.no_box
+    );
+
+    if (hasDetailedBoxes) {
+      setEditingPacking(packing);
+      setIsEditModalOpen(true);
+      return;
+    }
+
+    try {
+      const response = await getPackingById(packing.id);
+      const detailData = response?.success ? response.data : response;
+      setEditingPacking(detailData || packing);
+    } catch (err) {
+      console.warn('Failed to fetch full packing detail for edit, falling back to row data:', err);
+      setEditingPacking(packing);
+    } finally {
+      setIsEditModalOpen(true);
+    }
   }, []);
 
   const closeEditModal = useCallback(() => {

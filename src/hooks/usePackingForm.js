@@ -152,21 +152,6 @@ const usePackingForm = (initialData = null) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate tanggal_packing
-    if (!formData.tanggal_packing) {
-      newErrors.tanggal_packing = 'Tanggal packing harus diisi';
-    }
-
-    // Validate statusId
-    if (!formData.statusId) {
-      newErrors.statusId = 'Status harus dipilih';
-    }
-
-    // Validate purchaseOrderId
-    if (!formData.purchaseOrderId) {
-      newErrors.purchaseOrderId = 'Purchase Order harus dipilih';
-    }
-
     // Validate packingBoxes
     if (!formData.packingBoxes || formData.packingBoxes.length === 0) {
       newErrors.packingBoxes = 'Minimal satu box packing harus ditambahkan';
@@ -217,17 +202,27 @@ const usePackingForm = (initialData = null) => {
   };
 
   const getFormattedData = () => {
-    return {
-      ...formData,
-      tanggal_packing: new Date(formData.tanggal_packing).toISOString(),
+    const data = {
       packingBoxes: formData.packingBoxes.map((box) => ({
         ...box,
         packingBoxItems: box.packingBoxItems.map((item) => ({
           ...item,
-          quantity: parseInt(item.quantity),
+          quantity: parseInt(item.quantity, 10),
         })),
       })),
     };
+
+    if (formData.tanggal_packing) {
+      data.tanggal_packing = new Date(formData.tanggal_packing).toISOString();
+    }
+    if (formData.statusId) {
+      data.statusId = formData.statusId;
+    }
+    if (formData.purchaseOrderId) {
+      data.purchaseOrderId = formData.purchaseOrderId;
+    }
+
+    return data;
   };
 
   return {

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
     DocumentTextIcon,
-    ClipboardDocumentCheckIcon,
     ArchiveBoxIcon,
-    ChevronDownIcon,
-    ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { getPackingBoxes } from '../../utils/suratJalanHelpers';
+import SuratJalanDetailsTable from './SuratJalanDetailsTable';
 
 const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }) => {
     const [formData, setFormData] = useState({
@@ -15,39 +13,16 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
         PIC: '',
         alamat_tujuan: '',
         invoiceId: '',
-        checklistSuratJalan: {
-            tanggal: '',
-            checker: '',
-            ekspedisi: '',
-            mobil: '',
-            kota: ''
-        }
     });
-    const [expandedDetails, setExpandedDetails] = useState({});
 
     useEffect(() => {
         if (suratJalan) {
-            const hasChecklist = suratJalan.checklistSuratJalan && Object.keys(suratJalan.checklistSuratJalan).length > 0;
-
             setFormData({
                 no_surat_jalan: suratJalan.no_surat_jalan || '',
                 deliver_to: suratJalan.deliver_to || '',
                 PIC: suratJalan.PIC || '',
                 alamat_tujuan: suratJalan.alamat_tujuan || '',
                 invoiceId: suratJalan.invoiceId || '',
-                checklistSuratJalan: hasChecklist ? {
-                    tanggal: suratJalan.checklistSuratJalan.tanggal ? new Date(suratJalan.checklistSuratJalan.tanggal).toISOString().slice(0, 16) : '',
-                    checker: suratJalan.checklistSuratJalan.checker || '',
-                    ekspedisi: suratJalan.checklistSuratJalan.ekspedisi || '',
-                    mobil: suratJalan.checklistSuratJalan.mobil || '',
-                    kota: suratJalan.checklistSuratJalan.kota || ''
-                } : {
-                    tanggal: '',
-                    checker: '',
-                    ekspedisi: '',
-                    mobil: '',
-                    kota: ''
-                }
             });
         }
     }, [suratJalan]);
@@ -57,24 +32,6 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
         setFormData(prev => ({
             ...prev,
             [name]: value
-        }));
-    };
-
-    const handleChecklistChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            checklistSuratJalan: {
-                ...prev.checklistSuratJalan,
-                [name]: value
-            }
-        }));
-    };
-
-    const toggleDetail = (detailId) => {
-        setExpandedDetails(prev => ({
-            ...prev,
-            [detailId]: !prev[detailId]
         }));
     };
 
@@ -170,97 +127,6 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
                     <p className="mt-1 text-xs text-gray-500">
                         Sisakan kosong jika surat jalan tidak terkait dengan invoice tertentu.
                     </p>
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderChecklistSection = () => (
-        <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-                <ClipboardDocumentCheckIcon className="mr-2 h-5 w-5 text-blue-600" aria-hidden="true" />
-                Checklist Surat Jalan
-            </h3>
-            <div className="p-4 border border-blue-200 rounded-lg bg-blue-50/30">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                        <label htmlFor="tanggal" className="block mb-1 text-sm font-medium text-gray-700">
-                            Tanggal <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="datetime-local"
-                            id="tanggal"
-                            name="tanggal"
-                            value={formData.checklistSuratJalan.tanggal}
-                            onChange={handleChecklistChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="checker" className="block mb-1 text-sm font-medium text-gray-700">
-                            Checker <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="checker"
-                            name="checker"
-                            value={formData.checklistSuratJalan.checker}
-                            onChange={handleChecklistChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            required
-                            placeholder="Nama pemeriksa"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="ekspedisi" className="block mb-1 text-sm font-medium text-gray-700">
-                            Ekspedisi <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="ekspedisi"
-                            name="ekspedisi"
-                            value={formData.checklistSuratJalan.ekspedisi}
-                            onChange={handleChecklistChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            required
-                            placeholder="Nama ekspedisi"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="mobil" className="block mb-1 text-sm font-medium text-gray-700">
-                            Mobil <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="mobil"
-                            name="mobil"
-                            value={formData.checklistSuratJalan.mobil}
-                            onChange={handleChecklistChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            required
-                            placeholder="Nomor kendaraan (misal: B 1234 XYZ)"
-                        />
-                    </div>
-
-                    <div>
-                        <label htmlFor="kota" className="block mb-1 text-sm font-medium text-gray-700">
-                            Kota <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="kota"
-                            name="kota"
-                            value={formData.checklistSuratJalan.kota}
-                            onChange={handleChecklistChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                            required
-                            placeholder="Kota tujuan"
-                        />
-                    </div>
                 </div>
             </div>
         </div>
@@ -393,7 +259,6 @@ const SuratJalanForm = ({ suratJalan, onSubmit, onCancel, isSubmitting, formId }
     return (
         <form id={formId} onSubmit={handleSubmit} className="space-y-6">
             {renderBasicInfoSection()}
-            {renderChecklistSection()}
             {renderDetailsSection()}
         </form>
     );

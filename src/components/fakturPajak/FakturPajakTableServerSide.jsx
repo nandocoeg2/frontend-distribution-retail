@@ -798,7 +798,7 @@ const FakturPajakTableServerSide = ({
   return (
     <div className="space-y-2">
       {(hasActiveFilters || selectedFakturIds.length > 0) && (
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-100">
           {selectedFakturIds.length > 0 ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-blue-700">
