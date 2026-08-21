@@ -2,46 +2,135 @@ import { useState, useEffect } from 'react';
 import useStatuses from './useStatuses';
 import useItemsLookup from './useItemsLookup';
 
+const mapInitialBoxes = (boxesData, itemsList = []) => {
+  if (!Array.isArray(boxesData)) return [];
+  return boxesData.map((box) => ({
+    id: box.id,
+    no_box: box.no_box || '',
+    statusId: box.statusId || box.status?.id || '',
+    status: box.status || null,
+    packingBoxItems: Array.isArray(box.packingBoxItems)
+      ? box.packingBoxItems.map((item) => {
+          let resolvedItemId = item.itemId || item.item?.id || '';
+          const nama = item.nama_barang || item.item?.nama_barang || '';
+          if (!resolvedItemId && nama && Array.isArray(itemsList) && itemsList.length > 0) {
+            const trimmedNama = nama.trim().toLowerCase();
+            const matched = itemsList.find(
+              (it) =>
+                (it.nama_barang && it.nama_barang.trim().toLowerCase() === trimmedNama) ||
+                (it.plu && it.plu.trim().toLowerCase() === trimmedNama)
+            );
+            if (matched) resolvedItemId = matched.id;
+          }
+          return {
+            id: item.id,
+            nama_barang: nama,
+            quantity: item.quantity ?? '',
+            itemId: resolvedItemId,
+            keterangan: item.keterangan || '',
+          };
+        })
+      : [],
+  }));
+};
+
 const usePackingForm = (initialData = null) => {
-  const [formData, setFormData] = useState({
-    tanggal_packing: '',
-    statusId: '',
-    purchaseOrderId: '',
-    packingBoxes: [],
+  // Load dependencies
+  const {
+    packingStatuses,
+    packingItemStatuses,
+    loading: statusLoadingObj,
+    fetchPackingStatuses,
+    fetchPackingItemStatuses,
+  } = useStatuses();
+  
+  // Extract specific loading state for packing and packing item
+  const statusLoading =
+    statusLoadingObj?.packing || statusLoadingObj?.packingItem || false;
+  const { items, loading: itemsLoading } = useItemsLookup();
+
+  const [formData, setFormData] = useState(() => {
+    if (!initialData) {
+      return {
+        tanggal_packing: '',
+        statusId: '',
+        purchaseOrderId: '',
+        packingBoxes: [],
+      };
+    }
+    return {
+      tanggal_packing: initialData.tanggal_packing
+        ? new Date(initialData.tanggal_packing).toISOString().split('T')[0]
+        : '',
+      statusId: initialData.statusId || initialData.status?.id || '',
+      purchaseOrderId: initialData.purchaseOrderId || '',
+      packingBoxes: mapInitialBoxes(initialData.packingBoxes, items),
+    };
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load dependencies
-  const {
-    packingStatuses,
-    loading: statusLoadingObj,
-    fetchPackingStatuses,
-  } = useStatuses();
-  
-  // Extract specific loading state for packing (statusLoadingObj is an object)
-  const statusLoading = statusLoadingObj?.packing || false;
-  const { items, loading: itemsLoading } = useItemsLookup();
-
-  // Load packing statuses on mount
+  // Load packing and packing item statuses on mount
   useEffect(() => {
-    fetchPackingStatuses();
-  }, [fetchPackingStatuses]);
+    if (typeof fetchPackingStatuses === 'function') fetchPackingStatuses();
+    if (typeof fetchPackingItemStatuses === 'function') fetchPackingItemStatuses();
+  }, []);
 
-  // Initialize form with initial data
+  // Determine box statuses (category 'Packing Detail Item' is used for packing boxes)
+  const boxStatuses =
+    Array.isArray(packingItemStatuses) && packingItemStatuses.length > 0
+      ? packingItemStatuses
+      : packingStatuses;
+
+  // Initialize/sync form when initialData changes
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        tanggal_packing: initialData.tanggal_packing
-          ? new Date(initialData.tanggal_packing).toISOString().split('T')[0]
-          : '',
-        statusId: initialData.statusId || '',
-        purchaseOrderId: initialData.purchaseOrderId || '',
-        packingBoxes: initialData.packingBoxes || [],
+    if (!initialData) return;
+    setFormData({
+      tanggal_packing: initialData.tanggal_packing
+        ? new Date(initialData.tanggal_packing).toISOString().split('T')[0]
+        : '',
+      statusId: initialData.statusId || initialData.status?.id || '',
+      purchaseOrderId: initialData.purchaseOrderId || '',
+      packingBoxes: mapInitialBoxes(initialData.packingBoxes, items),
+    });
+  }, [initialData?.id]);
+
+  // Auto-resolve missing itemId in box items when items lookup is available
+  useEffect(() => {
+    if (!items || items.length === 0) return;
+
+    setFormData((prev) => {
+      let hasChanges = false;
+      const updatedBoxes = prev.packingBoxes.map((box) => {
+        let boxChanged = false;
+        const updatedItems = (box.packingBoxItems || []).map((item) => {
+          if (!item.itemId && item.nama_barang) {
+            const trimmedNama = item.nama_barang.trim().toLowerCase();
+            const matchedItem = items.find(
+              (it) =>
+                (it.nama_barang &&
+                  it.nama_barang.trim().toLowerCase() === trimmedNama) ||
+                (it.plu && it.plu.trim().toLowerCase() === trimmedNama)
+            );
+            if (matchedItem) {
+              boxChanged = true;
+              return { ...item, itemId: matchedItem.id };
+            }
+          }
+          return item;
+        });
+
+        if (boxChanged) {
+          hasChanges = true;
+          return { ...box, packingBoxItems: updatedItems };
+        }
+        return box;
       });
-    }
-  }, [initialData]);
+
+      return hasChanges ? { ...prev, packingBoxes: updatedBoxes } : prev;
+    });
+  }, [items?.length]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -59,13 +148,15 @@ const usePackingForm = (initialData = null) => {
   };
 
   const addPackingBox = () => {
+    const defaultStatusId =
+      packingItemStatuses?.[0]?.id || packingStatuses?.[0]?.id || '';
     setFormData((prev) => ({
       ...prev,
       packingBoxes: [
         ...prev.packingBoxes,
         {
           no_box: '',
-          statusId: '',
+          statusId: defaultStatusId,
           packingBoxItems: [
             {
               nama_barang: '',
@@ -204,10 +295,15 @@ const usePackingForm = (initialData = null) => {
   const getFormattedData = () => {
     const data = {
       packingBoxes: formData.packingBoxes.map((box) => ({
-        ...box,
+        ...(box.id ? { id: box.id } : {}),
+        no_box: box.no_box,
+        statusId: box.statusId || undefined,
         packingBoxItems: box.packingBoxItems.map((item) => ({
-          ...item,
+          ...(item.id ? { id: item.id } : {}),
+          itemId: item.itemId,
+          nama_barang: item.nama_barang,
           quantity: parseInt(item.quantity, 10),
+          keterangan: item.keterangan || '',
         })),
       })),
     };
@@ -230,7 +326,9 @@ const usePackingForm = (initialData = null) => {
     errors,
     isSubmitting,
     setIsSubmitting,
+    boxStatuses,
     packingStatuses,
+    packingItemStatuses,
     items,
     statusLoading,
     itemsLoading,

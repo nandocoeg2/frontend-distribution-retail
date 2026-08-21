@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import ScheduledPriceTableServerSide from '../components/scheduledPrice/ScheduledPriceTableServerSide';
 import AddScheduledPriceModal from '../components/scheduledPrice/AddScheduledPriceModal';
 import EditScheduledPriceModal from '../components/scheduledPrice/EditScheduledPriceModal';
-import CancelScheduleModal from '../components/scheduledPrice/CancelScheduleModal';
 import useScheduledPriceOperations from '../hooks/useScheduledPriceOperations';
 import authService from '../services/authService';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -12,7 +11,6 @@ const ScheduledPrice = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
 
   const { deleteSchedule, getSchedule, loading: operationLoading } = useScheduledPriceOperations();
@@ -33,11 +31,6 @@ const ScheduledPrice = () => {
       setSelectedSchedule(schedule);
       setShowEditModal(true);
     }
-  };
-
-  const handleCancel = (schedule) => {
-    setSelectedSchedule(schedule);
-    setShowCancelModal(true);
   };
 
   const handleDelete = async (scheduleId) => {
@@ -78,7 +71,6 @@ const ScheduledPrice = () => {
             <ScheduledPriceTableServerSide
               ref={tableRef}
               onEdit={handleEdit}
-              onCancel={handleCancel}
               onDelete={handleDelete}
               deleteLoading={operationLoading}
               companyId={companyId}
@@ -98,17 +90,6 @@ const ScheduledPrice = () => {
               schedule={selectedSchedule}
               onClose={() => {
                 setShowEditModal(false);
-                setSelectedSchedule(null);
-              }}
-              onSuccess={handleModalSuccess}
-            />
-          )}
-
-          {showCancelModal && selectedSchedule && (
-            <CancelScheduleModal
-              schedule={selectedSchedule}
-              onClose={() => {
-                setShowCancelModal(false);
                 setSelectedSchedule(null);
               }}
               onSuccess={handleModalSuccess}

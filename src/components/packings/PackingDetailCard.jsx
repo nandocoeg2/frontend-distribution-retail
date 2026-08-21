@@ -84,7 +84,7 @@ const PackingDetailCard = ({ packing, onClose, loading = false }) => {
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-900">Packing Details</h2>
-            <p className="text-xs text-gray-600">{packing.purchaseOrder.po_number || 'N/A'}</p>
+            <p className="text-xs text-gray-600">{packing.purchaseOrder?.po_number || 'N/A'}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">

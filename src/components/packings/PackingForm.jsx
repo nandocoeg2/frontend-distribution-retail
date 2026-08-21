@@ -10,6 +10,7 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
     errors,
     isSubmitting,
     setIsSubmitting,
+    boxStatuses,
     packingStatuses,
     items,
     statusLoading,
@@ -183,8 +184,15 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
                     disabled={isLoading}
                   >
                     <option value=''>Pilih Status</option>
-                    {Array.isArray(packingStatuses) &&
-                      packingStatuses.map((status) => (
+                    {/* Include box's own existing status if not present in boxStatuses */}
+                    {box.status &&
+                      !boxStatuses?.some((s) => s.id === box.statusId) && (
+                        <option value={box.status.id}>
+                          {box.status.status_name}
+                        </option>
+                      )}
+                    {Array.isArray(boxStatuses) &&
+                      boxStatuses.map((status) => (
                         <option key={status.id} value={status.id}>
                           {status.status_name}
                         </option>
@@ -268,14 +276,32 @@ const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
                           </label>
                           <select
                             value={item.itemId}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const selectedId = e.target.value;
                               updateBoxItem(
                                 boxIndex,
                                 itemIndex,
                                 'itemId',
-                                e.target.value
-                              )
-                            }
+                                selectedId
+                              );
+                              if (selectedId) {
+                                const selectedItem = items?.find(
+                                  (it) => it.id === selectedId
+                                );
+                                if (selectedItem && !item.nama_barang) {
+                                  updateBoxItem(
+                                    boxIndex,
+                                    itemIndex,
+                                    'nama_barang',
+                                    selectedItem.nama_barang ||
+                                      selectedItem.product_name ||
+                                      selectedItem.name ||
+                                      selectedItem.plu ||
+                                      ''
+                                  );
+                                }
+                              }
+                            }}
                             className={`w-full px-2 py-1 text-sm border rounded ${
                               errors[
                                 `packingBoxes.${boxIndex}.items.${itemIndex}.itemId`

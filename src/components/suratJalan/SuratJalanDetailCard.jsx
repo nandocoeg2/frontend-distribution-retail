@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ClipboardDocumentCheckIcon,
   ClockIcon,
@@ -10,7 +10,6 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { resolveStatusVariant } from '../../utils/modalUtils';
-import PackingGroupedItemsTable from '../packings/PackingGroupedItemsTable';
 import { AccordionItem, StatusBadge, InfoTable, TabContainer, Tab, TabContent, TabPanel } from '../ui';
 import { formatDateTime, formatDate } from '../../utils/formatUtils';
 import ActivityTimeline from '../common/ActivityTimeline';
@@ -18,6 +17,8 @@ import suratJalanService from '../../services/suratJalanService';
 import toastService from '../../services/toastService';
 import { getPackingBoxes, getTotals } from '../../utils/suratJalanHelpers';
 import SuratJalanForm from './SuratJalanForm';
+import SuratJalanDetailsTable from './SuratJalanDetailsTable';
+
 
 const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }) => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -80,62 +81,73 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
   };
 
   const checklistData = suratJalan?.checklistSuratJalan;
-  const normalizedChecklist = Array.isArray(checklistData)
-    ? checklistData
-    : checklistData
-      ? [checklistData]
-      : [];
+  const normalizedChecklist = useMemo(() => {
+    return Array.isArray(checklistData)
+      ? checklistData
+      : checklistData
+        ? [checklistData]
+        : [];
+  }, [checklistData]);
 
-  const historyData = Array.isArray(suratJalan?.historyPengiriman)
-    ? suratJalan.historyPengiriman
-    : suratJalan?.historyPengiriman
-      ? [suratJalan.historyPengiriman]
-      : [];
+  const historyData = useMemo(() => {
+    return Array.isArray(suratJalan?.historyPengiriman)
+      ? suratJalan.historyPengiriman
+      : suratJalan?.historyPengiriman
+        ? [suratJalan.historyPengiriman]
+        : [];
+  }, [suratJalan?.historyPengiriman]);
 
-  const rawAuditTrailData = Array.isArray(suratJalan?.auditTrails)
-    ? suratJalan.auditTrails
-    : suratJalan?.auditTrails
-      ? [suratJalan.auditTrails]
-      : [];
+  const rawAuditTrailData = suratJalan?.auditTrails;
+  const normalizedAuditTrails = useMemo(() => {
+    const raw = Array.isArray(rawAuditTrailData)
+      ? rawAuditTrailData
+      : rawAuditTrailData
+        ? [rawAuditTrailData]
+        : [];
 
-  const normalizedAuditTrails = rawAuditTrailData.map((trail) => {
-    const timestampSource =
-      trail?.timestamp ||
-      trail?.createdAt ||
-      trail?.updatedAt ||
-      trail?.created_at ||
-      trail?.updated_at;
-    let timestamp = null;
+    return raw.map((trail) => {
+      const timestampSource =
+        trail?.timestamp ||
+        trail?.createdAt ||
+        trail?.updatedAt ||
+        trail?.created_at ||
+        trail?.updated_at;
+      let timestamp = null;
 
-    if (timestampSource) {
-      const parsed = new Date(timestampSource);
-      if (!Number.isNaN(parsed.getTime())) {
-        timestamp = parsed.toISOString();
+      if (timestampSource) {
+        const parsed = new Date(timestampSource);
+        if (!Number.isNaN(parsed.getTime())) {
+          timestamp = parsed.toISOString();
+        }
       }
-    }
 
-    return {
-      ...trail,
-      timestamp,
-      tableName: trail?.tableName || trail?.entityType || 'Surat Jalan',
-    };
-  });
+      return {
+        ...trail,
+        timestamp,
+        tableName: trail?.tableName || trail?.entityType || 'Surat Jalan',
+      };
+    });
+  }, [rawAuditTrailData]);
 
   const statusData = suratJalan?.status;
-  const statusDisplay =
-    typeof statusData === 'string'
+  const statusDisplay = useMemo(() => {
+    return typeof statusData === 'string'
       ? statusData
       : statusData?.status_name ||
       statusData?.status_code ||
       'DRAFT SURAT JALAN';
-  const statusVariant = resolveStatusVariant(
-    typeof statusData === 'string'
-      ? statusData
-      : statusData?.status_name || statusData?.status_code
-  );
+  }, [statusData]);
 
-  const packingBoxes = getPackingBoxes(suratJalan);
-  const { totalBoxes, totalQuantity } = getTotals(suratJalan);
+  const statusVariant = useMemo(() => {
+    return resolveStatusVariant(
+      typeof statusData === 'string'
+        ? statusData
+        : statusData?.status_name || statusData?.status_code
+    );
+  }, [statusData]);
+
+  const packingBoxes = useMemo(() => getPackingBoxes(suratJalan), [suratJalan]);
+  const { totalBoxes, totalQuantity } = useMemo(() => getTotals(suratJalan), [suratJalan]);
 
   return (
     <div className='bg-white shadow rounded-lg p-3 mt-3'>
@@ -251,12 +263,11 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
             </TabPanel>
 
             <TabPanel tabId='details'>
-              <div className='flex items-center justify-between mb-2'>
-                <span className='text-xs font-medium text-gray-700'>Box Details</span>
-                <span className='px-2 py-0.5 text-xs font-medium text-blue-800 bg-blue-100 rounded-full'>{packingBoxes.length} boxes • {totalQuantity || 0} qty</span>
+              <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+                <SuratJalanDetailsTable packingBoxes={packingBoxes} />
               </div>
-              <PackingGroupedItemsTable packingBoxes={packingBoxes} />
             </TabPanel>
+
 
             <TabPanel tabId='checklist'>
               <div className='flex items-center justify-between mb-2'>

@@ -6,34 +6,49 @@ import usePackingForm from '../../hooks/usePackingForm';
 import PackingForm from '../../components/packings/PackingForm';
 
 const mockFetchPackingStatuses = vi.fn();
+const mockFetchPackingItemStatuses = vi.fn();
+
+const MOCK_PACKING_STATUSES = [
+  { id: 'status-pack-1', status_name: 'Pending Packing', status_code: 'PENDING PACKING' },
+  { id: 'status-pack-2', status_name: 'Completed Packing', status_code: 'COMPLETED PACKING' },
+];
+
+const MOCK_PACKING_ITEM_STATUSES = [
+  { id: 'status-box-1', status_name: 'Pending Item', status_code: 'PENDING ITEM' },
+  { id: 'status-box-2', status_name: 'Processed Item', status_code: 'PROCESSED ITEM' },
+];
+
+const MOCK_ITEMS = [
+  { id: 'item-1', nama_barang: 'Item Alpha', plu: 'PLU001' },
+  { id: 'item-2', nama_barang: 'Item Beta', plu: 'PLU002' },
+];
+
 vi.mock('../../hooks/useStatuses', () => ({
   default: () => ({
-    packingStatuses: [
-      { id: 'status-1', status_name: 'Pending Packing', status_code: 'PENDING PACKING' },
-      { id: 'status-2', status_name: 'Completed Packing', status_code: 'COMPLETED PACKING' },
-    ],
-    loading: { packing: false },
+    packingStatuses: MOCK_PACKING_STATUSES,
+    packingItemStatuses: MOCK_PACKING_ITEM_STATUSES,
+    loading: { packing: false, packingItem: false },
     fetchPackingStatuses: mockFetchPackingStatuses,
+    fetchPackingItemStatuses: mockFetchPackingItemStatuses,
   }),
 }));
 
 vi.mock('../../hooks/useItemsLookup', () => ({
   default: () => ({
-    items: [
-      { id: 'item-1', nama_barang: 'Item Alpha', plu: 'PLU001' },
-      { id: 'item-2', nama_barang: 'Item Beta', plu: 'PLU002' },
-    ],
+    items: MOCK_ITEMS,
     loading: false,
   }),
 }));
 
+const mockPackingOperations = {
+  isCreating: false,
+  isUpdating: false,
+  createPackingData: vi.fn(),
+  updatePackingData: vi.fn(),
+};
+
 vi.mock('../../hooks/usePackingOperations', () => ({
-  default: () => ({
-    isCreating: false,
-    isUpdating: false,
-    createPackingData: vi.fn(),
-    updatePackingData: vi.fn(),
-  }),
+  default: () => mockPackingOperations,
 }));
 
 vi.mock('../../hooks/useMixedCartonValidation', () => ({
@@ -59,7 +74,7 @@ describe('usePackingForm hook for Edit Packing', () => {
         packingBoxes: [
           {
             no_box: 'BOX-001',
-            statusId: 'status-1',
+            statusId: 'status-box-1',
             packingBoxItems: [
               {
                 nama_barang: 'Item Alpha',
@@ -83,7 +98,33 @@ describe('usePackingForm hook for Edit Packing', () => {
 
     const formatted = result.current.getFormattedData();
     expect(formatted.packingBoxes).toHaveLength(1);
+    expect(formatted.packingBoxes[0].statusId).toBe('status-box-1');
     expect(formatted.packingBoxes[0].packingBoxItems[0].quantity).toBe(10);
+    expect(formatted.packingBoxes[0].packingBoxItems[0].itemId).toBe('item-1');
+  });
+
+  it('auto-resolves missing itemId when nama_barang matches an item from catalog', () => {
+    const { result } = renderHook(() =>
+      usePackingForm({
+        id: 'packing-1',
+        packingBoxes: [
+          {
+            no_box: 'BOX-001',
+            statusId: 'status-box-1',
+            packingBoxItems: [
+              {
+                nama_barang: 'Item Beta',
+                quantity: '5',
+                itemId: '', // Initially empty
+                keterangan: '',
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    expect(result.current.formData.packingBoxes[0].packingBoxItems[0].itemId).toBe('item-2');
   });
 
   it('fails validation when a box has no items or empty no_box', () => {
@@ -93,7 +134,7 @@ describe('usePackingForm hook for Edit Packing', () => {
         packingBoxes: [
           {
             no_box: '',
-            statusId: 'status-1',
+            statusId: 'status-box-1',
             packingBoxItems: [],
           },
         ],
@@ -112,14 +153,14 @@ describe('usePackingForm hook for Edit Packing', () => {
 });
 
 describe('PackingForm component', () => {
-  it('renders packing boxes directly without Tanggal Packing, Status, and Purchase Order header fields', () => {
+  it('renders packing boxes and populates status and items properly', () => {
     const initialData = {
       id: 'packing-1',
       packing_number: 'PCK-001',
       packingBoxes: [
         {
           no_box: 'BOX-001',
-          statusId: 'status-1',
+          statusId: 'status-box-1',
           packingBoxItems: [
             {
               nama_barang: 'Item Alpha',
@@ -143,7 +184,10 @@ describe('PackingForm component', () => {
     // Packing Boxes section should be rendered directly
     expect(screen.getByText('Packing Boxes *')).toBeDefined();
     expect(screen.getByDisplayValue('BOX-001')).toBeDefined();
-    expect(screen.getByDisplayValue('Item Alpha')).toBeDefined();
+    expect(screen.getAllByDisplayValue('Item Alpha').length).toBeGreaterThan(0);
+
+    // Status box dropdown should contain option for Pending Item
+    expect(screen.getByText('Pending Item')).toBeDefined();
 
     unmount();
   });

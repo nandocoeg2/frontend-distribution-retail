@@ -119,38 +119,6 @@ const useScheduledPriceOperations = () => {
     }
   }, [handleAuthError]);
 
-  const cancelSchedule = useCallback(async (id, reason) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await scheduledPriceService.cancelSchedule(id, reason);
-
-      if (response.success) {
-        toastService.success('Schedule cancelled successfully');
-        return response.data;
-      } else {
-        // Handle validation errors with issues array
-        if (response.issues && Array.isArray(response.issues)) {
-          const errorMessages = response.issues.map(issue => issue.message).join(', ');
-          throw new Error(errorMessages);
-        }
-        throw new Error(response.error?.message || response.error || 'Failed to cancel schedule');
-      }
-    } catch (err) {
-      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
-        handleAuthError();
-      } else {
-        const errorMessage = err.message || 'Failed to cancel schedule';
-        setError(errorMessage);
-        toastService.error(errorMessage);
-      }
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError]);
-
   const getSchedule = useCallback(async (id) => {
     try {
       setLoading(true);
@@ -244,7 +212,6 @@ const useScheduledPriceOperations = () => {
     createSchedule,
     updateSchedule,
     deleteSchedule,
-    cancelSchedule,
     getSchedule,
     getEffectivePrice,
     validateScheduleData

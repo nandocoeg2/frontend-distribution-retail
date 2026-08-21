@@ -98,11 +98,6 @@ const scheduledPriceService = {
     return baseService.delete(id);
   },
 
-  // Cancel schedule
-  cancelSchedule: (id, reason) => {
-    return patch(`/item-price-schedules/${id}/cancel`, { reason });
-  },
-
   // Get schedules by ItemPrice ID
   getSchedulesByItemPrice: (itemPriceId) => {
     return get(`/item-price-schedules/item-price/${itemPriceId}`);

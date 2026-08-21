@@ -350,21 +350,28 @@ const SuratJalan = () => {
 
 
 
-  const handleSuratJalanUpdated = useCallback(() => {
+  const handleSuratJalanUpdated = useCallback(async (updatedData) => {
     // Refresh data after update from Detail Card
     queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
-    // We might want to refresh the detail view as well if it's open, 
-    // but SuratJalanDetailCard handles its own internal state update via onUpdate callback if we pass it correctly?
-    // Actually, if we invalidate queries, the table updates. 
-    // For the detail card, if we want it to reflect changes immediately, we might need to re-fetch or update local state.
-    // But let's see how Companies.jsx does it.
-    // Companies.jsx: fetchCompanies(pagination.currentPage, pagination.itemsPerPage); handleViewDetail(selectedCompanyForDetail);
+    queryClient.invalidateQueries({ queryKey: ['invoice-pengiriman'] });
+    queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
 
-    if (selectedSuratJalanForDetail) {
-      // Re-fetch detail to ensure consistency
-      handleViewDetail(selectedSuratJalanForDetail);
+    const targetId = updatedData?.id || selectedSuratJalanForDetail?.id;
+    if (targetId) {
+      try {
+        setDetailLoading(true);
+        const response = await suratJalanService.getSuratJalanById(targetId);
+        const detailData = response?.data?.data ?? response?.data;
+        if (detailData) {
+          setSelectedSuratJalanForDetail(detailData);
+        }
+      } catch (err) {
+        console.error('Error refreshing surat jalan detail:', err);
+      } finally {
+        setDetailLoading(false);
+      }
     }
-  }, [queryClient, selectedSuratJalanForDetail]);
+  }, [queryClient, selectedSuratJalanForDetail?.id]);
 
   const handleExportExcel = () => {
     setShowExportConfirmation(true);

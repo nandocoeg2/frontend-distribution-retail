@@ -165,4 +165,4 @@ const SuratJalanDetailsTable = ({ details = [], packingBoxes = [] }) => {
   );
 };
 
-export default SuratJalanDetailsTable;
+export default React.memo(SuratJalanDetailsTable);

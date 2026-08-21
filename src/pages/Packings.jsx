@@ -58,16 +58,6 @@ const PackingsPage = () => {
   const openEditModal = useCallback(async (packing) => {
     if (!packing?.id) return;
 
-    const hasDetailedBoxes = packing.packingBoxes?.some(
-      (b) => b.packingBoxItems?.length > 0 && b.no_box
-    );
-
-    if (hasDetailedBoxes) {
-      setEditingPacking(packing);
-      setIsEditModalOpen(true);
-      return;
-    }
-
     try {
       const response = await getPackingById(packing.id);
       const detailData = response?.success ? response.data : response;

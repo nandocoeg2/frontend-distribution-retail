@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { PencilIcon, XCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { formatDate, formatCurrency } from '../../utils/formatUtils';
 import { useScheduledPricesQuery } from '../../hooks/useScheduledPricesQuery';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
@@ -18,11 +18,11 @@ const columnHelper = createColumnHelper();
 const STATUS_OPTIONS = [
     { id: 'PENDING', label: 'Pending' },
     { id: 'ACTIVE', label: 'Active' },
+    { id: 'EXPIRED', label: 'Expired' },
 ];
 
 const ScheduledPriceTableServerSide = forwardRef(({
     onEdit,
-    onCancel,
     onDelete,
     deleteLoading = false,
     companyId,
@@ -144,7 +144,6 @@ const ScheduledPriceTableServerSide = forwardRef(({
             PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-800' },
             ACTIVE: { label: 'Active', className: 'bg-green-100 text-green-800' },
             EXPIRED: { label: 'Expired', className: 'bg-gray-100 text-gray-800' },
-            CANCELLED: { label: 'Cancelled', className: 'bg-red-100 text-red-800' }
         };
         const config = statusConfig[status] || statusConfig.PENDING;
         return (
@@ -368,7 +367,6 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 cell: ({ row }) => {
                     const schedule = row.original;
                     const canEdit = schedule.status === 'PENDING';
-                    const canCancel = schedule.status === 'PENDING' || schedule.status === 'ACTIVE';
                     const canDelete = true;
 
                     return (
@@ -380,15 +378,6 @@ const ScheduledPriceTableServerSide = forwardRef(({
                                     title="Edit"
                                 >
                                     <PencilIcon className="h-4 w-4" />
-                                </button>
-                            )}
-                            {canCancel && (
-                                <button
-                                    onClick={() => onCancel && onCancel(schedule)}
-                                    className="p-0.5 text-orange-600 hover:text-orange-800"
-                                    title="Cancel"
-                                >
-                                    <XCircleIcon className="h-4 w-4" />
                                 </button>
                             )}
                             {canDelete && (
@@ -406,7 +395,7 @@ const ScheduledPriceTableServerSide = forwardRef(({
                 },
             }),
         ],
-        [customerOptions, setPage, onEdit, onCancel, deleteLoading, deleteId]
+        [customerOptions, setPage, onEdit, deleteLoading, deleteId]
     );
 
     const table = useReactTable({
