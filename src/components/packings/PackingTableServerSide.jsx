@@ -754,49 +754,54 @@ const PackingTableServerSide = forwardRef(({
 
   return (
     <div className='space-y-2'>
-      <div className='flex justify-between items-center'>
-        <div className='flex items-center gap-2'>
+      <div className="flex justify-between items-center p-2 bg-blue-50 rounded border border-blue-100">
+        <div className="flex items-center gap-2">
           {hasSelectedPackings && (
-            <span className='text-xs font-medium text-blue-700'>{selectedPackings.length} dipilih</span>
+            <span className="text-xs font-medium text-blue-700">{selectedPackings.length} dipilih</span>
           )}
           <button
             onClick={handleBulkPrintSticker}
             disabled={isPrinting || actionDisabled}
-            className='inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Stiker'}
+            <PrinterIcon className="h-3 w-3 mr-1" />{isPrinting ? '...' : 'Stiker'}
           </button>
           <button
             onClick={handleBulkPrintTandaTerimaGrouped}
             disabled={isPrintingTandaTerimaGrouped || actionDisabled}
-            className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima'}
+            <PrinterIcon className="h-3 w-3 mr-1" />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima'}
           </button>
           <button
             onClick={handleBulkEditTanggal}
             disabled={editTanggalLoading || actionDisabled}
-            className='inline-flex items-center px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="inline-flex items-center px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <CalendarIcon className='h-3 w-3 mr-1' />{editTanggalLoading ? '...' : 'Edit Tanggal'}
+            <CalendarIcon className="h-3 w-3 mr-1" />{editTanggalLoading ? '...' : 'Edit Tanggal'}
           </button>
           <button
             onClick={onProcessSelected}
             disabled={actionDisabled}
-            className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <PlayIcon className='h-3 w-3 mr-1' />{isProcessing ? '...' : 'Proses'}
+            <PlayIcon className="h-3 w-3 mr-1" />{isProcessing ? '...' : 'Proses'}
           </button>
           <button
             onClick={onCompleteSelected}
             disabled={actionDisabled}
-            className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+            className="inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            <CheckIcon className='h-3 w-3 mr-1' />{isCompleting ? '...' : 'Selesai'}
+            <CheckIcon className="h-3 w-3 mr-1" />{isCompleting ? '...' : 'Selesai'}
           </button>
         </div>
         {hasActiveFilters ? (
-          <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
+          <button
+            onClick={resetFilters}
+            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          >
+            Reset Filter
+          </button>
         ) : <div />}
       </div>
 
