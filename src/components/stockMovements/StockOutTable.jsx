@@ -107,15 +107,36 @@ const StockOutTable = ({
           source: movement,
         });
       } else {
-        items.forEach((itemObj, idx) => {
+        // Group items in movement by itemId/plu so it's always consolidated total per item per PO (not per box)
+        const groupedItemsMap = new Map();
+        items.forEach((itemObj) => {
           const itemInfo = itemObj?.item || itemObj?.inventory || {};
           const itemId = itemObj?.itemId || itemInfo?.id;
+          const key = itemId || itemInfo?.plu || itemInfo?.nama_barang || JSON.stringify(itemInfo);
 
-          const totalPengiriman = Number(itemObj?.quantity || 0);
+          if (groupedItemsMap.has(key)) {
+            const existing = groupedItemsMap.get(key);
+            existing.quantity += Number(itemObj?.quantity || 0);
+          } else {
+            groupedItemsMap.set(key, {
+              ...itemObj,
+              itemInfo,
+              itemId,
+              quantity: Number(itemObj?.quantity || 0),
+            });
+          }
+        });
+
+        const groupedItems = Array.from(groupedItemsMap.values());
+
+        groupedItems.forEach((itemObj, idx) => {
+          const itemInfo = itemObj.itemInfo;
+          const itemId = itemObj.itemId;
+          const totalPengiriman = itemObj.quantity;
 
           // Find corresponding PO Detail Qty if available
           const matchingPoDetail = poDetails.find(
-            (pod) => pod.itemId === itemId
+            (pod) => pod.itemId === itemId || (itemInfo?.plu && pod?.plu === itemInfo?.plu)
           );
           const poQuantity = matchingPoDetail
             ? Number(matchingPoDetail.quantity || matchingPoDetail.qty_po || 0)
