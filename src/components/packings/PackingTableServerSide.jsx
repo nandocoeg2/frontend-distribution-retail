@@ -153,7 +153,6 @@ const PackingTableServerSide = forwardRef(({
     { id: 'PENDING PACKING', name: 'Pending' },
     { id: 'PROCESSING PACKING', name: 'Processing' },
     { id: 'COMPLETED PACKING', name: 'Completed' },
-    { id: 'FAILED PACKING', name: 'Failed' },
   ], []);
 
   // Fetch customers for multi-select filter
@@ -751,37 +750,55 @@ const PackingTableServerSide = forwardRef(({
     columns,
   });
 
-  const actionDisabled = isProcessing || isCompleting;
+  const actionDisabled = isProcessing || isCompleting || !hasSelectedPackings;
 
   return (
     <div className='space-y-2'>
-      {(hasActiveFilters || hasSelectedPackings) && (
-        <div className='flex justify-between items-center'>
-          {hasSelectedPackings ? (
-            <div className='flex items-center gap-2'>
-              <span className='text-xs font-medium text-blue-700'>{selectedPackings.length} dipilih</span>
-              <button onClick={handleBulkPrintSticker} disabled={isPrinting || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50'>
-                <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Stiker'}
-              </button>
-              <button onClick={handleBulkPrintTandaTerimaGrouped} disabled={isPrintingTandaTerimaGrouped || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50'>
-                <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima'}
-              </button>
-              <button onClick={handleBulkEditTanggal} disabled={editTanggalLoading || actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50'>
-                <CalendarIcon className='h-3 w-3 mr-1' />{editTanggalLoading ? '...' : 'Edit Tanggal'}
-              </button>
-              <button onClick={onProcessSelected} disabled={actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50'>
-                <PlayIcon className='h-3 w-3 mr-1' />{isProcessing ? '...' : 'Proses'}
-              </button>
-              <button onClick={onCompleteSelected} disabled={actionDisabled} className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'>
-                <CheckIcon className='h-3 w-3 mr-1' />{isCompleting ? '...' : 'Selesai'}
-              </button>
-            </div>
-          ) : <div />}
-          {hasActiveFilters && (
-            <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
+      <div className='flex justify-between items-center'>
+        <div className='flex items-center gap-2'>
+          {hasSelectedPackings && (
+            <span className='text-xs font-medium text-blue-700'>{selectedPackings.length} dipilih</span>
           )}
+          <button
+            onClick={handleBulkPrintSticker}
+            disabled={isPrinting || actionDisabled}
+            className='inline-flex items-center px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            <PrinterIcon className='h-3 w-3 mr-1' />{isPrinting ? '...' : 'Stiker'}
+          </button>
+          <button
+            onClick={handleBulkPrintTandaTerimaGrouped}
+            disabled={isPrintingTandaTerimaGrouped || actionDisabled}
+            className='inline-flex items-center px-2 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            <PrinterIcon className='h-3 w-3 mr-1' />{isPrintingTandaTerimaGrouped ? '...' : 'T.Terima'}
+          </button>
+          <button
+            onClick={handleBulkEditTanggal}
+            disabled={editTanggalLoading || actionDisabled}
+            className='inline-flex items-center px-2 py-1 text-xs bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            <CalendarIcon className='h-3 w-3 mr-1' />{editTanggalLoading ? '...' : 'Edit Tanggal'}
+          </button>
+          <button
+            onClick={onProcessSelected}
+            disabled={actionDisabled}
+            className='inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            <PlayIcon className='h-3 w-3 mr-1' />{isProcessing ? '...' : 'Proses'}
+          </button>
+          <button
+            onClick={onCompleteSelected}
+            disabled={actionDisabled}
+            className='inline-flex items-center px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          >
+            <CheckIcon className='h-3 w-3 mr-1' />{isCompleting ? '...' : 'Selesai'}
+          </button>
         </div>
-      )}
+        {hasActiveFilters ? (
+          <button onClick={resetFilters} className='px-2 py-1 text-xs text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50'>Reset Filter</button>
+        ) : <div />}
+      </div>
 
       <DataTable
         table={table}

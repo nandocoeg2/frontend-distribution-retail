@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  PencilIcon,
+  EyeIcon,
+  PencilSquareIcon,
   TrashIcon,
   CheckIcon,
   LinkIcon,

@@ -465,7 +465,6 @@ const SuratJalanTableServerSide = forwardRef(({
               <option value="DRAFT SURAT JALAN">Draft</option>
               <option value="READY TO SHIP SURAT JALAN">Ready To Ship</option>
               <option value="DELIVERED SURAT JALAN">Delivered</option>
-              <option value="CANCELLED SURAT JALAN">Cancelled</option>
             </select>
           </div>
         ),

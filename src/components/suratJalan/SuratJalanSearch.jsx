@@ -8,7 +8,6 @@ const STATUS_OPTIONS = [
   { value: 'READY TO SHIP SURAT JALAN', label: 'Ready to Ship' },
   { value: 'SHIPPED SURAT JALAN', label: 'Shipped' },
   { value: 'DELIVERED SURAT JALAN', label: 'Delivered' },
-  { value: 'CANCELLED SURAT JALAN', label: 'Cancelled' },
 ];
 
 const PRINT_STATUS_OPTIONS = [

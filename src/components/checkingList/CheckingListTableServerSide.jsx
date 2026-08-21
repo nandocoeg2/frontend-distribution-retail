@@ -26,6 +26,43 @@ const resolveChecklistId = (item) => {
   );
 };
 
+const resolvePoNumbers = (item) => {
+  if (!item || typeof item !== 'object') {
+    return [];
+  }
+
+  const suratJalanList = Array.isArray(item.suratJalan)
+    ? item.suratJalan
+    : item.suratJalan
+      ? [item.suratJalan]
+      : [];
+
+  const poList = [];
+  suratJalanList.forEach((sj) => {
+    const poNum =
+      sj?.purchaseOrder?.po_number ||
+      sj?.purchaseOrder?.no_po ||
+      sj?.po_number ||
+      sj?.no_po;
+    if (poNum && !poList.includes(poNum)) {
+      poList.push(poNum);
+    }
+  });
+
+  if (poList.length === 0) {
+    const directPo =
+      item.purchaseOrder?.po_number ||
+      item.purchaseOrder?.no_po ||
+      item.po_number ||
+      item.no_po;
+    if (directPo && !poList.includes(directPo)) {
+      poList.push(directPo);
+    }
+  }
+
+  return poList;
+};
+
 const resolveStatusVariant = (status) => {
   const statusText = typeof status === 'string'
     ? status
@@ -324,6 +361,34 @@ const CheckingListTableServerSide = ({
               )}
               {additionalCount > 0 && (
                 <p className="text-xs text-gray-400">+{additionalCount} surat jalan lainnya</p>
+              )}
+            </div>
+          );
+        },
+        enableColumnFilter: false,
+      }),
+      columnHelper.accessor((row) => resolvePoNumbers(row).join(', '), {
+        id: 'no_po',
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No PO</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
+        cell: (info) => {
+          const poNumbers = resolvePoNumbers(info.row.original);
+          const primaryPo = poNumbers[0];
+          const additionalCount = poNumbers.length > 1 ? poNumbers.length - 1 : 0;
+
+          if (!primaryPo) {
+            return <span className="text-xs text-gray-500">-</span>;
+          }
+
+          return (
+            <div className="text-sm">
+              <p className="font-medium text-gray-900">{primaryPo}</p>
+              {additionalCount > 0 && (
+                <p className="text-xs text-gray-400">+{additionalCount} PO lainnya</p>
               )}
             </div>
           );
