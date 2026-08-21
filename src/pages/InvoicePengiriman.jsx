@@ -4,6 +4,7 @@ import useInvoicePengiriman from '@/hooks/useInvoicePengirimanPage';
 import { InvoicePengirimanTableServerSide } from '@/components/invoicePengiriman';
 import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoicePengirimanDetailCard';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { TableFooterCell } from '@/components/table';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
 import toastService from '@/services/toastService';
 
@@ -425,6 +426,69 @@ const InvoicePengirimanPage = () => {
                           ))
                         )}
                       </tbody>
+                      {filteredPreviewData.length > 0 && (
+                        <tfoot className="bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 z-10">
+                          <tr>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'no_invoice' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'po' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'customer' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'tanggal_invoice' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'top' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'status' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'plu' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'nama_barang' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'quantity' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'harga' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'potongan_a' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'harga_after_potongan_a' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'potongan_b' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'harga_after_potongan_b' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'total' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'sub_total' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'total_discount' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'ppn_percentage' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300">
+                              <TableFooterCell column={{ id: 'grand_total' }} data={filteredPreviewData} />
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
                 )}

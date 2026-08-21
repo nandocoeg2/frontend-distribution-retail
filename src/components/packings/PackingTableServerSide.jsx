@@ -1131,6 +1131,33 @@ const PackingTableServerSide = forwardRef(({
                           ))
                         )}
                       </tbody>
+                      {filteredPreviewData.length > 0 && (
+                        <tfoot className="bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 z-10">
+                          <tr>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'po' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'customer' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'tanggal_packing' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'status' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'plu' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'nama_barang' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300">
+                              <TableFooterCell column={{ id: 'quantity' }} data={filteredPreviewData} />
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
                 )}

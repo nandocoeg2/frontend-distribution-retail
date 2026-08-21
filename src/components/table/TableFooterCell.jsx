@@ -100,8 +100,8 @@ const TableFooterCell = ({ column, table, data = [] }) => {
         if (val === null || val === undefined || val === "") return null;
         if (typeof val === "object" || typeof val === "boolean") return null;
         if (typeof val === "number") return isNaN(val) ? null : val;
-        // Clean formatted values (e.g. "Rp. 5.000", "1.469,72", or "722.73")
-        let cleanVal = String(val).replace(/Rp\.?\s*/i, "").trim();
+        // Clean formatted values (e.g. "Rp. 5.000", "1.469,72", "722.73", or "10%")
+        let cleanVal = String(val).replace(/Rp\.?\s*/i, "").replace(/%/g, "").trim();
         if (cleanVal.includes(",")) {
           // Indonesian format with comma decimal: 1.234,56 -> 1234.56
           cleanVal = cleanVal.replace(/\./g, "").replace(/,/g, ".");

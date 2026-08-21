@@ -817,6 +817,30 @@ const MutasiBankTableServerSide = forwardRef(({
                           ))
                         )}
                       </tbody>
+                      {filteredPreviewData.length > 0 && (
+                        <tfoot className="bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 z-10">
+                          <tr>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'tanggal' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'customer' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'keterangan' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'invoice' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300 border-r border-gray-200">
+                              <TableFooterCell column={{ id: 'jumlah' }} data={filteredPreviewData} />
+                            </td>
+                            <td className="px-3 py-1.5 text-xs border-t border-gray-300">
+                              <TableFooterCell column={{ id: 'notes' }} data={filteredPreviewData} />
+                            </td>
+                          </tr>
+                        </tfoot>
+                      )}
                     </table>
                   </div>
                 )}
