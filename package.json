@@ -1,7 +1,7 @@
 {
   "name": "frontend-distribution-retail",
   "productName": "ERP PT DOVEN TRADECO",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "ERP PT DOVEN TRADECO",
   "main": ".webpack/main",
   "scripts": {
