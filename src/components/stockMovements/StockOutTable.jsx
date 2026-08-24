@@ -470,10 +470,14 @@ const StockOutTable = forwardRef(({
       columnHelper.accessor('totalPengiriman', {
         id: 'totalPengiriman',
         size: 120,
-        header: () => (
-          <div className="space-y-0.5 text-right">
+        header: ({ column }) => (
+          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Total Pengiriman</div>
-            <div className="h-6"></div>
+            <TextColumnFilter
+              column={column}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
         ),
         cell: (info) => (
@@ -484,16 +488,25 @@ const StockOutTable = forwardRef(({
             })}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '');
+          return val.includes(String(filterValue).trim());
+        },
       }),
 
       // 7. PO Quantity
       columnHelper.accessor('poQuantity', {
         id: 'poQuantity',
         size: 110,
-        header: () => (
-          <div className="space-y-0.5 text-right">
+        header: ({ column }) => (
+          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">PO Quantity</div>
-            <div className="h-6"></div>
+            <TextColumnFilter
+              column={column}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
         ),
         cell: (info) => (
@@ -504,6 +517,11 @@ const StockOutTable = forwardRef(({
             })}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '');
+          return val.includes(String(filterValue).trim());
+        },
       }),
 
       // 8. Selisih
@@ -564,10 +582,14 @@ const StockOutTable = forwardRef(({
       columnHelper.accessor('totalPenagihan', {
         id: 'totalPenagihan',
         size: 120,
-        header: () => (
-          <div className="space-y-0.5 text-right">
+        header: ({ column }) => (
+          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Total Penagihan</div>
-            <div className="h-6"></div>
+            <TextColumnFilter
+              column={column}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
         ),
         cell: (info) => (
@@ -578,6 +600,11 @@ const StockOutTable = forwardRef(({
             })}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '');
+          return val.includes(String(filterValue).trim());
+        },
       }),
 
       // 11. Stok Gantung
