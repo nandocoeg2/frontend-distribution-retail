@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TableLoading } from '../ui/Loading.jsx';
 import { formatDate } from '../../utils/formatUtils';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const formatNumber = (num, decimals = 0) => {
   if (num == null || isNaN(num)) return '0';
@@ -19,11 +20,11 @@ const StockInTable = ({
   // Column header filter states
   const [columnFilters, setColumnFilters] = useState({
     tgl: '',
-    noSuratJalan: '',
-    namaBarang: '',
-    plu: '',
+    noSuratJalan: [],
+    namaBarang: [],
+    plu: [],
     qty: '',
-    namaSupplier: '',
+    namaSupplier: [],
   });
 
   // Footer aggregation toggle state for numeric column Qty ('summary' | 'count' | 'average')
@@ -84,56 +85,112 @@ const StockInTable = ({
     return flatRows;
   }, [movements]);
 
+  // Options for Autocomplete filters
+  const noSuratJalanOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.noSuratJalan && r.noSuratJalan !== '-' && !set.has(r.noSuratJalan)) {
+        set.add(r.noSuratJalan);
+        list.push({ id: r.noSuratJalan, name: r.noSuratJalan });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const namaBarangOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.namaBarang && r.namaBarang !== '-' && !set.has(r.namaBarang)) {
+        set.add(r.namaBarang);
+        list.push({ id: r.namaBarang, name: r.namaBarang });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const pluOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.plu && r.plu !== '-' && !set.has(r.plu)) {
+        set.add(r.plu);
+        list.push({ id: r.plu, name: r.plu });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const supplierOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.namaSupplier && r.namaSupplier !== '-' && !set.has(r.namaSupplier)) {
+        set.add(r.namaSupplier);
+        list.push({ id: r.namaSupplier, name: r.namaSupplier });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
   // Filter rows according to per-column header inputs
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      // Date filter (Specific date)
       if (columnFilters.tgl) {
         const filterVal = columnFilters.tgl; // e.g. "2026-06-12"
         const rowTglStr = String(row.tgl || '');
+        let rowIsoDate = '';
+        if (row.source?.createdAt) {
+          try {
+            rowIsoDate = new Date(row.source.createdAt).toISOString().split('T')[0];
+          } catch (e) {}
+        }
         const matches =
+          rowIsoDate === filterVal ||
           rowTglStr.includes(filterVal) ||
           new Date(filterVal).toLocaleDateString('id-ID') === rowTglStr ||
           new Date(filterVal).toLocaleDateString('en-GB') === rowTglStr;
         if (!matches) return false;
       }
-      if (
-        columnFilters.noSuratJalan &&
-        !row.noSuratJalan
-          .toLowerCase()
-          .includes(columnFilters.noSuratJalan.toLowerCase())
-      ) {
-        return false;
+
+      // No Surat Jalan filter
+      if (Array.isArray(columnFilters.noSuratJalan) && columnFilters.noSuratJalan.length > 0) {
+        if (!columnFilters.noSuratJalan.includes(row.noSuratJalan)) return false;
+      } else if (typeof columnFilters.noSuratJalan === 'string' && columnFilters.noSuratJalan.trim() !== '') {
+        if (!row.noSuratJalan.toLowerCase().includes(columnFilters.noSuratJalan.toLowerCase())) return false;
       }
-      if (
-        columnFilters.namaBarang &&
-        !row.namaBarang
-          .toLowerCase()
-          .includes(columnFilters.namaBarang.toLowerCase())
-      ) {
-        return false;
+
+      // Nama Barang filter
+      if (Array.isArray(columnFilters.namaBarang) && columnFilters.namaBarang.length > 0) {
+        if (!columnFilters.namaBarang.includes(row.namaBarang)) return false;
+      } else if (typeof columnFilters.namaBarang === 'string' && columnFilters.namaBarang.trim() !== '') {
+        if (!row.namaBarang.toLowerCase().includes(columnFilters.namaBarang.toLowerCase())) return false;
       }
-      if (
-        columnFilters.plu &&
-        !row.plu.toLowerCase().includes(columnFilters.plu.toLowerCase())
-      ) {
-        return false;
+
+      // PLU filter
+      if (Array.isArray(columnFilters.plu) && columnFilters.plu.length > 0) {
+        if (!columnFilters.plu.includes(row.plu)) return false;
+      } else if (typeof columnFilters.plu === 'string' && columnFilters.plu.trim() !== '') {
+        if (!row.plu.toLowerCase().includes(columnFilters.plu.toLowerCase())) return false;
       }
+
+      // Qty filter
       if (
         columnFilters.qty &&
-        !String(row.qty)
-          .toLowerCase()
-          .includes(columnFilters.qty.toLowerCase())
+        !String(row.qty).toLowerCase().includes(columnFilters.qty.toLowerCase())
       ) {
         return false;
       }
-      if (
-        columnFilters.namaSupplier &&
-        !row.namaSupplier
-          .toLowerCase()
-          .includes(columnFilters.namaSupplier.toLowerCase())
-      ) {
-        return false;
+
+      // Nama Supplier filter
+      if (Array.isArray(columnFilters.namaSupplier) && columnFilters.namaSupplier.length > 0) {
+        if (!columnFilters.namaSupplier.includes(row.namaSupplier)) return false;
+      } else if (typeof columnFilters.namaSupplier === 'string' && columnFilters.namaSupplier.trim() !== '') {
+        if (!row.namaSupplier.toLowerCase().includes(columnFilters.namaSupplier.toLowerCase())) return false;
       }
+
       return true;
     });
   }, [rows, columnFilters]);
@@ -176,26 +233,26 @@ const StockInTable = ({
               <th className='border-r border-gray-300 px-3 py-2 text-left w-28'>
                 Tgl
               </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left w-44'>
+              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[160px]'>
                 No Surat Jalan
               </th>
               <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[200px]'>
                 Nama Barang
               </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left w-28'>
+              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[120px]'>
                 PLU
               </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-right w-36'>
+              <th className='border-r border-gray-300 px-3 py-2 text-right w-28'>
                 Qty
               </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left w-40'>
+              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[180px]'>
                 Nama Supplier
               </th>
             </tr>
 
-            {/* Header Filter Inputs Row ("DI BIKIN BISA FILTER") */}
+            {/* Header Filter Inputs Row */}
             <tr className='bg-gray-50 border-b border-gray-300'>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='date'
                   value={columnFilters.tgl}
@@ -203,55 +260,69 @@ const StockInTable = ({
                   className='w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={noSuratJalanOptions}
                   value={columnFilters.noSuratJalan}
                   onChange={(e) =>
                     handleFilterChange('noSuratJalan', e.target.value)
                   }
-                  placeholder='Filter No SJ...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={namaBarangOptions}
                   value={columnFilters.namaBarang}
                   onChange={(e) =>
                     handleFilterChange('namaBarang', e.target.value)
                   }
-                  placeholder='Filter Nama Barang...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={pluOptions}
                   value={columnFilters.plu}
-                  onChange={(e) => handleFilterChange('plu', e.target.value)}
-                  placeholder='Filter PLU...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+                  onChange={(e) =>
+                    handleFilterChange('plu', e.target.value)
+                  }
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='text'
                   value={columnFilters.qty}
                   onChange={(e) => handleFilterChange('qty', e.target.value)}
-                  placeholder='Filter Qty...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
+                  placeholder='...'
+                  className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={supplierOptions}
                   value={columnFilters.namaSupplier}
                   onChange={(e) =>
                     handleFilterChange('namaSupplier', e.target.value)
                   }
-                  placeholder='Filter Supplier...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
             </tr>

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TableLoading } from '../ui/Loading.jsx';
 import { formatDate } from '../../utils/formatUtils';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const formatNumber = (num, decimals = 1) => {
   if (num == null || isNaN(num)) return '0.0';
@@ -19,14 +20,14 @@ const StockOutTable = ({
   // Column header filter states
   const [columnFilters, setColumnFilters] = useState({
     tgl: '',
-    noInvoice: '',
-    plu: '',
-    namaCustomer: '',
-    namaBarang: '',
+    noInvoice: [],
+    plu: [],
+    namaCustomer: [],
+    namaBarang: [],
     totalPengiriman: '',
     poQuantity: '',
     selisih: '',
-    noPo: '',
+    noPo: [],
     totalPenagihan: '',
     stokGantung: '',
   });
@@ -188,44 +189,110 @@ const StockOutTable = ({
     return flatRows;
   }, [movements]);
 
+  // Options for Autocomplete filters
+  const noInvoiceOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.noInvoice && r.noInvoice !== '-' && !set.has(r.noInvoice)) {
+        set.add(r.noInvoice);
+        list.push({ id: r.noInvoice, name: r.noInvoice });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const pluOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.plu && r.plu !== '-' && !set.has(r.plu)) {
+        set.add(r.plu);
+        list.push({ id: r.plu, name: r.plu });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const customerOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.namaCustomer && r.namaCustomer !== '-' && !set.has(r.namaCustomer)) {
+        set.add(r.namaCustomer);
+        list.push({ id: r.namaCustomer, name: r.namaCustomer });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const namaBarangOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.namaBarang && r.namaBarang !== '-' && !set.has(r.namaBarang)) {
+        set.add(r.namaBarang);
+        list.push({ id: r.namaBarang, name: r.namaBarang });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
+  const noPoOptions = useMemo(() => {
+    const set = new Set();
+    const list = [];
+    rows.forEach((r) => {
+      if (r.noPo && r.noPo !== '-' && !set.has(r.noPo)) {
+        set.add(r.noPo);
+        list.push({ id: r.noPo, name: r.noPo });
+      }
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows]);
+
   // Filter rows according to header input filters
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       if (columnFilters.tgl) {
         const filterVal = columnFilters.tgl; // e.g. "2026-06-12"
         const rowTglStr = String(row.tgl || '');
+        let rowIsoDate = '';
+        if (row.source?.createdAt) {
+          try {
+            rowIsoDate = new Date(row.source.createdAt).toISOString().split('T')[0];
+          } catch (e) {}
+        }
         const matches =
+          rowIsoDate === filterVal ||
           rowTglStr.includes(filterVal) ||
           new Date(filterVal).toLocaleDateString('id-ID') === rowTglStr ||
           new Date(filterVal).toLocaleDateString('en-GB') === rowTglStr;
         if (!matches) return false;
       }
-      if (
-        columnFilters.noInvoice &&
-        !row.noInvoice
-          .toLowerCase()
-          .includes(columnFilters.noInvoice.toLowerCase())
-      )
-        return false;
-      if (
-        columnFilters.plu &&
-        !row.plu.toLowerCase().includes(columnFilters.plu.toLowerCase())
-      )
-        return false;
-      if (
-        columnFilters.namaCustomer &&
-        !row.namaCustomer
-          .toLowerCase()
-          .includes(columnFilters.namaCustomer.toLowerCase())
-      )
-        return false;
-      if (
-        columnFilters.namaBarang &&
-        !row.namaBarang
-          .toLowerCase()
-          .includes(columnFilters.namaBarang.toLowerCase())
-      )
-        return false;
+      if (Array.isArray(columnFilters.noInvoice) && columnFilters.noInvoice.length > 0) {
+        if (!columnFilters.noInvoice.includes(row.noInvoice)) return false;
+      } else if (typeof columnFilters.noInvoice === 'string' && columnFilters.noInvoice.trim() !== '') {
+        if (!row.noInvoice.toLowerCase().includes(columnFilters.noInvoice.toLowerCase())) return false;
+      }
+
+      if (Array.isArray(columnFilters.plu) && columnFilters.plu.length > 0) {
+        if (!columnFilters.plu.includes(row.plu)) return false;
+      } else if (typeof columnFilters.plu === 'string' && columnFilters.plu.trim() !== '') {
+        if (!row.plu.toLowerCase().includes(columnFilters.plu.toLowerCase())) return false;
+      }
+
+      if (Array.isArray(columnFilters.namaCustomer) && columnFilters.namaCustomer.length > 0) {
+        if (!columnFilters.namaCustomer.includes(row.namaCustomer)) return false;
+      } else if (typeof columnFilters.namaCustomer === 'string' && columnFilters.namaCustomer.trim() !== '') {
+        if (!row.namaCustomer.toLowerCase().includes(columnFilters.namaCustomer.toLowerCase())) return false;
+      }
+
+      if (Array.isArray(columnFilters.namaBarang) && columnFilters.namaBarang.length > 0) {
+        if (!columnFilters.namaBarang.includes(row.namaBarang)) return false;
+      } else if (typeof columnFilters.namaBarang === 'string' && columnFilters.namaBarang.trim() !== '') {
+        if (!row.namaBarang.toLowerCase().includes(columnFilters.namaBarang.toLowerCase())) return false;
+      }
+
       if (
         columnFilters.totalPengiriman &&
         !String(row.totalPengiriman)
@@ -247,11 +314,13 @@ const StockOutTable = ({
           .includes(columnFilters.selisih.toLowerCase())
       )
         return false;
-      if (
-        columnFilters.noPo &&
-        !row.noPo.toLowerCase().includes(columnFilters.noPo.toLowerCase())
-      )
-        return false;
+
+      if (Array.isArray(columnFilters.noPo) && columnFilters.noPo.length > 0) {
+        if (!columnFilters.noPo.includes(row.noPo)) return false;
+      } else if (typeof columnFilters.noPo === 'string' && columnFilters.noPo.trim() !== '') {
+        if (!row.noPo.toLowerCase().includes(columnFilters.noPo.toLowerCase())) return false;
+      }
+
       if (
         columnFilters.totalPenagihan &&
         !String(row.totalPenagihan)
@@ -307,16 +376,16 @@ const StockOutTable = ({
           {/* Header Row */}
           <thead className='bg-gray-100'>
             <tr className='border-b border-gray-300 text-gray-700 font-bold'>
-              <th className='border-r border-gray-300 px-2 py-2 text-left w-24'>
+              <th className='border-r border-gray-300 px-2 py-2 text-left w-28'>
                 Tgl
               </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left w-36'>
+              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[150px]'>
                 No Invoice
               </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left w-24'>
+              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[120px]'>
                 PLU
               </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left w-36'>
+              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[160px]'>
                 Nama Customer
               </th>
               <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[180px]'>
@@ -331,7 +400,7 @@ const StockOutTable = ({
               <th className='border-r border-gray-300 px-2 py-2 text-right w-24'>
                 Selisih
               </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left w-28' title='NO PO LENGKAP'>
+              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[150px]' title='NO PO LENGKAP'>
                 No PO
               </th>
               <th className='border-r border-gray-300 px-2 py-2 text-right w-28'>
@@ -342,9 +411,9 @@ const StockOutTable = ({
               </th>
             </tr>
 
-            {/* Header Filter Row ("DI BIKIN BISA FILTER") */}
+            {/* Header Filter Row */}
             <tr className='bg-gray-50 border-b border-gray-300'>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='date'
                   value={columnFilters.tgl}
@@ -352,94 +421,109 @@ const StockOutTable = ({
                   className='w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={noInvoiceOptions}
                   value={columnFilters.noInvoice}
                   onChange={(e) => handleFilterChange('noInvoice', e.target.value)}
-                  placeholder='Filter Invoice...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={pluOptions}
                   value={columnFilters.plu}
                   onChange={(e) => handleFilterChange('plu', e.target.value)}
-                  placeholder='Filter PLU...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={customerOptions}
                   value={columnFilters.namaCustomer}
                   onChange={(e) => handleFilterChange('namaCustomer', e.target.value)}
-                  placeholder='Filter Customer...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={namaBarangOptions}
                   value={columnFilters.namaBarang}
                   onChange={(e) => handleFilterChange('namaBarang', e.target.value)}
-                  placeholder='Filter Barang...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='text'
                   value={columnFilters.totalPengiriman}
                   onChange={(e) => handleFilterChange('totalPengiriman', e.target.value)}
-                  placeholder='Filter Kirim...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none text-right'
+                  placeholder='...'
+                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='text'
                   value={columnFilters.poQuantity}
                   onChange={(e) => handleFilterChange('poQuantity', e.target.value)}
-                  placeholder='Filter PO Qty...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none text-right'
+                  placeholder='...'
+                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='text'
                   value={columnFilters.selisih}
                   onChange={(e) => handleFilterChange('selisih', e.target.value)}
-                  placeholder='Filter Selisih...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none text-right'
+                  placeholder='...'
+                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
-                <input
-                  type='text'
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
+                <AutocompleteCheckboxLimitTag
+                  options={noPoOptions}
                   value={columnFilters.noPo}
                   onChange={(e) => handleFilterChange('noPo', e.target.value)}
-                  placeholder='Filter PO...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
+                  placeholder='All'
+                  displayKey='name'
+                  valueKey='id'
+                  limitTags={1}
+                  size='small'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='text'
                   value={columnFilters.totalPenagihan}
                   onChange={(e) => handleFilterChange('totalPenagihan', e.target.value)}
-                  placeholder='Filter Tagihan...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none text-right'
+                  placeholder='...'
+                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
                 />
               </th>
-              <th className='border-r border-gray-300 px-1 py-1'>
+              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
                 <input
                   type='text'
                   value={columnFilters.stokGantung}
                   onChange={(e) => handleFilterChange('stokGantung', e.target.value)}
-                  placeholder='Filter Gantung...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none text-right'
+                  placeholder='...'
+                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
                 />
               </th>
             </tr>
