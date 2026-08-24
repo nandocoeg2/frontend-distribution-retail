@@ -117,20 +117,80 @@ const StockInTable = forwardRef(({
     storageKey: 'stock-in-table',
   });
 
-  // Dynamic filter options derived from current dataset
+// Helper to evaluate whether a row matches a specific filter
+const matchesStockInFilter = (row, filterId, filterValue) => {
+  if (filterValue == null || filterValue === '') return true;
+
+  if (filterId === 'createdAt') {
+    if (!filterValue.from && !filterValue.to) return true;
+    const rowDateVal = row.createdAt;
+    if (!rowDateVal) return false;
+    const date = new Date(rowDateVal);
+    if (isNaN(date.getTime())) return false;
+    if (filterValue.from) {
+      const fromDate = new Date(filterValue.from);
+      fromDate.setHours(0, 0, 0, 0);
+      if (date < fromDate) return false;
+    }
+    if (filterValue.to) {
+      const toDate = new Date(filterValue.to);
+      toDate.setHours(23, 59, 59, 999);
+      if (date > toDate) return false;
+    }
+    return true;
+  }
+
+  if (filterId === 'no_surat_jalan') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.no_surat_jalan);
+  }
+
+  if (filterId === 'nama_barang') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.nama_barang);
+  }
+
+  if (filterId === 'nama_supplier') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.nama_supplier);
+  }
+
+  if (filterId === 'plu') {
+    if (typeof filterValue !== 'string') return true;
+    return String(row.plu || '').toLowerCase().includes(filterValue.toLowerCase().trim());
+  }
+
+  if (filterId === 'qty') {
+    const val = String(row.qty ?? '');
+    return val.includes(String(filterValue).trim());
+  }
+
+  return true;
+};
+
+// Filter rows against all active filters except the specified column
+const getMatchingStockInRowsExcluding = (rows, columnFilters, excludeFilterId) => {
+  if (!rows || rows.length === 0) return [];
+  if (!columnFilters || columnFilters.length === 0) return rows;
+
+  return rows.filter((row) => {
+    for (const filter of columnFilters) {
+      if (filter.id === excludeFilterId) continue;
+      if (!matchesStockInFilter(row, filter.id, filter.value)) {
+        return false;
+      }
+    }
+    return true;
+  });
+};
+
+  // Dynamic filter options derived from current matching dataset in table
   const suratJalanOptions = useMemo(() => {
+    const matchingRows = getMatchingStockInRowsExcluding(rows, columnFilters, 'no_surat_jalan');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.no_surat_jalan;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'no_surat_jalan');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -139,18 +199,11 @@ const StockInTable = forwardRef(({
   }, [rows, columnFilters]);
 
   const namaBarangOptions = useMemo(() => {
+    const matchingRows = getMatchingStockInRowsExcluding(rows, columnFilters, 'nama_barang');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.nama_barang;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'nama_barang');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -159,18 +212,11 @@ const StockInTable = forwardRef(({
   }, [rows, columnFilters]);
 
   const supplierOptions = useMemo(() => {
+    const matchingRows = getMatchingStockInRowsExcluding(rows, columnFilters, 'nama_supplier');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.nama_supplier;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'nama_supplier');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -336,7 +382,7 @@ const StockInTable = forwardRef(({
         ),
         cell: (info) => (
           <span className="text-xs font-bold text-right text-gray-900 block whitespace-nowrap">
-            {Number(info.getValue() || 0).toLocaleString('id-ID')}
+            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {

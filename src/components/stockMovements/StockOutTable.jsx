@@ -204,20 +204,95 @@ const StockOutTable = forwardRef(({
     storageKey: 'stock-out-table',
   });
 
-  // Dynamic filter options derived from current dataset
+// Helper to evaluate whether a row matches a specific filter in StockOut
+const matchesStockOutFilter = (row, filterId, filterValue) => {
+  if (filterValue == null || filterValue === '') return true;
+
+  if (filterId === 'tgl') {
+    if (!filterValue.from && !filterValue.to) return true;
+    const rowDateVal = row.tgl;
+    if (!rowDateVal) return false;
+    const date = new Date(rowDateVal);
+    if (isNaN(date.getTime())) return false;
+    if (filterValue.from) {
+      const fromDate = new Date(filterValue.from);
+      fromDate.setHours(0, 0, 0, 0);
+      if (date < fromDate) return false;
+    }
+    if (filterValue.to) {
+      const toDate = new Date(filterValue.to);
+      toDate.setHours(23, 59, 59, 999);
+      if (date > toDate) return false;
+    }
+    return true;
+  }
+
+  if (filterId === 'noInvoice') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.noInvoice);
+  }
+
+  if (filterId === 'namaCustomer') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.namaCustomer);
+  }
+
+  if (filterId === 'namaBarang') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.namaBarang);
+  }
+
+  if (filterId === 'noPo') {
+    if (!Array.isArray(filterValue) || filterValue.length === 0) return true;
+    return filterValue.includes(row.noPo);
+  }
+
+  if (filterId === 'plu') {
+    if (typeof filterValue !== 'string') return true;
+    return String(row.plu || '').toLowerCase().includes(filterValue.toLowerCase().trim());
+  }
+
+  if (filterId === 'totalPengiriman') {
+    const val = String(row.totalPengiriman ?? '');
+    return val.includes(String(filterValue).trim());
+  }
+
+  if (filterId === 'poQuantity') {
+    const val = String(row.poQuantity ?? '');
+    return val.includes(String(filterValue).trim());
+  }
+
+  if (filterId === 'totalPenagihan') {
+    const val = String(row.totalPenagihan ?? '');
+    return val.includes(String(filterValue).trim());
+  }
+
+  return true;
+};
+
+// Filter rows against all active filters except the specified column
+const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) => {
+  if (!rows || rows.length === 0) return [];
+  if (!columnFilters || columnFilters.length === 0) return rows;
+
+  return rows.filter((row) => {
+    for (const filter of columnFilters) {
+      if (filter.id === excludeFilterId) continue;
+      if (!matchesStockOutFilter(row, filter.id, filter.value)) {
+        return false;
+      }
+    }
+    return true;
+  });
+};
+
+  // Dynamic filter options derived from current matching dataset in table
   const invoiceOptions = useMemo(() => {
+    const matchingRows = getMatchingStockOutRowsExcluding(rows, columnFilters, 'noInvoice');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.noInvoice;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'noInvoice');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -226,18 +301,11 @@ const StockOutTable = forwardRef(({
   }, [rows, columnFilters]);
 
   const customerOptions = useMemo(() => {
+    const matchingRows = getMatchingStockOutRowsExcluding(rows, columnFilters, 'namaCustomer');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.namaCustomer;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'namaCustomer');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -246,18 +314,11 @@ const StockOutTable = forwardRef(({
   }, [rows, columnFilters]);
 
   const namaBarangOptions = useMemo(() => {
+    const matchingRows = getMatchingStockOutRowsExcluding(rows, columnFilters, 'namaBarang');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.namaBarang;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'namaBarang');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -266,18 +327,11 @@ const StockOutTable = forwardRef(({
   }, [rows, columnFilters]);
 
   const poOptions = useMemo(() => {
+    const matchingRows = getMatchingStockOutRowsExcluding(rows, columnFilters, 'noPo');
     const map = new Map();
-    (rows || []).forEach((row) => {
+    matchingRows.forEach((row) => {
       const val = row.noPo;
       if (val && val !== '-' && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'noPo');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
@@ -482,10 +536,7 @@ const StockOutTable = forwardRef(({
         ),
         cell: (info) => (
           <span className="text-xs font-bold text-right text-gray-900 block whitespace-nowrap">
-            {Number(info.getValue() || 0).toLocaleString('id-ID', {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            })}
+            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
@@ -511,10 +562,7 @@ const StockOutTable = forwardRef(({
         ),
         cell: (info) => (
           <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
-            {Number(info.getValue() || 0).toLocaleString('id-ID', {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            })}
+            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
@@ -536,10 +584,7 @@ const StockOutTable = forwardRef(({
         ),
         cell: (info) => (
           <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
-            {Number(info.getValue() || 0).toLocaleString('id-ID', {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            })}
+            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
           </span>
         ),
       }),
@@ -594,10 +639,7 @@ const StockOutTable = forwardRef(({
         ),
         cell: (info) => (
           <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
-            {Number(info.getValue() || 0).toLocaleString('id-ID', {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            })}
+            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
@@ -618,17 +660,14 @@ const StockOutTable = forwardRef(({
           </div>
         ),
         cell: (info) => {
-          const val = Number(info.getValue() || 0);
+          const val = Math.round(Number(info.getValue() || 0));
           return (
             <span
               className={`text-xs text-right block whitespace-nowrap ${
                 val !== 0 ? 'font-semibold text-red-600' : 'text-gray-800'
               }`}
             >
-              {val.toLocaleString('id-ID', {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}
+              {val.toLocaleString('id-ID')}
             </span>
           );
         },
