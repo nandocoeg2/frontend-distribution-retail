@@ -35,6 +35,7 @@ const DataTable = ({
   emptyFilteredMessage,
   wrapperClassName = 'overflow-x-auto min-h-full',
   tableClassName = 'min-w-full bg-white border border-gray-200',
+  theadClassName = 'sticky top-0 z-20 bg-gray-50',
   headerRowClassName = 'bg-gray-50',
   headerCellClassName = 'px-4 py-3 text-left text-xs text-gray-500 uppercase tracking-wider',
   bodyClassName = 'bg-white divide-y divide-gray-200',
@@ -93,7 +94,7 @@ const DataTable = ({
           tableLayout: hasSizing ? 'fixed' : undefined,
         }}
       >
-        <thead className="sticky top-0 z-10 bg-gray-50">
+        <thead className={theadClassName}>
           {headerGroups.map((headerGroup) => (
             <tr key={headerGroup.id} className={headerRowClassName}>
               {headerGroup.headers.map((header) => {
