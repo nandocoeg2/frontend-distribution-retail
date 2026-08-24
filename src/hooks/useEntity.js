@@ -9,8 +9,8 @@ const INITIAL_PAGINATION = {
   totalPages: 1,
   totalItems: 0,
   total: 0,
-  itemsPerPage: 10,
-  limit: 10
+  itemsPerPage: 9999,
+  limit: 9999
 };
 
 const normalizePaginationShape = (paginationData = {}) => {
@@ -84,12 +84,12 @@ const useEntity = ({
   } = usePaginatedSearch({
     initialInput: '',
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => {
+    searchFn: (query, page, limit = 9999) => {
       const trimmedQuery = typeof query === 'string' ? query.trim() : '';
       if (!trimmedQuery || !searchService) {
-        return getAllService(page, limit);
+        return getAllService(page, limit || 9999);
       }
-      return searchService(trimmedQuery, page, limit);
+      return searchService(trimmedQuery, page, limit || 9999);
     },
     parseResponse: (response) => parseEntityResponse(response, entityNamePlural),
     resolveErrorMessage: createErrorResolver(entityNamePlural),

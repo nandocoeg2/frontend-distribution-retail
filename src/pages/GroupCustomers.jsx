@@ -90,63 +90,72 @@ const GroupCustomers = () => {
     );
   }
 
+  const isDetailOpen = Boolean(selectedGroupCustomerForDetail);
+
   return (
-    <div>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <h3 className='text-sm font-semibold text-gray-900'>Group Customer List</h3>
-            <div className='flex flex-wrap gap-2'>
-              <button
-                onClick={handleExportExcel}
-                disabled={exportLoading}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'
-              >
-                {exportLoading ? (
-                  <>
-                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <ArrowDownTrayIcon className='h-4 w-4 mr-1.5' />
-                    Export Excel
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
-              >
-                <PlusIcon className='h-4 w-4 mr-1.5' />
-                Add Group Customer
-              </button>
+    <div className={isDetailOpen ? 'space-y-3' : 'h-full flex flex-col'}>
+      <div className={`max-w-full mx-auto w-full ${isDetailOpen ? '' : 'h-full flex flex-col'}`}>
+        <div className={`bg-white shadow rounded-lg overflow-hidden p-3 ${isDetailOpen ? 'space-y-2' : 'flex flex-col flex-1 min-h-0'}`}>
+          <div className='mb-2'>
+            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+              <h3 className='text-sm font-semibold text-gray-900'>Group Customer List</h3>
+              <div className='flex flex-wrap gap-2'>
+                <button
+                  onClick={handleExportExcel}
+                  disabled={exportLoading}
+                  className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50'
+                >
+                  {exportLoading ? (
+                    <>
+                      <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownTrayIcon className='h-4 w-4 mr-1.5' />
+                      Export Excel
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
+                >
+                  <PlusIcon className='h-4 w-4 mr-1.5' />
+                  Add Group Customer
+                </button>
+              </div>
             </div>
           </div>
 
-          <GroupCustomerSearch
-            searchQuery={searchQuery}
-            handleSearchChange={handleSearchChange}
-            handleSearchSubmit={handleSearchSubmit}
-            searchLoading={searchLoading}
-          />
-
-          {loading && !searchLoading ? (
-            <div className='flex justify-center items-center h-64'>
-              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
-            </div>
-          ) : (
-            <GroupCustomerTable
-              groupCustomers={groupCustomers}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              onLimitChange={handleLimitChange}
-              onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation}
-              onViewDetail={handleViewDetail}
-              selectedGroupCustomerId={selectedGroupCustomerForDetail?.id}
-              searchQuery={activeSearchQuery}
+          <div className='mb-2'>
+            <GroupCustomerSearch
+              searchQuery={searchQuery}
+              handleSearchChange={handleSearchChange}
+              handleSearchSubmit={handleSearchSubmit}
+              searchLoading={searchLoading}
             />
-          )}
+          </div>
+
+          <div className={isDetailOpen ? '' : 'mt-1 flex-1 flex flex-col min-h-0'}>
+            {loading && !searchLoading ? (
+              <div className='flex justify-center items-center h-64'>
+                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600'></div>
+              </div>
+            ) : (
+              <GroupCustomerTable
+                groupCustomers={groupCustomers}
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                onLimitChange={handleLimitChange}
+                onDelete={deleteGroupCustomerConfirmation.showDeleteConfirmation}
+                onViewDetail={handleViewDetail}
+                selectedGroupCustomerId={selectedGroupCustomerForDetail?.id}
+                searchQuery={activeSearchQuery}
+                isDetailOpen={isDetailOpen}
+              />
+            )}
+          </div>
         </div>
       </div>
 

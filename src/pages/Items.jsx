@@ -104,10 +104,12 @@ const Items = () => {
     }
   };
 
+  const isDetailOpen = Boolean(selectedItemForDetail);
+
   return (
-    <div>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='p-3'>
+    <div className={isDetailOpen ? 'space-y-3' : 'h-full flex flex-col'}>
+      <div className={`max-w-full mx-auto w-full ${isDetailOpen ? '' : 'h-full flex flex-col'}`}>
+        <div className={`bg-white shadow rounded-lg overflow-hidden p-3 ${isDetailOpen ? 'space-y-2' : 'flex flex-col flex-1 min-h-0'}`}>
           <div className='flex justify-between items-center mb-2'>
             <h1 className='text-sm font-semibold text-gray-900'>Items</h1>
             <div className='flex gap-2'>
@@ -137,16 +139,18 @@ const Items = () => {
               </button>
             </div>
           </div>
-          <ItemTableServerSide
-            ref={tableRef}
-            onViewDetail={handleViewDetail}
-            selectedItems={selectedItems}
-            onSelectionChange={handleSelectionChange}
-            onBulkDelete={handleBulkDelete}
-            isDeleting={bulkDeleting}
-            hasSelectedItems={selectedItems.length > 0}
-            selectedItemId={selectedItemForDetail?.id}
-          />
+          <div className={isDetailOpen ? '' : 'flex-1 flex flex-col min-h-0'}>
+            <ItemTableServerSide
+              ref={tableRef}
+              onViewDetail={handleViewDetail}
+              selectedItems={selectedItems}
+              onSelectionChange={handleSelectionChange}
+              onBulkDelete={handleBulkDelete}
+              isDeleting={bulkDeleting}
+              hasSelectedItems={selectedItems.length > 0}
+              selectedItemId={selectedItemForDetail?.id}
+            />
+          </div>
         </div>
       </div>
 

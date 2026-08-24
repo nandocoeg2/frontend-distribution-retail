@@ -74,39 +74,48 @@ const MasterParameter = () => {
     );
   }
 
+  const isDetailOpen = Boolean(selectedParameterForDetail);
+
   return (
-    <div>
-      <div className='bg-white shadow rounded-lg overflow-hidden'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-            <h3 className='text-sm font-semibold text-gray-900'>Master Parameters</h3>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
-            >
-              <PlusIcon className='h-4 w-4 mr-1.5' />
-              Add Master Parameter
-            </button>
+    <div className={isDetailOpen ? 'space-y-3' : 'h-full flex flex-col'}>
+      <div className={`max-w-full mx-auto w-full ${isDetailOpen ? '' : 'h-full flex flex-col'}`}>
+        <div className={`bg-white shadow rounded-lg overflow-hidden p-3 ${isDetailOpen ? 'space-y-2' : 'flex flex-col flex-1 min-h-0'}`}>
+          <div className='mb-2'>
+            <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+              <h3 className='text-sm font-semibold text-gray-900'>Master Parameters</h3>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700'
+              >
+                <PlusIcon className='h-4 w-4 mr-1.5' />
+                Add Master Parameter
+              </button>
+            </div>
           </div>
 
-          <MasterParameterSearch
-            searchQuery={searchQuery}
-            handleSearchChange={handleSearchChange}
-            handleSearchSubmit={handleSearchSubmit}
-            searchLoading={searchLoading}
-          />
+          <div className='mb-2'>
+            <MasterParameterSearch
+              searchQuery={searchQuery}
+              handleSearchChange={handleSearchChange}
+              handleSearchSubmit={handleSearchSubmit}
+              searchLoading={searchLoading}
+            />
+          </div>
 
-          <MasterParameterTable
-            masterParameters={masterParameters}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-            onDelete={deleteMasterParameter}
-            onViewDetail={handleViewDetail}
-            selectedParameterId={selectedParameterForDetail?.id}
-            searchQuery={activeSearchQuery}
-            loading={loading}
-          />
+          <div className={isDetailOpen ? '' : 'mt-1 flex-1 flex flex-col min-h-0'}>
+            <MasterParameterTable
+              masterParameters={masterParameters}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              onDelete={deleteMasterParameter}
+              onViewDetail={handleViewDetail}
+              selectedParameterId={selectedParameterForDetail?.id}
+              searchQuery={activeSearchQuery}
+              loading={loading}
+              isDetailOpen={isDetailOpen}
+            />
+          </div>
         </div>
       </div>
 

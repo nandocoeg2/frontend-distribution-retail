@@ -68,10 +68,12 @@ const Customers = () => {
   };
 
 
+  const isDetailOpen = Boolean(selectedCustomerForDetail);
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="max-w-full mx-auto w-full h-full flex flex-col">
-        <div className="bg-white shadow rounded-lg overflow-hidden p-3 flex flex-col flex-1 min-h-0">
+    <div className={isDetailOpen ? 'space-y-3' : 'h-full flex flex-col'}>
+      <div className={`max-w-full mx-auto w-full ${isDetailOpen ? '' : 'h-full flex flex-col'}`}>
+        <div className={`bg-white shadow rounded-lg overflow-hidden p-3 ${isDetailOpen ? 'space-y-2' : 'flex flex-col flex-1 min-h-0'}`}>
           <div className="mb-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -115,7 +117,7 @@ const Customers = () => {
             />
           </div>
 
-          <div className="mt-1 flex-1 flex flex-col min-h-0">
+          <div className={isDetailOpen ? '' : 'mt-1 flex-1 flex flex-col min-h-0'}>
             {loading ? (
               <Loading />
             ) : (
@@ -128,6 +130,7 @@ const Customers = () => {
                 onViewDetail={handleViewDetail}
                 selectedCustomerId={selectedCustomerForDetail?.id}
                 searchQuery={activeSearchQuery}
+                isDetailOpen={isDetailOpen}
               />
             )}
           </div>

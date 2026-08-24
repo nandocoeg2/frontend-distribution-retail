@@ -14,8 +14,8 @@ const SupplierItemPrices = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [paginationInfo, setPaginationInfo] = useState({ totalItems: 0, totalPages: 0, currentPage: 1, itemsPerPage: 10 });
+  const [limit, setLimit] = useState(9999);
+  const [paginationInfo, setPaginationInfo] = useState({ totalItems: 0, totalPages: 0, currentPage: 1, itemsPerPage: 9999 });
 
   const [selected, setSelected] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -87,49 +87,51 @@ const SupplierItemPrices = () => {
   const totalItems = paginationInfo.totalItems || visibleCount;
 
   return (
-    <Card padding='md' className='shadow-sm'>
-      <header className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-lg font-semibold text-gray-900'>Harga Item Supplier</h1>
-          <p className='text-xs text-gray-500'>Harga item per supplier — digunakan otomatis saat Stock In</p>
-        </div>
-        <div className='flex items-center gap-2'>
-          <span className='text-xs text-gray-500'>
-            <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} data
-          </span>
+    <div className='h-full flex flex-col'>
+      <div className='max-w-full mx-auto w-full h-full flex flex-col'>
+        <Card padding='md' className='shadow-sm flex flex-col flex-1 min-h-0'>
+          <header className='flex items-center justify-between'>
+            <div>
+              <h1 className='text-lg font-semibold text-gray-900'>Harga Item Supplier</h1>
+              <p className='text-xs text-gray-500'>Harga item per supplier — digunakan otomatis saat Stock In</p>
+            </div>
+            <div className='flex items-center gap-2'>
+              <span className='text-xs text-gray-500'>
+                <span className='font-semibold text-gray-700'>{visibleCount}</span>/{totalItems} data
+              </span>
 
-          {selected && (
-            <>
-              <button type='button' onClick={handleEdit}
-                className='inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500'>
-                <PencilSquareIcon className='h-3.5 w-3.5' aria-hidden='true' /> Edit
+              {selected && (
+                <>
+                  <button type='button' onClick={handleEdit}
+                    className='inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500'>
+                    <PencilSquareIcon className='h-3.5 w-3.5' aria-hidden='true' /> Edit
+                  </button>
+                  <button type='button' onClick={handleDeleteClick}
+                    className='inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'>
+                    <TrashIcon className='h-3.5 w-3.5' aria-hidden='true' /> Hapus
+                  </button>
+                </>
+              )}
+
+              <button type='button' onClick={handleAdd}
+                className='inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500'>
+                <PlusIcon className='h-3.5 w-3.5' aria-hidden='true' /> Tambah
               </button>
-              <button type='button' onClick={handleDeleteClick}
-                className='inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500'>
-                <TrashIcon className='h-3.5 w-3.5' aria-hidden='true' /> Hapus
+            </div>
+          </header>
+
+          <div className='my-2 h-px bg-gray-200' />
+
+          {error && (
+            <div className='mt-2 flex items-center justify-between rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800'>
+              <span>Error: {error}</span>
+              <button type='button' onClick={fetchData} className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'>
+                Muat ulang
               </button>
-            </>
+            </div>
           )}
 
-          <button type='button' onClick={handleAdd}
-            className='inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500'>
-            <PlusIcon className='h-3.5 w-3.5' aria-hidden='true' /> Tambah
-          </button>
-        </div>
-      </header>
-
-      <div className='my-2 h-px bg-gray-200' />
-
-      {error && (
-        <div className='mt-2 flex items-center justify-between rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800'>
-          <span>Error: {error}</span>
-          <button type='button' onClick={fetchData} className='rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700'>
-            Muat ulang
-          </button>
-        </div>
-      )}
-
-      <div className='mt-3 overflow-x-auto'>
+          <div className='mt-3 overflow-x-auto overflow-y-auto flex-1 min-h-[300px]'>
         <table className='min-w-full divide-y divide-gray-200 text-xs'>
           <thead className='bg-gray-50'>
             <tr>
@@ -213,7 +215,9 @@ const SupplierItemPrices = () => {
         confirmText='Hapus'
         loading={deleteLoading}
       />
-    </Card>
+        </Card>
+      </div>
+    </div>
   );
 };
 

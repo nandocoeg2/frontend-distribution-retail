@@ -6,7 +6,7 @@ import Pagination from '../common/Pagination';
 import { useConfirmationDialog } from '../ui';
 import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
-const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedCustomerId, searchQuery }) => {
+const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedCustomerId, searchQuery, isDetailOpen = false }) => {
   const [deleteId, setDeleteId] = React.useState(null);
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
 
@@ -37,9 +37,9 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
   });
 
   return (
-    <div className='flex-1 flex flex-col min-h-0 space-y-2'>
-      <div className='flex-1 flex flex-col min-h-0 overflow-hidden rounded-md border border-gray-200 bg-white'>
-        <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px]'>
+    <div className={isDetailOpen ? 'space-y-2' : 'flex-1 flex flex-col min-h-0 space-y-2'}>
+      <div className={`overflow-hidden rounded-md border border-gray-200 bg-white ${isDetailOpen ? '' : 'flex-1 flex flex-col min-h-0'}`}>
+        <div className={`overflow-x-auto overflow-y-auto ${isDetailOpen ? 'min-h-[250px] max-h-[calc(85vh-300px)]' : 'flex-1 min-h-[300px]'}`}>
           <table className='min-w-full w-full divide-y divide-gray-200 text-xs table-fixed'>
             <colgroup>
               <col style={{ width: '180px' }} />

@@ -3,7 +3,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import Pagination from '../common/Pagination';
 import useTableKeyboardNavigation from '../../hooks/useTableKeyboardNavigation';
 
-const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedGroupCustomerId, searchQuery }) => {
+const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitChange, onDelete, onViewDetail, selectedGroupCustomerId, searchQuery, isDetailOpen = false }) => {
   useTableKeyboardNavigation({
     items: groupCustomers,
     selectedId: selectedGroupCustomerId,
@@ -12,9 +12,9 @@ const GroupCustomerTable = ({ groupCustomers, pagination, onPageChange, onLimitC
   });
 
   return (
-    <div className='space-y-2'>
-      <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
-        <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]'>
+    <div className={isDetailOpen ? 'space-y-2' : 'flex-1 flex flex-col min-h-0 space-y-2'}>
+      <div className={`overflow-hidden rounded-md border border-gray-200 bg-white ${isDetailOpen ? '' : 'flex-1 flex flex-col min-h-0'}`}>
+        <div className={`overflow-x-auto overflow-y-auto ${isDetailOpen ? 'min-h-[250px] max-h-[calc(85vh-300px)]' : 'flex-1 min-h-[300px]'}`}>
           <table className='min-w-full w-full divide-y divide-gray-200 text-xs table-fixed'>
             <colgroup>
               <col style={{ width: '180px' }} />
