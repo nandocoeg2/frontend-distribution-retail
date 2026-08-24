@@ -1,66 +1,45 @@
-import React, { useState, useMemo } from 'react';
-import { TableLoading } from '../ui/Loading.jsx';
+import React, { useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
+import {
+  createColumnHelper,
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+} from '@tanstack/react-table';
 import { formatDate } from '../../utils/formatUtils';
+import { useStockOutMovementsQuery } from '../../hooks/useStockMovementsQuery';
+import { useServerSideTable } from '../../hooks/useServerSideTable';
+import { DataTable, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 
-const formatNumber = (num, decimals = 1) => {
-  if (num == null || isNaN(num)) return '0.0';
-  return Number(num).toLocaleString('id-ID', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-};
+const columnHelper = createColumnHelper();
 
-const StockOutTable = ({
-  movements = [],
-  loading = false,
-  searchLoading = false,
-  onEditNotes,
-}) => {
-  // Column header filter states
-  const [columnFilters, setColumnFilters] = useState({
-    tgl: '',
-    noInvoice: [],
-    plu: [],
-    namaCustomer: [],
-    namaBarang: [],
-    totalPengiriman: '',
-    poQuantity: '',
-    selisih: '',
-    noPo: [],
-    totalPenagihan: '',
-    stokGantung: '',
-  });
-
-  // Numeric footer aggregation toggle states per numeric column ('summary' | 'count' | 'average')
-  const [numericAggTypes, setNumericAggTypes] = useState({
-    totalPengiriman: 'summary',
-    poQuantity: 'summary',
-    selisih: 'summary',
-    noPo: 'count',
-    totalPenagihan: 'summary',
-    stokGantung: 'summary',
-  });
-
-  const handleAggTypeChange = (field, value) => {
-    setNumericAggTypes((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Flatten movements to item rows for Stock Out display
-  const rows = useMemo(() => {
-    if (!Array.isArray(movements) || movements.length === 0) return [];
+const StockOutTable = forwardRef(({
+  onViewDetail,
+  selectedMovementId = null,
+  globalSearch = '',
+}, ref) => {
+  // Flatten raw stock movements into consolidated item rows for table display
+  const selectData = useCallback((response) => {
+    const rawMovements = response?.movements || (Array.isArray(response) ? response : []);
+    if (!Array.isArray(rawMovements) || rawMovements.length === 0) return [];
 
     const flatRows = [];
 
-    movements.forEach((movement) => {
+    rawMovements.forEach((movement) => {
+      // Ensure only STOCK_OUT movements are processed defensively
+      if (movement.type && movement.type !== 'STOCK_OUT') {
+        return;
+      }
+
       const customerName =
         movement?.customer?.namaCustomer ||
         movement?.customerName ||
         '-';
 
-      const movementDate = movement?.createdAt
-        ? formatDate(movement.createdAt)
-        : '-';
+      const movementDate = movement?.createdAt || null;
 
       const poNumber =
         movement?.no_po ||
@@ -94,6 +73,7 @@ const StockOutTable = ({
       if (items.length === 0) {
         flatRows.push({
           id: movement.id,
+          movementId: movement.id,
           tgl: movementDate,
           noInvoice: invoiceNumber,
           plu: '-',
@@ -108,7 +88,7 @@ const StockOutTable = ({
           source: movement,
         });
       } else {
-        // Group items in movement by itemId/plu so it's always consolidated total per item per PO (not per box)
+        // Group items in movement by itemId/plu so it's always consolidated total per item per PO
         const groupedItemsMap = new Map();
         items.forEach((itemObj) => {
           const itemInfo = itemObj?.item || itemObj?.inventory || {};
@@ -169,6 +149,7 @@ const StockOutTable = ({
 
           flatRows.push({
             id: `${movement.id}-${idx}`,
+            movementId: movement.id,
             tgl: movementDate,
             noInvoice: invoiceNumber,
             plu: itemInfo?.plu || '-',
@@ -187,534 +168,527 @@ const StockOutTable = ({
     });
 
     return flatRows;
-  }, [movements]);
+  }, []);
 
-  // Options for Autocomplete filters
-  const noInvoiceOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.noInvoice && r.noInvoice !== '-' && !set.has(r.noInvoice)) {
-        set.add(r.noInvoice);
-        list.push({ id: r.noInvoice, name: r.noInvoice });
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: Boolean(globalSearch),
+      initialValue: globalSearch,
+      debounceMs: 500,
+    }),
+    [globalSearch]
+  );
+
+  const {
+    data: rows,
+    pagination,
+    hasActiveFilters,
+    isLoading,
+    isFetching,
+    error,
+    resetFilters,
+    tableOptions,
+    refetch,
+    columnFilters,
+  } = useServerSideTable({
+    queryHook: useStockOutMovementsQuery,
+    selectData,
+    selectPagination: (response) => response?.pagination,
+    initialPage: 1,
+    initialLimit: 9999, // Fetch all records at once (no pagination)
+    manualFiltering: false, // Perform filtering client-side across the entire fetched dataset
+    manualPagination: false,
+    manualSorting: false,
+    globalFilter: globalFilterConfig,
+    columnFilterDebounceMs: 0,
+    storageKey: 'stock-out-table',
+  });
+
+  // Dynamic filter options derived from current dataset
+  const invoiceOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.noInvoice;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
       }
     });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
 
-  const pluOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.plu && r.plu !== '-' && !set.has(r.plu)) {
-        set.add(r.plu);
-        list.push({ id: r.plu, name: r.plu });
+    const activeFilter = columnFilters.find((f) => f.id === 'noInvoice');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
       }
     });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
 
-  const customerOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.namaCustomer && r.namaCustomer !== '-' && !set.has(r.namaCustomer)) {
-        set.add(r.namaCustomer);
-        list.push({ id: r.namaCustomer, name: r.namaCustomer });
-      }
-    });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
-
-  const namaBarangOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.namaBarang && r.namaBarang !== '-' && !set.has(r.namaBarang)) {
-        set.add(r.namaBarang);
-        list.push({ id: r.namaBarang, name: r.namaBarang });
-      }
-    });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
-
-  const noPoOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.noPo && r.noPo !== '-' && !set.has(r.noPo)) {
-        set.add(r.noPo);
-        list.push({ id: r.noPo, name: r.noPo });
-      }
-    });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
-
-  // Filter rows according to header input filters
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      if (columnFilters.tgl) {
-        const filterVal = columnFilters.tgl; // e.g. "2026-06-12"
-        const rowTglStr = String(row.tgl || '');
-        let rowIsoDate = '';
-        if (row.source?.createdAt) {
-          try {
-            rowIsoDate = new Date(row.source.createdAt).toISOString().split('T')[0];
-          } catch (e) {}
-        }
-        const matches =
-          rowIsoDate === filterVal ||
-          rowTglStr.includes(filterVal) ||
-          new Date(filterVal).toLocaleDateString('id-ID') === rowTglStr ||
-          new Date(filterVal).toLocaleDateString('en-GB') === rowTglStr;
-        if (!matches) return false;
-      }
-      if (Array.isArray(columnFilters.noInvoice) && columnFilters.noInvoice.length > 0) {
-        if (!columnFilters.noInvoice.includes(row.noInvoice)) return false;
-      } else if (typeof columnFilters.noInvoice === 'string' && columnFilters.noInvoice.trim() !== '') {
-        if (!row.noInvoice.toLowerCase().includes(columnFilters.noInvoice.toLowerCase())) return false;
-      }
-
-      if (Array.isArray(columnFilters.plu) && columnFilters.plu.length > 0) {
-        if (!columnFilters.plu.includes(row.plu)) return false;
-      } else if (typeof columnFilters.plu === 'string' && columnFilters.plu.trim() !== '') {
-        if (!row.plu.toLowerCase().includes(columnFilters.plu.toLowerCase())) return false;
-      }
-
-      if (Array.isArray(columnFilters.namaCustomer) && columnFilters.namaCustomer.length > 0) {
-        if (!columnFilters.namaCustomer.includes(row.namaCustomer)) return false;
-      } else if (typeof columnFilters.namaCustomer === 'string' && columnFilters.namaCustomer.trim() !== '') {
-        if (!row.namaCustomer.toLowerCase().includes(columnFilters.namaCustomer.toLowerCase())) return false;
-      }
-
-      if (Array.isArray(columnFilters.namaBarang) && columnFilters.namaBarang.length > 0) {
-        if (!columnFilters.namaBarang.includes(row.namaBarang)) return false;
-      } else if (typeof columnFilters.namaBarang === 'string' && columnFilters.namaBarang.trim() !== '') {
-        if (!row.namaBarang.toLowerCase().includes(columnFilters.namaBarang.toLowerCase())) return false;
-      }
-
-      if (
-        columnFilters.totalPengiriman &&
-        !String(row.totalPengiriman)
-          .toLowerCase()
-          .includes(columnFilters.totalPengiriman.toLowerCase())
-      )
-        return false;
-      if (
-        columnFilters.poQuantity &&
-        !String(row.poQuantity)
-          .toLowerCase()
-          .includes(columnFilters.poQuantity.toLowerCase())
-      )
-        return false;
-      if (
-        columnFilters.selisih &&
-        !String(row.selisih)
-          .toLowerCase()
-          .includes(columnFilters.selisih.toLowerCase())
-      )
-        return false;
-
-      if (Array.isArray(columnFilters.noPo) && columnFilters.noPo.length > 0) {
-        if (!columnFilters.noPo.includes(row.noPo)) return false;
-      } else if (typeof columnFilters.noPo === 'string' && columnFilters.noPo.trim() !== '') {
-        if (!row.noPo.toLowerCase().includes(columnFilters.noPo.toLowerCase())) return false;
-      }
-
-      if (
-        columnFilters.totalPenagihan &&
-        !String(row.totalPenagihan)
-          .toLowerCase()
-          .includes(columnFilters.totalPenagihan.toLowerCase())
-      )
-        return false;
-      if (
-        columnFilters.stokGantung &&
-        !String(row.stokGantung)
-          .toLowerCase()
-          .includes(columnFilters.stokGantung.toLowerCase())
-      )
-        return false;
-
-      return true;
-    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [rows, columnFilters]);
 
-  const totalCount = filteredRows.length;
+  const customerOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.namaCustomer;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
 
-  // Helper calculation for numeric columns
-  const computeAggValue = (field, decimals = 1) => {
-    if (totalCount === 0) return formatNumber(0, decimals);
-    const aggType = numericAggTypes[field] || 'summary';
-    if (aggType === 'count') {
-      return String(totalCount);
-    }
+    const activeFilter = columnFilters.find((f) => f.id === 'namaCustomer');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
 
-    const sum = filteredRows.reduce((acc, r) => acc + (Number(r[field]) || 0), 0);
-    if (aggType === 'average') {
-      return formatNumber(sum / totalCount, decimals);
-    }
-    return formatNumber(sum, decimals);
-  };
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows, columnFilters]);
 
-  const handleFilterChange = (colKey, value) => {
-    setColumnFilters((prev) => ({ ...prev, [colKey]: value }));
-  };
+  const namaBarangOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.namaBarang;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
 
-  if (loading && !searchLoading) {
-    return (
-      <div className='bg-white rounded-lg shadow divide-y divide-gray-200'>
-        <TableLoading rows={5} columns={11} className='p-6' />
-      </div>
-    );
-  }
+    const activeFilter = columnFilters.find((f) => f.id === 'namaBarang');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows, columnFilters]);
+
+  const poOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.noPo;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'noPo');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows, columnFilters]);
+
+  // Define TanStack Table columns (11 columns matching user requirements)
+  const columns = useMemo(
+    () => [
+      // 1. Tgl
+      columnHelper.accessor('tgl', {
+        id: 'tgl',
+        size: 110,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tgl</div>
+              <div className="flex flex-col gap-0.5">
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, from: val });
+                  }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, to: val });
+                  }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => (
+          <span className="text-xs text-gray-700 whitespace-nowrap">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || (!filterValue.from && !filterValue.to)) return true;
+          const rowDateVal = row.getValue(columnId);
+          if (!rowDateVal) return false;
+          const date = new Date(rowDateVal);
+          if (isNaN(date.getTime())) return false;
+
+          if (filterValue.from) {
+            const fromDate = new Date(filterValue.from);
+            fromDate.setHours(0, 0, 0, 0);
+            if (date < fromDate) return false;
+          }
+          if (filterValue.to) {
+            const toDate = new Date(filterValue.to);
+            toDate.setHours(23, 59, 59, 999);
+            if (date > toDate) return false;
+          }
+          return true;
+        },
+      }),
+
+      // 2. No Invoice
+      columnHelper.accessor('noInvoice', {
+        id: 'noInvoice',
+        size: 140,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">No Invoice</div>
+            <AutocompleteCheckboxLimitTag
+              options={invoiceOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-medium text-gray-900 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+
+      // 3. PLU
+      columnHelper.accessor('plu', {
+        id: 'plu',
+        size: 100,
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">PLU</div>
+            <TextColumnFilter column={column} placeholder="Filter PLU..." />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-mono text-gray-700 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || typeof filterValue !== 'string') return true;
+          const val = String(row.getValue(columnId) || '').toLowerCase();
+          return val.includes(filterValue.toLowerCase().trim());
+        },
+      }),
+
+      // 4. Nama Customer
+      columnHelper.accessor('namaCustomer', {
+        id: 'namaCustomer',
+        size: 150,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Nama Customer</div>
+            <AutocompleteCheckboxLimitTag
+              options={customerOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-medium text-gray-900 truncate block" title={info.getValue()}>
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+
+      // 5. Nama Barang
+      columnHelper.accessor('namaBarang', {
+        id: 'namaBarang',
+        size: 200,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Nama Barang</div>
+            <AutocompleteCheckboxLimitTag
+              options={namaBarangOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-semibold text-gray-900 truncate block" title={info.getValue()}>
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+
+      // 6. Total Pengiriman
+      columnHelper.accessor('totalPengiriman', {
+        id: 'totalPengiriman',
+        size: 120,
+        header: () => (
+          <div className="space-y-0.5 text-right">
+            <div className="font-medium text-xs">Total Pengiriman</div>
+            <div className="h-6"></div>
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-bold text-right text-gray-900 block whitespace-nowrap">
+            {Number(info.getValue() || 0).toLocaleString('id-ID', {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}
+          </span>
+        ),
+      }),
+
+      // 7. PO Quantity
+      columnHelper.accessor('poQuantity', {
+        id: 'poQuantity',
+        size: 110,
+        header: () => (
+          <div className="space-y-0.5 text-right">
+            <div className="font-medium text-xs">PO Quantity</div>
+            <div className="h-6"></div>
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
+            {Number(info.getValue() || 0).toLocaleString('id-ID', {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}
+          </span>
+        ),
+      }),
+
+      // 8. Selisih
+      columnHelper.accessor('selisih', {
+        id: 'selisih',
+        size: 100,
+        header: () => (
+          <div className="space-y-0.5 text-right">
+            <div className="font-medium text-xs">Selisih</div>
+            <div className="h-6"></div>
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
+            {Number(info.getValue() || 0).toLocaleString('id-ID', {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}
+          </span>
+        ),
+      }),
+
+      // 9. No PO
+      columnHelper.accessor('noPo', {
+        id: 'noPo',
+        size: 140,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">No PO</div>
+            <AutocompleteCheckboxLimitTag
+              options={poOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-medium text-gray-900 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+
+      // 10. Total Penagihan
+      columnHelper.accessor('totalPenagihan', {
+        id: 'totalPenagihan',
+        size: 120,
+        header: () => (
+          <div className="space-y-0.5 text-right">
+            <div className="font-medium text-xs">Total Penagihan</div>
+            <div className="h-6"></div>
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
+            {Number(info.getValue() || 0).toLocaleString('id-ID', {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}
+          </span>
+        ),
+      }),
+
+      // 11. Stok Gantung
+      columnHelper.accessor('stokGantung', {
+        id: 'stokGantung',
+        size: 110,
+        header: () => (
+          <div className="space-y-0.5 text-right">
+            <div className="font-medium text-xs">Stok Gantung</div>
+            <div className="h-6"></div>
+          </div>
+        ),
+        cell: (info) => {
+          const val = Number(info.getValue() || 0);
+          return (
+            <span
+              className={`text-xs text-right block whitespace-nowrap ${
+                val !== 0 ? 'font-semibold text-red-600' : 'text-gray-800'
+              }`}
+            >
+              {val.toLocaleString('id-ID', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}
+            </span>
+          );
+        },
+      }),
+    ],
+    [invoiceOptions, customerOptions, namaBarangOptions, poOptions]
+  );
+
+  const table = useReactTable({
+    ...tableOptions,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  useImperativeHandle(ref, () => ({
+    refetch: () => refetch?.(),
+    getFilters: () => {
+      const state = table.getState();
+      const filters = {};
+      state.columnFilters.forEach((filter) => {
+        filters[filter.id] = filter.value;
+      });
+      return filters;
+    },
+    getData: () => rows,
+  }));
+
+  const loading = isLoading || isFetching;
 
   return (
-    <div className='bg-white rounded-lg shadow overflow-hidden'>
-      <div className='overflow-x-auto'>
-        <table className='min-w-full border-collapse border border-gray-300 text-xs'>
-          {/* Header Row */}
-          <thead className='bg-gray-100'>
-            <tr className='border-b border-gray-300 text-gray-700 font-bold'>
-              <th className='border-r border-gray-300 px-2 py-2 text-left w-28'>
-                Tgl
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[150px]'>
-                No Invoice
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[120px]'>
-                PLU
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[160px]'>
-                Nama Customer
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[180px]'>
-                Nama Barang
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-right w-28'>
-                Total Pengiriman
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-right w-28'>
-                PO Quantity
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-right w-24'>
-                Selisih
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-left min-w-[150px]' title='NO PO LENGKAP'>
-                No PO
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-right w-28'>
-                Total Penagihan
-              </th>
-              <th className='border-r border-gray-300 px-2 py-2 text-right w-28'>
-                Stok Gantung
-              </th>
-            </tr>
+    <div className="flex-1 flex flex-col min-h-0 space-y-2">
+      {hasActiveFilters && (
+        <div className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+          <div />
+          <button
+            onClick={resetFilters}
+            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          >
+            Reset Filter
+          </button>
+        </div>
+      )}
 
-            {/* Header Filter Row */}
-            <tr className='bg-gray-50 border-b border-gray-300'>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='date'
-                  value={columnFilters.tgl}
-                  onChange={(e) => handleFilterChange('tgl', e.target.value)}
-                  className='w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={noInvoiceOptions}
-                  value={columnFilters.noInvoice}
-                  onChange={(e) => handleFilterChange('noInvoice', e.target.value)}
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={pluOptions}
-                  value={columnFilters.plu}
-                  onChange={(e) => handleFilterChange('plu', e.target.value)}
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={customerOptions}
-                  value={columnFilters.namaCustomer}
-                  onChange={(e) => handleFilterChange('namaCustomer', e.target.value)}
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={namaBarangOptions}
-                  value={columnFilters.namaBarang}
-                  onChange={(e) => handleFilterChange('namaBarang', e.target.value)}
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='text'
-                  value={columnFilters.totalPengiriman}
-                  onChange={(e) => handleFilterChange('totalPengiriman', e.target.value)}
-                  placeholder='...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='text'
-                  value={columnFilters.poQuantity}
-                  onChange={(e) => handleFilterChange('poQuantity', e.target.value)}
-                  placeholder='...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='text'
-                  value={columnFilters.selisih}
-                  onChange={(e) => handleFilterChange('selisih', e.target.value)}
-                  placeholder='...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={noPoOptions}
-                  value={columnFilters.noPo}
-                  onChange={(e) => handleFilterChange('noPo', e.target.value)}
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='text'
-                  value={columnFilters.totalPenagihan}
-                  onChange={(e) => handleFilterChange('totalPenagihan', e.target.value)}
-                  placeholder='...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='text'
-                  value={columnFilters.stokGantung}
-                  onChange={(e) => handleFilterChange('stokGantung', e.target.value)}
-                  placeholder='...'
-                  className='w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
-                />
-              </th>
-            </tr>
-          </thead>
-
-          {/* Table Body */}
-          <tbody className='divide-y divide-gray-200 bg-white'>
-            {filteredRows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={11}
-                  className='px-3 py-6 text-center text-xs text-gray-500'
-                >
-                  {searchLoading
-                    ? 'Memuat data Stock Out...'
-                    : 'Tidak ada data Stock Out ditemukan.'}
-                </td>
-              </tr>
-            ) : (
-              filteredRows.map((row) => (
-                <tr key={row.id} className='hover:bg-amber-50/40 transition-colors'>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-gray-900 whitespace-nowrap'>
-                    {row.tgl}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 font-medium text-gray-900 whitespace-nowrap'>
-                    {row.noInvoice}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-gray-700 whitespace-nowrap'>
-                    {row.plu}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-gray-900 font-medium whitespace-nowrap'>
-                    {row.namaCustomer}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-gray-900 font-semibold'>
-                    {row.namaBarang}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-right font-bold text-gray-900 whitespace-nowrap'>
-                    {formatNumber(row.totalPengiriman, 1)}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-right text-gray-800 whitespace-nowrap'>
-                    {formatNumber(row.poQuantity, 1)}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-right text-gray-800 whitespace-nowrap'>
-                    {formatNumber(row.selisih, 1)}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-gray-900 font-medium whitespace-nowrap'>
-                    {row.noPo}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-right text-gray-800 whitespace-nowrap'>
-                    {formatNumber(row.totalPenagihan, 1)}
-                  </td>
-                  <td className='border-r border-gray-200 px-2 py-1.5 text-right font-semibold text-red-600 whitespace-nowrap'>
-                    {formatNumber(row.stokGantung, 1)}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-
-          {/* Table Footer Summary Row */}
-          <tfoot className='bg-blue-50/70 border-t-2 border-blue-400 font-semibold text-xs text-gray-800'>
-            <tr>
-              <td className='border-r border-gray-300 px-2 py-2 font-bold text-blue-900'>
-                COUNT: {totalCount}
+      <DataTable
+        table={table}
+        isLoading={loading}
+        error={error}
+        hasActiveFilters={hasActiveFilters}
+        loadingMessage="Memuat data Stock Out..."
+        emptyMessage="Tidak ada data Stock Out."
+        emptyFilteredMessage="Tidak ada data sesuai filter."
+        wrapperClassName="overflow-x-auto overflow-y-auto flex-1 min-h-[300px]"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
+        headerRowClassName="bg-gray-50"
+        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-amber-50/40 h-7"
+        getRowClassName={({ row }) => {
+          if (selectedMovementId && row.original.movementId === selectedMovementId) {
+            return 'bg-blue-50 border-l-2 border-blue-500';
+          }
+          return undefined;
+        }}
+        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
+        onRowClick={onViewDetail ? (row) => onViewDetail(row) : undefined}
+        footerRowClassName={`bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+        footerCellClassName="px-1.5 py-1 text-xs border-t border-gray-300"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-1.5 py-1 text-xs border-t border-gray-300 border-r border-gray-200 last:border-r-0"
+              >
+                <TableFooterCell column={column} table={table} />
               </td>
-              <td className='border-r border-gray-300 px-2 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-              <td className='border-r border-gray-300 px-2 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-              <td className='border-r border-gray-300 px-2 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-              <td className='border-r border-gray-300 px-2 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-
-              {/* Total Pengiriman */}
-              <td className='border-r border-gray-300 px-1 py-1 text-right bg-blue-100/50'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={numericAggTypes.totalPengiriman}
-                    onChange={(e) => handleAggTypeChange('totalPengiriman', e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[9px] font-bold text-blue-800 uppercase focus:outline-none'
-                  >
-                    <option value='summary'>SUMMARY</option>
-                    <option value='count'>COUNT</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-xs text-blue-950'>
-                    {computeAggValue('totalPengiriman', 1)}
-                  </span>
-                </div>
-              </td>
-
-              {/* PO Quantity */}
-              <td className='border-r border-gray-300 px-1 py-1 text-right bg-blue-100/50'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={numericAggTypes.poQuantity}
-                    onChange={(e) => handleAggTypeChange('poQuantity', e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[9px] font-bold text-blue-800 uppercase focus:outline-none'
-                  >
-                    <option value='summary'>SUMMARY</option>
-                    <option value='count'>COUNT</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-xs text-blue-950'>
-                    {computeAggValue('poQuantity', 1)}
-                  </span>
-                </div>
-              </td>
-
-              {/* Selisih */}
-              <td className='border-r border-gray-300 px-1 py-1 text-right bg-blue-100/50'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={numericAggTypes.selisih}
-                    onChange={(e) => handleAggTypeChange('selisih', e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[9px] font-bold text-blue-800 uppercase focus:outline-none'
-                  >
-                    <option value='summary'>SUMMARY</option>
-                    <option value='count'>COUNT</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-xs text-blue-950'>
-                    {computeAggValue('selisih', 1)}
-                  </span>
-                </div>
-              </td>
-
-              {/* No PO */}
-              <td className='border-r border-gray-300 px-1 py-1 text-right bg-blue-100/50'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={numericAggTypes.noPo}
-                    onChange={(e) => handleAggTypeChange('noPo', e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[9px] font-bold text-blue-800 uppercase focus:outline-none'
-                  >
-                    <option value='count'>COUNT</option>
-                    <option value='summary'>SUMMARY</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-xs text-blue-950'>
-                    {computeAggValue('noPo', 0)}
-                  </span>
-                </div>
-              </td>
-
-              {/* Total Penagihan */}
-              <td className='border-r border-gray-300 px-1 py-1 text-right bg-blue-100/50'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={numericAggTypes.totalPenagihan}
-                    onChange={(e) => handleAggTypeChange('totalPenagihan', e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[9px] font-bold text-blue-800 uppercase focus:outline-none'
-                  >
-                    <option value='summary'>SUMMARY</option>
-                    <option value='count'>COUNT</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-xs text-blue-950'>
-                    {computeAggValue('totalPenagihan', 1)}
-                  </span>
-                </div>
-              </td>
-
-              {/* Stok Gantung */}
-              <td className='border-r border-gray-300 px-1 py-1 text-right bg-blue-100/50'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={numericAggTypes.stokGantung}
-                    onChange={(e) => handleAggTypeChange('stokGantung', e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[9px] font-bold text-blue-800 uppercase focus:outline-none'
-                  >
-                    <option value='summary'>SUMMARY</option>
-                    <option value='count'>COUNT</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-xs text-red-700'>
-                    {computeAggValue('stokGantung', 1)}
-                  </span>
-                </div>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            ))}
+          </tr>
+        }
+      />
     </div>
   );
-};
+});
+
+StockOutTable.displayName = 'StockOutTable';
 
 export default StockOutTable;

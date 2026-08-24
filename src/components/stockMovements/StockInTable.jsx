@@ -1,42 +1,39 @@
-import React, { useState, useMemo } from 'react';
-import { TableLoading } from '../ui/Loading.jsx';
+import React, { useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
+import {
+  createColumnHelper,
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+} from '@tanstack/react-table';
 import { formatDate } from '../../utils/formatUtils';
+import { useStockMovementsQuery } from '../../hooks/useStockMovementsQuery';
+import { useServerSideTable } from '../../hooks/useServerSideTable';
+import { DataTable, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
 
-const formatNumber = (num, decimals = 0) => {
-  if (num == null || isNaN(num)) return '0';
-  return Number(num).toLocaleString('id-ID', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-};
+const columnHelper = createColumnHelper();
 
-const StockInTable = ({
-  movements = [],
-  loading = false,
-  searchLoading = false,
-  onEditNotes,
-}) => {
-  // Column header filter states
-  const [columnFilters, setColumnFilters] = useState({
-    tgl: '',
-    noSuratJalan: [],
-    namaBarang: [],
-    plu: [],
-    qty: '',
-    namaSupplier: [],
-  });
-
-  // Footer aggregation toggle state for numeric column Qty ('summary' | 'count' | 'average')
-  const [qtyAggType, setQtyAggType] = useState('summary');
-
-  // Flatten movements to item rows for Stock In display
-  const rows = useMemo(() => {
-    if (!Array.isArray(movements) || movements.length === 0) return [];
+const StockInTable = forwardRef(({
+  onViewDetail,
+  selectedMovementId = null,
+  globalSearch = '',
+}, ref) => {
+  // Flatten raw stock movements into item rows for table display
+  const selectData = useCallback((response) => {
+    const rawMovements = response?.movements || (Array.isArray(response) ? response : []);
+    if (!Array.isArray(rawMovements) || rawMovements.length === 0) return [];
 
     const flatRows = [];
 
-    movements.forEach((movement) => {
+    rawMovements.forEach((movement) => {
+      // Ensure only STOCK_IN movements are processed defensively
+      if (movement.type && movement.type !== 'STOCK_IN') {
+        return;
+      }
+
       const supplierName =
         movement?.supplier?.name ||
         movement?.supplierName ||
@@ -48,21 +45,20 @@ const StockInTable = ({
         movement?.reportPoSuppliers?.[0]?.no_surat_jalan ||
         '-';
 
-      const movementDate = movement?.createdAt
-        ? formatDate(movement.createdAt)
-        : '-';
-
+      const movementDate = movement?.createdAt || null;
       const items = Array.isArray(movement?.items) ? movement.items : [];
 
       if (items.length === 0) {
         flatRows.push({
           id: movement.id,
-          tgl: movementDate,
-          noSuratJalan: suratJalanNo,
-          namaBarang: '-',
+          movementId: movement.id,
+          createdAt: movementDate,
+          no_surat_jalan: suratJalanNo,
+          nama_barang: '-',
           plu: '-',
           qty: 0,
-          namaSupplier: supplierName,
+          quantity: 0,
+          nama_supplier: supplierName,
           source: movement,
         });
       } else {
@@ -70,12 +66,14 @@ const StockInTable = ({
           const itemInfo = itemObj?.item || itemObj?.inventory || {};
           flatRows.push({
             id: `${movement.id}-${idx}`,
-            tgl: movementDate,
-            noSuratJalan: suratJalanNo,
-            namaBarang: itemInfo?.nama_barang || itemInfo?.name || '-',
+            movementId: movement.id,
+            createdAt: movementDate,
+            no_surat_jalan: suratJalanNo,
+            nama_barang: itemInfo?.nama_barang || itemInfo?.name || '-',
             plu: itemInfo?.plu || '-',
             qty: Number(itemObj?.quantity || 0),
-            namaSupplier: supplierName,
+            quantity: Number(itemObj?.quantity || 0),
+            nama_supplier: supplierName,
             source: movement,
           });
         });
@@ -83,333 +81,386 @@ const StockInTable = ({
     });
 
     return flatRows;
-  }, [movements]);
+  }, []);
 
-  // Options for Autocomplete filters
-  const noSuratJalanOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.noSuratJalan && r.noSuratJalan !== '-' && !set.has(r.noSuratJalan)) {
-        set.add(r.noSuratJalan);
-        list.push({ id: r.noSuratJalan, name: r.noSuratJalan });
+  const globalFilterConfig = useMemo(
+    () => ({
+      enabled: Boolean(globalSearch),
+      initialValue: globalSearch,
+      debounceMs: 500,
+    }),
+    [globalSearch]
+  );
+
+  const {
+    data: rows,
+    pagination,
+    hasActiveFilters,
+    isLoading,
+    isFetching,
+    error,
+    resetFilters,
+    tableOptions,
+    refetch,
+    columnFilters,
+  } = useServerSideTable({
+    queryHook: useStockMovementsQuery,
+    selectData,
+    selectPagination: (response) => response?.pagination,
+    initialPage: 1,
+    initialLimit: 9999, // Fetch all records at once (no pagination)
+    manualFiltering: false, // Perform filtering client-side across the entire fetched dataset
+    manualPagination: false,
+    manualSorting: false,
+    globalFilter: globalFilterConfig,
+    columnFilterDebounceMs: 0,
+    storageKey: 'stock-in-table',
+  });
+
+  // Dynamic filter options derived from current dataset
+  const suratJalanOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.no_surat_jalan;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
       }
     });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
 
-  const namaBarangOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.namaBarang && r.namaBarang !== '-' && !set.has(r.namaBarang)) {
-        set.add(r.namaBarang);
-        list.push({ id: r.namaBarang, name: r.namaBarang });
+    const activeFilter = columnFilters.find((f) => f.id === 'no_surat_jalan');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
       }
     });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
 
-  const pluOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.plu && r.plu !== '-' && !set.has(r.plu)) {
-        set.add(r.plu);
-        list.push({ id: r.plu, name: r.plu });
-      }
-    });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
-
-  const supplierOptions = useMemo(() => {
-    const set = new Set();
-    const list = [];
-    rows.forEach((r) => {
-      if (r.namaSupplier && r.namaSupplier !== '-' && !set.has(r.namaSupplier)) {
-        set.add(r.namaSupplier);
-        list.push({ id: r.namaSupplier, name: r.namaSupplier });
-      }
-    });
-    return list.sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows]);
-
-  // Filter rows according to per-column header inputs
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      // Date filter (Specific date)
-      if (columnFilters.tgl) {
-        const filterVal = columnFilters.tgl; // e.g. "2026-06-12"
-        const rowTglStr = String(row.tgl || '');
-        let rowIsoDate = '';
-        if (row.source?.createdAt) {
-          try {
-            rowIsoDate = new Date(row.source.createdAt).toISOString().split('T')[0];
-          } catch (e) {}
-        }
-        const matches =
-          rowIsoDate === filterVal ||
-          rowTglStr.includes(filterVal) ||
-          new Date(filterVal).toLocaleDateString('id-ID') === rowTglStr ||
-          new Date(filterVal).toLocaleDateString('en-GB') === rowTglStr;
-        if (!matches) return false;
-      }
-
-      // No Surat Jalan filter
-      if (Array.isArray(columnFilters.noSuratJalan) && columnFilters.noSuratJalan.length > 0) {
-        if (!columnFilters.noSuratJalan.includes(row.noSuratJalan)) return false;
-      } else if (typeof columnFilters.noSuratJalan === 'string' && columnFilters.noSuratJalan.trim() !== '') {
-        if (!row.noSuratJalan.toLowerCase().includes(columnFilters.noSuratJalan.toLowerCase())) return false;
-      }
-
-      // Nama Barang filter
-      if (Array.isArray(columnFilters.namaBarang) && columnFilters.namaBarang.length > 0) {
-        if (!columnFilters.namaBarang.includes(row.namaBarang)) return false;
-      } else if (typeof columnFilters.namaBarang === 'string' && columnFilters.namaBarang.trim() !== '') {
-        if (!row.namaBarang.toLowerCase().includes(columnFilters.namaBarang.toLowerCase())) return false;
-      }
-
-      // PLU filter
-      if (Array.isArray(columnFilters.plu) && columnFilters.plu.length > 0) {
-        if (!columnFilters.plu.includes(row.plu)) return false;
-      } else if (typeof columnFilters.plu === 'string' && columnFilters.plu.trim() !== '') {
-        if (!row.plu.toLowerCase().includes(columnFilters.plu.toLowerCase())) return false;
-      }
-
-      // Qty filter
-      if (
-        columnFilters.qty &&
-        !String(row.qty).toLowerCase().includes(columnFilters.qty.toLowerCase())
-      ) {
-        return false;
-      }
-
-      // Nama Supplier filter
-      if (Array.isArray(columnFilters.namaSupplier) && columnFilters.namaSupplier.length > 0) {
-        if (!columnFilters.namaSupplier.includes(row.namaSupplier)) return false;
-      } else if (typeof columnFilters.namaSupplier === 'string' && columnFilters.namaSupplier.trim() !== '') {
-        if (!row.namaSupplier.toLowerCase().includes(columnFilters.namaSupplier.toLowerCase())) return false;
-      }
-
-      return true;
-    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [rows, columnFilters]);
 
-  // Computations for footer summary row
-  const totalCount = filteredRows.length;
+  const namaBarangOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.nama_barang;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
 
-  const qtyAggValue = useMemo(() => {
-    if (totalCount === 0) return '0';
-    const sum = filteredRows.reduce((acc, r) => acc + (r.qty || 0), 0);
-    if (qtyAggType === 'count') {
-      return formatNumber(totalCount);
-    }
-    if (qtyAggType === 'average') {
-      return formatNumber(sum / totalCount, 2);
-    }
-    // Default 'summary' (SUM)
-    return formatNumber(sum, 2);
-  }, [filteredRows, totalCount, qtyAggType]);
+    const activeFilter = columnFilters.find((f) => f.id === 'nama_barang');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
 
-  const handleFilterChange = (colKey, value) => {
-    setColumnFilters((prev) => ({ ...prev, [colKey]: value }));
-  };
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows, columnFilters]);
 
-  if (loading && !searchLoading) {
-    return (
-      <div className='bg-white rounded-lg shadow divide-y divide-gray-200'>
-        <TableLoading rows={5} columns={6} className='p-6' />
-      </div>
-    );
-  }
+  const supplierOptions = useMemo(() => {
+    const map = new Map();
+    (rows || []).forEach((row) => {
+      const val = row.nama_supplier;
+      if (val && val !== '-' && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'nama_supplier');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows, columnFilters]);
+
+  // Define TanStack Table columns
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor('createdAt', {
+        id: 'createdAt',
+        size: 120,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-0.5">
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, from: val });
+                  }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, to: val });
+                  }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => (
+          <span className="text-xs text-gray-700 whitespace-nowrap">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || (!filterValue.from && !filterValue.to)) return true;
+          const rowDateVal = row.getValue(columnId);
+          if (!rowDateVal) return false;
+          const date = new Date(rowDateVal);
+          if (isNaN(date.getTime())) return false;
+
+          if (filterValue.from) {
+            const fromDate = new Date(filterValue.from);
+            fromDate.setHours(0, 0, 0, 0);
+            if (date < fromDate) return false;
+          }
+          if (filterValue.to) {
+            const toDate = new Date(filterValue.to);
+            toDate.setHours(23, 59, 59, 999);
+            if (date > toDate) return false;
+          }
+          return true;
+        },
+      }),
+
+      columnHelper.accessor('no_surat_jalan', {
+        id: 'no_surat_jalan',
+        size: 160,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">No Surat Jalan</div>
+            <AutocompleteCheckboxLimitTag
+              options={suratJalanOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-medium text-gray-900 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+
+      columnHelper.accessor('nama_barang', {
+        id: 'nama_barang',
+        size: 220,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Nama Barang</div>
+            <AutocompleteCheckboxLimitTag
+              options={namaBarangOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-semibold text-gray-900 truncate block" title={info.getValue()}>
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+
+      columnHelper.accessor('plu', {
+        id: 'plu',
+        size: 110,
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">PLU</div>
+            <TextColumnFilter column={column} placeholder="Filter PLU..." />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-mono text-gray-700 whitespace-nowrap">
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || typeof filterValue !== 'string') return true;
+          const val = String(row.getValue(columnId) || '').toLowerCase();
+          return val.includes(filterValue.toLowerCase().trim());
+        },
+      }),
+
+      columnHelper.accessor('qty', {
+        id: 'qty',
+        size: 110,
+        header: ({ column }) => (
+          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Qty</div>
+            <TextColumnFilter
+              column={column}
+              placeholder="Filter Qty..."
+              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-bold text-right text-gray-900 block whitespace-nowrap">
+            {Number(info.getValue() || 0).toLocaleString('id-ID')}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '');
+          return val.includes(String(filterValue).trim());
+        },
+      }),
+
+      columnHelper.accessor('nama_supplier', {
+        id: 'nama_supplier',
+        size: 180,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Nama Supplier</div>
+            <AutocompleteCheckboxLimitTag
+              options={supplierOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-xs font-medium text-gray-900 truncate block" title={info.getValue()}>
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
+      }),
+    ],
+    [suratJalanOptions, namaBarangOptions, supplierOptions]
+  );
+
+  const table = useReactTable({
+    ...tableOptions,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  useImperativeHandle(ref, () => ({
+    refetch: () => refetch?.(),
+    getFilters: () => {
+      const state = table.getState();
+      const filters = {};
+      state.columnFilters.forEach((filter) => {
+        filters[filter.id] = filter.value;
+      });
+      return filters;
+    },
+    getData: () => rows,
+  }));
+
+  const loading = isLoading || isFetching;
 
   return (
-    <div className='bg-white rounded-lg shadow overflow-hidden'>
-      <div className='overflow-x-auto'>
-        <table className='min-w-full border-collapse border border-gray-300 text-xs'>
-          {/* Header Row */}
-          <thead className='bg-gray-100'>
-            <tr className='border-b border-gray-300 text-gray-700 font-bold'>
-              <th className='border-r border-gray-300 px-3 py-2 text-left w-28'>
-                Tgl
-              </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[160px]'>
-                No Surat Jalan
-              </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[200px]'>
-                Nama Barang
-              </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[120px]'>
-                PLU
-              </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-right w-28'>
-                Qty
-              </th>
-              <th className='border-r border-gray-300 px-3 py-2 text-left min-w-[180px]'>
-                Nama Supplier
-              </th>
-            </tr>
+    <div className="flex-1 flex flex-col min-h-0 space-y-2">
+      {hasActiveFilters && (
+        <div className="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-200">
+          <div />
+          <button
+            onClick={resetFilters}
+            className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          >
+            Reset Filter
+          </button>
+        </div>
+      )}
 
-            {/* Header Filter Inputs Row */}
-            <tr className='bg-gray-50 border-b border-gray-300'>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='date'
-                  value={columnFilters.tgl}
-                  onChange={(e) => handleFilterChange('tgl', e.target.value)}
-                  className='w-full rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-800 focus:border-blue-500 focus:outline-none'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={noSuratJalanOptions}
-                  value={columnFilters.noSuratJalan}
-                  onChange={(e) =>
-                    handleFilterChange('noSuratJalan', e.target.value)
-                  }
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={namaBarangOptions}
-                  value={columnFilters.namaBarang}
-                  onChange={(e) =>
-                    handleFilterChange('namaBarang', e.target.value)
-                  }
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={pluOptions}
-                  value={columnFilters.plu}
-                  onChange={(e) =>
-                    handleFilterChange('plu', e.target.value)
-                  }
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <input
-                  type='text'
-                  value={columnFilters.qty}
-                  onChange={(e) => handleFilterChange('qty', e.target.value)}
-                  placeholder='...'
-                  className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none text-right'
-                />
-              </th>
-              <th className='border-r border-gray-300 px-1 py-1 font-normal'>
-                <AutocompleteCheckboxLimitTag
-                  options={supplierOptions}
-                  value={columnFilters.namaSupplier}
-                  onChange={(e) =>
-                    handleFilterChange('namaSupplier', e.target.value)
-                  }
-                  placeholder='All'
-                  displayKey='name'
-                  valueKey='id'
-                  limitTags={1}
-                  size='small'
-                />
-              </th>
-            </tr>
-          </thead>
-
-          {/* Table Body */}
-          <tbody className='divide-y divide-gray-200 bg-white'>
-            {filteredRows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className='px-3 py-6 text-center text-xs text-gray-500'
-                >
-                  {searchLoading
-                    ? 'Memuat data Stock In...'
-                    : 'Tidak ada data Stock In ditemukan.'}
-                </td>
-              </tr>
-            ) : (
-              filteredRows.map((row) => (
-                <tr key={row.id} className='hover:bg-blue-50/40 transition-colors'>
-                  <td className='border-r border-gray-200 px-3 py-2 text-gray-900 whitespace-nowrap'>
-                    {row.tgl}
-                  </td>
-                  <td className='border-r border-gray-200 px-3 py-2 font-medium text-gray-900 whitespace-nowrap'>
-                    {row.noSuratJalan}
-                  </td>
-                  <td className='border-r border-gray-200 px-3 py-2 text-gray-900 font-semibold'>
-                    {row.namaBarang}
-                  </td>
-                  <td className='border-r border-gray-200 px-3 py-2 text-gray-700 whitespace-nowrap'>
-                    {row.plu}
-                  </td>
-                  <td className='border-r border-gray-200 px-3 py-2 text-right font-bold text-gray-900 whitespace-nowrap'>
-                    {formatNumber(row.qty, 2)}
-                  </td>
-                  <td className='border-r border-gray-200 px-3 py-2 text-gray-900 font-medium whitespace-nowrap'>
-                    {row.namaSupplier}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-
-          {/* Table Footer with Summary Aggregation */}
-          <tfoot className='bg-blue-50/70 border-t-2 border-blue-400 font-semibold text-xs text-gray-800'>
-            <tr>
-              <td className='border-r border-gray-300 px-3 py-2 font-bold text-blue-900'>
-                COUNT: {totalCount}
+      <DataTable
+        table={table}
+        isLoading={loading}
+        error={error}
+        hasActiveFilters={hasActiveFilters}
+        loadingMessage="Memuat data Stock In..."
+        emptyMessage="Tidak ada data Stock In."
+        emptyFilteredMessage="Tidak ada data sesuai filter."
+        wrapperClassName="overflow-x-auto overflow-y-auto flex-1 min-h-[300px]"
+        tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
+        headerRowClassName="bg-gray-50"
+        headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
+        bodyClassName="bg-white divide-y divide-gray-100"
+        rowClassName="hover:bg-gray-50 h-7"
+        getRowClassName={({ row }) => {
+          if (selectedMovementId && row.original.movementId === selectedMovementId) {
+            return 'bg-blue-50 border-l-2 border-blue-500';
+          }
+          return undefined;
+        }}
+        cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"
+        emptyCellClassName="px-1.5 py-0.5 text-center text-gray-500"
+        onRowClick={onViewDetail ? (row) => onViewDetail(row) : undefined}
+        footerRowClassName={`bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 ${(pagination?.totalItems || 0) > 0 ? 'z-10' : 'z-0'}`}
+        footerCellClassName="px-1.5 py-1 text-xs border-t border-gray-300"
+        footerContent={
+          <tr>
+            {table.getVisibleLeafColumns().map((column) => (
+              <td
+                key={column.id}
+                className="px-1.5 py-1 text-xs border-t border-gray-300 border-r border-gray-200 last:border-r-0"
+              >
+                <TableFooterCell column={column} table={table} />
               </td>
-              <td className='border-r border-gray-300 px-3 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-              <td className='border-r border-gray-300 px-3 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-              <td className='border-r border-gray-300 px-3 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-
-              {/* Numeric Column Filter (COUNT / SUMMARY / AVERAGE) */}
-              <td className='border-r border-gray-300 px-2 py-1 text-right bg-blue-100/60'>
-                <div className='flex flex-col items-end gap-0.5'>
-                  <select
-                    value={qtyAggType}
-                    onChange={(e) => setQtyAggType(e.target.value)}
-                    className='rounded border border-blue-300 bg-white px-1 py-0.5 text-[10px] font-bold text-blue-800 uppercase focus:outline-none focus:ring-1 focus:ring-blue-500'
-                  >
-                    <option value='summary'>SUMMARY (SUM)</option>
-                    <option value='count'>COUNT</option>
-                    <option value='average'>AVERAGE</option>
-                  </select>
-                  <span className='font-bold text-sm text-blue-950'>
-                    {qtyAggValue}
-                  </span>
-                </div>
-              </td>
-
-              <td className='border-r border-gray-300 px-3 py-2 text-blue-900'>
-                COUNT: {totalCount}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            ))}
+          </tr>
+        }
+      />
     </div>
   );
-};
+});
+
+StockInTable.displayName = 'StockInTable';
 
 export default StockInTable;
