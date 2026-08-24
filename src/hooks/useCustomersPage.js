@@ -9,8 +9,8 @@ const INITIAL_PAGINATION = {
   totalPages: 1,
   totalItems: 0,
   total: 0,
-  itemsPerPage: 10,
-  limit: 10
+  itemsPerPage: 9999,
+  limit: 9999
 };
 
 const parseCustomerResponse = (response) => {
@@ -63,12 +63,12 @@ const useCustomersPage = () => {
   } = usePaginatedSearch({
     initialInput: '',
     initialPagination: INITIAL_PAGINATION,
-    searchFn: (query, page, limit) => {
+    searchFn: (query, page, limit = 9999) => {
       const trimmedQuery = typeof query === 'string' ? query.trim() : '';
       if (!trimmedQuery) {
-        return customerService.getAllCustomers(page, limit);
+        return customerService.getAllCustomers(page, limit || 9999);
       }
-      return customerService.search(trimmedQuery, page, limit);
+      return customerService.search(trimmedQuery, page, limit || 9999);
     },
     parseResponse: parseCustomerResponse,
     resolveErrorMessage: resolveCustomerError,

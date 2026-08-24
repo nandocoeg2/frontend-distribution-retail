@@ -37,9 +37,9 @@ const CustomerTable = ({ customers, pagination, onPageChange, onLimitChange, onD
   });
 
   return (
-    <div className='space-y-2'>
-      <div className='overflow-hidden rounded-md border border-gray-200 bg-white'>
-        <div className='overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]'>
+    <div className='flex-1 flex flex-col min-h-0 space-y-2'>
+      <div className='flex-1 flex flex-col min-h-0 overflow-hidden rounded-md border border-gray-200 bg-white'>
+        <div className='overflow-x-auto overflow-y-auto flex-1 min-h-[300px]'>
           <table className='min-w-full w-full divide-y divide-gray-200 text-xs table-fixed'>
             <colgroup>
               <col style={{ width: '180px' }} />
