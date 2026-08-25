@@ -346,8 +346,8 @@ const CheckingListForm = ({
                               : 'Keluarkan dari checklist'
                           }
                           className={`rounded-lg p-1.5 transition-colors ${assignedSuratJalans.length <= 1
-                              ? 'text-gray-300 cursor-not-allowed'
-                              : 'text-red-500 hover:bg-red-50 hover:text-red-700'
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-red-500 hover:bg-red-50 hover:text-red-700'
                             }`}
                         >
                           <TrashIcon className='h-4 w-4' />

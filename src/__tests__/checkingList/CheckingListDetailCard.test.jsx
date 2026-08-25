@@ -28,7 +28,7 @@ describe('CheckingListDetailCard', () => {
     render(
       <CheckingListDetailCard
         checklist={mockChecklist}
-        onClose={() => {}}
+        onClose={() => { }}
       />
     );
 

@@ -13,8 +13,8 @@ describe('StockOutTable data transformation and calculation', () => {
         po_number: 'PO-2026-001',
         grand_total: 500000,
         purchaseOrderDetails: [
-          { itemId: 'itm-1', plu: '1001', quantity: 100 },
-          { itemId: 'itm-2', plu: '1002', quantity: 50 },
+          { itemId: 'itm-1', plu: '1001', total_quantity_order: 100 },
+          { itemId: 'itm-2', plu: '1002', quantity_pcs: 50 },
         ],
         invoicePenagihan: [
           {
@@ -104,12 +104,27 @@ describe('StockOutTable data transformation and calculation', () => {
         const itemId = itemObj.itemId;
         const totalPengiriman = itemObj.quantity;
 
-        const matchingPoDetail = poDetails.find(
-          (pod) => pod.itemId === itemId || (itemInfo?.plu && pod?.plu === itemInfo?.plu)
+        const matchingPoDetails = poDetails.filter(
+          (pod) =>
+            (itemId && pod.itemId === itemId) ||
+            (itemInfo?.plu && (pod?.plu === itemInfo?.plu || pod?.PLU === itemInfo?.plu)) ||
+            (itemInfo?.nama_barang && pod?.nama_barang === itemInfo?.nama_barang)
         );
-        const poQuantity = matchingPoDetail
-          ? Number(matchingPoDetail.quantity || 0)
-          : totalPengiriman;
+        const poQuantity = matchingPoDetails.length > 0
+          ? matchingPoDetails.reduce(
+              (sum, pod) =>
+                sum +
+                Number(
+                  pod.total_quantity_order ??
+                  pod.quantity_pcs ??
+                  pod.quantity ??
+                  pod.qty_po ??
+                  pod.qty ??
+                  0
+                ),
+              0
+            )
+          : (poDetails.length > 0 ? 0 : totalPengiriman);
 
         const invoicePenagihanList = Array.isArray(movement?.purchaseOrder?.invoicePenagihan)
           ? movement.purchaseOrder.invoicePenagihan
