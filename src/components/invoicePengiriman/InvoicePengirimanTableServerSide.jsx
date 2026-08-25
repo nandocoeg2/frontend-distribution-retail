@@ -374,11 +374,16 @@ const InvoicePengirimanTableServerSide = ({
             </div>
           );
         },
-        cell: (info) => (
-          <span className="text-xs text-gray-600">
-            {info.getValue() ? formatDate(info.getValue()) : "-"}
-          </span>
-        ),
+        cell: (info) => {
+          const val =
+            info.row.original.purchaseOrder?.packing?.tanggal_packing ||
+            info.getValue();
+          return (
+            <span className="text-xs text-gray-600">
+              {val ? formatDate(val) : "-"}
+            </span>
+          );
+        },
       }),
       columnHelper.accessor("no_invoice", {
         header: ({ column }) => (

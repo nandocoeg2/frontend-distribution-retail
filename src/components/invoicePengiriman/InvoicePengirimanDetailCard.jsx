@@ -132,7 +132,7 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
                 <AccordionItem title='Info Dasar' isExpanded={expandedSections.basicInfo} onToggle={() => toggleSection('basicInfo')} bgColor='bg-indigo-50' compact>
                   <InfoTable compact data={[
                     { label: 'No. Invoice', value: invoice.no_invoice },
-                    { label: 'Tanggal', value: formatDate(invoice.tanggal) },
+                    { label: 'Tanggal', value: formatDate(invoice.purchaseOrder?.packing?.tanggal_packing || invoice.tanggal) },
                     { label: 'Jatuh Tempo', value: formatDate(invoice.expired_date) },
                     { label: 'TOP', value: invoice.termOfPayment?.kode_top || invoice.TOP || '-' },
                     { label: 'Status', component: <StatusBadge status={statusLabel || '-'} variant={statusVariant} size='xs' dot /> },
