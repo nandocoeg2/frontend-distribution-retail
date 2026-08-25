@@ -32,37 +32,28 @@ const PdfPreviewModal = ({
                     html, body {
                         overflow: hidden !important;
                         margin: 0 !important;
-                        padding: 0 !important;
-                        background: #e2e8f0 !important;
                     }
-                    /* Page break visual styling for screen preview */
+                    /* Page break visual styling */
                     @media screen {
-                        .container, .bulk-page, .page, .inv-document {
-                            background: #ffffff !important;
-                            width: 210mm !important;
-                            min-height: 297mm !important;
-                            padding: 15mm !important;
-                            margin: 20px auto !important;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
-                            border-radius: 2px !important;
-                            box-sizing: border-box !important;
+                        .page-break {
+                            border-top: 2px dashed #94a3b8 !important;
+                            margin: 24px 0 !important;
+                            padding-top: 20px !important;
                             position: relative !important;
                         }
-                        .page-break, [style*="page-break-after: always"], [style*="break-after: always"], [style*="break-after: page"] {
-                            position: relative !important;
-                            margin-bottom: 36px !important;
-                        }
-                        .page-break::after, [style*="page-break-after: always"]::after, [style*="break-after: always"]::after, [style*="break-after: page"]::after {
+                        .page-break::before {
                             content: "✂ — Batas Halaman —" !important;
-                            display: block !important;
-                            text-align: center !important;
-                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+                            position: absolute !important;
+                            top: -12px !important;
+                            left: 50% !important;
+                            transform: translateX(-50%) !important;
+                            background: #64748b !important;
+                            color: white !important;
+                            padding: 2px 12px !important;
                             font-size: 11px !important;
-                            font-weight: 600 !important;
-                            color: #64748b !important;
-                            letter-spacing: 0.08em !important;
-                            margin: 24px 0 -12px 0 !important;
-                            user-select: none !important;
+                            font-weight: 500 !important;
+                            border-radius: 4px !important;
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
                         }
                     }
                 `;
@@ -303,22 +294,22 @@ const PdfPreviewModal = ({
                 </div>
 
                 {/* HTML Preview using iframe - paper-like appearance with outer scroll */}
-                <div className="flex-1 bg-slate-200 overflow-auto p-6">
+                <div className="flex-1 bg-gray-300 overflow-auto p-6">
                     <div
-                        className="mx-auto flex justify-center"
+                        className="bg-white shadow-2xl mx-auto"
                         style={{
                             minWidth: '210mm',
-                            width: '100%',
+                            width: 'fit-content',
                             maxWidth: 'none'
                         }}
                     >
                         <iframe
                             ref={iframeRef}
-                            className="border-0"
+                            className="w-full border-0"
                             style={{
                                 minHeight: '500px',
-                                width: '100%',
-                                background: 'transparent'
+                                minWidth: '210mm',
+                                width: 'fit-content'
                             }}
                             title="Document Preview"
                             onLoad={(e) => {
