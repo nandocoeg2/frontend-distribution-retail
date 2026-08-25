@@ -127,6 +127,17 @@ const SuratJalanTableServerSide = forwardRef(({
     setUnprocessDialog({ show: false, item: null, loading: false });
   }, []);
 
+  const getSelectedIdsInTableOrder = useCallback(() => {
+    const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+    const selectedIdSet = new Set(selectedIds);
+    const renderedIds = (suratJalan || []).map(item => item?.id).filter(Boolean);
+
+    return [
+      ...renderedIds.filter(id => selectedIdSet.has(id)),
+      ...selectedIds.filter(id => !renderedIds.includes(id)),
+    ];
+  }, [selectedSuratJalan, suratJalan]);
+
   const handleBulkPrint = async () => {
     try {
       if (!selectedSuratJalan || selectedSuratJalan.length === 0) {
@@ -140,10 +151,14 @@ const SuratJalanTableServerSide = forwardRef(({
         return;
       }
 
-      setIsPrinting(true);
-      toastService.info(`Generating bulk print for ${selectedSuratJalan.length} items...`);
+      const ids = getSelectedIdsInTableOrder();
+      if (ids.length === 0) {
+        toastService.error('Tidak ada surat jalan valid yang dipilih');
+        return;
+      }
 
-      const ids = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+      setIsPrinting(true);
+      toastService.info(`Generating bulk print for ${ids.length} items...`);
 
       // Call bulk export endpoint
       const html = await suratJalanService.exportSuratJalanBulk(ids, companyData.id);
@@ -183,10 +198,14 @@ const SuratJalanTableServerSide = forwardRef(({
         return;
       }
 
-      setIsPrinting(true);
-      toastService.info(`Generating bulk paket print for ${selectedSuratJalan.length} items...`);
+      const ids = getSelectedIdsInTableOrder();
+      if (ids.length === 0) {
+        toastService.error('Tidak ada surat jalan valid yang dipilih');
+        return;
+      }
 
-      const ids = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id).filter(Boolean);
+      setIsPrinting(true);
+      toastService.info(`Generating bulk paket print for ${ids.length} items...`);
 
       // Call bulk export paket endpoint
       const html = await suratJalanService.exportSuratJalanPaketBulk(ids, companyData.id);
