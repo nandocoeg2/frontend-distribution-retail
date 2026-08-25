@@ -346,8 +346,8 @@ const CheckingListForm = ({
                               : 'Keluarkan dari checklist'
                           }
                           className={`rounded-lg p-1.5 transition-colors ${assignedSuratJalans.length <= 1
-                              ? 'text-gray-300 cursor-not-allowed'
-                              : 'text-red-500 hover:bg-red-50 hover:text-red-700'
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-red-500 hover:bg-red-50 hover:text-red-700'
                             }`}
                         >
                           <TrashIcon className='h-4 w-4' />
@@ -362,7 +362,7 @@ const CheckingListForm = ({
         </div>
 
         {/* Form Actions */}
-        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6'>
+        <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200'>
           {onCancel && (
             <button
               type='button'

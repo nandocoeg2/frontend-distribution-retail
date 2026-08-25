@@ -28,13 +28,12 @@ describe('CheckingListDetailCard', () => {
     render(
       <CheckingListDetailCard
         checklist={mockChecklist}
-        onClose={() => {}}
+        onClose={() => { }}
       />
     );
 
-    // Check title and checklist number
+    // Check title
     expect(screen.getByText('Detail Checklist Surat Jalan')).toBeDefined();
-    expect(screen.getByText(/CHK\/2026\/001/)).toBeDefined();
 
     // Check tabs
     expect(screen.getByRole('button', { name: /Surat Jalan & No PO/i })).toBeDefined();

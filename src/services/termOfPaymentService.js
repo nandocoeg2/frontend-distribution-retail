@@ -2,19 +2,34 @@ import authService from './authService';
 
 const API_URL = `${process.env.BACKEND_BASE_URL}api/v1/term-of-payments`;
 
-const getHeaders = () => {
+const getCompanyId = () => {
+  const company = authService.getCompanyData();
+  return company?.id || null;
+};
+
+const getHeaders = (customCompanyId) => {
   const accessToken = localStorage.getItem('token');
-  return {
+  const companyId = customCompanyId || getCompanyId();
+  const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${accessToken}`,
   };
+  if (companyId) {
+    headers['x-company-id'] = companyId;
+  }
+  return headers;
 };
 
-const getAuthHeader = () => {
+const getAuthHeader = (customCompanyId) => {
   const accessToken = localStorage.getItem('token');
-  return {
+  const companyId = customCompanyId || getCompanyId();
+  const headers = {
     'Authorization': `Bearer ${accessToken}`,
   };
+  if (companyId) {
+    headers['x-company-id'] = companyId;
+  }
+  return headers;
 };
 
 const handleAuthError = (navigate) => {
@@ -72,10 +87,10 @@ export const termOfPaymentService = {
   // Get all term of payments with pagination
   getAllTermOfPayments: async (page = 1, limit = 10, companyId) => {
     try {
-      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const activeCompanyId = companyId || getCompanyId();
       const query = activeCompanyId ? `&companyId=${encodeURIComponent(activeCompanyId)}` : '';
       const response = await fetch(`${API_URL}?page=${page}&limit=${limit}${query}`, {
-        headers: getHeaders(),
+        headers: getHeaders(activeCompanyId),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -94,10 +109,12 @@ export const termOfPaymentService = {
   },
 
   // Get term of payment by ID
-  getTermOfPaymentById: async (id) => {
+  getTermOfPaymentById: async (id, companyId) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        headers: getHeaders(),
+      const activeCompanyId = companyId || getCompanyId();
+      const query = activeCompanyId ? `?companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const response = await fetch(`${API_URL}/${id}${query}`, {
+        headers: getHeaders(activeCompanyId),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -118,10 +135,15 @@ export const termOfPaymentService = {
   // Create new term of payment
   createTermOfPayment: async (termOfPaymentData) => {
     try {
+      const activeCompanyId = termOfPaymentData?.companyId || getCompanyId();
+      const payload = {
+        ...termOfPaymentData,
+        ...(activeCompanyId && !termOfPaymentData?.companyId ? { companyId: activeCompanyId } : {}),
+      };
       const response = await fetch(`${API_URL}`, {
         method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(termOfPaymentData),
+        headers: getHeaders(activeCompanyId),
+        body: JSON.stringify(payload),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -142,9 +164,11 @@ export const termOfPaymentService = {
   // Update term of payment
   updateTermOfPayment: async (id, termOfPaymentData) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
+      const activeCompanyId = termOfPaymentData?.companyId || getCompanyId();
+      const query = activeCompanyId ? `?companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const response = await fetch(`${API_URL}/${id}${query}`, {
         method: 'PUT',
-        headers: getHeaders(),
+        headers: getHeaders(activeCompanyId),
         body: JSON.stringify(termOfPaymentData),
       });
 
@@ -164,11 +188,13 @@ export const termOfPaymentService = {
   },
 
   // Delete term of payment
-  deleteTermOfPayment: async (id) => {
+  deleteTermOfPayment: async (id, companyId) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
+      const activeCompanyId = companyId || getCompanyId();
+      const query = activeCompanyId ? `?companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const response = await fetch(`${API_URL}/${id}${query}`, {
         method: 'DELETE',
-        headers: getHeaders(),
+        headers: getHeaders(activeCompanyId),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -194,10 +220,12 @@ export const termOfPaymentService = {
   },
 
   // Search term of payments
-  searchTermOfPayments: async (query, page = 1, limit = 10) => {
+  searchTermOfPayments: async (query, page = 1, limit = 10, companyId) => {
     try {
-      const response = await fetch(`${API_URL}/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}`, {
-        headers: getHeaders(),
+      const activeCompanyId = companyId || getCompanyId();
+      const companyQuery = activeCompanyId ? `&companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const response = await fetch(`${API_URL}/search/${encodeURIComponent(query)}?page=${page}&limit=${limit}${companyQuery}`, {
+        headers: getHeaders(activeCompanyId),
       });
 
       if (response.status === 401 || response.status === 403) {
@@ -304,15 +332,23 @@ export const termOfPaymentService = {
   /**
    * Export term of payments to Excel
    * @param {string} searchQuery - Optional search query to filter data
+   * @param {string} companyId - Optional company ID filter
    */
-  exportExcel: async (searchQuery = '') => {
-    const url = searchQuery
-      ? `${API_URL}/export-excel?q=${encodeURIComponent(searchQuery)}`
-      : `${API_URL}/export-excel`;
+  exportExcel: async (searchQuery = '', companyId) => {
+    const activeCompanyId = companyId || getCompanyId();
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      params.set('q', searchQuery);
+    }
+    if (activeCompanyId) {
+      params.set('companyId', activeCompanyId);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${API_URL}/export-excel?${queryString}` : `${API_URL}/export-excel`;
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: getAuthHeader()
+      headers: getAuthHeader(activeCompanyId)
     });
 
     if (!response.ok) {

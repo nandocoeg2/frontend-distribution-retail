@@ -447,6 +447,47 @@ printDocuments: async (id, documents) => {
     return { success: true, filename };
   },
 
+  // Preview export purchase orders to Excel
+  previewExportExcel: async (params = {}) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const url = new URL(`${API_URL}/preview-export`);
+
+    // Add params to URL
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        if (Array.isArray(params[key])) {
+          params[key].forEach(val => url.searchParams.append(key, val));
+        } else {
+          url.searchParams.append(key, params[key]);
+        }
+      }
+    });
+
+    const activeCompanyId = authService.getCompanyData()?.id;
+    if (activeCompanyId && !url.searchParams.has('companyId')) {
+      url.searchParams.append('companyId', activeCompanyId);
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || 'Failed to fetch purchase orders export preview');
+    }
+
+    return response.json();
+  },
+
   // Validate item prices - compare PO prices with master data prices
   validateItemPrices: async (purchaseOrderIds) => {
     const accessToken = localStorage.getItem('token');
@@ -551,8 +592,74 @@ printDocuments: async (id, documents) => {
     }
 
     return response.json();
+  },
+
+  // Export single purchase order to HTML
+  exportPurchaseOrder: async (id, companyId) => {
+    try {
+      const accessToken = localStorage.getItem('token') || authService.getToken();
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const query = activeCompanyId ? `?companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const endpoint = `${API_URL}/${id}/export${query}`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to export purchase order HTML');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error exporting purchase order HTML:', error);
+      throw error;
+    }
+  },
+
+  // Export multiple purchase orders to HTML (Bulk)
+  exportPurchaseOrderBulk: async (ids, companyId) => {
+    try {
+      const accessToken = localStorage.getItem('token') || authService.getToken();
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const response = await fetch(`${API_URL}/export/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ ids, companyId: activeCompanyId }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to export bulk purchase order HTML');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error exporting bulk purchase order HTML:', error);
+      throw error;
+    }
   }
 };
 
 export default purchaseOrderService;
+
 

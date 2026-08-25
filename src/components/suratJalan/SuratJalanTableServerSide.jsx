@@ -89,6 +89,81 @@ const SuratJalanTableServerSide = forwardRef(({
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewFileName, setPreviewFileName] = useState('document.pdf');
 
+  const companyId = authService.getCompanyData()?.id;
+
+  const [poSearch, setPoSearch] = useState('');
+  const [deliverSearch, setDeliverSearch] = useState('');
+
+  // Add queries for autocomplete options
+  const { data: poOptions = [] } = useQuery({
+    queryKey: ['surat-jalan-po-options', companyId, poSearch],
+    queryFn: async () => {
+      const res = await suratJalanService.getUniqueValues('po_number', poSearch, companyId);
+      return (res?.data || []).map(val => ({ id: val, name: val }));
+    },
+    staleTime: 5 * 60 * 1000,
+    keepPreviousData: true,
+    enabled: !!companyId,
+  });
+
+  const { data: deliverOptions = [] } = useQuery({
+    queryKey: ['surat-jalan-deliver-options', companyId, deliverSearch],
+    queryFn: async () => {
+      const res = await suratJalanService.getUniqueValues('deliver_to', deliverSearch, companyId);
+      return (res?.data || []).map(val => ({ id: val, name: val }));
+    },
+    staleTime: 5 * 60 * 1000,
+    keepPreviousData: true,
+    enabled: !!companyId,
+  });
+
+  const getQueryParams = useCallback(({ filters, ...rest }) => {
+    const mappedFilters = { ...filters };
+
+    if (companyId) {
+      mappedFilters.companyId = companyId;
+    }
+
+    // Handle date range filters for tanggal_surat_jalan
+    if (mappedFilters.tanggal_surat_jalan && typeof mappedFilters.tanggal_surat_jalan === 'object') {
+      if (mappedFilters.tanggal_surat_jalan.from) {
+        mappedFilters.tanggal_surat_jalan_from = mappedFilters.tanggal_surat_jalan.from;
+      }
+      if (mappedFilters.tanggal_surat_jalan.to) {
+        mappedFilters.tanggal_surat_jalan_to = mappedFilters.tanggal_surat_jalan.to;
+      }
+      delete mappedFilters.tanggal_surat_jalan;
+    }
+
+    return {
+      ...rest,
+      filters: mappedFilters,
+    };
+  }, [companyId]);
+
+  const {
+    data: suratJalan,
+    pagination,
+    setPage,
+    hasActiveFilters,
+    isLoading,
+    isFetching,
+    error,
+    resetFilters,
+    tableOptions,
+    columnFilters,
+  } = useServerSideTable({
+    queryHook: useSuratJalanQuery,
+    selectData: (response) => response?.suratJalan ?? [],
+    selectPagination: (response) => response?.pagination,
+    initialLimit: 9999,
+    initialPage: 1,
+    getQueryParams,
+    columnFilterDebounceMs: 0,
+    initialSorting: [{ id: 'no_surat_jalan', desc: true }],
+    storageKey: 'surat-jalan', // Persist filter state to sessionStorage
+  });
+
   // Handle checkbox click
   const handleCheckboxChange = useCallback((item) => {
     onSelectSuratJalan && onSelectSuratJalan(item);
@@ -224,81 +299,6 @@ const SuratJalanTableServerSide = forwardRef(({
       setIsPrinting(false);
     }
   };
-
-  const companyId = authService.getCompanyData()?.id;
-
-  const [poSearch, setPoSearch] = useState('');
-  const [deliverSearch, setDeliverSearch] = useState('');
-
-  // Add queries for autocomplete options
-  const { data: poOptions = [] } = useQuery({
-    queryKey: ['surat-jalan-po-options', companyId, poSearch],
-    queryFn: async () => {
-      const res = await suratJalanService.getUniqueValues('po_number', poSearch, companyId);
-      return (res?.data || []).map(val => ({ id: val, name: val }));
-    },
-    staleTime: 5 * 60 * 1000,
-    keepPreviousData: true,
-    enabled: !!companyId,
-  });
-
-  const { data: deliverOptions = [] } = useQuery({
-    queryKey: ['surat-jalan-deliver-options', companyId, deliverSearch],
-    queryFn: async () => {
-      const res = await suratJalanService.getUniqueValues('deliver_to', deliverSearch, companyId);
-      return (res?.data || []).map(val => ({ id: val, name: val }));
-    },
-    staleTime: 5 * 60 * 1000,
-    keepPreviousData: true,
-    enabled: !!companyId,
-  });
-
-  const getQueryParams = useCallback(({ filters, ...rest }) => {
-    const mappedFilters = { ...filters };
-
-    if (companyId) {
-      mappedFilters.companyId = companyId;
-    }
-
-    // Handle date range filters for tanggal_surat_jalan
-    if (mappedFilters.tanggal_surat_jalan && typeof mappedFilters.tanggal_surat_jalan === 'object') {
-      if (mappedFilters.tanggal_surat_jalan.from) {
-        mappedFilters.tanggal_surat_jalan_from = mappedFilters.tanggal_surat_jalan.from;
-      }
-      if (mappedFilters.tanggal_surat_jalan.to) {
-        mappedFilters.tanggal_surat_jalan_to = mappedFilters.tanggal_surat_jalan.to;
-      }
-      delete mappedFilters.tanggal_surat_jalan;
-    }
-
-    return {
-      ...rest,
-      filters: mappedFilters,
-    };
-  }, [companyId]);
-
-  const {
-    data: suratJalan,
-    pagination,
-    setPage,
-    hasActiveFilters,
-    isLoading,
-    isFetching,
-    error,
-    resetFilters,
-    tableOptions,
-    columnFilters,
-  } = useServerSideTable({
-    queryHook: useSuratJalanQuery,
-    selectData: (response) => response?.suratJalan ?? [],
-    selectPagination: (response) => response?.pagination,
-    initialLimit: 9999,
-    initialPage: 1,
-    getQueryParams,
-    columnFilterDebounceMs: 0,
-    initialSorting: [{ id: 'no_surat_jalan', desc: true }],
-    storageKey: 'surat-jalan', // Persist filter state to sessionStorage
-  });
 
   const dynamicPoOptions = useMemo(() => {
     const map = new Map();

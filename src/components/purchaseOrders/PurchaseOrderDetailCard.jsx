@@ -121,8 +121,22 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         return;
       }
 
-      // NOTE: Purchase Order export will be handled by backend API in the future
-      // For now, we only mark it as printed without generating the document
+      exportTasks.push(async () => {
+        const companyData = authService.getCompanyData();
+        const html = await purchaseOrderService.exportPurchaseOrder(order.id, companyData?.id);
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+
+          printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+          };
+        } else {
+          throw new Error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+        }
+      });
     }
 
     if (selectedDocuments.PACKING && order?.packing) {

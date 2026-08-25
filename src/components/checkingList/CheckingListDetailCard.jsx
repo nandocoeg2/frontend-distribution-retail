@@ -143,6 +143,7 @@ const CheckingListDetailCard = ({
       setIsAdding(false);
     }
   };
+
   const overviewInfo = [
     { label: 'No Checklist', value: checklist.no_checklist_surat_jalan || checklist.id || '-', copyable: true },
     { label: 'Tanggal', value: formatDate(checklist.tanggal) },
