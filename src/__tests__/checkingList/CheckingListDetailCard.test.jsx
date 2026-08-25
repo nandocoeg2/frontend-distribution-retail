@@ -16,6 +16,9 @@ describe('CheckingListDetailCard', () => {
           purchaseOrder: {
             id: 'po-1',
             po_number: 'PO/2026/101',
+            customer: {
+              namaCustomer: 'PT Maju Bersama',
+            },
           },
         },
       ],
@@ -46,7 +49,9 @@ describe('CheckingListDetailCard', () => {
     // In PO tab (active by default), verify table contents
     expect(screen.getByText('No Surat Jalan')).toBeDefined();
     expect(screen.getByText('No PO')).toBeDefined();
+    expect(screen.getByText('Customer / Tujuan')).toBeDefined();
     expect(screen.getByText('SJ/2026/001')).toBeDefined();
     expect(screen.getByText('PO/2026/101')).toBeDefined();
+    expect(screen.getByText('PT Maju Bersama')).toBeDefined();
   });
 });

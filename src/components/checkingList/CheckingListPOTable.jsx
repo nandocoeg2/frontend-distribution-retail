@@ -28,16 +28,12 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         sj?.no_po ||
         sj?.purchase_order?.po_number ||
         '-',
-      customer:
+      customer_tujuan:
         sj?.purchaseOrder?.customer?.namaCustomer ||
-        sj?.customer?.namaCustomer ||
+        sj?.purchaseOrder?.customer?.nama_customer ||
         sj?.deliver_to ||
+        sj?.purchaseOrder?.deliver_to ||
         '-',
-      invoice:
-        sj?.invoice?.no_invoice ||
-        sj?.purchaseOrder?.invoice?.no_invoice ||
-        '-',
-      tanggal: sj?.tanggal_surat_jalan || sj?.tanggal || sj?.createdAt || null,
     }));
   }, [suratJalan]);
 
@@ -61,33 +57,44 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
           </span>
         ),
       }),
+<<<<<<< HEAD
       columnHelper.accessor('customer', {
         id: 'customer',
         header: 'Customer / Tujuan',
         cell: (info) => (
           <span className="text-gray-700">
-            {info.getValue() || '-'}
-          </span>
-        ),
-      }),
-      columnHelper.accessor('invoice', {
-        id: 'invoice',
-        header: 'Invoice',
+=======
+      columnHelper.accessor('customer_tujuan', {
+              id: 'customer_tujuan',
+            header: 'Customer / Tujuan',
         cell: (info) => (
-          <span className="text-gray-600">
-            {info.getValue() || '-'}
-          </span>
+            <span className="text-gray-900">
+>>>>>>> origin/master
+              {info.getValue() || '-'}
+            </span>
         ),
       }),
-      columnHelper.accessor('tanggal', {
-        id: 'tanggal',
-        header: 'Tanggal',
-        cell: (info) => (
-          <span className="text-gray-500">
-            {info.getValue() ? formatDate(info.getValue()) : '-'}
-          </span>
-        ),
-      }),
+<<<<<<< HEAD
+        columnHelper.accessor('invoice', {
+          id: 'invoice',
+          header: 'Invoice',
+          cell: (info) => (
+            <span className="text-gray-600">
+              {info.getValue() || '-'}
+            </span>
+          ),
+        }),
+        columnHelper.accessor('tanggal', {
+          id: 'tanggal',
+          header: 'Tanggal',
+          cell: (info) => (
+            <span className="text-gray-500">
+              {info.getValue() ? formatDate(info.getValue()) : '-'}
+            </span>
+          ),
+        }),
+=======
+>>>>>>> origin/master
     ],
     []
   );

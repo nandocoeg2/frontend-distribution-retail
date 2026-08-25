@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -12,6 +12,50 @@ import TextColumnFilter from '../common/TextColumnFilter';
 
 const columnHelper = createColumnHelper();
 
+const matchesPackingFilter = (row, filterId, filterValue) => {
+  if (filterValue == null || filterValue === '') return true;
+  if (Array.isArray(filterValue) && filterValue.length === 0) return true;
+
+  if (filterId === 'customer' || filterId === 'status' || filterId === 'nama_barang') {
+    if (!Array.isArray(filterValue)) return true;
+    return filterValue.includes(row[filterId]);
+  }
+
+  if (filterId === 'tanggal_packing') {
+    const cellValue = String(row[filterId] || '');
+    if (cellValue.includes(filterValue)) return true;
+    try {
+      const selectedLocale = new Date(filterValue).toLocaleDateString('id-ID');
+      const selectedLocaleGB = new Date(filterValue).toLocaleDateString('en-GB');
+      return (
+        cellValue === selectedLocale ||
+        cellValue === selectedLocaleGB ||
+        cellValue.includes(selectedLocale)
+      );
+    } catch {
+      return cellValue.includes(filterValue);
+    }
+  }
+
+  const rowVal = String(row[filterId] ?? '').toLowerCase();
+  return rowVal.includes(String(filterValue).toLowerCase().trim());
+};
+
+const getMatchingPackingRowsExcluding = (rows, columnFilters, excludeFilterId) => {
+  if (!rows || rows.length === 0) return [];
+  if (!columnFilters || columnFilters.length === 0) return rows;
+
+  return rows.filter((row) => {
+    for (const filter of columnFilters) {
+      if (filter.id === excludeFilterId) continue;
+      if (!matchesPackingFilter(row, filter.id, filter.value)) {
+        return false;
+      }
+    }
+    return true;
+  });
+};
+
 const PackingExportPreviewModal = ({
   isOpen,
   onClose,
@@ -19,6 +63,14 @@ const PackingExportPreviewModal = ({
   previewLoading,
   onExport,
 }) => {
+  const [columnFilters, setColumnFilters] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setColumnFilters([]);
+    }
+  }, [isOpen]);
+
   const formattedData = useMemo(() => {
     if (!previewData?.data || !Array.isArray(previewData.data)) return [];
     return previewData.data.map((row) => ({
@@ -33,30 +85,64 @@ const PackingExportPreviewModal = ({
   }, [previewData]);
 
   const customerOptions = useMemo(() => {
-    if (!formattedData.length) return [];
-    const set = new Set();
-    formattedData.forEach((row) => {
+    const matchingRows = getMatchingPackingRowsExcluding(formattedData, columnFilters, 'customer');
+    const map = new Map();
+    matchingRows.forEach((row) => {
       if (row.customer && row.customer !== '-') {
-        set.add(row.customer);
+        map.set(row.customer, { id: row.customer, name: row.customer });
       }
     });
-    return Array.from(set)
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({ id: name, name }));
-  }, [formattedData]);
+
+    const activeFilter = columnFilters.find((f) => f.id === 'customer');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [formattedData, columnFilters]);
 
   const statusOptions = useMemo(() => {
-    if (!formattedData.length) return [];
-    const set = new Set();
-    formattedData.forEach((row) => {
+    const matchingRows = getMatchingPackingRowsExcluding(formattedData, columnFilters, 'status');
+    const map = new Map();
+    matchingRows.forEach((row) => {
       if (row.status && row.status !== '-') {
-        set.add(row.status);
+        map.set(row.status, { id: row.status, name: row.status });
       }
     });
-    return Array.from(set)
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({ id: name, name }));
-  }, [formattedData]);
+
+    const activeFilter = columnFilters.find((f) => f.id === 'status');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [formattedData, columnFilters]);
+
+  const barangOptions = useMemo(() => {
+    const matchingRows = getMatchingPackingRowsExcluding(formattedData, columnFilters, 'nama_barang');
+    const map = new Map();
+    matchingRows.forEach((row) => {
+      if (row.nama_barang && row.nama_barang !== '-') {
+        map.set(row.nama_barang, { id: row.nama_barang, name: row.nama_barang });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'nama_barang');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [formattedData, columnFilters]);
 
   const columns = useMemo(
     () => [
@@ -206,7 +292,17 @@ const PackingExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Nama Barang</div>
-            <TextColumnFilter column={column} placeholder="Filter Barang..." />
+            <AutocompleteCheckboxLimitTag
+              options={barangOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -215,9 +311,9 @@ const PackingExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('quantity', {
@@ -244,12 +340,16 @@ const PackingExportPreviewModal = ({
         },
       }),
     ],
-    [customerOptions, statusOptions]
+    [customerOptions, statusOptions, barangOptions]
   );
 
   const table = useReactTable({
     data: formattedData,
     columns,
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });

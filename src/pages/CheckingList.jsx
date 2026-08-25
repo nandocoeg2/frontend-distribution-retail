@@ -127,6 +127,36 @@ const CheckingList = () => {
     setDetailLoading(false);
   };
 
+  const handleChecklistUpdated = useCallback(
+    async (updatedData) => {
+      // 1. Instantly update selectedChecklist with direct response
+      if (updatedData) {
+        const directData = updatedData?.data || updatedData;
+        setSelectedChecklist(directData);
+      }
+
+      // 2. Invalidate table query to refresh the list in background
+      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+
+      // 3. Fetch fresh detail with audit trails
+      const checklistId =
+        resolveChecklistId(updatedData?.data || updatedData) ||
+        resolveChecklistId(selectedChecklist);
+
+      if (checklistId) {
+        try {
+          const response = await fetchChecklistById(checklistId);
+          if (response) {
+            setSelectedChecklist(response);
+          }
+        } catch (fetchError) {
+          console.error('Failed to refresh checklist detail after update:', fetchError);
+        }
+      }
+    },
+    [queryClient, selectedChecklist, fetchChecklistById]
+  );
+
   const handleRetry = () => {
     handleRetryFetch();
   };

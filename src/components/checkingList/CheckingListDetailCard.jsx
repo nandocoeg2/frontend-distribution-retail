@@ -106,25 +106,46 @@ const CheckingListDetailCard = ({
       ? [checklist.suratJalan]
       : [];
 
-  const statusName = checklist?.status?.status_name || checklist?.status?.status_code || '-';
-  const statusVariant = resolveStatusVariant(statusName);
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
 
-  const overviewInfo = [
-    { label: 'No Checklist', value: checklist.no_checklist_surat_jalan || checklist.id || '-', copyable: true },
-    { label: 'Tanggal', value: formatDate(checklist.tanggal) },
-    { label: 'Checker', value: checklist.checker || '-' },
-    { label: 'Ekspedisi', value: checklist.ekspedisi || '-' },
-    { label: 'Nomor Kendaraan', value: checklist.mobil || '-' },
-    { label: 'Kota Tujuan', value: checklist.kota || '-' },
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  const handleSave = async (formData) => {
+    setSaving(true);
+    try {
+      const response = await checkingListService.updateChecklist(checklist.id, formData);
+      const updatedData = response?.data || response;
+      toastService.success('Checklist berhasil diperbarui');
+      if (onUpdate) {
+        await onUpdate(updatedData);
+      }
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Failed to update checklist:', error);
+      toastService.error(error.message || 'Gagal memperbarui checklist');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const tabs = [
     {
-      label: 'Status',
-      component: <StatusBadge status={statusName} variant={statusVariant} size="xs" dot />,
+      id: 'po',
+      label: 'PO',
+      icon: <ShoppingCartIcon className='w-5 h-5' aria-hidden='true' />,
+      badge: suratJalanData.length || null,
     },
-    { label: 'Total Surat Jalan', value: `${suratJalanData.length} Dokumen` },
+    {
+      id: 'activity',
+      label: 'Activity Timeline',
+      icon: <ClockIcon className='w-5 h-5' aria-hidden='true' />,
+      badge: normalizedAuditTrails.length || null,
+    },
   ];
-
-  const firstSj = suratJalanData[0];
-  const poNumber = firstSj?.purchaseOrder?.po_number || firstSj?.po_number || '-';
 
   return (
     <div className="bg-white shadow rounded-lg p-3 mt-3">
