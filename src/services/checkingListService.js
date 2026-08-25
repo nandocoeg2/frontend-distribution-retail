@@ -147,6 +147,19 @@ class CheckingListService {
     }
   }
 
+  async assignSuratJalan(checklistId, suratJalanIds = []) {
+    try {
+      const response = await this.api.post(
+        `${RESOURCE_PATH}/${checklistId}/assign`,
+        { suratJalanIds }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error assigning surat jalan to checklist:', error);
+      throw error;
+    }
+  }
+
   async bulkDeleteChecklists(ids = []) {
     try {
       const payloadIds = Array.isArray(ids) ? ids.filter(Boolean) : [];
