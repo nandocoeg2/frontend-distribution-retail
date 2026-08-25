@@ -362,7 +362,7 @@ const CheckingListForm = ({
         </div>
 
         {/* Form Actions */}
-        <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200'>
+        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6'>
           {onCancel && (
             <button
               type='button'

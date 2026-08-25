@@ -69,29 +69,43 @@ const CheckingList = () => {
     setEditingChecklist(null);
   }, []);
 
-  const handleModalSuccess = useCallback(async (formData) => {
-    const checklistId = resolveChecklistId(editingChecklist);
-    if (!checklistId) return;
+  const handleModalSuccess = useCallback(
+    async (formData) => {
+      const checklistId = resolveChecklistId(editingChecklist);
+      if (!checklistId) return;
 
-    try {
-      await checkingListService.updateChecklist(checklistId, formData);
-      toastService.success('Checklist berhasil diperbarui');
-      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+      try {
+        const response = await checkingListService.updateChecklist(checklistId, formData);
+        const updatedData = response?.data || response;
+        toastService.success('Checklist berhasil diperbarui');
 
-      // Refresh detail view if currently open
-      if (resolveChecklistId(selectedChecklist) === checklistId) {
-        const refreshed = await fetchChecklistById(checklistId);
-        if (refreshed) {
-          setSelectedChecklist(refreshed);
+        // Immediately update selectedChecklist if currently open
+        if (resolveChecklistId(selectedChecklist) === checklistId) {
+          setSelectedChecklist(updatedData);
         }
-      }
 
-      closeEditModal();
-    } catch (updateError) {
-      console.error('Failed to update checklist:', updateError);
-      toastService.error(updateError.message || 'Gagal memperbarui checklist');
-    }
-  }, [editingChecklist, selectedChecklist, fetchChecklistById, queryClient, closeEditModal]);
+        await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+
+        // Background refresh detail with audit trails
+        if (resolveChecklistId(selectedChecklist) === checklistId) {
+          try {
+            const refreshed = await fetchChecklistById(checklistId);
+            if (refreshed) {
+              setSelectedChecklist(refreshed);
+            }
+          } catch (fetchErr) {
+            console.error('Failed to refresh checklist detail:', fetchErr);
+          }
+        }
+
+        closeEditModal();
+      } catch (updateError) {
+        console.error('Failed to update checklist:', updateError);
+        toastService.error(updateError.message || 'Gagal memperbarui checklist');
+      }
+    },
+    [editingChecklist, selectedChecklist, fetchChecklistById, queryClient, closeEditModal]
+  );
 
   const handleViewDetail = useCallback(
     async (checklist) => {
