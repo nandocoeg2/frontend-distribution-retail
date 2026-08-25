@@ -4,6 +4,7 @@ import {
   ClipboardDocumentCheckIcon,
   DocumentTextIcon,
   ClockIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import {
   TabContainer,
@@ -15,8 +16,11 @@ import {
 } from '../ui';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { getAuditTrails } from '../../services/auditTrailService';
+import checkingListService from '../../services/checkingListService';
+import toastService from '../../services/toastService';
 import { formatDate } from '../../utils/formatUtils';
 import CheckingListPOTable from './CheckingListPOTable';
+import AddSuratJalanToChecklistModal from './AddSuratJalanToChecklistModal';
 
 const resolveStatusVariant = (status) => {
   const statusText = typeof status === 'string'
@@ -56,8 +60,11 @@ const CheckingListDetailCard = ({
   checklist,
   onClose,
   isLoading = false,
+  onUpdate,
 }) => {
   const [activeTab, setActiveTab] = useState('po');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     if (checklist) {
@@ -112,6 +119,31 @@ const CheckingListDetailCard = ({
   const statusName = checklist?.status?.status_name || checklist?.status?.status_code || '-';
   const statusVariant = resolveStatusVariant(statusName);
 
+  const handleAddSuratJalans = async (selectedSjs) => {
+    if (!selectedSjs || selectedSjs.length === 0) return;
+    setIsAdding(true);
+    try {
+      const currentSjIds = suratJalanData.map((sj) => sj.id);
+      const newSjIds = selectedSjs.map((sj) => sj.id);
+      const combinedIds = Array.from(new Set([...currentSjIds, ...newSjIds]));
+
+      const response = await checkingListService.assignSuratJalan(checklist.id, combinedIds);
+      const updatedData = response?.data || response;
+      toastService.success(`${selectedSjs.length} Surat Jalan / Faktur berhasil ditambahkan`);
+
+      if (onUpdate) {
+        await onUpdate(updatedData);
+      }
+    } catch (err) {
+      console.error('Failed to add surat jalan to checklist:', err);
+      toastService.error(
+        err?.response?.data?.message || err.message || 'Gagal menambahkan Surat Jalan / Faktur'
+      );
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   const overviewInfo = [
     { label: 'No Checklist', value: checklist.no_checklist_surat_jalan || checklist.id || '-', copyable: true },
     { label: 'Tanggal', value: formatDate(checklist.tanggal) },
@@ -125,7 +157,6 @@ const CheckingListDetailCard = ({
     },
     { label: 'Total Surat Jalan', value: `${suratJalanData.length} Dokumen` },
   ];
-
 
   return (
     <div className="bg-white shadow rounded-lg p-3 mt-3">
@@ -183,8 +214,24 @@ const CheckingListDetailCard = ({
           <TabContent activeTab={activeTab}>
             {/* Tab 1: Surat Jalan & No PO */}
             <TabPanel tabId="po">
-              <div className="overflow-hidden bg-white border border-gray-200 rounded">
-                <CheckingListPOTable suratJalan={suratJalanData} />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between pb-1">
+                  <span className="text-xs font-medium text-gray-600">
+                    Daftar Dokumen ({suratJalanData.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(true)}
+                    disabled={isAdding}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-teal-600 rounded hover:bg-teal-700 disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    <PlusIcon className="w-3.5 h-3.5" />
+                    <span>Tambah Faktur / Surat Jalan</span>
+                  </button>
+                </div>
+                <div className="overflow-hidden bg-white border border-gray-200 rounded">
+                  <CheckingListPOTable suratJalan={suratJalanData} />
+                </div>
               </div>
             </TabPanel>
 
@@ -217,6 +264,15 @@ const CheckingListDetailCard = ({
           </TabContent>
         </div>
       )}
+
+      {/* Modal to pick and add draft Surat Jalan / Faktur */}
+      <AddSuratJalanToChecklistModal
+        show={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddSuratJalans}
+        existingSuratJalanIds={suratJalanData.map((sj) => sj.id)}
+        companyId={checklist?.companyId || checklist?.suratJalan?.[0]?.companyId}
+      />
     </div>
   );
 };

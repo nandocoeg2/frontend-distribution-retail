@@ -47,5 +47,8 @@ describe('CheckingListDetailCard', () => {
     expect(screen.getByText('SJ/2026/001')).toBeDefined();
     expect(screen.getByText('PO/2026/101')).toBeDefined();
     expect(screen.getByText('PT Maju Bersama')).toBeDefined();
+
+    // Check Tambah Faktur / Surat Jalan button exists
+    expect(screen.getByRole('button', { name: /Tambah Faktur \/ Surat Jalan/i })).toBeDefined();
   });
 });

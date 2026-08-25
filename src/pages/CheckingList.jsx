@@ -255,6 +255,7 @@ const CheckingList = () => {
           checklist={selectedChecklist}
           onClose={handleCloseDetail}
           isLoading={detailLoading}
+          onUpdate={handleChecklistUpdated}
         />
       )}
 
