@@ -1,30 +1,71 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   XMarkIcon,
   ClipboardDocumentCheckIcon,
-  ShoppingCartIcon,
+  DocumentTextIcon,
   ClockIcon,
-  PencilIcon,
 } from '@heroicons/react/24/outline';
-import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs';
+import {
+  TabContainer,
+  Tab,
+  TabContent,
+  TabPanel,
+  StatusBadge,
+  InfoTable,
+} from '../ui';
 import ActivityTimeline from '../common/ActivityTimeline';
-import checkingListService from '../../services/checkingListService';
 import { getAuditTrails } from '../../services/auditTrailService';
-import toastService from '../../services/toastService';
-import CheckingListForm from './CheckingListForm';
+import { formatDate } from '../../utils/formatUtils';
 import CheckingListPOTable from './CheckingListPOTable';
+
+const resolveStatusVariant = (status) => {
+  const statusText = typeof status === 'string'
+    ? status
+    : status?.status_name || status?.status_code || '';
+
+  const value = statusText.toLowerCase();
+
+  if (!value) {
+    return 'secondary';
+  }
+
+  if (value.includes('completed') || value.includes('selesai') || value.includes('success')) {
+    return 'success';
+  }
+
+  if (value.includes('cancelled') || value.includes('canceled') || value.includes('failed') || value.includes('batal')) {
+    return 'danger';
+  }
+
+  if (value.includes('processed') && !value.includes('processing')) {
+    return 'primary';
+  }
+
+  if (value.includes('processing') || value.includes('proses') || value.includes('in progress')) {
+    return 'warning';
+  }
+
+  if (value.includes('pending') || value.includes('menunggu') || value.includes('waiting')) {
+    return 'secondary';
+  }
+
+  return 'default';
+};
 
 const CheckingListDetailCard = ({
   checklist,
   onClose,
   isLoading = false,
-  onUpdate,
 }) => {
   const [activeTab, setActiveTab] = useState('po');
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  // Normalize audit trails - must be called before early return
+  useEffect(() => {
+    if (checklist) {
+      setActiveTab('po');
+    }
+  }, [checklist]);
+
+  // Normalize audit trails
   const normalizedAuditTrails = useMemo(() => {
     const rawAuditTrailData = Array.isArray(checklist?.auditTrails)
       ? checklist.auditTrails
@@ -65,169 +106,112 @@ const CheckingListDetailCard = ({
       ? [checklist.suratJalan]
       : [];
 
-  const handleEditClick = () => {
-    setIsEditMode(true);
-  };
+  const statusName = checklist?.status?.status_name || checklist?.status?.status_code || '-';
+  const statusVariant = resolveStatusVariant(statusName);
 
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-  };
-
-  const handleSave = async (formData) => {
-    setSaving(true);
-    try {
-      await checkingListService.updateChecklist(checklist.id, formData);
-      toastService.success('Checklist berhasil diperbarui');
-      setIsEditMode(false);
-      if (onUpdate) {
-        onUpdate();
-      }
-    } catch (error) {
-      console.error('Failed to update checklist:', error);
-      toastService.error(error.message || 'Gagal memperbarui checklist');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const tabs = [
+  const overviewInfo = [
+    { label: 'No Checklist', value: checklist.no_checklist_surat_jalan || checklist.id || '-', copyable: true },
+    { label: 'Tanggal', value: formatDate(checklist.tanggal) },
+    { label: 'Checker', value: checklist.checker || '-' },
+    { label: 'Ekspedisi', value: checklist.ekspedisi || '-' },
+    { label: 'Nomor Kendaraan', value: checklist.mobil || '-' },
+    { label: 'Kota Tujuan', value: checklist.kota || '-' },
     {
-      id: 'po',
-      label: 'PO',
-      icon: <ShoppingCartIcon className='w-5 h-5' aria-hidden='true' />,
-      badge: suratJalanData.length || null,
+      label: 'Status',
+      component: <StatusBadge status={statusName} variant={statusVariant} size="xs" dot />,
     },
-    {
-      id: 'activity',
-      label: 'Activity Timeline',
-      icon: <ClockIcon className='w-5 h-5' aria-hidden='true' />,
-      badge: normalizedAuditTrails.length || null,
-    },
+    { label: 'Total Surat Jalan', value: `${suratJalanData.length} Dokumen` },
   ];
 
+  const firstSj = suratJalanData[0];
+  const poNumber = firstSj?.purchaseOrder?.po_number || firstSj?.po_number || '-';
+
   return (
-    <div className='bg-white rounded-lg shadow-md mt-6 overflow-hidden'>
+    <div className="bg-white shadow rounded-lg p-3 mt-3">
       {/* Header */}
-      <div className='flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-cyan-50'>
-        <div className='flex items-center space-x-4'>
-          <div className='p-2 bg-teal-100 rounded-lg'>
-            <ClipboardDocumentCheckIcon
-              className='w-8 h-8 text-teal-600'
-              aria-hidden='true'
-            />
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-teal-100 rounded">
+            <ClipboardDocumentCheckIcon className="h-4 w-4 text-teal-600" />
           </div>
           <div>
-            <h2 className='text-2xl font-bold text-gray-900'>
-              Checklist Surat Jalan Details
-            </h2>
-            <p className='text-sm text-gray-600'>
-              {checklist.no_checklist_surat_jalan || checklist.id}
+            <h2 className="text-sm font-bold text-gray-900">Detail Checklist Surat Jalan</h2>
+            <p className="text-xs text-gray-600">
+              {firstSj?.no_surat_jalan ? `SJ: ${firstSj.no_surat_jalan}` : (checklist.no_checklist_surat_jalan || 'Checklist Detail')}
+              {poNumber !== '-' ? ` • PO: ${poNumber}` : ''}
             </p>
           </div>
         </div>
-        <div className='flex items-center space-x-2'>
-          {!isEditMode ? (
-            <>
-              <button
-                type='button'
-                onClick={handleEditClick}
-                className='flex items-center px-4 py-2 space-x-2 text-sm font-medium text-white transition-colors bg-yellow-600 rounded-lg hover:bg-yellow-700'
-              >
-                <PencilIcon className='w-5 h-5' />
-                <span>Edit</span>
-              </button>
-              <button
-                onClick={onClose}
-                className='p-2 transition-colors rounded-lg hover:bg-gray-100'
-                title='Close'
-              >
-                <XMarkIcon className='w-6 h-6 text-gray-500' />
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type='button'
-                onClick={handleCancelEdit}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50'
-                disabled={saving}
-              >
-                Batal
-              </button>
-              <button
-                type='submit'
-                form='checking-list-form'
-                className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50'
-                disabled={saving}
-              >
-                {saving ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </>
+        <div className="flex items-center gap-1.5">
+          <StatusBadge status={statusName} variant={statusVariant} size="xs" />
+          {onClose && (
+            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Close">
+              <XMarkIcon className="w-4 h-4 text-gray-500" />
+            </button>
           )}
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      {!isEditMode && (
-        <div className='border-b border-gray-200 bg-gray-50'>
-          <TabContainer
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            variant='underline'
-            size='md'
-          >
-            {tabs.map((tab) => (
-              <Tab
-                key={tab.id}
-                id={tab.id}
-                label={tab.label}
-                icon={tab.icon}
-                badge={tab.badge}
-                disabled={tab.disabled}
-              />
-            ))}
-          </TabContainer>
-        </div>
-      )}
-
-      {/* Content */}
       {isLoading ? (
-        <div className='flex justify-center items-center py-12'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-          <span className='ml-3 text-sm text-gray-600'>Loading checklist details...</span>
-        </div>
-      ) : isEditMode ? (
-        <div className='p-6'>
-          <CheckingListForm
-            initialValues={checklist}
-            onSubmit={handleSave}
-            onCancel={handleCancelEdit}
-            isSubmitting={saving}
-            formId='checking-list-form'
-          />
+        <div className="flex justify-center items-center py-4">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-xs text-gray-600">Loading...</span>
         </div>
       ) : (
-        <div className='p-6'>
+        <div>
+          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant="underline" className="mb-2">
+            <Tab
+              id="po"
+              label="Surat Jalan & No PO"
+              icon={<DocumentTextIcon className="w-3 h-3" />}
+              badge={suratJalanData.length || null}
+            />
+            <Tab
+              id="overview"
+              label="Informasi"
+              icon={<ClipboardDocumentCheckIcon className="w-3 h-3" />}
+            />
+            <Tab
+              id="timeline"
+              label="Timeline"
+              icon={<ClockIcon className="w-3 h-3" />}
+              badge={normalizedAuditTrails.length || null}
+            />
+          </TabContainer>
+
           <TabContent activeTab={activeTab}>
-            {/* PO Tab */}
-            <TabPanel tabId='po'>
-              <div className='overflow-hidden bg-white border border-gray-200 rounded-lg'>
+            {/* Tab 1: Surat Jalan & No PO */}
+            <TabPanel tabId="po">
+              <div className="overflow-hidden bg-white border border-gray-200 rounded">
                 <CheckingListPOTable suratJalan={suratJalanData} />
               </div>
             </TabPanel>
 
-            {/* Activity Tab */}
-            <TabPanel tabId='activity'>
-              <ActivityTimeline
-                auditTrails={normalizedAuditTrails}
-                title='Activity Timeline'
-                emptyMessage='Belum ada audit trail untuk checklist ini.'
-                hasMore={checklist?.hasMoreAuditTrails}
-                totalAuditTrails={checklist?.totalAuditTrails || 0}
-                tableName='ChecklistSuratJalan'
-                recordId={checklist?.id}
-                onLoadMore={getAuditTrails}
-              />
+            {/* Tab 2: Informasi */}
+            <TabPanel tabId="overview">
+              <div className="border border-gray-200 rounded p-2 bg-gray-50">
+                <InfoTable compact data={overviewInfo} />
+              </div>
+            </TabPanel>
+
+            {/* Tab 3: Timeline */}
+            <TabPanel tabId="timeline">
+              {normalizedAuditTrails.length > 0 ? (
+                <ActivityTimeline
+                  auditTrails={normalizedAuditTrails}
+                  title="Activity Timeline"
+                  emptyMessage="Belum ada audit trail untuk checklist ini."
+                  hasMore={checklist?.hasMoreAuditTrails}
+                  totalAuditTrails={checklist?.totalAuditTrails || 0}
+                  tableName="ChecklistSuratJalan"
+                  recordId={checklist?.id}
+                  onLoadMore={getAuditTrails}
+                />
+              ) : (
+                <div className="py-4 text-center text-xs text-gray-500">
+                  Belum ada aktivitas.
+                </div>
+              )}
             </TabPanel>
           </TabContent>
         </div>

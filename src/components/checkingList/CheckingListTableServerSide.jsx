@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
-import { TrashIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, DocumentArrowDownIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { useCheckingListQuery } from '../../hooks/useCheckingListQuery';
 import { formatDate } from '../../utils/formatUtils';
 import checkingListService from '../../services/checkingListService';
@@ -109,6 +109,7 @@ const resolveStatusText = (status) => {
 
 const CheckingListTableServerSide = ({
   onViewDetail,
+  onEdit,
   selectedChecklistId = null,
   selectedChecklists = [],
   onSelectChecklist,
@@ -431,6 +432,32 @@ const CheckingListTableServerSide = ({
         ),
         cell: (info) => info.getValue() || '-',
       }),
+      columnHelper.display({
+        id: 'actions',
+        header: () => <div className="font-medium text-xs">ACTIONS</div>,
+        cell: ({ row }) => {
+          const checklist = row.original;
+
+          return (
+            <div className="flex items-center space-x-1">
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(checklist);
+                  }}
+                  className="p-1 text-green-600 hover:text-green-900 rounded hover:bg-green-50 transition-colors"
+                  title="Edit Checklist"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+      }),
     ],
     [
       checklists,
@@ -438,6 +465,7 @@ const CheckingListTableServerSide = ({
       onSelectChecklist,
       handleSelectAllInternalToggle,
       setPage,
+      onEdit,
     ]
   );
 

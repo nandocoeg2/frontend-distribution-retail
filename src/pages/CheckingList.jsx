@@ -4,8 +4,11 @@ import useCheckingListPage from '@/hooks/useCheckingListPage';
 import {
   CheckingListTableServerSide,
   CheckingListDetailCard,
+  CheckingListModal,
 } from '@/components/checkingList';
 import { useConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import checkingListService from '@/services/checkingListService';
+import toastService from '@/services/toastService';
 
 const resolveChecklistId = (checklist) => {
   if (!checklist || typeof checklist !== 'object') {
@@ -36,6 +39,9 @@ const CheckingList = () => {
   const [selectedChecklists, setSelectedChecklists] = useState([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingChecklist, setEditingChecklist] = useState(null);
+
   const {
     showDialog: showDeleteDialog,
     hideDialog: hideDeleteDialog,
@@ -43,10 +49,60 @@ const CheckingList = () => {
     ConfirmationDialog: DeleteConfirmationDialog,
   } = useConfirmationDialog();
 
+  const openEditModal = useCallback(async (checklist) => {
+    const checklistId = resolveChecklistId(checklist);
+    if (!checklistId) return;
+
+    try {
+      const detail = await fetchChecklistById(checklistId);
+      setEditingChecklist(detail || checklist);
+    } catch (err) {
+      console.warn('Failed to fetch full checklist detail for edit, falling back to row data:', err);
+      setEditingChecklist(checklist);
+    } finally {
+      setIsEditModalOpen(true);
+    }
+  }, [fetchChecklistById]);
+
+  const closeEditModal = useCallback(() => {
+    setIsEditModalOpen(false);
+    setEditingChecklist(null);
+  }, []);
+
+  const handleModalSuccess = useCallback(async (formData) => {
+    const checklistId = resolveChecklistId(editingChecklist);
+    if (!checklistId) return;
+
+    try {
+      await checkingListService.updateChecklist(checklistId, formData);
+      toastService.success('Checklist berhasil diperbarui');
+      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+
+      // Refresh detail view if currently open
+      if (resolveChecklistId(selectedChecklist) === checklistId) {
+        const refreshed = await fetchChecklistById(checklistId);
+        if (refreshed) {
+          setSelectedChecklist(refreshed);
+        }
+      }
+
+      closeEditModal();
+    } catch (updateError) {
+      console.error('Failed to update checklist:', updateError);
+      toastService.error(updateError.message || 'Gagal memperbarui checklist');
+    }
+  }, [editingChecklist, selectedChecklist, fetchChecklistById, queryClient, closeEditModal]);
+
   const handleViewDetail = useCallback(
     async (checklist) => {
       const checklistId = resolveChecklistId(checklist);
       if (!checklistId) {
+        return;
+      }
+
+      // Toggle detail card if same item clicked
+      if (resolveChecklistId(selectedChecklist) === checklistId) {
+        setSelectedChecklist(null);
         return;
       }
 
@@ -63,28 +119,13 @@ const CheckingList = () => {
         setDetailLoading(false);
       }
     },
-    [fetchChecklistById]
+    [fetchChecklistById, selectedChecklist]
   );
 
   const handleCloseDetail = () => {
     setSelectedChecklist(null);
     setDetailLoading(false);
   };
-
-  const handleChecklistUpdated = useCallback(async () => {
-    // Refresh data after update from Detail Card
-    await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
-    // Also refresh the detail view if needed
-    if (selectedChecklist) {
-      const checklistId = resolveChecklistId(selectedChecklist);
-      if (checklistId) {
-        const response = await fetchChecklistById(checklistId);
-        if (response) {
-          setSelectedChecklist(response);
-        }
-      }
-    }
-  }, [queryClient, selectedChecklist, fetchChecklistById]);
 
   const handleRetry = () => {
     handleRetryFetch();
@@ -167,6 +208,7 @@ const CheckingList = () => {
           ) : (
             <CheckingListTableServerSide
               onViewDetail={handleViewDetail}
+              onEdit={openEditModal}
               selectedChecklistId={selectedChecklist?.id}
               selectedChecklists={selectedChecklists}
               onSelectChecklist={handleSelectChecklist}
@@ -183,9 +225,16 @@ const CheckingList = () => {
           checklist={selectedChecklist}
           onClose={handleCloseDetail}
           isLoading={detailLoading}
-          onUpdate={handleChecklistUpdated}
         />
       )}
+
+      {/* Edit Modal */}
+      <CheckingListModal
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        initialData={editingChecklist}
+        onSuccess={handleModalSuccess}
+      />
 
       <DeleteConfirmationDialog onConfirm={handleConfirmDelete} />
     </div>

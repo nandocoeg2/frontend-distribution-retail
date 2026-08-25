@@ -5,6 +5,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable } from '../table';
+import { formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
@@ -27,6 +28,16 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         sj?.no_po ||
         sj?.purchase_order?.po_number ||
         '-',
+      customer:
+        sj?.purchaseOrder?.customer?.namaCustomer ||
+        sj?.customer?.namaCustomer ||
+        sj?.deliver_to ||
+        '-',
+      invoice:
+        sj?.invoice?.no_invoice ||
+        sj?.purchaseOrder?.invoice?.no_invoice ||
+        '-',
+      tanggal: sj?.tanggal_surat_jalan || sj?.tanggal || sj?.createdAt || null,
     }));
   }, [suratJalan]);
 
@@ -36,7 +47,7 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         id: 'no_surat_jalan',
         header: 'No Surat Jalan',
         cell: (info) => (
-          <span className="font-medium text-gray-900">
+          <span className="font-semibold text-gray-900">
             {info.getValue() || '-'}
           </span>
         ),
@@ -45,8 +56,35 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         id: 'po_number',
         header: 'No PO',
         cell: (info) => (
-          <span className="text-gray-900">
+          <span className="font-medium text-blue-600">
             {info.getValue() || '-'}
+          </span>
+        ),
+      }),
+      columnHelper.accessor('customer', {
+        id: 'customer',
+        header: 'Customer / Tujuan',
+        cell: (info) => (
+          <span className="text-gray-700">
+            {info.getValue() || '-'}
+          </span>
+        ),
+      }),
+      columnHelper.accessor('invoice', {
+        id: 'invoice',
+        header: 'Invoice',
+        cell: (info) => (
+          <span className="text-gray-600">
+            {info.getValue() || '-'}
+          </span>
+        ),
+      }),
+      columnHelper.accessor('tanggal', {
+        id: 'tanggal',
+        header: 'Tanggal',
+        cell: (info) => (
+          <span className="text-gray-500">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
           </span>
         ),
       }),
@@ -68,8 +106,8 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
 
   if (!tableData || tableData.length === 0) {
     return (
-      <div className="py-8 text-center text-xs text-gray-500">
-        Tidak ada data PO.
+      <div className="py-6 text-center text-xs text-gray-500">
+        Tidak ada data Surat Jalan & Purchase Order.
       </div>
     );
   }
@@ -78,14 +116,14 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
     <DataTable
       table={table}
       isLoading={false}
-      emptyMessage="Tidak ada data PO."
-      wrapperClassName="overflow-x-auto overflow-y-auto max-h-[400px]"
+      emptyMessage="Tidak ada data Surat Jalan & Purchase Order."
+      wrapperClassName="overflow-x-auto overflow-y-auto max-h-[350px]"
       tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
       headerRowClassName="bg-gray-50"
-      headerCellClassName="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+      headerCellClassName="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
       bodyClassName="bg-white divide-y divide-gray-100"
       rowClassName="hover:bg-gray-50 h-8"
-      cellClassName="px-4 py-2 whitespace-nowrap text-xs text-gray-900"
+      cellClassName="px-3 py-1.5 whitespace-nowrap text-xs text-gray-900"
     />
   );
 };
