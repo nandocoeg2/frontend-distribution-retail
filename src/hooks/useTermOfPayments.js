@@ -160,9 +160,9 @@ const useTermOfPayments = () => {
     }
   }, [authHandler, refreshAfterMutation]);
 
-  const getTermOfPaymentById = useCallback(async (id) => {
+  const getTermOfPaymentById = useCallback(async (id, companyId) => {
     try {
-      const result = await termOfPaymentService.getTermOfPaymentById(id);
+      const result = await termOfPaymentService.getTermOfPaymentById(id, companyId);
       if (result?.success === false) {
         throw new Error(result?.message || 'Failed to fetch term of payment');
       }
