@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import CheckingListDetailCard from '../../components/checkingList/CheckingListDetailCard';
 
 describe('CheckingListDetailCard', () => {
-  it('renders 2 tabs: PO and Activity Timeline', () => {
+  it('renders tabs and details correctly', () => {
     const mockChecklist = {
       id: 'chk-1',
       no_checklist_surat_jalan: 'CHK/2026/001',
@@ -32,19 +32,13 @@ describe('CheckingListDetailCard', () => {
       />
     );
 
-    // Check title and checklist number
-    expect(screen.getByText('Checklist Surat Jalan Details')).toBeDefined();
-    expect(screen.getByText('CHK/2026/001')).toBeDefined();
+    // Check title
+    expect(screen.getByText('Detail Checklist Surat Jalan')).toBeDefined();
 
     // Check tabs
-    expect(screen.getByRole('button', { name: /PO/i })).toBeDefined();
-    expect(screen.getByRole('button', { name: /Activity Timeline/i })).toBeDefined();
-
-    // Old tabs should not be present
-    expect(screen.queryByRole('button', { name: /Overview/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Packing/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Customer/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Supplier/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /Surat Jalan & No PO/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Informasi/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /Timeline/i })).toBeDefined();
 
     // In PO tab (active by default), verify table contents
     expect(screen.getByText('No Surat Jalan')).toBeDefined();

@@ -5,7 +5,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable } from '../table';
-import { formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
@@ -57,44 +56,15 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
           </span>
         ),
       }),
-<<<<<<< HEAD
-      columnHelper.accessor('customer', {
-        id: 'customer',
+      columnHelper.accessor('customer_tujuan', {
+        id: 'customer_tujuan',
         header: 'Customer / Tujuan',
         cell: (info) => (
-          <span className="text-gray-700">
-=======
-      columnHelper.accessor('customer_tujuan', {
-              id: 'customer_tujuan',
-            header: 'Customer / Tujuan',
-        cell: (info) => (
-            <span className="text-gray-900">
->>>>>>> origin/master
-              {info.getValue() || '-'}
-            </span>
+          <span className="text-gray-900">
+            {info.getValue() || '-'}
+          </span>
         ),
       }),
-<<<<<<< HEAD
-        columnHelper.accessor('invoice', {
-          id: 'invoice',
-          header: 'Invoice',
-          cell: (info) => (
-            <span className="text-gray-600">
-              {info.getValue() || '-'}
-            </span>
-          ),
-        }),
-        columnHelper.accessor('tanggal', {
-          id: 'tanggal',
-          header: 'Tanggal',
-          cell: (info) => (
-            <span className="text-gray-500">
-              {info.getValue() ? formatDate(info.getValue()) : '-'}
-            </span>
-          ),
-        }),
-=======
->>>>>>> origin/master
     ],
     []
   );
