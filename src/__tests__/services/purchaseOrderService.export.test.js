@@ -3,15 +3,29 @@ import purchaseOrderService from '../../services/purchaseOrderService';
 import authService from '../../services/authService';
 
 describe('purchaseOrderService export methods', () => {
+  const originalFetch = global.fetch;
+  const originalLocalStorage = global.localStorage;
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    localStorage.setItem('token', 'mock-token-123');
+    vi.restoreAllMocks();
+    global.fetch = vi.fn();
     vi.spyOn(authService, 'getToken').mockReturnValue('mock-token-123');
     vi.spyOn(authService, 'getCompanyData').mockReturnValue({ id: 'comp-1' });
+
+    const storage = {
+      token: 'mock-token-123',
+    };
+    global.localStorage = {
+      getItem: (key) => storage[key] || null,
+      setItem: (key, val) => { storage[key] = val; },
+      removeItem: (key) => { delete storage[key]; },
+      clear: () => { Object.keys(storage).forEach(k => delete storage[k]); },
+    };
   });
 
   afterEach(() => {
-    localStorage.clear();
+    global.fetch = originalFetch;
+    global.localStorage = originalLocalStorage;
     vi.restoreAllMocks();
   });
 

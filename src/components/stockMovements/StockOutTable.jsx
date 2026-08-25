@@ -37,6 +37,8 @@ const StockOutTable = forwardRef(({
       const customerName =
         movement?.customer?.namaCustomer ||
         movement?.customerName ||
+        movement?.purchaseOrder?.customer?.namaCustomer ||
+        movement?.suratJalan?.purchaseOrder?.customer?.namaCustomer ||
         '-';
 
       const movementDate = movement?.createdAt || null;
@@ -44,6 +46,7 @@ const StockOutTable = forwardRef(({
       const poNumber =
         movement?.no_po ||
         movement?.purchaseOrder?.po_number ||
+        movement?.suratJalan?.purchaseOrder?.po_number ||
         '-';
 
       const invoiceNumber =
@@ -51,23 +54,34 @@ const StockOutTable = forwardRef(({
         movement?.suratJalan?.invoice?.no_invoice ||
         movement?.purchaseOrder?.invoice?.no_invoice ||
         movement?.purchaseOrder?.invoicePengiriman?.no_invoice ||
+        movement?.suratJalan?.purchaseOrder?.invoice?.no_invoice ||
         (Array.isArray(movement?.purchaseOrder?.invoicePenagihan)
           ? movement.purchaseOrder.invoicePenagihan[0]?.no_invoice_penagihan ||
             movement.purchaseOrder.invoicePenagihan[0]?.no_invoice
           : movement?.purchaseOrder?.invoicePenagihan?.no_invoice_penagihan ||
             movement?.purchaseOrder?.invoicePenagihan?.no_invoice) ||
+        (Array.isArray(movement?.suratJalan?.purchaseOrder?.invoicePenagihan)
+          ? movement.suratJalan.purchaseOrder.invoicePenagihan[0]?.no_invoice_penagihan ||
+            movement.suratJalan.purchaseOrder.invoicePenagihan[0]?.no_invoice
+          : movement?.suratJalan?.purchaseOrder?.invoicePenagihan?.no_invoice_penagihan ||
+            movement?.suratJalan?.purchaseOrder?.invoicePenagihan?.no_invoice) ||
         '-';
 
       const totalPenagihanVal = Number(
         movement?.purchaseOrder?.grand_total ||
+        movement?.suratJalan?.purchaseOrder?.grand_total ||
         movement?.purchaseOrder?.payable_amount ||
+        movement?.suratJalan?.purchaseOrder?.payable_amount ||
         movement?.purchaseOrder?.invoicePenagihan?.[0]?.total_invoice ||
+        movement?.suratJalan?.purchaseOrder?.invoicePenagihan?.[0]?.total_invoice ||
         0
       );
 
       const items = Array.isArray(movement?.items) ? movement.items : [];
       const poDetails = Array.isArray(movement?.purchaseOrder?.purchaseOrderDetails)
         ? movement.purchaseOrder.purchaseOrderDetails
+        : Array.isArray(movement?.suratJalan?.purchaseOrder?.purchaseOrderDetails)
+        ? movement.suratJalan.purchaseOrder.purchaseOrderDetails
         : [];
 
       if (items.length === 0) {
@@ -116,24 +130,44 @@ const StockOutTable = forwardRef(({
           const totalPengiriman = itemObj.quantity;
 
           // Find corresponding PO Detail Qty if available
-          const matchingPoDetail = poDetails.find(
-            (pod) => pod.itemId === itemId || (itemInfo?.plu && pod?.plu === itemInfo?.plu)
+          const matchingPoDetails = poDetails.filter(
+            (pod) =>
+              (itemId && pod.itemId === itemId) ||
+              (itemInfo?.plu && (pod?.plu === itemInfo?.plu || pod?.PLU === itemInfo?.plu)) ||
+              (itemInfo?.nama_barang && pod?.nama_barang === itemInfo?.nama_barang)
           );
-          const poQuantity = matchingPoDetail
-            ? Number(matchingPoDetail.quantity || matchingPoDetail.qty_po || 0)
-            : totalPengiriman;
+
+          const poQuantity = matchingPoDetails.length > 0
+            ? matchingPoDetails.reduce(
+                (sum, pod) =>
+                  sum +
+                  Number(
+                    pod.total_quantity_order ??
+                    pod.quantity_pcs ??
+                    pod.quantity ??
+                    pod.qty_po ??
+                    pod.qty ??
+                    0
+                  ),
+                0
+              )
+            : (poDetails.length > 0 ? 0 : totalPengiriman);
 
           // Calculate Total Penagihan for this item (from invoicePenagihanDetails if present)
           const invoicePenagihanList = Array.isArray(movement?.purchaseOrder?.invoicePenagihan)
             ? movement.purchaseOrder.invoicePenagihan
+            : Array.isArray(movement?.suratJalan?.purchaseOrder?.invoicePenagihan)
+            ? movement.suratJalan.purchaseOrder.invoicePenagihan
             : movement?.purchaseOrder?.invoicePenagihan
             ? [movement.purchaseOrder.invoicePenagihan]
+            : movement?.suratJalan?.purchaseOrder?.invoicePenagihan
+            ? [movement.suratJalan.purchaseOrder.invoicePenagihan]
             : [];
 
           const matchingInvoiceDetails = invoicePenagihanList.flatMap(
             (inv) => inv?.invoicePenagihanDetails || []
           ).filter(
-            (det) => det?.itemId === itemId || (itemInfo?.plu && det?.PLU === itemInfo?.plu)
+            (det) => det?.itemId === itemId || (itemInfo?.plu && (det?.PLU === itemInfo?.plu || det?.plu === itemInfo?.plu))
           );
 
           const totalPenagihan = matchingInvoiceDetails.reduce(
