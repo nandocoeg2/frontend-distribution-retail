@@ -447,6 +447,47 @@ printDocuments: async (id, documents) => {
     return { success: true, filename };
   },
 
+  // Preview export purchase orders to Excel
+  previewExportExcel: async (params = {}) => {
+    const accessToken = localStorage.getItem('token');
+    if (!accessToken) {
+      throw new Error('No access token found');
+    }
+
+    const url = new URL(`${API_URL}/preview-export`);
+
+    // Add params to URL
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        if (Array.isArray(params[key])) {
+          params[key].forEach(val => url.searchParams.append(key, val));
+        } else {
+          url.searchParams.append(key, params[key]);
+        }
+      }
+    });
+
+    const activeCompanyId = authService.getCompanyData()?.id;
+    if (activeCompanyId && !url.searchParams.has('companyId')) {
+      url.searchParams.append('companyId', activeCompanyId);
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || 'Failed to fetch purchase orders export preview');
+    }
+
+    return response.json();
+  },
+
   // Validate item prices - compare PO prices with master data prices
   validateItemPrices: async (purchaseOrderIds) => {
     const accessToken = localStorage.getItem('token');

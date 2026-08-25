@@ -1,10 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, EyeIcon } from '@heroicons/react/24/outline';
 import {
   PurchaseOrderTableServerSide,
   AddPurchaseOrderModal,
   PurchaseOrderDetailCard,
+  PurchaseOrderExportPreviewModal,
 } from '../components/purchaseOrders';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
@@ -73,6 +74,9 @@ const PurchaseOrders = () => {
 
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
   const tableRef = useRef(null);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -230,6 +234,32 @@ const PurchaseOrders = () => {
         setExportLoading(false);
       }
     });
+  };
+
+  const handlePreviewExcel = async () => {
+    try {
+      setIsPreviewModalOpen(true);
+      setPreviewLoading(true);
+      const filters = tableRef.current?.getFilters() || {};
+      const response = await purchaseOrderService.previewExportExcel(filters);
+      setPreviewData(response.data || response);
+    } catch (err) {
+      console.error('Preview export failed:', err);
+      showError(err.message || 'Gagal memuat preview data');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleExportFromPreview = async () => {
+    try {
+      const filters = tableRef.current?.getFilters() || {};
+      await purchaseOrderService.exportExcel(filters);
+      showSuccess('Data berhasil diexport ke Excel');
+    } catch (err) {
+      console.error('Export failed:', err);
+      showError(err.message || 'Gagal mengexport data');
+    }
   };
 
   // Bulk selection handlers
@@ -460,9 +490,26 @@ const PurchaseOrders = () => {
             <h3 className="text-sm font-semibold text-gray-900">Purchase Orders</h3>
             <div className="flex flex-wrap gap-2">
               <button
+                onClick={handlePreviewExcel}
+                disabled={previewLoading}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+              >
+                {previewLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                    Memuat...
+                  </>
+                ) : (
+                  <>
+                    <EyeIcon className="h-4 w-4 mr-1.5" />
+                    Preview Excel
+                  </>
+                )}
+              </button>
+              <button
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
               >
                 {exportLoading ? (
                   <>
@@ -478,7 +525,7 @@ const PurchaseOrders = () => {
               </button>
               <button
                 onClick={() => setAddModalOpen(true)}
-                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors shadow-sm"
               >
                 <HeroIcon name='plus' className='w-4 h-4 mr-1.5' />
                 Add PO
@@ -518,6 +565,16 @@ const PurchaseOrders = () => {
           onClose={() => setAddModalOpen(false)}
           onFinished={handleAddFinished}
           createPurchaseOrder={createPurchaseOrder}
+        />
+      )}
+
+      {isPreviewModalOpen && (
+        <PurchaseOrderExportPreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          previewData={previewData}
+          previewLoading={previewLoading}
+          onExport={handleExportFromPreview}
         />
       )}
 
