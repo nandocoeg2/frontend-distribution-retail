@@ -391,7 +391,10 @@ const SuratJalanTableServerSide = forwardRef(({
             </div>
           );
         },
-        cell: (info) => <span className="font-medium">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
+        cell: (info) => {
+          const val = info.row.original.purchaseOrder?.packing?.tanggal_packing || info.getValue();
+          return <span className="font-medium">{val ? formatDate(val) : '-'}</span>;
+        },
       }),
       columnHelper.accessor('no_surat_jalan', {
         header: ({ column }) => (

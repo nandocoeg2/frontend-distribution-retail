@@ -7,7 +7,7 @@ import CheckingListPOTable from '../../components/checkingList/CheckingListPOTab
 describe('CheckingListPOTable', () => {
   it('renders empty message when no surat jalan data is provided', () => {
     render(<CheckingListPOTable suratJalan={[]} />);
-    expect(screen.getByText('Tidak ada data PO.')).toBeDefined();
+    expect(screen.getByText('Tidak ada data Surat Jalan & Purchase Order.')).toBeDefined();
   });
 
   it('renders table headers and rows correctly from suratJalan data structure', () => {

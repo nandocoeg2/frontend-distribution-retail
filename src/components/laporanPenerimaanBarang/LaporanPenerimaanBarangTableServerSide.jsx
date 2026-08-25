@@ -1,8 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import {
-  EyeIcon,
-  PencilSquareIcon,
   TrashIcon,
   CheckIcon,
   LinkIcon,
@@ -641,20 +639,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
           return (
             <div className="flex items-center space-x-1">
               <button
-                onClick={() => onView(report)}
-                className="text-blue-600 hover:text-blue-900"
-                title="Lihat Detail"
-              >
-                <EyeIcon className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => onEdit(report)}
-                className="text-yellow-600 hover:text-yellow-900"
-                title="Edit LPB"
-              >
-                <PencilSquareIcon className="h-4 w-4" />
-              </button>
-              <button
                 onClick={() => handleOpenAssignModal(report)}
                 className="text-green-600 hover:text-green-900"
                 title={hasAssignedPO ? 'Ubah Assign Purchase Order' : 'Assign Purchase Order'}
@@ -681,8 +665,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
       selectedReports,
       onSelectReport,
       handleSelectAllInternalToggle,
-      onView,
-      onEdit,
       setPage,
       handleOpenAssignModal,
       handleUnassignClick,
