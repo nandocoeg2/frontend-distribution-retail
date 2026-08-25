@@ -560,7 +560,7 @@ const PurchaseOrders = () => {
                 ) : (
                   <>
                     <DocumentTextIcon className="h-4 w-4 mr-1.5" />
-                    Preview PO (HTML)
+                    Preview PO
                   </>
                 )}
               </button>
