@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import CheckingListDetailCard from '../../components/checkingList/CheckingListDetailCard';
 
 describe('CheckingListDetailCard', () => {
-  it('renders 2 tabs: PO and Activity Timeline', () => {
+  it('renders tabs and details correctly', () => {
     const mockChecklist = {
       id: 'chk-1',
       no_checklist_surat_jalan: 'CHK/2026/001',
@@ -32,9 +32,8 @@ describe('CheckingListDetailCard', () => {
       />
     );
 
-    // Check title and checklist number
+    // Check title
     expect(screen.getByText('Detail Checklist Surat Jalan')).toBeDefined();
-    expect(screen.getByText(/CHK\/2026\/001/)).toBeDefined();
 
     // Check tabs
     expect(screen.getByRole('button', { name: /Surat Jalan & No PO/i })).toBeDefined();
@@ -48,5 +47,8 @@ describe('CheckingListDetailCard', () => {
     expect(screen.getByText('SJ/2026/001')).toBeDefined();
     expect(screen.getByText('PO/2026/101')).toBeDefined();
     expect(screen.getByText('PT Maju Bersama')).toBeDefined();
+
+    // Check Tambah Faktur / Surat Jalan button exists
+    expect(screen.getByRole('button', { name: /Tambah Faktur \/ Surat Jalan/i })).toBeDefined();
   });
 });

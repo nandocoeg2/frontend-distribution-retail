@@ -72,13 +72,34 @@ const AddSuratJalanToChecklistModal = ({
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const noSj = (sj.no_surat_jalan || '').toLowerCase();
-    const poNumber = (sj.purchaseOrder?.po_number || '').toLowerCase();
-    const customer = (
-      sj.purchaseOrder?.customer?.namaCustomer ||
-      sj.deliver_to ||
+    const poNumber = (
+      sj.purchaseOrder?.po_number ||
+      sj.po_number ||
+      sj.no_po ||
+      sj.purchase_order?.po_number ||
       ''
     ).toLowerCase();
-    return noSj.includes(q) || poNumber.includes(q) || customer.includes(q);
+    const invoiceNumber = (
+      sj.invoice?.no_invoice ||
+      sj.purchaseOrder?.invoice?.no_invoice ||
+      sj.no_invoice ||
+      ''
+    ).toLowerCase();
+    const customer = (
+      sj.purchaseOrder?.customer?.namaCustomer ||
+      sj.purchaseOrder?.customer?.nama_customer ||
+      sj.customer?.namaCustomer ||
+      sj.customer?.nama_customer ||
+      sj.deliver_to ||
+      sj.purchaseOrder?.deliver_to ||
+      ''
+    ).toLowerCase();
+    return (
+      noSj.includes(q) ||
+      poNumber.includes(q) ||
+      invoiceNumber.includes(q) ||
+      customer.includes(q)
+    );
   });
 
   const handleToggleSelect = (id) => {
@@ -116,10 +137,10 @@ const AddSuratJalanToChecklistModal = ({
             </div>
             <div>
               <h3 className='text-lg font-bold text-gray-900'>
-                Tambah Surat Jalan ke Checklist
+                Tambah Surat Jalan / PO ke Checklist
               </h3>
               <p className='text-xs text-gray-500'>
-                Pilih Surat Jalan berstatus Draft untuk dimasukkan ke dalam checklist ini
+                Pilih Surat Jalan berdasarkan Nomor PO atau Nomor Surat Jalan untuk dimasukkan ke checklist
               </p>
             </div>
           </div>
@@ -140,7 +161,7 @@ const AddSuratJalanToChecklistModal = ({
               type='text'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Cari nomor surat jalan, nomor PO, atau nama customer...'
+              placeholder='Cari nomor PO, nomor surat jalan, atau nama customer...'
               className='w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2.5 text-sm placeholder-gray-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500'
             />
           </div>

@@ -77,8 +77,8 @@ const CheckingListForm = ({
       const rawSj = Array.isArray(initialValues.suratJalan)
         ? initialValues.suratJalan
         : initialValues.suratJalan
-        ? [initialValues.suratJalan]
-        : [];
+          ? [initialValues.suratJalan]
+          : [];
       setAssignedSuratJalans(rawSj);
     } else {
       setFormData(defaultValues);
@@ -345,11 +345,10 @@ const CheckingListForm = ({
                               ? 'Minimal 1 Surat Jalan harus ada dalam checklist'
                               : 'Keluarkan dari checklist'
                           }
-                          className={`rounded-lg p-1.5 transition-colors ${
-                            assignedSuratJalans.length <= 1
+                          className={`rounded-lg p-1.5 transition-colors ${assignedSuratJalans.length <= 1
                               ? 'text-gray-300 cursor-not-allowed'
                               : 'text-red-500 hover:bg-red-50 hover:text-red-700'
-                          }`}
+                            }`}
                         >
                           <TrashIcon className='h-4 w-4' />
                         </button>
@@ -363,7 +362,7 @@ const CheckingListForm = ({
         </div>
 
         {/* Form Actions */}
-        <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200 mt-6'>
+        <div className='flex justify-end space-x-3 pt-4 border-t border-gray-200'>
           {onCancel && (
             <button
               type='button'

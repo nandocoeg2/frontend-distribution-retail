@@ -5,7 +5,6 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable } from '../table';
-import { formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
@@ -31,15 +30,9 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
       customer_tujuan:
         sj?.purchaseOrder?.customer?.namaCustomer ||
         sj?.purchaseOrder?.customer?.nama_customer ||
-        sj?.customer?.namaCustomer ||
         sj?.deliver_to ||
         sj?.purchaseOrder?.deliver_to ||
         '-',
-      invoice:
-        sj?.invoice?.no_invoice ||
-        sj?.purchaseOrder?.invoice?.no_invoice ||
-        '-',
-      tanggal: sj?.tanggal_surat_jalan || sj?.tanggal || sj?.createdAt || null,
     }));
   }, [suratJalan]);
 
@@ -67,26 +60,8 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         id: 'customer_tujuan',
         header: 'Customer / Tujuan',
         cell: (info) => (
-          <span className="text-gray-700">
+          <span className="text-gray-900">
             {info.getValue() || '-'}
-          </span>
-        ),
-      }),
-      columnHelper.accessor('invoice', {
-        id: 'invoice',
-        header: 'Invoice',
-        cell: (info) => (
-          <span className="text-gray-600">
-            {info.getValue() || '-'}
-          </span>
-        ),
-      }),
-      columnHelper.accessor('tanggal', {
-        id: 'tanggal',
-        header: 'Tanggal',
-        cell: (info) => (
-          <span className="text-gray-500">
-            {info.getValue() ? formatDate(info.getValue()) : '-'}
           </span>
         ),
       }),
