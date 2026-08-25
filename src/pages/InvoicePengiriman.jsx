@@ -6,6 +6,7 @@ import InvoicePengirimanDetailCard from '@/components/invoicePengiriman/InvoiceP
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { TableFooterCell } from '@/components/table';
 import invoicePengirimanService from '@/services/invoicePengirimanService';
+import authService from '@/services/authService';
 import toastService from '@/services/toastService';
 
 const InvoicePengirimanPage = () => {
@@ -127,11 +128,15 @@ const InvoicePengirimanPage = () => {
 
   // Convert column filters (array format) to backend query params (object format)
   const convertFiltersToParams = useCallback((columnFilters) => {
-    if (!columnFilters || !Array.isArray(columnFilters) || columnFilters.length === 0) {
-      return {};
+    const companyId = authService.getCompanyData()?.id;
+    const params = {};
+    if (companyId) {
+      params.companyId = companyId;
     }
 
-    const params = {};
+    if (!columnFilters || !Array.isArray(columnFilters) || columnFilters.length === 0) {
+      return params;
+    }
     for (const filter of columnFilters) {
       const { id, value } = filter;
       if (value === undefined || value === null || value === '') continue;
