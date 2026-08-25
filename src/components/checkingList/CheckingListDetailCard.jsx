@@ -76,12 +76,13 @@ const CheckingListDetailCard = ({
   const handleSave = async (formData) => {
     setSaving(true);
     try {
-      await checkingListService.updateChecklist(checklist.id, formData);
+      const response = await checkingListService.updateChecklist(checklist.id, formData);
+      const updatedData = response?.data || response;
       toastService.success('Checklist berhasil diperbarui');
-      setIsEditMode(false);
       if (onUpdate) {
-        onUpdate();
+        await onUpdate(updatedData);
       }
+      setIsEditMode(false);
     } catch (error) {
       console.error('Failed to update checklist:', error);
       toastService.error(error.message || 'Gagal memperbarui checklist');

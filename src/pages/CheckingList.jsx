@@ -71,20 +71,35 @@ const CheckingList = () => {
     setDetailLoading(false);
   };
 
-  const handleChecklistUpdated = useCallback(async () => {
-    // Refresh data after update from Detail Card
-    await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
-    // Also refresh the detail view if needed
-    if (selectedChecklist) {
-      const checklistId = resolveChecklistId(selectedChecklist);
+  const handleChecklistUpdated = useCallback(
+    async (updatedData) => {
+      // 1. Instantly update selectedChecklist with direct response
+      if (updatedData) {
+        const directData = updatedData?.data || updatedData;
+        setSelectedChecklist(directData);
+      }
+
+      // 2. Invalidate table query to refresh the list in background
+      await queryClient.invalidateQueries({ queryKey: ['checkingList'] });
+
+      // 3. Fetch fresh detail with audit trails
+      const checklistId =
+        resolveChecklistId(updatedData?.data || updatedData) ||
+        resolveChecklistId(selectedChecklist);
+
       if (checklistId) {
-        const response = await fetchChecklistById(checklistId);
-        if (response) {
-          setSelectedChecklist(response);
+        try {
+          const response = await fetchChecklistById(checklistId);
+          if (response) {
+            setSelectedChecklist(response);
+          }
+        } catch (fetchError) {
+          console.error('Failed to refresh checklist detail after update:', fetchError);
         }
       }
-    }
-  }, [queryClient, selectedChecklist, fetchChecklistById]);
+    },
+    [queryClient, selectedChecklist, fetchChecklistById]
+  );
 
   const handleRetry = () => {
     handleRetryFetch();

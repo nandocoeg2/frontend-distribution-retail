@@ -18,6 +18,7 @@ describe('CheckingListPOTable', () => {
         purchaseOrder: {
           id: 'po-1',
           po_number: 'PO/2026/101',
+          customer: { namaCustomer: 'PT Maju Bersama' },
         },
       },
       {
@@ -26,6 +27,7 @@ describe('CheckingListPOTable', () => {
         purchaseOrder: {
           id: 'po-2',
           po_number: 'PO/2026/102',
+          customer: { namaCustomer: 'CV Berkah Sentosa' },
         },
       },
     ];
@@ -35,12 +37,15 @@ describe('CheckingListPOTable', () => {
     // Check headers
     expect(screen.getByText('No Surat Jalan')).toBeDefined();
     expect(screen.getByText('No PO')).toBeDefined();
+    expect(screen.getByText('Customer / Tujuan')).toBeDefined();
 
     // Check row values
     expect(screen.getByText('SJ/2026/001')).toBeDefined();
     expect(screen.getByText('PO/2026/101')).toBeDefined();
+    expect(screen.getByText('PT Maju Bersama')).toBeDefined();
     expect(screen.getByText('SJ/2026/002')).toBeDefined();
     expect(screen.getByText('PO/2026/102')).toBeDefined();
+    expect(screen.getByText('CV Berkah Sentosa')).toBeDefined();
   });
 
   it('handles fallback po_number formats and null values gracefully', () => {

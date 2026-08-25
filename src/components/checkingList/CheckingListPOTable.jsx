@@ -27,6 +27,12 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         sj?.no_po ||
         sj?.purchase_order?.po_number ||
         '-',
+      customer_tujuan:
+        sj?.purchaseOrder?.customer?.namaCustomer ||
+        sj?.purchaseOrder?.customer?.nama_customer ||
+        sj?.deliver_to ||
+        sj?.purchaseOrder?.deliver_to ||
+        '-',
     }));
   }, [suratJalan]);
 
@@ -44,6 +50,15 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
       columnHelper.accessor('po_number', {
         id: 'po_number',
         header: 'No PO',
+        cell: (info) => (
+          <span className="text-gray-900">
+            {info.getValue() || '-'}
+          </span>
+        ),
+      }),
+      columnHelper.accessor('customer_tujuan', {
+        id: 'customer_tujuan',
+        header: 'Customer / Tujuan',
         cell: (info) => (
           <span className="text-gray-900">
             {info.getValue() || '-'}
