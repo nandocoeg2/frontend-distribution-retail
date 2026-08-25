@@ -592,8 +592,74 @@ printDocuments: async (id, documents) => {
     }
 
     return response.json();
+  },
+
+  // Export single purchase order to HTML
+  exportPurchaseOrder: async (id, companyId) => {
+    try {
+      const accessToken = localStorage.getItem('token') || authService.getToken();
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const query = activeCompanyId ? `?companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const endpoint = `${API_URL}/${id}/export${query}`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to export purchase order HTML');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error exporting purchase order HTML:', error);
+      throw error;
+    }
+  },
+
+  // Export multiple purchase orders to HTML (Bulk)
+  exportPurchaseOrderBulk: async (ids, companyId) => {
+    try {
+      const accessToken = localStorage.getItem('token') || authService.getToken();
+      if (!accessToken) {
+        throw new Error('No access token found');
+      }
+
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const response = await fetch(`${API_URL}/export/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/html',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ ids, companyId: activeCompanyId }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to export bulk purchase order HTML');
+      }
+
+      return await response.text();
+    } catch (error) {
+      console.error('Error exporting bulk purchase order HTML:', error);
+      throw error;
+    }
   }
 };
 
 export default purchaseOrderService;
+
 

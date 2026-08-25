@@ -1,12 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowDownTrayIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, EyeIcon, PrinterIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import {
   PurchaseOrderTableServerSide,
   AddPurchaseOrderModal,
   PurchaseOrderDetailCard,
   PurchaseOrderExportPreviewModal,
 } from '../components/purchaseOrders';
+import PdfPreviewModal from '../components/common/PdfPreviewModal';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import { useConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import { useAlert } from '../components/ui/Alert';
@@ -77,6 +78,11 @@ const PurchaseOrders = () => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState(null);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('');
+  const [isPreviewPoLoading, setIsPreviewPoLoading] = useState(false);
   const tableRef = useRef(null);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -261,6 +267,57 @@ const PurchaseOrders = () => {
       showError(err.message || 'Gagal mengexport data');
     }
   };
+
+  // Preview PO in HTML document format (Formulir Pesanan Pembelian)
+  const handlePreviewPoHtml = useCallback(async (targetOrderId = null) => {
+    let ids = [];
+    if (typeof targetOrderId === 'string') {
+      ids = [targetOrderId];
+    } else if (targetOrderId && targetOrderId.id) {
+      ids = [targetOrderId.id];
+    } else if (selectedOrders.length > 0) {
+      ids = selectedOrders;
+    } else if (selectedOrderForDetail?.id) {
+      ids = [selectedOrderForDetail.id];
+    }
+
+    if (ids.length === 0) {
+      showWarning('Pilih minimal satu Purchase Order untuk melihat preview Formulir Pesanan Pembelian.');
+      return;
+    }
+
+    setIsPreviewPoLoading(true);
+    try {
+      const activeCompanyId = localStorage.getItem('companyData')
+        ? JSON.parse(localStorage.getItem('companyData'))?.id
+        : undefined;
+
+      let html = '';
+      let title = '';
+      let fileName = '';
+
+      if (ids.length === 1) {
+        const id = ids[0];
+        html = await purchaseOrderService.exportPurchaseOrder(id, activeCompanyId);
+        title = `Preview Formulir Purchase Order`;
+        fileName = `Purchase_Order_${id}.pdf`;
+      } else {
+        html = await purchaseOrderService.exportPurchaseOrderBulk(ids, activeCompanyId);
+        title = `Preview Formulir Purchase Order Bulk (${ids.length} Dokumen)`;
+        fileName = `Purchase_Order_Bulk_${ids.length}_dokumen.pdf`;
+      }
+
+      setPreviewHtmlContent(html);
+      setPreviewTitle(title);
+      setPreviewFileName(fileName);
+      setPdfPreviewOpen(true);
+    } catch (error) {
+      console.error('Failed to preview PO HTML:', error);
+      showError(error.message || 'Gagal memuat preview HTML Purchase Order.');
+    } finally {
+      setIsPreviewPoLoading(false);
+    }
+  }, [selectedOrders, selectedOrderForDetail, showWarning, showError]);
 
   // Bulk selection handlers
   const handleSelectionChange = (orderId, checked) => {
@@ -490,6 +547,24 @@ const PurchaseOrders = () => {
             <h3 className="text-sm font-semibold text-gray-900">Purchase Orders</h3>
             <div className="flex flex-wrap gap-2">
               <button
+                onClick={() => handlePreviewPoHtml()}
+                disabled={isPreviewPoLoading}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm"
+                title="Preview Formulir Pesanan Pembelian (HTML)"
+              >
+                {isPreviewPoLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                    Memuat PO...
+                  </>
+                ) : (
+                  <>
+                    <DocumentTextIcon className="h-4 w-4 mr-1.5" />
+                    Preview PO (HTML)
+                  </>
+                )}
+              </button>
+              <button
                 onClick={handlePreviewExcel}
                 disabled={previewLoading}
                 className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
@@ -577,6 +652,14 @@ const PurchaseOrders = () => {
           onExport={handleExportFromPreview}
         />
       )}
+
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => setPdfPreviewOpen(false)}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
+      />
 
       <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
       <AlertComponent />
