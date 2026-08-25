@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -13,6 +13,50 @@ import { formatCurrency } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
+const matchesMutasiBankFilter = (row, filterId, filterValue) => {
+  if (filterValue == null || filterValue === '') return true;
+  if (Array.isArray(filterValue) && filterValue.length === 0) return true;
+
+  if (filterId === 'customer') {
+    if (!Array.isArray(filterValue)) return true;
+    return filterValue.includes(row.customer);
+  }
+
+  if (filterId === 'tanggal') {
+    const cellValue = String(row.tanggal || '');
+    if (cellValue.includes(filterValue)) return true;
+    try {
+      const selectedLocale = new Date(filterValue).toLocaleDateString('id-ID');
+      const selectedLocaleGB = new Date(filterValue).toLocaleDateString('en-GB');
+      return (
+        cellValue === selectedLocale ||
+        cellValue === selectedLocaleGB ||
+        cellValue.includes(selectedLocale)
+      );
+    } catch {
+      return cellValue.includes(filterValue);
+    }
+  }
+
+  const rowVal = String(row[filterId] ?? '').toLowerCase();
+  return rowVal.includes(String(filterValue).toLowerCase().trim());
+};
+
+const getMatchingMutasiBankRowsExcluding = (rows, columnFilters, excludeFilterId) => {
+  if (!rows || rows.length === 0) return [];
+  if (!columnFilters || columnFilters.length === 0) return rows;
+
+  return rows.filter((row) => {
+    for (const filter of columnFilters) {
+      if (filter.id === excludeFilterId) continue;
+      if (!matchesMutasiBankFilter(row, filter.id, filter.value)) {
+        return false;
+      }
+    }
+    return true;
+  });
+};
+
 const MutasiBankExportPreviewModal = ({
   isOpen,
   onClose,
@@ -20,6 +64,14 @@ const MutasiBankExportPreviewModal = ({
   previewLoading,
   onExport,
 }) => {
+  const [columnFilters, setColumnFilters] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setColumnFilters([]);
+    }
+  }, [isOpen]);
+
   const formattedData = useMemo(() => {
     if (!previewData?.data || !Array.isArray(previewData.data)) return [];
     return previewData.data.map((row) => {
@@ -45,17 +97,24 @@ const MutasiBankExportPreviewModal = ({
   }, [previewData]);
 
   const customerOptions = useMemo(() => {
-    if (!formattedData.length) return [];
-    const set = new Set();
-    formattedData.forEach((row) => {
+    const matchingRows = getMatchingMutasiBankRowsExcluding(formattedData, columnFilters, 'customer');
+    const map = new Map();
+    matchingRows.forEach((row) => {
       if (row.customer && row.customer !== '-') {
-        set.add(row.customer);
+        map.set(row.customer, { id: row.customer, name: row.customer });
       }
     });
-    return Array.from(set)
-      .sort((a, b) => a.localeCompare(b))
-      .map((name) => ({ id: name, name }));
-  }, [formattedData]);
+
+    const activeFilter = columnFilters.find((f) => f.id === 'customer');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [formattedData, columnFilters]);
 
   const columns = useMemo(
     () => [
@@ -209,6 +268,10 @@ const MutasiBankExportPreviewModal = ({
   const table = useReactTable({
     data: formattedData,
     columns,
+    state: {
+      columnFilters,
+    },
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });

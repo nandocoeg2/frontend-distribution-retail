@@ -373,6 +373,31 @@ const MutasiBankTableServerSide = forwardRef(({
     },
   }));
 
+  const dynamicStatusOptions = useMemo(() => {
+    const map = new Map();
+    (mutations || []).forEach((item) => {
+      const code = item.validation_status ? String(item.validation_status).toUpperCase() : null;
+      if (code) {
+        const fallback = STATUS_OPTIONS.find((s) => s.id === code);
+        const name = fallback?.name || (code === 'MATCHED' ? 'Match' : code === 'UNMATCHED' ? 'Unmatched' : code);
+        if (!map.has(code)) {
+          map.set(code, { id: code, name });
+        }
+      }
+    });
+
+    const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'validation_status');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = STATUS_OPTIONS.find((s) => s.id === val);
+        map.set(val, { id: val, name: fallback?.name || val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [mutations, tableOptions?.state?.columnFilters]);
+
   const tableColumns = useMemo(() => {
     return [
       columnHelper.accessor(
@@ -508,7 +533,7 @@ const MutasiBankTableServerSide = forwardRef(({
           <div className='space-y-0.5 max-w-[120px]' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-[11px]'>Status</div>
             <AutocompleteCheckboxLimitTag
-              options={STATUS_OPTIONS}
+              options={dynamicStatusOptions}
               value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
               placeholder='All'
@@ -593,6 +618,7 @@ const MutasiBankTableServerSide = forwardRef(({
       }),
     ];
   }, [
+    dynamicStatusOptions,
     onValidateMutation,
     onViewMutation,
     onAssignDocument,
