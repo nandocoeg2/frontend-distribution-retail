@@ -1,444 +1,298 @@
-import React, { useEffect } from 'react';
-import usePackingForm from '../../hooks/usePackingForm';
+import React, { useState, useEffect, useMemo } from 'react';
 import usePackingOperations from '../../hooks/usePackingOperations';
-import useMixedCartonValidation from '../../hooks/useMixedCartonValidation';
-import { MixedBadge } from '../ui';
+import useStatuses from '../../hooks/useStatuses';
+import {
+  extractGroupedItemsFromPacking,
+  generateBoxesFromGroupedItems,
+} from '../../utils/packingBoxGenerator';
 
 const PackingForm = ({ initialData = null, onSuccess, onCancel }) => {
-  const {
-    formData,
-    errors,
-    isSubmitting,
-    setIsSubmitting,
-    boxStatuses,
-    packingStatuses,
-    items,
-    statusLoading,
-    itemsLoading,
-    handleInputChange,
-    addPackingBox,
-    updatePackingBox,
-    addItemToBox,
-    updateBoxItem,
-    removeBoxItem,
-    removePackingBox,
-    validateForm,
-    resetForm,
-    getFormattedData,
-  } = usePackingForm(initialData);
-
-  const { isCreating, isUpdating, createPackingData, updatePackingData } =
+  const { isUpdating, isCreating, updatePackingData, createPackingData } =
     usePackingOperations();
-  
-  const {
-    loadItemsRelationships,
-    canAddItemToBox,
-    getCompatibleItems,
-    getMixingInfo,
-    loading: relationshipsLoading
-  } = useMixedCartonValidation();
+  const { packingStatuses, packingItemStatuses } = useStatuses();
 
-  // Load relationships when items are available (non-blocking)
+  // Extract initial grouped items & start box number
+  const [groupedItems, setGroupedItems] = useState([]);
+  const [startBoxNum, setStartBoxNum] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Default status for created boxes
+  const defaultBoxStatusId = useMemo(() => {
+    return (
+      packingItemStatuses?.[0]?.id ||
+      packingStatuses?.[0]?.id ||
+      initialData?.statusId ||
+      initialData?.status?.id ||
+      ''
+    );
+  }, [packingItemStatuses, packingStatuses, initialData]);
+
+  // Sync state when initialData changes
   useEffect(() => {
-    if (items && items.length > 0) {
-      const itemIds = items.map(item => item.id).filter(Boolean);
-      if (itemIds.length > 0) {
-        // Load relationships asynchronously without blocking
-        loadItemsRelationships(itemIds).catch(err => {
-          console.warn('Failed to preload item relationships:', err);
-        });
-      }
+    if (initialData) {
+      const extracted = extractGroupedItemsFromPacking(initialData);
+      setGroupedItems(extracted.items);
+      setStartBoxNum(extracted.startBoxNum);
+    } else {
+      setGroupedItems([]);
+      setStartBoxNum(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items?.length]); // Only re-run when items length changes
+  }, [initialData]);
+
+  // Handle Qty change for an item
+  const handleQtyChange = (index, value) => {
+    const numericValue = value === '' ? '' : Math.max(0, parseInt(value, 10) || 0);
+    setGroupedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        totalQty: numericValue,
+      };
+      return updated;
+    });
+    setErrorMessage('');
+  };
+
+  // Handle Qty Per Carton change
+  const handleQtyPerCartonChange = (index, value) => {
+    const numericValue = Math.max(1, parseInt(value, 10) || 1);
+    setGroupedItems((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        qtyPerCarton: numericValue,
+      };
+      return updated;
+    });
+  };
+
+  // Compute preview for table (box ranges, total box count, etc.)
+  const previewData = useMemo(() => {
+    let currentBoxCounter = Number(startBoxNum) > 0 ? Number(startBoxNum) : 1;
+
+    return groupedItems.map((item) => {
+      const totalQty = Number(item.totalQty) || 0;
+      const qtyPerCarton = Number(item.qtyPerCarton) > 0 ? Number(item.qtyPerCarton) : 1;
+
+      const fullCartons = Math.floor(totalQty / qtyPerCarton);
+      const remainderQty = totalQty % qtyPerCarton;
+      const totalBoxCount = fullCartons + (remainderQty > 0 ? 1 : 0);
+
+      let minBox = '-';
+      let maxBox = '-';
+      let keterangan = '-';
+
+      if (totalBoxCount > 0) {
+        minBox = currentBoxCounter;
+        maxBox = currentBoxCounter + totalBoxCount - 1;
+        
+        if (fullCartons > 0 && remainderQty === 0) {
+          keterangan = `Full carton ${minBox}/${maxBox}`;
+        } else if (fullCartons > 0 && remainderQty > 0) {
+          keterangan = `Full carton ${minBox}-${maxBox - 1}/${maxBox}, Partial: ${remainderQty} pcs`;
+        } else {
+          keterangan = `Partial carton - ${remainderQty}/${qtyPerCarton} pcs`;
+        }
+
+        currentBoxCounter += totalBoxCount;
+      }
+
+      return {
+        ...item,
+        fullCartons,
+        remainderQty,
+        totalBoxCount,
+        minBox,
+        maxBox,
+        keteranganPreview: keterangan,
+      };
+    });
+  }, [groupedItems, startBoxNum]);
+
+  // Grand totals
+  const grandTotalQty = previewData.reduce((acc, curr) => acc + (Number(curr.totalQty) || 0), 0);
+  const grandTotalBoxes = previewData.reduce((acc, curr) => acc + curr.totalBoxCount, 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (previewData.some((item) => (Number(item.totalQty) || 0) <= 0)) {
+      setErrorMessage('Qty untuk setiap barang harus lebih dari 0.');
       return;
     }
 
     setIsSubmitting(true);
-    try {
-      const formattedData = getFormattedData();
+    setErrorMessage('');
 
-      if (initialData) {
-        await updatePackingData(initialData.id, formattedData);
+    try {
+      // Regenerate box array sequentially
+      const generatedBoxes = generateBoxesFromGroupedItems(
+        groupedItems,
+        startBoxNum,
+        defaultBoxStatusId
+      );
+
+      const payload = {
+        tanggal_packing: initialData?.tanggal_packing || new Date().toISOString(),
+        statusId: initialData?.statusId || initialData?.status?.id || defaultBoxStatusId,
+        purchaseOrderId: initialData?.purchaseOrderId || '',
+        packingBoxes: generatedBoxes,
+      };
+
+      if (initialData?.id) {
+        await updatePackingData(initialData.id, payload);
       } else {
-        await createPackingData(formattedData);
+        await createPackingData(payload);
       }
 
-      resetForm();
       onSuccess?.();
     } catch (error) {
-      console.error('Error saving packing:', error);
+      console.error('Error updating packing:', error);
+      setErrorMessage(error?.message || 'Gagal menyimpan perubahan packing.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    resetForm();
-    onCancel?.();
-  };
-
-  // Don't include relationshipsLoading in main isLoading to prevent blocking the entire form
-  const isLoading =
-    statusLoading ||
-    itemsLoading ||
-    isSubmitting ||
-    isCreating ||
-    isUpdating;
+  const isLoading = isSubmitting || isUpdating || isCreating;
 
   return (
-    <form onSubmit={handleSubmit} className='space-y-6'>
-
-      {/* Packing Boxes */}
-      <div>
-        <div className='flex justify-between items-center mb-4'>
-          <h3 className='text-lg font-medium text-gray-900'>Packing Boxes *</h3>
-          <button
-            type='button'
-            onClick={addPackingBox}
-            className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
-            disabled={isLoading}
-          >
-            Tambah Box
-          </button>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {errorMessage && (
+        <div className="p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded">
+          {errorMessage}
         </div>
+      )}
 
-        {errors.packingBoxes && (
-          <p className='mb-4 text-sm text-red-600'>{errors.packingBoxes}</p>
-        )}
-
-        <div className='space-y-6'>
-          {formData.packingBoxes.map((box, boxIndex) => (
-            <div
-              key={boxIndex}
-              className='p-6 border-2 border-gray-300 rounded-lg bg-gray-50'
-            >
-              <div className='flex justify-between items-center mb-4'>
-                <div className='flex items-center gap-2'>
-                  <h4 className='font-semibold text-gray-900'>
-                    Box {boxIndex + 1}
-                  </h4>
-                  {/* Show MIXED badge if box has multiple different items */}
-                  {(() => {
-                    const uniqueItemIds = new Set(
-                      box.packingBoxItems
-                        .map(item => item.itemId)
-                        .filter(Boolean)
-                    );
-                    return uniqueItemIds.size > 1 ? <MixedBadge /> : null;
-                  })()}
-                </div>
-                <button
-                  type='button'
-                  onClick={() => removePackingBox(boxIndex)}
-                  className='text-red-600 hover:text-red-800'
-                  disabled={isLoading}
-                >
-                  Hapus Box
-                </button>
-              </div>
-
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-                {/* Box Number */}
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Nomor Box *
-                  </label>
-                  <input
-                    type='text'
-                    value={box.no_box}
-                    onChange={(e) =>
-                      updatePackingBox(boxIndex, 'no_box', e.target.value)
-                    }
-                    placeholder='BOX-001'
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors[`packingBoxes.${boxIndex}.no_box`]
-                        ? 'border-red-500'
-                        : 'border-gray-300'
-                    }`}
-                    disabled={isLoading}
-                  />
-                  {errors[`packingBoxes.${boxIndex}.no_box`] && (
-                    <p className='mt-1 text-sm text-red-600'>
-                      {errors[`packingBoxes.${boxIndex}.no_box`]}
-                    </p>
-                  )}
-                </div>
-
-                {/* Box Status */}
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Status Box
-                  </label>
-                  <select
-                    value={box.statusId}
-                    onChange={(e) =>
-                      updatePackingBox(boxIndex, 'statusId', e.target.value)
-                    }
-                    className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
-                    disabled={isLoading}
-                  >
-                    <option value=''>Pilih Status</option>
-                    {/* Include box's own existing status if not present in boxStatuses */}
-                    {box.status &&
-                      !boxStatuses?.some((s) => s.id === box.statusId) && (
-                        <option value={box.status.id}>
-                          {box.status.status_name}
-                        </option>
-                      )}
-                    {Array.isArray(boxStatuses) &&
-                      boxStatuses.map((status) => (
-                        <option key={status.id} value={status.id}>
-                          {status.status_name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Box Items */}
-              <div className='pl-4 border-l-4 border-blue-300'>
-                <div className='flex justify-between items-center mb-3'>
-                  <h5 className='font-medium text-gray-800'>Items dalam Box</h5>
-                  <button
-                    type='button'
-                    onClick={() => addItemToBox(boxIndex)}
-                    className='px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700'
-                    disabled={isLoading}
-                  >
-                    Tambah Item
-                  </button>
-                </div>
-
-                {errors[`packingBoxes.${boxIndex}.items`] && (
-                  <p className='mb-2 text-sm text-red-600'>
-                    {errors[`packingBoxes.${boxIndex}.items`]}
-                  </p>
-                )}
-
-                <div className='space-y-3'>
-                  {box.packingBoxItems.map((item, itemIndex) => (
-                    <div
-                      key={itemIndex}
-                      className='p-3 bg-white rounded border border-gray-200'
-                    >
-                      <div className='flex justify-between items-center mb-2'>
-                        <span className='text-sm font-medium text-gray-700'>
-                          Item {itemIndex + 1}
-                        </span>
-                        <button
-                          type='button'
-                          onClick={() => removeBoxItem(boxIndex, itemIndex)}
-                          className='text-xs text-red-600 hover:text-red-800'
-                          disabled={isLoading}
-                        >
-                          Hapus
-                        </button>
-                      </div>
-
-                      <div className='grid grid-cols-2 gap-3'>
-                        {/* Nama Barang */}
-                        <div>
-                          <label className='block text-xs font-medium text-gray-700 mb-1'>
-                            Nama Barang *
-                          </label>
-                          <input
-                            type='text'
-                            value={item.nama_barang}
-                            onChange={(e) =>
-                              updateBoxItem(
-                                boxIndex,
-                                itemIndex,
-                                'nama_barang',
-                                e.target.value
-                              )
-                            }
-                            className={`w-full px-2 py-1 text-sm border rounded ${
-                              errors[
-                                `packingBoxes.${boxIndex}.items.${itemIndex}.nama_barang`
-                              ]
-                                ? 'border-red-500'
-                                : 'border-gray-300'
-                            }`}
-                            disabled={isLoading}
-                          />
-                        </div>
-
-                        {/* Item */}
-                        <div>
-                          <label className='block text-xs font-medium text-gray-700 mb-1'>
-                            Item *
-                          </label>
-                          <select
-                            value={item.itemId}
-                            onChange={(e) => {
-                              const selectedId = e.target.value;
-                              updateBoxItem(
-                                boxIndex,
-                                itemIndex,
-                                'itemId',
-                                selectedId
-                              );
-                              if (selectedId) {
-                                const selectedItem = items?.find(
-                                  (it) => it.id === selectedId
-                                );
-                                if (selectedItem && !item.nama_barang) {
-                                  updateBoxItem(
-                                    boxIndex,
-                                    itemIndex,
-                                    'nama_barang',
-                                    selectedItem.nama_barang ||
-                                      selectedItem.product_name ||
-                                      selectedItem.name ||
-                                      selectedItem.plu ||
-                                      ''
-                                  );
-                                }
-                              }
-                            }}
-                            className={`w-full px-2 py-1 text-sm border rounded ${
-                              errors[
-                                `packingBoxes.${boxIndex}.items.${itemIndex}.itemId`
-                              ]
-                                ? 'border-red-500'
-                                : 'border-gray-300'
-                            }`}
-                            disabled={isLoading}
-                            title={relationshipsLoading ? 'Loading item relationships...' : ''}
-                          >
-                            <option value=''>Pilih Item</option>
-                            {Array.isArray(items) &&
-                              items.map((inv) => {
-                                // Get existing item IDs in this box (excluding current item)
-                                const boxItemIds = box.packingBoxItems
-                                  .filter((_, idx) => idx !== itemIndex)
-                                  .map(bi => bi.itemId)
-                                  .filter(Boolean);
-                                
-                                const { canAdd, reason } = canAddItemToBox(inv.id, boxItemIds);
-                                const mixingInfo = getMixingInfo(inv.id);
-                                
-                                return (
-                                  <option 
-                                    key={inv.id} 
-                                    value={inv.id}
-                                    disabled={!canAdd}
-                                    title={!canAdd ? reason : (mixingInfo?.allowMixed ? 'Dapat dicampur' : 'Tidak dapat dicampur')}
-                                  >
-                                    {inv.nama_barang || inv.product_name || inv.name || inv.plu}
-                                    {!canAdd ? ' (tidak kompatibel)' : ''}
-                                  </option>
-                                );
-                              })}
-                          </select>
-                          
-                          {/* Show mixing info for selected item */}
-                          {item.itemId && (() => {
-                            const mixingInfo = getMixingInfo(item.itemId);
-                            const boxItemIds = box.packingBoxItems
-                              .map(bi => bi.itemId)
-                              .filter(Boolean);
-                            
-                            if (boxItemIds.length > 1 && mixingInfo) {
-                              return (
-                                <div className='mt-1 text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-200'>
-                                  {mixingInfo.allowMixed ? (
-                                    <span className='text-blue-700'>
-                                      ✓ Dapat dicampur dengan {mixingInfo.mixedWithItemIds.length} item lain
-                                    </span>
-                                  ) : (
-                                    <span className='text-orange-700'>
-                                      ⚠ Tidak mengizinkan mixed carton
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
-
-                        {/* Quantity */}
-                        <div>
-                          <label className='block text-xs font-medium text-gray-700 mb-1'>
-                            Quantity *
-                          </label>
-                          <input
-                            type='number'
-                            min='1'
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateBoxItem(
-                                boxIndex,
-                                itemIndex,
-                                'quantity',
-                                e.target.value
-                              )
-                            }
-                            className={`w-full px-2 py-1 text-sm border rounded ${
-                              errors[
-                                `packingBoxes.${boxIndex}.items.${itemIndex}.quantity`
-                              ]
-                                ? 'border-red-500'
-                                : 'border-gray-300'
-                            }`}
-                            disabled={isLoading}
-                          />
-                        </div>
-
-                        {/* Keterangan */}
-                        <div>
-                          <label className='block text-xs font-medium text-gray-700 mb-1'>
-                            Keterangan
-                          </label>
-                          <input
-                            type='text'
-                            value={item.keterangan || ''}
-                            onChange={(e) =>
-                              updateBoxItem(
-                                boxIndex,
-                                itemIndex,
-                                'keterangan',
-                                e.target.value
-                              )
-                            }
-                            placeholder='e.g., Full carton 1/1'
-                            className='w-full px-2 py-1 text-sm border border-gray-300 rounded'
-                            disabled={isLoading}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* Start Box Number Setting */}
+      <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
+        <div className="text-xs text-gray-600">
+          <span className="font-medium text-gray-800">Nomor Box Mulai Dari:</span>
+          <span className="ml-1 text-gray-500">(Otomatis mengurutkan box & keterangan)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 font-semibold">BOX-</span>
+          <input
+            type="number"
+            min="1"
+            value={startBoxNum}
+            onChange={(e) => setStartBoxNum(Math.max(1, parseInt(e.target.value, 10) || 1))}
+            className="w-20 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            disabled={isLoading}
+          />
         </div>
       </div>
 
+      {/* Items Summary Table */}
+      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase border-r">No</th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase border-r">Nama Barang</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase border-r">PLU</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase border-r">Qty Per Box</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-blue-700 uppercase border-r bg-blue-50">Jumlah Qty</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase border-r">Satuan</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase border-r">Box Dari</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase border-r">Box Sampai</th>
+              <th scope="col" className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Total Box</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {previewData.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="text-center py-4 text-xs text-gray-500">
+                  Tidak ada item ditemukan.
+                </td>
+              </tr>
+            ) : (
+              previewData.map((item, index) => (
+                <tr key={item.itemId || index} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 border-r text-center">
+                    {index + 1}.
+                  </td>
+                  <td className="px-3 py-2 whitespace-normal text-xs font-medium text-gray-900 border-r">
+                    {item.nama_barang}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-500 border-r">
+                    {item.plu}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center border-r">
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.qtyPerCarton}
+                      onChange={(e) => handleQtyPerCartonChange(index, e.target.value)}
+                      className="w-20 px-2 py-1 text-xs text-center border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      disabled={isLoading}
+                    />
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center border-r bg-blue-50/50">
+                    <input
+                      type="number"
+                      min="0"
+                      value={item.totalQty}
+                      onChange={(e) => handleQtyChange(index, e.target.value)}
+                      className="w-24 px-2 py-1 text-xs font-bold text-center border border-blue-400 bg-white rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      disabled={isLoading}
+                      placeholder="0"
+                    />
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-500 border-r">
+                    {item.satuan}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-600 font-semibold border-r">
+                    {item.minBox}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-600 font-semibold border-r">
+                    {item.maxBox}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-center font-bold text-gray-900 bg-gray-50">
+                    {item.totalBoxCount} Box
+                  </td>
+                </tr>
+              ))
+            )}
+
+            {/* Summary Row */}
+            {previewData.length > 0 && (
+              <tr className="bg-gray-100 font-semibold border-t-2 border-gray-300">
+                <td colSpan={4} className="px-3 py-2 text-xs text-right text-gray-700 border-r">
+                  Grand Total
+                </td>
+                <td className="px-3 py-2 text-xs text-center text-blue-900 border-r font-bold bg-blue-100/50">
+                  {grandTotalQty.toLocaleString()}
+                </td>
+                <td className="px-3 py-2 border-r"></td>
+                <td className="px-3 py-2 border-r"></td>
+                <td className="px-3 py-2 border-r"></td>
+                <td className="px-3 py-2 text-xs text-center text-gray-900 font-bold bg-gray-200">
+                  {grandTotalBoxes} Boxes
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
       {/* Form Actions */}
-      <div className='flex justify-end space-x-3 pt-6 border-t border-gray-200'>
+      <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
         <button
-          type='button'
-          onClick={handleCancel}
-          className='px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500'
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none"
           disabled={isLoading}
         >
           Batal
         </button>
         <button
-          type='submit'
-          className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50'
-          disabled={isLoading}
+          type="submit"
+          className="px-5 py-2 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors shadow-sm"
+          disabled={isLoading || previewData.length === 0}
         >
-          {isLoading ? 'Menyimpan...' : initialData ? 'Update' : 'Simpan'}
+          {isLoading ? 'Menyimpan...' : 'Update'}
         </button>
       </div>
     </form>

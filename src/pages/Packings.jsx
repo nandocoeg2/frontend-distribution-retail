@@ -75,12 +75,27 @@ const PackingsPage = () => {
     setEditingPacking(null);
   }, []);
 
-  const handleModalSuccess = useCallback(() => {
+  const handleModalSuccess = useCallback(async () => {
+    const editedId = editingPacking?.id;
     setSelectedPackings([]);
     queryClient.invalidateQueries({ queryKey: ['packings'] });
     refreshPackings();
     closeEditModal();
-  }, [closeEditModal, refreshPackings, setSelectedPackings, queryClient]);
+
+    // If the edited packing is currently shown in the detail panel, refresh its detail
+    if (selectedPackingForDetail && editedId && selectedPackingForDetail.id === editedId) {
+      try {
+        setDetailLoading(true);
+        const response = await getPackingById(editedId);
+        const detailData = response?.success ? response.data : response;
+        setSelectedPackingForDetail(detailData);
+      } catch (err) {
+        console.warn('Failed to refresh packing detail after edit:', err);
+      } finally {
+        setDetailLoading(false);
+      }
+    }
+  }, [closeEditModal, editingPacking, refreshPackings, selectedPackingForDetail, setSelectedPackings, queryClient]);
 
   const handleProcessSelected = useCallback(() => {
     if (!hasSelectedPackings) {

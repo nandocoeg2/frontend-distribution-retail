@@ -79,14 +79,26 @@ const PackingGroupedItemsTable = ({ packingBoxes }) => {
             }
 
             const totalBoxString = ranges.length > 0 ? ranges.join(', ') : '-';
+            const totalBoxCount = group.boxes.length || 0;
+
+            // Generate clean dynamic keterangan if boxes exist
+            let formattedKeterangan = group.keterangan || '-';
+            if (totalBoxCount > 0 && typeof minBox === 'number' && typeof maxBox === 'number') {
+                if (minBox === maxBox) {
+                    formattedKeterangan = `Full carton ${minBox}/${maxBox}`;
+                } else {
+                    formattedKeterangan = `Full carton ${minBox}-${maxBox}/${maxBox}`;
+                }
+            }
 
             return {
                 ...group,
+                keterangan: formattedKeterangan,
                 minBox,
                 maxBox,
                 qtyPerBox: modeQty,
                 totalBoxString,
-                totalBoxCount: group.boxes.length || 0
+                totalBoxCount
             };
         }).sort((a, b) => {
             const aBox = typeof a.minBox === 'number' ? a.minBox : 999999;
