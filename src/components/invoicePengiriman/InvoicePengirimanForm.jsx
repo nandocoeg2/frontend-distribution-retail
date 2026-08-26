@@ -122,9 +122,6 @@ const InvoicePengirimanForm = ({
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.deliver_to.trim()) {
-      newErrors.deliver_to = 'Tujuan pengiriman wajib diisi.';
-    }
 
     numericFields.forEach((field) => {
       const value = formData[field];
@@ -171,103 +168,7 @@ const InvoicePengirimanForm = ({
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className='space-y-8'>
-      <section>
-        <h3 className='text-lg font-semibold text-gray-900'>
-          Informasi Dasar
-        </h3>
-        <p className='text-sm text-gray-500'>
-          Perbarui data pelanggan dan ketentuan pembayaran.
-        </p>
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-          <div>
-            <label
-              htmlFor='deliver_to'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Tujuan Pengiriman *
-            </label>
-            <input
-              id='deliver_to'
-              name='deliver_to'
-              type='text'
-              value={formData.deliver_to}
-              onChange={(e) =>
-                handleChange('deliver_to', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.deliver_to ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Masukkan alamat tujuan'
-              disabled={isSubmitting}
-            />
-            {errors.deliver_to && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.deliver_to}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor='expired_date'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Tanggal Jatuh Tempo
-            </label>
-            <input
-              id='expired_date'
-              name='expired_date'
-              type='date'
-              value={formData.expired_date}
-              onChange={(e) =>
-                handleChange('expired_date', e.target.value)
-              }
-              className='w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400'
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor='termOfPaymentId'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Term of Payment (Optional)
-            </label>
-            <input
-              id='termOfPaymentId'
-              name='termOfPaymentId'
-              type='text'
-              value={formData.termOfPaymentId}
-              onChange={(e) =>
-                handleChange('termOfPaymentId', e.target.value)
-              }
-              placeholder='Term of Payment ID'
-              className='w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400'
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor='type'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Tipe Invoice
-            </label>
-            <select
-              id='type'
-              name='type'
-              value={formData.type}
-              onChange={(e) => handleChange('type', e.target.value)}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400'
-              disabled={isSubmitting}
-            >
-              <option value='PEMBAYARAN'>PEMBAYARAN</option>
-              <option value='PENGIRIMAN'>PENGIRIMAN</option>
-            </select>
-          </div>
-        </div>
-      </section>
+    <form id={formId} onSubmit={handleSubmit} className='space-y-6'>
 
       <section>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
