@@ -642,7 +642,7 @@ const TandaTerimaFakturTableServerSide = ({
         enableSorting: false,
         size: 100,
       }),
-      columnHelper.accessor('bankMutation.keterangan', {
+      columnHelper.accessor((row) => row.keterangan || row.bankMutation?.keterangan || '', {
         id: 'keterangan',
         header: () => <div className="font-medium text-xs">Keterangan</div>,
         cell: (info) => (

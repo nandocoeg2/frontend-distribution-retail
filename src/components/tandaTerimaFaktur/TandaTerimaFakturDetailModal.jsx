@@ -114,6 +114,34 @@ const TandaTerimaFakturDetailModal = ({
                     }
                   />
                   <InfoRow
+                    label='Tanggal TTF 1'
+                    value={
+                      detail.tanggal_print_ttf1
+                        ? formatDate(detail.tanggal_print_ttf1)
+                        : '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Tanggal TTF 2'
+                    value={
+                      detail.tanggal_upload_ttf2
+                        ? formatDate(detail.tanggal_upload_ttf2)
+                        : '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Tanggal Jatuh Tempo'
+                    value={
+                      detail.tanggal_jatuh_tempo
+                        ? formatDate(detail.tanggal_jatuh_tempo)
+                        : '-'
+                    }
+                  />
+                  <InfoRow
+                    label='Keterangan'
+                    value={detail.keterangan || '-'}
+                  />
+                  <InfoRow
                     label='Grand Total'
                     value={
                       detail.grand_total != null
