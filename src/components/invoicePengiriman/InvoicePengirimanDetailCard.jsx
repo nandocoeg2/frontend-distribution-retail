@@ -3,6 +3,7 @@ import {
   DocumentTextIcon,
   XMarkIcon,
   PencilIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import toastService from '../../services/toastService';
@@ -47,7 +48,22 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
           <DocumentTextIcon className='h-4 w-4 text-indigo-600' />
           <div>
             <h2 className='text-sm font-bold text-gray-900'>Invoice Pengiriman</h2>
-            <p className='text-xs text-gray-600'>{invoice?.no_invoice || '-'}</p>
+            <div className='flex items-center gap-1'>
+              <p className='text-xs text-gray-600'>{invoice?.no_invoice || '-'}</p>
+              {invoice?.no_invoice && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(invoice.no_invoice);
+                    toastService.success(`No Invoice ${invoice.no_invoice} disalin`);
+                  }}
+                  className="p-0.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                  title="Salin No Invoice"
+                >
+                  <DocumentDuplicateIcon className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <div className='flex items-center gap-1'>

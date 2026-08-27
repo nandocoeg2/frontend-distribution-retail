@@ -5,6 +5,7 @@ import {
   PrinterIcon,
   ArrowDownTrayIcon,
   EyeIcon,
+  DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline";
 import { StatusBadge } from "../ui/Badge";
 import {
@@ -392,11 +393,29 @@ const InvoicePengirimanTableServerSide = ({
             <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
-        cell: (info) => (
-          <div className="font-medium text-gray-900">
-            {info.getValue() || "-"}
-          </div>
-        ),
+        cell: (info) => {
+          const value = info.getValue();
+          if (!value || value === "-") {
+            return <div className="font-medium text-gray-900">-</div>;
+          }
+          return (
+            <div className="flex items-center gap-1 font-medium text-gray-900">
+              <span>{value}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(value);
+                  toastService.success(`No Invoice ${value} disalin`);
+                }}
+                className="p-0.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                title="Salin No Invoice"
+              >
+                <DocumentDuplicateIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          );
+        },
       }),
       columnHelper.accessor("purchaseOrder.po_number", {
         id: "po_number",
