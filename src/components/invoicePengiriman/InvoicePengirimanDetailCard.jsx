@@ -1,34 +1,17 @@
 import React, { useState } from 'react';
 import {
   DocumentTextIcon,
-  ShoppingCartIcon,
   XMarkIcon,
   PencilIcon,
 } from '@heroicons/react/24/outline';
-import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatUtils';
-import { InfoTable, StatusBadge, TabContainer, Tab, TabContent, TabPanel } from '../ui';
-import { AccordionItem } from '../ui';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import toastService from '../../services/toastService';
 import InvoicePengirimanForm from './InvoicePengirimanForm';
 import InvoicePengirimanDetailsTable from './InvoicePengirimanDetailsTable';
 
 const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpdate }) => {
-  const [activeTab, setActiveTab] = useState('details');
   const [isEditMode, setIsEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    basicInfo: true,
-    pricingInfo: false,
-    metaInfo: false,
-  });
-
-  const toggleSection = (section) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
 
   const handleEditClick = () => {
     setIsEditMode(true);
@@ -56,20 +39,6 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
   };
 
   if (!invoice) return null;
-
-  const detailCount = invoice?.invoiceDetails?.length ?? 0;
-  const statusInfo = invoice?.status || invoice?.statusPembayaran || null;
-  const statusLabel = statusInfo?.status_name || statusInfo?.status_code || '';
-  const normalizedStatus = statusLabel.toLowerCase();
-  const statusVariant = normalizedStatus.includes('paid')
-    ? 'success'
-    : normalizedStatus.includes('cancelled')
-      ? 'danger'
-      : normalizedStatus.includes('overdue')
-        ? 'danger'
-        : normalizedStatus.includes('pending')
-          ? 'secondary'
-          : 'secondary';
 
   return (
     <div className='bg-white shadow rounded-lg p-3 mt-3'>
@@ -120,52 +89,8 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
           />
         </div>
       ) : (
-        <div>
-          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
-            <Tab id='overview' label='Ringkasan' icon={<DocumentTextIcon className='w-3 h-3' />} />
-            <Tab id='details' label='Items' icon={<ShoppingCartIcon className='w-3 h-3' />} badge={detailCount} />
-          </TabContainer>
-
-          <TabContent activeTab={activeTab}>
-            <TabPanel tabId='overview'>
-              <div className='space-y-2'>
-                <AccordionItem title='Info Dasar' isExpanded={expandedSections.basicInfo} onToggle={() => toggleSection('basicInfo')} bgColor='bg-indigo-50' compact>
-                  <InfoTable compact data={[
-                    { label: 'No. Invoice', value: invoice.no_invoice },
-                    { label: 'Tanggal', value: formatDate(invoice.purchaseOrder?.packing?.tanggal_packing || invoice.tanggal) },
-                    { label: 'Jatuh Tempo', value: formatDate(invoice.expired_date) },
-                    { label: 'TOP', value: invoice.termOfPayment?.kode_top || invoice.TOP || '-' },
-                    { label: 'Status', component: <StatusBadge status={statusLabel || '-'} variant={statusVariant} size='xs' dot /> },
-                    { label: 'PO#', value: invoice.purchaseOrder?.po_number || '-' },
-                    { label: 'Customer', value: invoice.purchaseOrder?.customer?.namaCustomer || '-' },
-                    { label: 'Print', component: <StatusBadge status={invoice.is_printed ? 'Printed' : 'Not Printed'} variant={invoice.is_printed ? 'success' : 'secondary'} size='xs' dot /> },
-                  ]} />
-                </AccordionItem>
-
-                <AccordionItem title='Finansial' isExpanded={expandedSections.pricingInfo} onToggle={() => toggleSection('pricingInfo')} bgColor='bg-green-50' compact>
-                  <InfoTable compact data={[
-                    { label: 'Sub Total', value: formatCurrency(invoice.sub_total) },
-                    { label: 'Diskon', value: formatCurrency(invoice.total_discount) },
-                    { label: 'PPN', value: invoice.ppn_percentage ? `${invoice.ppn_percentage}%` : '-' },
-                    { label: 'Grand Total', value: formatCurrency(invoice.grand_total) },
-                  ]} />
-                </AccordionItem>
-
-                <AccordionItem title='System' isExpanded={expandedSections.metaInfo} onToggle={() => toggleSection('metaInfo')} bgColor='bg-purple-50' compact>
-                  <InfoTable compact data={[
-                    { label: 'Created', value: formatDateTime(invoice.createdAt) },
-                    { label: 'Updated', value: formatDateTime(invoice.updatedAt) },
-                  ]} />
-                </AccordionItem>
-              </div>
-            </TabPanel>
-
-            <TabPanel tabId='details'>
-              <div className='overflow-hidden bg-white border border-gray-200 rounded'>
-                <InvoicePengirimanDetailsTable details={invoice.invoiceDetails || []} />
-              </div>
-            </TabPanel>
-          </TabContent>
+        <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+          <InvoicePengirimanDetailsTable details={invoice.invoiceDetails || []} />
         </div>
       )}
     </div>
