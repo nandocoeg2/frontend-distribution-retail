@@ -5,4 +5,5 @@ export { default as SuratJalanTableServerSide } from './SuratJalanTableServerSid
 export { default as ViewSuratJalanModal } from './ViewSuratJalanModal';
 export { default as ProcessSuratJalanModal } from './ProcessSuratJalanModal';
 export { default as SuratJalanDetailsTable } from './SuratJalanDetailsTable';
+export { default as BulkEditNoSuratJalanModal } from './BulkEditNoSuratJalanModal';
 

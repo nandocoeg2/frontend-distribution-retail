@@ -1,6 +1,10 @@
 import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { SuratJalanTableServerSide, ProcessSuratJalanModal } from '@/components/suratJalan';
+import {
+  SuratJalanTableServerSide,
+  ProcessSuratJalanModal,
+  BulkEditNoSuratJalanModal,
+} from '@/components/suratJalan';
 import {
   useConfirmationDialog,
 } from '@/components/ui/ConfirmationDialog';
@@ -24,6 +28,11 @@ const SuratJalan = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const tableRef = useRef(null);
+
+  // Bulk Edit Nomor / Bulan Surat Jalan states
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [itemsToBulkEdit, setItemsToBulkEdit] = useState([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   // Process dialog state
   const [showProcessDialog, setShowProcessDialog] = useState(false);
@@ -350,6 +359,59 @@ const SuratJalan = () => {
 
 
 
+  const handleOpenBulkEdit = useCallback((itemsToEdit) => {
+    const list = itemsToEdit && itemsToEdit.length > 0 ? itemsToEdit : selectedSuratJalan;
+    if (!list || list.length === 0) {
+      toastService.error('Pilih minimal satu surat jalan');
+      return;
+    }
+    setItemsToBulkEdit(list);
+    setShowBulkEditModal(true);
+  }, [selectedSuratJalan]);
+
+  const handleBulkEditConfirm = useCallback(async (payloadItems) => {
+    if (!payloadItems || payloadItems.length === 0) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const response = await suratJalanService.bulkUpdateNoSuratJalan(payloadItems);
+
+      if (response?.success === false) {
+        const errorMessage =
+          response?.message ||
+          response?.error?.message ||
+          'Gagal memperbarui nomor surat jalan';
+        toastService.error(errorMessage);
+        return;
+      }
+
+      const updatedCount = response?.data?.updatedCount || payloadItems.length;
+      toastService.success(`Berhasil memperbarui ${updatedCount} nomor surat jalan`);
+
+      setShowBulkEditModal(false);
+      setItemsToBulkEdit([]);
+      setSelectedSuratJalan([]);
+
+      // Invalidate queries to refresh data across pages/tables
+      await queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
+      await queryClient.invalidateQueries({ queryKey: ['invoice-pengiriman'] });
+      await queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    } catch (err) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        handleAuthError();
+        return;
+      }
+      const message =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        err?.message ||
+        'Gagal memperbarui nomor surat jalan';
+      toastService.error(message);
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  }, [handleAuthError, queryClient]);
+
   const handleSuratJalanUpdated = useCallback(async (updatedData) => {
     // Refresh data after update from Detail Card
     queryClient.invalidateQueries({ queryKey: ['surat-jalan'] });
@@ -432,6 +494,7 @@ const SuratJalan = () => {
             hasSelectedSuratJalan={selectedSuratJalan.length > 0}
             onRowClick={handleViewDetail}
             selectedSuratJalanId={selectedSuratJalanForDetail?.id}
+            onBulkEditNoSuratJalan={handleOpenBulkEdit}
           />
         </div>
       </div>
@@ -462,6 +525,14 @@ const SuratJalan = () => {
         isSubmitting={isProcessing}
         selectedItems={itemsToProcess}
         selectedIds={itemsToProcess.map((item) => typeof item === 'string' ? item : item?.id).filter(Boolean)}
+      />
+
+      <BulkEditNoSuratJalanModal
+        isOpen={showBulkEditModal}
+        onClose={() => setShowBulkEditModal(false)}
+        items={itemsToBulkEdit}
+        onSubmit={handleBulkEditConfirm}
+        isSubmitting={isBulkUpdating}
       />
     </div>
   );

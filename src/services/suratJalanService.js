@@ -100,6 +100,16 @@ class SuratJalanService {
     }
   }
 
+  async bulkUpdateNoSuratJalan(items = []) {
+    try {
+      const response = await this.api.patch('/surat-jalan/bulk-update-no-surat-jalan', { items });
+      return response.data;
+    } catch (error) {
+      console.error('Error bulk updating nomor surat jalan:', error);
+      throw error;
+    }
+  }
+
   async deleteSuratJalan(id) {
     try {
       const response = await this.api.delete(`/surat-jalan/${id}`);

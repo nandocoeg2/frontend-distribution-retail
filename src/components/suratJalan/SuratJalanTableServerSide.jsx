@@ -74,6 +74,7 @@ const SuratJalanTableServerSide = forwardRef(({
   hasSelectedSuratJalan = false,
   onRowClick,
   selectedSuratJalanId,
+  onBulkEditNoSuratJalan,
 }, ref) => {
   const queryClient = useQueryClient();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -614,6 +615,17 @@ const SuratJalanTableServerSide = forwardRef(({
           {hasSelectedSuratJalan ? (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-blue-700">{selectedSuratJalan.length} dipilih</span>
+              {/* Show Edit No SJ / Bulan button when there is selection */}
+              {selectedSuratJalan.length > 0 && onBulkEditNoSuratJalan && (
+                <button
+                  onClick={() => onBulkEditNoSuratJalan(selectedSuratJalan)}
+                  className="inline-flex items-center px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                  title="Ganti Bulan / Edit Nomor Surat Jalan (Bulk)"
+                >
+                  <PencilIcon className="h-3 w-3 mr-1" />
+                  Edit No. SJ
+                </button>
+              )}
               {/* Show Proses button when there is selection */}
               {selectedSuratJalan.length > 0 && (
                 <button onClick={onProcessSelected} disabled={isProcessing} className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
