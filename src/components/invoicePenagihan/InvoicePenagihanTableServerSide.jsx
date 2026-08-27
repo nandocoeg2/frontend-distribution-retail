@@ -10,6 +10,8 @@ import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag
 import groupCustomerService from '../../services/groupCustomerService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -325,57 +327,12 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       }),
       columnHelper.accessor('no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue();
-          const startValue = (typeof filterValue === 'object' && filterValue?.start) || '';
-          const endValue = (typeof filterValue === 'object' && filterValue?.end) || '';
-
-          return (
-            <div className="space-y-1">
-              <div className="font-medium text-xs">No Invoice</div>
-              <input
-                type="text"
-                value={startValue}
-                onChange={(event) => {
-                  const newValue = event.target.value;
-                  const currentFilter = column.getFilterValue() || {};
-                  const newFilterValue = {
-                    start: newValue,
-                    end: (typeof currentFilter === 'object' && currentFilter.end) || '',
-                  };
-                  // Set to undefined if both are empty to clear the filter
-                  column.setFilterValue(
-                    !newFilterValue.start && !newFilterValue.end ? undefined : newFilterValue
-                  );
-                  setPage(1);
-                }}
-                placeholder="Filter Start..."
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                onClick={(event) => event.stopPropagation()}
-              />
-              <input
-                type="text"
-                value={endValue}
-                onChange={(event) => {
-                  const newValue = event.target.value;
-                  const currentFilter = column.getFilterValue() || {};
-                  const newFilterValue = {
-                    start: (typeof currentFilter === 'object' && currentFilter.start) || '',
-                    end: newValue,
-                  };
-                  // Set to undefined if both are empty to clear the filter
-                  column.setFilterValue(
-                    !newFilterValue.start && !newFilterValue.end ? undefined : newFilterValue
-                  );
-                  setPage(1);
-                }}
-                placeholder="Filter End..."
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                onClick={(event) => event.stopPropagation()}
-              />
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-1">
+            <div className="font-medium text-xs">No Invoice</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-xs font-medium text-gray-900">
             {info.getValue() || '-'}
@@ -387,17 +344,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Customer</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => {
@@ -417,39 +364,19 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: '', max: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Total</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="number"
-                  value={filterValue.min ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                  placeholder="Min"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                  placeholder="Max"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Total</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-xs text-gray-900">
             {formatCurrency(info.getValue())}
           </div>
         ),
         enableSorting: true,
-        enableColumnFilter: false,
+        enableColumnFilter: true,
       }),
       columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
         id: 'status_codes',
@@ -484,17 +411,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Kwitansi</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: ({ row }) => {
@@ -522,17 +439,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Faktur Pajak</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: ({ row }) => {

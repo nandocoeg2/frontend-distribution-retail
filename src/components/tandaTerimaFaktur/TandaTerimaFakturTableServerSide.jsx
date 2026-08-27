@@ -13,6 +13,8 @@ import { termOfPaymentService } from '../../services/termOfPaymentService';
 import statusService from '../../services/statusService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -385,18 +387,9 @@ const TandaTerimaFakturTableServerSide = ({
       }, {
         id: 'invoice_no',
         header: ({ column }) => (
-          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+          <div className="space-y-0.5">
             <div className="font-medium text-xs">Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search..."
-              className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+            <TextColumnFilter column={column} placeholder="Search..." />
           </div>
         ),
         cell: (info) => {
@@ -439,36 +432,12 @@ const TandaTerimaFakturTableServerSide = ({
       }),
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: '', max: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs text-right">Total TTF</div>
-              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="number"
-                  value={filterValue.min ?? ''}
-                  onChange={(e) => {
-                    column.setFilterValue({ ...filterValue, min: e.target.value });
-                    setPage(1);
-                  }}
-                  placeholder="Min"
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ''}
-                  onChange={(e) => {
-                    column.setFilterValue({ ...filterValue, max: e.target.value });
-                    setPage(1);
-                  }}
-                  placeholder="Max"
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
-                />
-              </div>
-            </div>
-          )
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs text-right">Total TTF</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         enableSorting: true,
         cell: (info) => <div className="text-xs font-semibold text-gray-900 text-right">{formatCurrency(info.getValue())}</div>,
         enableColumnFilter: true,
@@ -593,35 +562,18 @@ const TandaTerimaFakturTableServerSide = ({
       }),
       columnHelper.accessor((row) => Number(row.bankMutation?.jumlah) || 0, {
         id: 'total_payment',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: '', max: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs text-right">Payment</div>
-              <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="number"
-                  value={filterValue.min ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                  placeholder="Min"
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                  placeholder="Max"
-                  className="w-full px-1 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-right pr-1"
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs text-right">Payment</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => {
           const value = info.getValue();
           return <div className="text-xs font-medium text-gray-900 text-right">{value > 0 ? formatCurrency(value) : '-'}</div>;
         },
         enableSorting: true,
+        enableColumnFilter: true,
         size: 100,
       }),
       columnHelper.accessor((row) => {

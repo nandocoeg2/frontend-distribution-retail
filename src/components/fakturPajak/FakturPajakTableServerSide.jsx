@@ -17,6 +17,8 @@ import customerService from "../../services/customerService";
 import { termOfPaymentService } from "../../services/termOfPaymentService";
 import authService from "../../services/authService";
 import DateFilter from "../common/DateFilter";
+import TextColumnFilter from "../common/TextColumnFilter";
+import RangeColumnFilter from "../common/RangeColumnFilter";
 
 const columnHelper = createColumnHelper();
 
@@ -401,17 +403,7 @@ const FakturPajakTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-0.5">
             <div className="font-medium text-xs">No Faktur</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ""}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter no faktur..."
-              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter no faktur..." />
           </div>
         ),
         cell: (info) => {
@@ -430,17 +422,7 @@ const FakturPajakTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-0.5">
             <div className="font-medium text-xs">No Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ""}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter no invoice..."
-              className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter no invoice..." />
           </div>
         ),
         cell: (info) => {
@@ -465,17 +447,7 @@ const FakturPajakTableServerSide = ({
           header: ({ column }) => (
             <div className="space-y-0.5">
               <div className="font-medium text-xs">No LPB</div>
-              <input
-                type="text"
-                value={column.getFilterValue() ?? ""}
-                onChange={(event) => {
-                  column.setFilterValue(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Filter no LPB..."
-                className="w-full px-1 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                onClick={(event) => event.stopPropagation()}
-              />
+              <TextColumnFilter column={column} placeholder="Filter no LPB..." />
             </div>
           ),
           cell: (info) => {
@@ -543,44 +515,12 @@ const FakturPajakTableServerSide = ({
       }),
       columnHelper.accessor("dasar_pengenaan_pajak", {
         id: "dasar_pengenaan_pajak",
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: "", max: "" };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">DPP</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="number"
-                  value={filterValue.min ?? ""}
-                  onChange={(e) => {
-                    column.setFilterValue({
-                      ...filterValue,
-                      min: e.target.value,
-                    });
-                    setPage(1);
-                  }}
-                  placeholder="Min"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ""}
-                  onChange={(e) => {
-                    column.setFilterValue({
-                      ...filterValue,
-                      max: e.target.value,
-                    });
-                    setPage(1);
-                  }}
-                  placeholder="Max"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">DPP</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-right">
             <div className="text-xs text-gray-900">
@@ -592,44 +532,12 @@ const FakturPajakTableServerSide = ({
       }),
       columnHelper.accessor("ppnRupiah", {
         id: "ppnRupiah",
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: "", max: "" };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">PPN</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="number"
-                  value={filterValue.min ?? ""}
-                  onChange={(e) => {
-                    column.setFilterValue({
-                      ...filterValue,
-                      min: e.target.value,
-                    });
-                    setPage(1);
-                  }}
-                  placeholder="Min"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ""}
-                  onChange={(e) => {
-                    column.setFilterValue({
-                      ...filterValue,
-                      max: e.target.value,
-                    });
-                    setPage(1);
-                  }}
-                  placeholder="Max"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">PPN</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => {
           return (
             <div className="text-right">
@@ -643,44 +551,12 @@ const FakturPajakTableServerSide = ({
       }),
       columnHelper.accessor("total_faktur_pajak", {
         id: "total_faktur_pajak",
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: "", max: "" };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Total</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="number"
-                  value={filterValue.min ?? ""}
-                  onChange={(e) => {
-                    column.setFilterValue({
-                      ...filterValue,
-                      min: e.target.value,
-                    });
-                    setPage(1);
-                  }}
-                  placeholder="Min"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ""}
-                  onChange={(e) => {
-                    column.setFilterValue({
-                      ...filterValue,
-                      max: e.target.value,
-                    });
-                    setPage(1);
-                  }}
-                  placeholder="Max"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Total</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => {
           return (
             <div className="text-right">

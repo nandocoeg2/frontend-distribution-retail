@@ -17,6 +17,8 @@ import { ConfirmationDialog, useConfirmationDialog } from '../ui/ConfirmationDia
 import customerService from '../../services/customerService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
+import TextColumnFilter from '../common/TextColumnFilter';
+import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
@@ -447,17 +449,7 @@ const KwitansiTableServerSide = ({
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No Invoice</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => {
@@ -473,20 +465,11 @@ const KwitansiTableServerSide = ({
         enableSorting: true,
       }),
       columnHelper.accessor('no_kwitansi', {
+        id: 'no_kwitansi',
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">Kwitansi</div>
-            <input
-              type="text"
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              onClick={(event) => event.stopPropagation()}
-            />
+            <TextColumnFilter column={column} placeholder="Filter..." />
           </div>
         ),
         cell: (info) => {
@@ -504,39 +487,19 @@ const KwitansiTableServerSide = ({
 
       columnHelper.accessor('grand_total', {
         id: 'grand_total',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { min: '', max: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Total</div>
-              <div className="flex flex-col gap-0.5">
-                <input
-                  type="number"
-                  value={filterValue.min ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, min: e.target.value }); setPage(1); }}
-                  placeholder="Min"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <input
-                  type="number"
-                  value={filterValue.max ?? ''}
-                  onChange={(e) => { column.setFilterValue({ ...filterValue, max: e.target.value }); setPage(1); }}
-                  placeholder="Max"
-                  className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Total</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-xs text-gray-900">
             {formatCurrency(info.getValue())}
           </div>
         ),
         enableSorting: true,
-        enableColumnFilter: false,
+        enableColumnFilter: true,
       }),
       columnHelper.accessor((row) => row.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer, {
         id: 'customer_name',
