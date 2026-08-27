@@ -18,8 +18,61 @@ const formatNumber = (val) => {
   });
 };
 
-const InvoicePengirimanDetailsTable = ({ details = [] }) => {
+const InvoicePengirimanDetailsTable = ({ details = [], purchaseOrderDetails = [] }) => {
   const [columnSizing, setColumnSizing] = useState({});
+
+  // Enrich invoice details with PO details (discounts and net prices) when available
+  const safeDetails = useMemo(() => {
+    if (!Array.isArray(details) || details.length === 0) return [];
+    if (!Array.isArray(purchaseOrderDetails) || purchaseOrderDetails.length === 0) {
+      return details;
+    }
+
+    const poByItemId = new Map();
+    const poByPlu = new Map();
+    const poByName = new Map();
+
+    for (const poItem of purchaseOrderDetails) {
+      if (poItem.itemId) {
+        poByItemId.set(String(poItem.itemId), poItem);
+      }
+      const pluKey = (poItem.plu || poItem.PLU || '').trim().toLowerCase();
+      if (pluKey) {
+        poByPlu.set(pluKey, poItem);
+      }
+      const nameKey = (poItem.nama_barang || '').trim().toLowerCase();
+      if (nameKey) {
+        poByName.set(nameKey, poItem);
+      }
+    }
+
+    return details.map((item) => {
+      const itemPlu = (item.PLU || item.plu || '').trim().toLowerCase();
+      const itemName = (item.nama_barang || '').trim().toLowerCase();
+      const itemIdStr = item.itemId ? String(item.itemId) : '';
+
+      const matchedPo =
+        (itemIdStr && poByItemId.get(itemIdStr)) ||
+        (itemPlu && poByPlu.get(itemPlu)) ||
+        (itemName && poByName.get(itemName)) ||
+        null;
+
+      if (!matchedPo) return item;
+
+      return {
+        ...item,
+        potongan_a: item.potongan_a ?? matchedPo.potongan_a ?? null,
+        harga_after_potongan_a:
+          item.harga_after_potongan_a ?? matchedPo.harga_after_potongan_a ?? null,
+        potongan_b: item.potongan_b ?? matchedPo.potongan_b ?? null,
+        harga_after_potongan_b:
+          item.harga_after_potongan_b ?? matchedPo.harga_after_potongan_b ?? null,
+        harga_netto: item.harga_netto ?? matchedPo.harga_netto ?? null,
+        total_pembelian: item.total_pembelian ?? matchedPo.total_pembelian ?? null,
+        vatRate: item.vatRate ?? matchedPo.vatRate ?? null,
+      };
+    });
+  }, [details, purchaseOrderDetails]);
 
   const columns = useMemo(
     () => [
@@ -69,12 +122,21 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
         ),
       }),
       columnHelper.accessor(
-        (row) =>
-          row.potongan_a ??
-          row.potonganA ??
-          row.discount_percentage ??
-          row.discountPercentage ??
-          null,
+        (row) => {
+          if (row.potongan_a !== undefined && row.potongan_a !== null) {
+            return row.potongan_a;
+          }
+          if (row.potonganA !== undefined && row.potonganA !== null) {
+            return row.potonganA;
+          }
+          if (row.discount_percentage !== undefined && row.discount_percentage !== null) {
+            return Number(row.discount_percentage);
+          }
+          if (row.discountPercentage !== undefined && row.discountPercentage !== null) {
+            return Number(row.discountPercentage);
+          }
+          return null;
+        },
         {
           id: 'potongan_a',
           size: 80,
@@ -100,14 +162,19 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
           if (row.hargaAfterPotonganA !== undefined && row.hargaAfterPotonganA !== null) {
             return Number(row.hargaAfterPotonganA);
           }
-          const potA = Number(row.potongan_a ?? row.potonganA ?? row.discount_percentage ?? 0) || 0;
           const harga = Number(row.harga) || 0;
+          const potA = Number(row.potongan_a ?? row.potonganA ?? 0) || 0;
           if (potA > 0) {
-            return harga * (1 - potA / 100);
+            return Number((harga * (1 - potA / 100)).toFixed(2));
+          }
+          const discPct = Number(row.discount_percentage ?? row.discountPercentage ?? 0) || 0;
+          if (discPct > 0) {
+            return Number((harga * (1 - discPct / 100)).toFixed(2));
           }
           const discRp = Number(row.discount_rupiah ?? 0) || 0;
           if (discRp > 0) {
-            return harga - discRp;
+            const qty = Number(row.quantity ?? row.qty ?? 1) || 1;
+            return Number((harga - discRp / qty).toFixed(2));
           }
           return harga;
         },
@@ -123,10 +190,15 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
         }
       ),
       columnHelper.accessor(
-        (row) =>
-          row.potongan_b ??
-          row.potonganB ??
-          null,
+        (row) => {
+          if (row.potongan_b !== undefined && row.potongan_b !== null) {
+            return row.potongan_b;
+          }
+          if (row.potonganB !== undefined && row.potonganB !== null) {
+            return row.potonganB;
+          }
+          return null;
+        },
         {
           id: 'potongan_b',
           size: 80,
@@ -152,14 +224,23 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
           if (row.hargaAfterPotonganB !== undefined && row.hargaAfterPotonganB !== null) {
             return Number(row.hargaAfterPotonganB);
           }
-          const potB = Number(row.potongan_b ?? row.potonganB ?? 0) || 0;
-          const potA = Number(row.potongan_a ?? row.potonganA ?? row.discount_percentage ?? 0) || 0;
-          const harga = Number(row.harga) || 0;
-          const hargaA = potA > 0 ? harga * (1 - potA / 100) : harga;
-          if (potB > 0) {
-            return hargaA * (1 - potB / 100);
+          if (row.harga_netto !== undefined && row.harga_netto !== null) {
+            return Number(row.harga_netto);
           }
-          return hargaA;
+          const harga = Number(row.harga) || 0;
+          const potA = Number(row.potongan_a ?? row.potonganA ?? 0) || 0;
+          const hargaA = potA > 0 ? harga * (1 - potA / 100) : harga;
+          const potB = Number(row.potongan_b ?? row.potonganB ?? 0) || 0;
+          if (potB > 0) {
+            return Number((hargaA * (1 - potB / 100)).toFixed(2));
+          }
+          // If no separate potB is recorded but DPP exists and is less than gross total
+          const dpp = Number(row.dasar_pengenaan_pajak);
+          const qty = Number(row.quantity ?? row.qty ?? 0) || 0;
+          if (!Number.isNaN(dpp) && dpp > 0 && qty > 0) {
+            return Number((dpp / qty).toFixed(2));
+          }
+          return Number(hargaA.toFixed(2));
         },
         {
           id: 'harga_after_potongan_b',
@@ -174,15 +255,33 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
       ),
       columnHelper.accessor(
         (row) => {
-          if (row.total !== undefined && row.total !== null && row.total !== '') {
-            return Number(row.total);
-          }
-          if (row.dasar_pengenaan_pajak !== undefined && row.dasar_pengenaan_pajak !== null && row.dasar_pengenaan_pajak !== '') {
+          // Priority 1: dasar_pengenaan_pajak (Net subtotal before tax / DPP)
+          if (
+            row.dasar_pengenaan_pajak !== undefined &&
+            row.dasar_pengenaan_pajak !== null &&
+            row.dasar_pengenaan_pajak !== ''
+          ) {
             return Number(row.dasar_pengenaan_pajak);
           }
+          // Priority 2: total_pembelian from PO
+          if (
+            row.total_pembelian !== undefined &&
+            row.total_pembelian !== null &&
+            row.total_pembelian !== ''
+          ) {
+            return Number(row.total_pembelian);
+          }
+          // Priority 3: qty * net price
           const qty = Number(row.quantity ?? row.qty ?? 0) || 0;
-          const harga = Number(row.harga_after_potongan_b ?? row.harga_after_potongan_a ?? row.harga ?? 0) || 0;
-          return qty * harga;
+          const netPrice =
+            Number(
+              row.harga_after_potongan_b ??
+                row.harga_netto ??
+                row.harga_after_potongan_a ??
+                row.harga ??
+                0
+            ) || 0;
+          return Number((qty * netPrice).toFixed(2));
         },
         {
           id: 'total',
@@ -201,9 +300,21 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
           if (ppn !== undefined && ppn !== null && ppn !== '') {
             return Number(ppn);
           }
-          const rate = Number(row.PPN_pecentage ?? row.ppn_percentage ?? 0) || 0;
-          const total = Number(row.total ?? row.dasar_pengenaan_pajak ?? 0) || 0;
-          return total * (rate / 100);
+          const rate = Number(row.PPN_pecentage ?? row.ppn_percentage ?? row.vatRate ?? 0) || 0;
+          const dpp =
+            row.dasar_pengenaan_pajak !== undefined &&
+            row.dasar_pengenaan_pajak !== null &&
+            row.dasar_pengenaan_pajak !== ''
+              ? Number(row.dasar_pengenaan_pajak)
+              : (Number(row.quantity ?? row.qty ?? 0) || 0) *
+                (Number(
+                  row.harga_after_potongan_b ??
+                    row.harga_netto ??
+                    row.harga_after_potongan_a ??
+                    row.harga ??
+                    0
+                ) || 0);
+          return Number(((dpp * rate) / 100).toFixed(2));
         },
         {
           id: 'ppnRupiah',
@@ -218,22 +329,40 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
       ),
       columnHelper.accessor(
         (row) => {
-          let total = 0;
-          if (row.total !== undefined && row.total !== null && row.total !== '') {
-            total = Number(row.total);
-          } else if (row.dasar_pengenaan_pajak !== undefined && row.dasar_pengenaan_pajak !== null && row.dasar_pengenaan_pajak !== '') {
-            total = Number(row.dasar_pengenaan_pajak);
+          let dpp = 0;
+          if (
+            row.dasar_pengenaan_pajak !== undefined &&
+            row.dasar_pengenaan_pajak !== null &&
+            row.dasar_pengenaan_pajak !== ''
+          ) {
+            dpp = Number(row.dasar_pengenaan_pajak);
+          } else if (
+            row.total_pembelian !== undefined &&
+            row.total_pembelian !== null &&
+            row.total_pembelian !== ''
+          ) {
+            dpp = Number(row.total_pembelian);
           } else {
             const qty = Number(row.quantity ?? row.qty ?? 0) || 0;
-            const harga = Number(row.harga_after_potongan_b ?? row.harga_after_potongan_a ?? row.harga ?? 0) || 0;
-            total = qty * harga;
+            const netPrice =
+              Number(
+                row.harga_after_potongan_b ??
+                  row.harga_netto ??
+                  row.harga_after_potongan_a ??
+                  row.harga ??
+                  0
+              ) || 0;
+            dpp = qty * netPrice;
           }
+
           const ppnRaw = row.ppnRupiah ?? row.ppn_rupiah;
+          const rate = Number(row.PPN_pecentage ?? row.ppn_percentage ?? row.vatRate ?? 0) || 0;
           const ppn =
             ppnRaw !== undefined && ppnRaw !== null && ppnRaw !== ''
               ? Number(ppnRaw)
-              : total * ((Number(row.PPN_pecentage ?? row.ppn_percentage ?? 0) || 0) / 100);
-          return total + ppn;
+              : (dpp * rate) / 100;
+
+          return Number((dpp + ppn).toFixed(2));
         },
         {
           id: 'grandTotal',
@@ -250,8 +379,6 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
     []
   );
 
-  const safeDetails = useMemo(() => details || [], [details]);
-
   const table = useReactTable({
     data: safeDetails,
     columns,
@@ -264,7 +391,7 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
     onColumnSizingChange: setColumnSizing,
   });
 
-  if (!details || details.length === 0) {
+  if (!safeDetails || safeDetails.length === 0) {
     return <div className="py-2 text-center text-xs text-gray-500">Tidak ada detail barang</div>;
   }
 
@@ -298,4 +425,4 @@ const InvoicePengirimanDetailsTable = ({ details = [] }) => {
   );
 };
 
-export default InvoicePengirimanDetailsTable;
+export default React.memo(InvoicePengirimanDetailsTable);

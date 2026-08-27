@@ -106,7 +106,10 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
         </div>
       ) : (
         <div className='overflow-hidden bg-white border border-gray-200 rounded'>
-          <InvoicePengirimanDetailsTable details={invoice.invoiceDetails || []} />
+          <InvoicePengirimanDetailsTable
+            details={invoice.invoiceDetails || []}
+            purchaseOrderDetails={invoice.purchaseOrder?.purchaseOrderDetails || []}
+          />
         </div>
       )}
     </div>

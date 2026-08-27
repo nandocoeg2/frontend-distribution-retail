@@ -29,40 +29,21 @@ const FakturPajakPage = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [generateTtfConfirmation, setGenerateTtfConfirmation] = useState({
-    show: false,
-    fakturPajak: null,
-  });
-  const [generatingTtfFakturPajakId, setGeneratingTtfFakturPajakId] = useState(null);
 
   // Export Excel states
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportConfirmation, setShowExportConfirmation] = useState(false);
   const currentQueryParams = useRef({});
 
-  const generateTtfDialogFakturPajak = generateTtfConfirmation.fakturPajak;
-  const generateTtfDialogLoading =
-    Boolean(generateTtfDialogFakturPajak) &&
-    generatingTtfFakturPajakId === generateTtfDialogFakturPajak.id;
-
   // Bulk Actions State
   const [bulkDeleteConfirmation, setBulkDeleteConfirmation] = useState({
     show: false,
     ids: [],
   });
-  const [bulkGenerateTtfConfirmation, setBulkGenerateTtfConfirmation] = useState({
-    show: false,
-    ids: [],
-  });
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
-  const [bulkGenerateTtfLoading, setBulkGenerateTtfLoading] = useState(false);
 
   const handleBulkDeleteClick = (ids) => {
     setBulkDeleteConfirmation({ show: true, ids });
-  };
-
-  const handleBulkGenerateTtfClick = (ids) => {
-    setBulkGenerateTtfConfirmation({ show: true, ids });
   };
 
   const confirmBulkDelete = async () => {
@@ -76,27 +57,6 @@ const FakturPajakPage = () => {
       toastService.error(err.message || 'Gagal menghapus Faktur Pajak');
     } finally {
       setBulkDeleteLoading(false);
-    }
-  };
-
-  const confirmBulkGenerateTtf = async () => {
-    try {
-      setBulkGenerateTtfLoading(true);
-      const result = await fakturPajakService.bulkGenerateTandaTerimaFaktur(bulkGenerateTtfConfirmation.ids);
-
-      const { successCount, failedCount } = result.data || result;
-      if (failedCount > 0) {
-        toastService.warning(`${successCount} berhasil, ${failedCount} gagal dibuat.`);
-      } else {
-        toastService.success(`${successCount} Tanda Terima Faktur berhasil dibuat.`);
-      }
-
-      setBulkGenerateTtfConfirmation({ show: false, ids: [] });
-      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
-    } catch (err) {
-      toastService.error(err.message || 'Gagal membuat Tanda Terima Faktur');
-    } finally {
-      setBulkGenerateTtfLoading(false);
     }
   };
 
@@ -133,93 +93,6 @@ const FakturPajakPage = () => {
     // Invalidate queries to refresh data
     await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
   }, [deleteFakturPajakConfirmation, queryClient]);
-
-  const openGenerateTtfDialog = useCallback((fakturPajak) => {
-    if (
-      !fakturPajak ||
-      fakturPajak?.tandaTerimaFakturId ||
-      fakturPajak?.tandaTerimaFaktur?.id
-    ) {
-      return;
-    }
-    setGenerateTtfConfirmation({
-      show: true,
-      fakturPajak,
-    });
-  }, []);
-
-  const closeGenerateTtfDialog = useCallback(() => {
-    setGenerateTtfConfirmation({
-      show: false,
-      fakturPajak: null,
-    });
-  }, []);
-
-  const handleGenerateTtfConfirm = useCallback(async () => {
-    const targetFakturPajak = generateTtfDialogFakturPajak;
-    const fakturPajakId = targetFakturPajak?.id;
-
-    if (!fakturPajakId) {
-      closeGenerateTtfDialog();
-      return;
-    }
-
-    setGeneratingTtfFakturPajakId(fakturPajakId);
-    try {
-      const response =
-        await fakturPajakService.generateTandaTerimaFaktur(fakturPajakId);
-      const payload = response ?? {};
-      if (payload?.success === false) {
-        throw new Error(
-          payload?.error?.message ||
-          'Gagal membuat tanda terima faktur dari faktur pajak.'
-        );
-      }
-
-      const ttfData = payload?.data ?? payload;
-      toastService.success(
-        ttfData?.code_supplier
-          ? `Tanda terima faktur ${ttfData.code_supplier} berhasil dibuat.`
-          : 'Tanda terima faktur berhasil dibuat.'
-      );
-
-      closeGenerateTtfDialog();
-
-      setSelectedFakturPajakForDetail((prev) => {
-        if (prev?.id !== fakturPajakId) {
-          return prev;
-        }
-        return {
-          ...prev,
-          tandaTerimaFakturId:
-            ttfData?.id ||
-            ttfData?.tandaTerimaFakturId ||
-            prev?.tandaTerimaFakturId,
-          tandaTerimaFaktur: ttfData || prev?.tandaTerimaFaktur,
-        };
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ['fakturPajak'] });
-    } catch (err) {
-      const message =
-        err?.response?.data?.error?.message ||
-        err?.message ||
-        'Gagal membuat tanda terima faktur dari faktur pajak.';
-      toastService.error(message);
-      console.error(
-        'Failed to generate tanda terima faktur from faktur pajak:',
-        err
-      );
-    } finally {
-      setGeneratingTtfFakturPajakId((current) =>
-        current === fakturPajakId ? null : current
-      );
-    }
-  }, [
-    closeGenerateTtfDialog,
-    generateTtfDialogFakturPajak,
-    queryClient,
-  ]);
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
@@ -352,9 +225,6 @@ const FakturPajakPage = () => {
           <FakturPajakTableServerSide
             onView={handleViewDetail}
             onDelete={handleDelete}
-            onGenerateTandaTerimaFaktur={openGenerateTtfDialog}
-            generatingTandaTerimaFakturPajakId={generatingTtfFakturPajakId}
-            onBulkGenerate={handleBulkGenerateTtfClick}
             onBulkExportEFaktur={handleBulkExportEFaktur}
             onBulkDelete={handleBulkDeleteClick}
             deleteLoading={deleteFakturPajakConfirmation.loading}
@@ -410,25 +280,6 @@ const FakturPajakPage = () => {
       )}
 
       <ConfirmationDialog
-        show={generateTtfConfirmation.show}
-        onClose={closeGenerateTtfDialog}
-        onConfirm={handleGenerateTtfConfirm}
-        title='Generate Tanda Terima Faktur'
-        message={
-          generateTtfDialogFakturPajak
-            ? `Apakah Anda yakin ingin membuat tanda terima faktur untuk faktur pajak ${generateTtfDialogFakturPajak.no_pajak ||
-            generateTtfDialogFakturPajak.id ||
-            ''
-            }?`
-            : 'Apakah Anda yakin ingin membuat tanda terima faktur untuk faktur pajak ini?'
-        }
-        confirmText='Ya, buat tanda terima'
-        cancelText='Batal'
-        type='warning'
-        loading={generateTtfDialogLoading}
-      />
-
-      <ConfirmationDialog
         show={showExportConfirmation}
         onClose={() => setShowExportConfirmation(false)}
         onConfirm={confirmExportExcel}
@@ -450,18 +301,6 @@ const FakturPajakPage = () => {
         confirmText='Hapus'
         cancelText='Batal'
         loading={bulkDeleteLoading}
-      />
-
-      <ConfirmationDialog
-        show={bulkGenerateTtfConfirmation.show}
-        onClose={() => setBulkGenerateTtfConfirmation({ show: false, ids: [] })}
-        onConfirm={confirmBulkGenerateTtf}
-        title='Generate Tanda Terima Faktur'
-        message={`Apakah Anda yakin ingin membuat Tanda Terima Faktur untuk ${bulkGenerateTtfConfirmation.ids.length} Faktur Pajak yang dipilih?`}
-        type='warning'
-        confirmText='Ya, Buat'
-        cancelText='Batal'
-        loading={bulkGenerateTtfLoading}
       />
     </div>
   );

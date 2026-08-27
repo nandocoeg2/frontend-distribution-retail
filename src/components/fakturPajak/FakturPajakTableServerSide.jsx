@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { createColumnHelper, useReactTable } from "@tanstack/react-table";
-import { TrashIcon, DocumentPlusIcon, ArchiveBoxIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, ArchiveBoxIcon } from "@heroicons/react/24/outline";
 import { StatusBadge } from "../ui/Badge";
 import { useFakturPajakQuery } from "../../hooks/useFakturPajakQuery";
 import { formatCurrency, formatDate } from "../../utils/formatUtils";
@@ -57,13 +57,10 @@ const resolveStatusVariant = (status) => {
 const FakturPajakTableServerSide = ({
   onView,
   onDelete,
-  onGenerateTandaTerimaFaktur,
-  generatingTandaTerimaFakturPajakId,
   deleteLoading = false,
   initialPage = 1,
   initialLimit = 10,
   selectedFakturPajakId = null,
-  onBulkGenerate,
   onBulkExportEFaktur,
   onBulkDelete,
   onQueryParamsChange,
@@ -779,8 +776,6 @@ const FakturPajakTableServerSide = ({
       fakturPajaks,
       onView,
       onDelete,
-      onGenerateTandaTerimaFaktur,
-      generatingTandaTerimaFakturPajakId,
       deleteLoading,
       setPage,
       selectedFakturPajakId,
@@ -804,15 +799,6 @@ const FakturPajakTableServerSide = ({
               <span className="text-xs font-medium text-blue-700">
                 {selectedFakturIds.length} dipilih
               </span>
-              {onBulkGenerate && (
-                <button
-                  onClick={() => onBulkGenerate(selectedFakturIds)}
-                  className="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
-                >
-                  <DocumentPlusIcon className="h-3.5 w-3.5 mr-1" />
-                  Generate TTF
-                </button>
-              )}
               {onBulkExportEFaktur && (
                 <button
                   onClick={() => onBulkExportEFaktur(selectedFakturIds)}
