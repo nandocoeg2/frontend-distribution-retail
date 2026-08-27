@@ -140,6 +140,10 @@ const CheckingListTableServerSide = ({
   const getQueryParams = useCallback(({ filters, ...rest }) => {
     const mappedFilters = { ...filters };
 
+    if (mappedFilters.surat_jalan) {
+      mappedFilters.no_surat_jalan = mappedFilters.surat_jalan;
+    }
+
     if (companyId) {
       mappedFilters.companyId = companyId;
     }
