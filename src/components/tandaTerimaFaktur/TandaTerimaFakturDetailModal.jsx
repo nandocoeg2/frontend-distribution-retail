@@ -114,7 +114,7 @@ const TandaTerimaFakturDetailModal = ({
                     }
                   />
                   <InfoRow
-                    label='Tanggal TTF 1'
+                    label='Tanggal Kirim Pos'
                     value={
                       detail.tanggal_print_ttf1
                         ? formatDate(detail.tanggal_print_ttf1)
@@ -122,7 +122,7 @@ const TandaTerimaFakturDetailModal = ({
                     }
                   />
                   <InfoRow
-                    label='Tanggal TTF 2'
+                    label='Tanggal Proses DC'
                     value={
                       detail.tanggal_upload_ttf2
                         ? formatDate(detail.tanggal_upload_ttf2)

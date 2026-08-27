@@ -327,7 +327,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Billing Date</div>
+              <div className="font-medium text-xs">Tanggal Tagihan</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
@@ -449,7 +449,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">TTF 1</div>
+              <div className="font-medium text-xs">Tanggal Kirim Pos</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
@@ -475,7 +475,7 @@ const TandaTerimaFakturTableServerSide = ({
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">TTF 2</div>
+              <div className="font-medium text-xs">Tanggal Proses DC</div>
               <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                 <DateFilter
                   value={filterValue.from ?? ''}
