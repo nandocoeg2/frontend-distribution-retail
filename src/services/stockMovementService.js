@@ -311,3 +311,114 @@ export const exportExcel = async (searchQuery = '') => {
 
   return { success: true, filename };
 };
+
+/**
+ * Export Stock In movements to Excel
+ * @param {Object} params - Query parameters for filtering (search, dateFilterType, startDate, endDate)
+ */
+export const exportStockInExcel = async (params = {}) => {
+  const token = authService.getToken();
+  const companyData = authService.getCompanyData();
+
+  const queryString = buildQueryString(params);
+  const url = `${API_BASE_URL}/stock-in/export-excel${queryString}`;
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (companyData?.id) {
+    headers['x-company-id'] = companyData.id;
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: { message: 'Failed to export Stock In data' } }));
+    throw new Error(errorData.error?.message || errorData.message || 'Failed to export Stock In data');
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = 'Stock_In.xlsx';
+
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = downloadUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(downloadUrl);
+  document.body.removeChild(a);
+
+  return { success: true, filename };
+};
+
+/**
+ * Export Stock Out movements to Excel
+ * @param {Object} params - Query parameters for filtering (search, dateFilterType, startDate, endDate)
+ */
+export const exportStockOutExcel = async (params = {}) => {
+  const token = authService.getToken();
+  const companyData = authService.getCompanyData();
+
+  const queryString = buildQueryString(params);
+  const url = `${API_BASE_URL}/stock-out/export-excel${queryString}`;
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (companyData?.id) {
+    headers['x-company-id'] = companyData.id;
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response
+      .json()
+      .catch(() => ({ error: { message: 'Failed to export Stock Out data' } }));
+    throw new Error(errorData.error?.message || errorData.message || 'Failed to export Stock Out data');
+  }
+
+  const contentDisposition = response.headers.get('Content-Disposition');
+  let filename = 'Stock_Out.xlsx';
+
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  const blob = await response.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = downloadUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(downloadUrl);
+  document.body.removeChild(a);
+
+  return { success: true, filename };
+};
+

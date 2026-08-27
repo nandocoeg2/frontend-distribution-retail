@@ -6,7 +6,7 @@ import StockOutTable from '../components/stockMovements/StockOutTable.jsx';
 import CreateStockOutModal from '../components/stockMovements/CreateStockOutModal.jsx';
 import { getItems } from '../services/itemService';
 import toastService from '../services/toastService';
-import { exportExcel, createStockOut } from '../services/stockMovementService';
+import { exportStockOutExcel, createStockOut } from '../services/stockMovementService';
 
 const StockOut = () => {
   const queryClient = useQueryClient();
@@ -47,10 +47,24 @@ const StockOut = () => {
   const handleExportExcel = async () => {
     setExportLoading(true);
     try {
-      await exportExcel();
-      toastService.success('Excel berhasil di-export.');
+      const filters = tableRef.current?.getFilters?.() || {};
+      const params = {};
+      if (filters.tgl?.from) {
+        params.startDate = new Date(filters.tgl.from).toISOString();
+      }
+      if (filters.tgl?.to) {
+        params.endDate = new Date(filters.tgl.to).toISOString();
+      }
+      if (params.startDate || params.endDate) {
+        params.dateFilterType = 'custom';
+      }
+      if (filters.namaBarang) {
+        params.search = Array.isArray(filters.namaBarang) ? filters.namaBarang[0] : filters.namaBarang;
+      }
+      await exportStockOutExcel(params);
+      toastService.success('Excel Stock Out berhasil di-export.');
     } catch (err) {
-      toastService.error(err?.message || 'Gagal mengexport Excel.');
+      toastService.error(err?.message || 'Gagal mengexport Excel Stock Out.');
     } finally {
       setExportLoading(false);
     }
