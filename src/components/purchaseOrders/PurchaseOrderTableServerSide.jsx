@@ -75,6 +75,12 @@ const PurchaseOrderTableServerSide = forwardRef(({
         mappedFilters.companyId = companyId;
       }
 
+      if (mappedFilters.po_number) {
+        if (Array.isArray(mappedFilters.po_number) && mappedFilters.po_number.length === 0) {
+          delete mappedFilters.po_number;
+        }
+      }
+
       if (mappedFilters.customer) {
         if (Array.isArray(mappedFilters.customer) && mappedFilters.customer.length > 0) {
           mappedFilters.customerIds = mappedFilters.customer;
@@ -287,6 +293,28 @@ const PurchaseOrderTableServerSide = forwardRef(({
     );
   }, [orders, columnFilters, statusOptions]);
 
+  const dynamicPoOptions = useMemo(() => {
+    const map = new Map();
+    (orders || []).forEach((item) => {
+      const poNumber = item.po_number;
+      if (poNumber && !map.has(poNumber)) {
+        map.set(poNumber, { id: poNumber, name: poNumber });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'po_number');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [orders, columnFilters]);
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -328,11 +356,24 @@ const PurchaseOrderTableServerSide = forwardRef(({
         enableColumnFilter: false,
       }),
       columnHelper.accessor('po_number', {
-        size: 55,
+        id: 'po_number',
+        size: 130,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">PO#</div>
-            <TextColumnFilter column={column} />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicPoOptions}
+              value={column.getFilterValue() || []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => <span className="text-xs font-medium">{info.getValue() || '-'}</span>,

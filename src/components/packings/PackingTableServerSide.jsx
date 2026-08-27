@@ -151,6 +151,13 @@ const PackingTableServerSide = forwardRef(({
   const getQueryParams = useCallback(({ filters, ...rest }) => {
     const mappedFilters = { ...filters };
 
+    // Handle array of PO numbers for multi-select
+    if (mappedFilters.po_number) {
+      if (Array.isArray(mappedFilters.po_number) && mappedFilters.po_number.length === 0) {
+        delete mappedFilters.po_number;
+      }
+    }
+
     // Handle array of customer IDs for multi-select
     if (mappedFilters.customer_name) {
       if (Array.isArray(mappedFilters.customer_name) && mappedFilters.customer_name.length > 0) {
@@ -461,6 +468,28 @@ const PackingTableServerSide = forwardRef(({
     );
   }, [packings, columnFilters, statusOptions]);
 
+  const dynamicPoOptions = useMemo(() => {
+    const map = new Map();
+    (packings || []).forEach((item) => {
+      const poNumber = item.purchaseOrder?.po_number || item.po_number;
+      if (poNumber && !map.has(poNumber)) {
+        map.set(poNumber, { id: poNumber, name: poNumber });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'po_number');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [packings, columnFilters]);
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -499,9 +528,21 @@ const PackingTableServerSide = forwardRef(({
       columnHelper.accessor('purchaseOrder.po_number', {
         id: 'po_number',
         header: ({ column }) => (
-          <div className='space-y-1'>
+          <div className='space-y-1' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-xs'>No PO</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicPoOptions}
+              value={column.getFilterValue() || []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => <span className='font-medium'>{info.getValue() || 'N/A'}</span>,

@@ -22,8 +22,17 @@ const purchaseOrderService = {
 
     // Add all parameters to URL
     Object.keys(params).forEach(key => {
-      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
-        url.searchParams.append(key, params[key]);
+      const val = params[key];
+      if (val !== null && val !== undefined && val !== '') {
+        if (Array.isArray(val)) {
+          val.forEach(item => {
+            if (item !== null && item !== undefined && item !== '') {
+              url.searchParams.append(key, item);
+            }
+          });
+        } else {
+          url.searchParams.append(key, val);
+        }
       }
     });
 
