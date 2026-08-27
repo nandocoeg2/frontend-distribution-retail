@@ -432,20 +432,6 @@ const MutasiBankTableServerSide = forwardRef(({
           enableSorting: true,
         }
       ),
-      columnHelper.display({
-        id: 'customer',
-        header: 'Customer',
-        size: 180,
-        cell: ({ row }) => {
-          const customer = resolveCustomer(row.original);
-          if (!customer?.name) return <span className='text-xs text-gray-400'>-</span>;
-          return (
-            <div className='text-xs leading-tight font-medium text-gray-800'>
-              {customer.name} {customer.code ? <span className='text-gray-500 font-normal'>({customer.code})</span> : null}
-            </div>
-          );
-        },
-      }),
       columnHelper.accessor(
         (row) => row.keterangan || '',
         {
@@ -462,6 +448,20 @@ const MutasiBankTableServerSide = forwardRef(({
           },
         }
       ),
+      columnHelper.display({
+        id: 'customer',
+        header: 'Customer',
+        size: 180,
+        cell: ({ row }) => {
+          const customer = resolveCustomer(row.original);
+          if (!customer?.name) return <span className='text-xs text-gray-400'>-</span>;
+          return (
+            <div className='text-xs leading-tight font-medium text-gray-800'>
+              {customer.name} {customer.code ? <span className='text-gray-500 font-normal'>({customer.code})</span> : null}
+            </div>
+          );
+        },
+      }),
       columnHelper.display({
         id: 'invoice_number',
         header: ({ column }) => (

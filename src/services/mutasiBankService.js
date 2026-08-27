@@ -248,8 +248,8 @@ class MutasiBankService {
 
       const headers = [
         'TANGGAL',
-        'CUSTOMER',
         'DESKRIPSI',
+        'CUSTOMER',
         'NO INVOICE',
         'NOMINAL',
         'KETERANGAN (RETUR/REBATE)',
@@ -274,8 +274,8 @@ class MutasiBankService {
 
         return [
           tanggalStr,
-          customerName,
           item.keterangan || '-',
+          customerName,
           invoiceNumber,
           Number(item.jumlah) || 0,
           item.validation_notes || '',

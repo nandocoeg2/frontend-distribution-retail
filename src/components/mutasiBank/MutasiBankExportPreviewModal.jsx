@@ -78,8 +78,8 @@ const MutasiBankExportPreviewModal = ({
       if (Array.isArray(row)) {
         return {
           tanggal: row[0] || '',
-          customer: row[1] || '',
-          keterangan: row[2] || '',
+          keterangan: row[1] || '',
+          customer: row[2] || '',
           invoice: row[3] || '',
           jumlah: Number(row[4]) || 0,
           notes: row[5] || '',
@@ -87,8 +87,8 @@ const MutasiBankExportPreviewModal = ({
       }
       return {
         tanggal: row.tanggal || '',
-        customer: row.customer || '',
         keterangan: row.keterangan || '',
+        customer: row.customer || '',
         invoice: row.invoice || '',
         jumlah: Number(row.jumlah) || 0,
         notes: row.notes || '',
@@ -152,6 +152,25 @@ const MutasiBankExportPreviewModal = ({
           }
         },
       }),
+      columnHelper.accessor('keterangan', {
+        id: 'keterangan',
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Deskripsi</div>
+            <TextColumnFilter column={column} placeholder="Filter Deskripsi..." />
+          </div>
+        ),
+        cell: (info) => (
+          <span className="text-gray-600 max-w-xs truncate block" title={info.getValue()}>
+            {info.getValue() || '-'}
+          </span>
+        ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || typeof filterValue !== 'string') return true;
+          const val = String(row.getValue(columnId) || '').toLowerCase();
+          return val.includes(filterValue.toLowerCase().trim());
+        },
+      }),
       columnHelper.accessor('customer', {
         id: 'customer',
         header: ({ column }) => (
@@ -179,25 +198,6 @@ const MutasiBankExportPreviewModal = ({
           if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
           const val = row.getValue(columnId);
           return filterValue.includes(val);
-        },
-      }),
-      columnHelper.accessor('keterangan', {
-        id: 'keterangan',
-        header: ({ column }) => (
-          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
-            <div className="font-medium text-xs">Deskripsi</div>
-            <TextColumnFilter column={column} placeholder="Filter Deskripsi..." />
-          </div>
-        ),
-        cell: (info) => (
-          <span className="text-gray-600 max-w-xs truncate block" title={info.getValue()}>
-            {info.getValue() || '-'}
-          </span>
-        ),
-        filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
         },
       }),
       columnHelper.accessor('invoice', {
