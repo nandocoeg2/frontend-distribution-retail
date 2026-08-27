@@ -161,7 +161,6 @@ const SuratJalanTableServerSide = forwardRef(({
     initialPage: 1,
     getQueryParams,
     columnFilterDebounceMs: 0,
-    initialSorting: [{ id: 'no_surat_jalan', desc: true }],
     storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
 
@@ -417,6 +416,7 @@ const SuratJalanTableServerSide = forwardRef(({
         },
       }),
       columnHelper.accessor('no_surat_jalan', {
+        sortDescFirst: false,
         header: ({ column }) => (
           <div className="space-y-1">
             <div className="font-medium text-xs">No Surat Jalan</div>
