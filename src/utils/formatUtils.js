@@ -66,3 +66,14 @@ export const formatCurrency = (amount) => {
     maximumFractionDigits: 2,
   }).format(numericAmount);
 };
+
+export const formatNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return '0';
+  }
+  const num = Number(value);
+  if (Number.isNaN(num)) {
+    return '0';
+  }
+  return num.toLocaleString('id-ID');
+};

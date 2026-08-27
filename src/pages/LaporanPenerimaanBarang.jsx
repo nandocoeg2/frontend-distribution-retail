@@ -5,6 +5,7 @@ import {
   LaporanPenerimaanBarangTableServerSide,
   LaporanPenerimaanBarangModal,
   LaporanPenerimaanBarangDetailCard,
+  LaporanPenerimaanBarangExportPreviewModal,
 } from '@/components/laporanPenerimaanBarang';
 import {
   useConfirmationDialog,
@@ -35,6 +36,9 @@ const LaporanPenerimaanBarang = () => {
   const [selectedReportIds, setSelectedReportIds] = useState([]);
   const [isCompletingReports, setIsCompletingReports] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
   const [generateConfirmation, setGenerateConfirmation] = useState({
     show: false,
@@ -124,6 +128,21 @@ const LaporanPenerimaanBarang = () => {
       setIsExporting(false);
     }
   }, [activeFilters, hideExportDialog, setExportDialogLoading]);
+
+  const handlePreviewExportClick = useCallback(async () => {
+    try {
+      setPreviewLoading(true);
+      setIsPreviewModalOpen(true);
+      const response = await laporanPenerimaanBarangService.previewExportExcel(activeFilters);
+      setPreviewData(response?.data || response);
+    } catch (error) {
+      console.error('Failed to load export preview:', error);
+      toastService.error('Gagal memuat preview export Excel');
+      setIsPreviewModalOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [activeFilters]);
 
   const hasSelectedReports = selectedReportIds.length > 0;
 
@@ -335,14 +354,22 @@ const LaporanPenerimaanBarang = () => {
             <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
             <div className='flex flex-wrap gap-2'>
               <button
+                onClick={handlePreviewExportClick}
+                disabled={previewLoading}
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 transition-colors'
+              >
+                <HeroIcon name='eye' className='w-4 h-4 mr-1.5 text-gray-500' />
+                {previewLoading ? 'Memuat Preview...' : 'Preview Excel'}
+              </button>
+              <button
                 onClick={handleExportClick}
                 disabled={isExporting}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
               >
                 <HeroIcon name='document-arrow-down' className='w-4 h-4 mr-1.5' />
                 {isExporting ? 'Exporting...' : 'Export Excel'}
               </button>
-              <button onClick={openCreateModal} className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700'>
+              <button onClick={openCreateModal} className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors'>
                 <HeroIcon name='plus' className='w-4 h-4 mr-1.5' />Tambah
               </button>
             </div>
@@ -401,6 +428,15 @@ const LaporanPenerimaanBarang = () => {
       {selectedReportForDetail && (
         <LaporanPenerimaanBarangDetailCard report={selectedReportForDetail} onClose={handleCloseDetail} loading={detailLoading} />
       )}
+
+      <LaporanPenerimaanBarangExportPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        previewData={previewData}
+        previewLoading={previewLoading}
+        onExport={handleConfirmExport}
+        isExporting={isExporting}
+      />
     </div>
   );
 };

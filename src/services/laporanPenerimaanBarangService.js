@@ -523,6 +523,56 @@ class LaporanPenerimaanBarangService {
     }
   }
 
+  /**
+   * Preview Export Laporan Penerimaan Barang to Excel
+   * @param {Object} filters - Filter parameters
+   * @returns {Promise<Object>} Object containing headers and data array
+   */
+  async previewExportExcel(filters = {}) {
+    try {
+      const activeCompanyId = authService.getCompanyData()?.id;
+      const params = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === '') {
+          return;
+        }
+
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            params.append(key, value.join(','));
+          }
+          return;
+        }
+
+        if (typeof value === 'object') {
+          // Handle date range objects like { from: 'date', to: 'date' }
+          if (value.from) params.append(key + '_from', value.from);
+          if (value.to) params.append(key + '_to', value.to);
+          // Handle min/max objects like { min: 1, max: 100 }
+          if (value.min !== undefined && value.min !== '') params.append(key + '_min', value.min);
+          if (value.max !== undefined && value.max !== '') params.append(key + '_max', value.max);
+          return;
+        }
+
+        params.append(key, value);
+      });
+
+      if (activeCompanyId && !params.has('companyId')) {
+        params.append('companyId', activeCompanyId);
+      }
+
+      const queryString = params.toString();
+      const url = '/laporan-penerimaan-barang/export-excel/preview' + (queryString ? '?' + queryString : '');
+
+      const response = await this.api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error previewing export laporan penerimaan barang:', error);
+      throw error;
+    }
+  }
+
   async bulkGenerateInvoicePenagihan(payload = {}) {
     try {
       const response = await this.api.post('/laporan-penerimaan-barang/bulk-generate-invoice-penagihan', payload);
