@@ -186,6 +186,94 @@ const LaporanPenerimaanBarangTableServerSide = ({
     );
   }, [reports, columnFilters, customers]);
 
+  const dynamicNoLpbOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const val = item.no_lpb;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'no_lpb');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [reports, columnFilters]);
+
+  const dynamicPoOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const val = item.purchaseOrder?.po_number || item.po_number;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'po_number');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [reports, columnFilters]);
+
+  const dynamicNoPoPenggantiOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const val = item.no_po_pengganti;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'no_po_pengganti');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [reports, columnFilters]);
+
+  const dynamicInvoiceOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const val = item.purchaseOrder?.invoice?.no_invoice || item.invoice;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'invoice');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [reports, columnFilters]);
+
   const statusOptions = useMemo(() => {
     const map = new Map();
     (reports || []).forEach((item) => {
@@ -511,9 +599,19 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('no_lpb', {
         id: 'no_lpb',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">No LPB</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicNoLpbOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -521,9 +619,19 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor((row) => row.purchaseOrder?.po_number ?? null, {
         id: 'po_number',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">No PO</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicPoOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -531,9 +639,19 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor('no_po_pengganti', {
         id: 'no_po_pengganti',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">No PO Pengganti</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicNoPoPenggantiOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -561,9 +679,19 @@ const LaporanPenerimaanBarangTableServerSide = ({
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.no_invoice ?? null, {
         id: 'invoice',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicInvoiceOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || '-'}</span>,
@@ -670,6 +798,10 @@ const LaporanPenerimaanBarangTableServerSide = ({
       handleUnassignClick,
       customerOptions,
       statusOptions,
+      dynamicNoLpbOptions,
+      dynamicPoOptions,
+      dynamicNoPoPenggantiOptions,
+      dynamicInvoiceOptions,
     ]
   );
 

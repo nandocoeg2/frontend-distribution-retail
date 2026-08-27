@@ -40,9 +40,49 @@ export const useLaporanPenerimaanBarangQuery = ({
           searchCriteria.includeCompleted = true;
         }
 
+        // Handle multi-select no_lpb (array)
+        if (searchCriteria.no_lpb && Array.isArray(searchCriteria.no_lpb)) {
+          if (searchCriteria.no_lpb.length === 0) {
+            delete searchCriteria.no_lpb;
+          } else {
+            searchCriteria.no_lpb = searchCriteria.no_lpb.join(',');
+          }
+        }
+
+        // Handle multi-select po_number (array)
+        if (searchCriteria.po_number && Array.isArray(searchCriteria.po_number)) {
+          if (searchCriteria.po_number.length === 0) {
+            delete searchCriteria.po_number;
+          } else {
+            searchCriteria.po_number = searchCriteria.po_number.join(',');
+          }
+        }
+
+        // Handle multi-select no_po_pengganti (array)
+        if (searchCriteria.no_po_pengganti && Array.isArray(searchCriteria.no_po_pengganti)) {
+          if (searchCriteria.no_po_pengganti.length === 0) {
+            delete searchCriteria.no_po_pengganti;
+          } else {
+            searchCriteria.no_po_pengganti = searchCriteria.no_po_pengganti.join(',');
+          }
+        }
+
+        // Handle multi-select invoice (array)
+        if (searchCriteria.invoice && Array.isArray(searchCriteria.invoice)) {
+          if (searchCriteria.invoice.length === 0) {
+            delete searchCriteria.invoice;
+          } else {
+            searchCriteria.invoice = searchCriteria.invoice.join(',');
+          }
+        }
+
         // Handle multi-select customerIds (array)
         if (searchCriteria.customerIds && Array.isArray(searchCriteria.customerIds)) {
-          searchCriteria.customerIds = searchCriteria.customerIds.join(',');
+          if (searchCriteria.customerIds.length === 0) {
+            delete searchCriteria.customerIds;
+          } else {
+            searchCriteria.customerIds = searchCriteria.customerIds.join(',');
+          }
         }
 
         // Handle multi-select status_codes (array)
