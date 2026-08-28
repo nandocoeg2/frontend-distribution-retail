@@ -315,6 +315,14 @@ const PurchaseOrderTableServerSide = forwardRef(({
     );
   }, [orders, columnFilters]);
 
+  const typeOptions = useMemo(
+    () => [
+      { id: 'MANUAL', name: 'MANUAL' },
+      { id: 'AUTO', name: 'AUTO' },
+    ],
+    []
+  );
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -471,20 +479,23 @@ const PurchaseOrderTableServerSide = forwardRef(({
         enableColumnFilter: true,
       }),
       columnHelper.accessor('po_type', {
-        size: 60,
+        id: 'po_type',
+        size: 80,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Type</div>
-            <select
-              value={column.getFilterValue() ?? ''}
+            <AutocompleteCheckboxLimitTag
+              options={typeOptions}
+              value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value="">All</option>
-              <option value="MANUAL">MAN</option>
-              <option value="AUTO">AUTO</option>
-            </select>
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '100px' }}
+            />
           </div>
         ),
         cell: (info) => {

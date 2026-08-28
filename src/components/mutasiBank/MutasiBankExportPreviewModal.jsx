@@ -17,9 +17,15 @@ const matchesMutasiBankFilter = (row, filterId, filterValue) => {
   if (filterValue == null || filterValue === '') return true;
   if (Array.isArray(filterValue) && filterValue.length === 0) return true;
 
-  if (filterId === 'customer') {
-    if (!Array.isArray(filterValue)) return true;
-    return filterValue.includes(row.customer);
+  const multiselectFields = ['keterangan', 'customer', 'invoice', 'notes'];
+
+  if (multiselectFields.includes(filterId)) {
+    if (!Array.isArray(filterValue)) {
+      const rowVal = String(row[filterId] ?? '').toLowerCase();
+      return rowVal.includes(String(filterValue).toLowerCase().trim());
+    }
+    if (filterValue.length === 0) return true;
+    return filterValue.includes(row[filterId]);
   }
 
   if (filterId === 'tanggal') {
@@ -96,25 +102,31 @@ const MutasiBankExportPreviewModal = ({
     });
   }, [previewData]);
 
-  const customerOptions = useMemo(() => {
-    const matchingRows = getMatchingMutasiBankRowsExcluding(formattedData, columnFilters, 'customer');
+  const getDynamicOptions = (field) => {
+    const matchingRows = getMatchingMutasiBankRowsExcluding(formattedData, columnFilters, field);
     const map = new Map();
     matchingRows.forEach((row) => {
-      if (row.customer && row.customer !== '-') {
-        map.set(row.customer, { id: row.customer, name: row.customer });
+      const val = row[field];
+      if (val && val !== '-') {
+        map.set(val, { id: val, name: String(val) });
       }
     });
 
-    const activeFilter = columnFilters.find((f) => f.id === 'customer');
+    const activeFilter = columnFilters.find((f) => f.id === field);
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
       if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
+        map.set(val, { id: val, name: String(val) });
       }
     });
 
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
+  };
+
+  const keteranganOptions = useMemo(() => getDynamicOptions('keterangan'), [formattedData, columnFilters]);
+  const customerOptions = useMemo(() => getDynamicOptions('customer'), [formattedData, columnFilters]);
+  const invoiceOptions = useMemo(() => getDynamicOptions('invoice'), [formattedData, columnFilters]);
+  const notesOptions = useMemo(() => getDynamicOptions('notes'), [formattedData, columnFilters]);
 
   const columns = useMemo(
     () => [
@@ -157,7 +169,17 @@ const MutasiBankExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Deskripsi</div>
-            <TextColumnFilter column={column} placeholder="Filter Deskripsi..." />
+            <AutocompleteCheckboxLimitTag
+              options={keteranganOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -166,9 +188,9 @@ const MutasiBankExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('customer', {
@@ -205,7 +227,17 @@ const MutasiBankExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">No Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter Invoice..." />
+            <AutocompleteCheckboxLimitTag
+              options={invoiceOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -214,9 +246,9 @@ const MutasiBankExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('jumlah', {
@@ -247,7 +279,17 @@ const MutasiBankExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Keterangan</div>
-            <TextColumnFilter column={column} placeholder="Filter Keterangan..." />
+            <AutocompleteCheckboxLimitTag
+              options={notesOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -256,13 +298,13 @@ const MutasiBankExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
     ],
-    [customerOptions]
+    [keteranganOptions, customerOptions, invoiceOptions, notesOptions]
   );
 
   const table = useReactTable({

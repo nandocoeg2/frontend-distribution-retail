@@ -11,6 +11,7 @@ import { DataTable, TableFooterCell } from '../table';
 import PdfPreviewModal from '../common/PdfPreviewModal';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
+import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 
 const columnHelper = createColumnHelper();
 
@@ -270,6 +271,86 @@ const CheckingListTableServerSide = ({
     }
   };
 
+  const dynamicCheckerOptions = useMemo(() => {
+    const map = new Map();
+    (checklists || []).forEach((item) => {
+      const val = item.checker;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'checker');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [checklists, tableOptions?.state?.columnFilters]);
+
+  const dynamicEkspedisiOptions = useMemo(() => {
+    const map = new Map();
+    (checklists || []).forEach((item) => {
+      const val = item.ekspedisi;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'ekspedisi');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [checklists, tableOptions?.state?.columnFilters]);
+
+  const dynamicMobilOptions = useMemo(() => {
+    const map = new Map();
+    (checklists || []).forEach((item) => {
+      const val = item.mobil;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'mobil');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [checklists, tableOptions?.state?.columnFilters]);
+
+  const dynamicKotaOptions = useMemo(() => {
+    const map = new Map();
+    (checklists || []).forEach((item) => {
+      const val = item.kota;
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'kota');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [checklists, tableOptions?.state?.columnFilters]);
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -401,37 +482,97 @@ const CheckingListTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.accessor('checker', {
+        id: 'checker',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Checker</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicCheckerOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
       }),
       columnHelper.accessor('ekspedisi', {
+        id: 'ekspedisi',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Ekspedisi</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicEkspedisiOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
       }),
       columnHelper.accessor('mobil', {
+        id: 'mobil',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Kendaraan</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicMobilOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => info.getValue() || '-',
       }),
       columnHelper.accessor('kota', {
+        id: 'kota',
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Kota</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicKotaOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => info.getValue() || '-',

@@ -185,6 +185,18 @@ const PackingTableServerSide = forwardRef(({
       delete mappedFilters.tanggal_packing;
     }
 
+    if (mappedFilters.is_printed) {
+      if (Array.isArray(mappedFilters.is_printed)) {
+        if (mappedFilters.is_printed.length === 1) {
+          mappedFilters.is_printed = mappedFilters.is_printed[0] === 'true';
+        } else {
+          delete mappedFilters.is_printed;
+        }
+      } else if (typeof mappedFilters.is_printed === 'string' && mappedFilters.is_printed !== '') {
+        mappedFilters.is_printed = mappedFilters.is_printed === 'true';
+      }
+    }
+
     // Handle date range filters for tanggal_expired
     if (mappedFilters.tanggal_expired && typeof mappedFilters.tanggal_expired === 'object') {
       if (mappedFilters.tanggal_expired.from) {
@@ -490,6 +502,14 @@ const PackingTableServerSide = forwardRef(({
     );
   }, [packings, columnFilters]);
 
+  const printOptions = useMemo(
+    () => [
+      { id: 'true', name: 'Sudah Print' },
+      { id: 'false', name: 'Belum Print' },
+    ],
+    []
+  );
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -617,21 +637,23 @@ const PackingTableServerSide = forwardRef(({
       columnHelper.display({
         id: 'is_printed',
         header: ({ column }) => (
-          <div className='space-y-1'>
+          <div className='space-y-1' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-xs'>Print</div>
-            <select
-              value={column.getFilterValue() ?? ''}
-              onChange={(event) => {
-                column.setFilterValue(event.target.value);
+            <AutocompleteCheckboxLimitTag
+              options={printOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
                 setPage(1);
               }}
-              className='w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500'
-              onClick={(event) => event.stopPropagation()}
-            >
-              <option value=''>Semua</option>
-              <option value='true'>Sudah Print</option>
-              <option value='false'>Belum Print</option>
-            </select>
+              placeholder='Semua'
+              displayKey='name'
+              valueKey='id'
+              limitTags={1}
+              size='small'
+              fetchOnClose={true}
+              className='w-full'
+            />
           </div>
         ),
         cell: ({ row }) => {

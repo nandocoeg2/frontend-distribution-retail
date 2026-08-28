@@ -25,9 +25,8 @@ const STATUS_OPTIONS = [
 ];
 
 const HAS_DOCUMENT_OPTIONS = [
-  { value: '', label: 'Semua' },
-  { value: 'true', label: 'Ada Dokumen' },
-  { value: 'false', label: 'Belum Ada Dokumen' },
+  { id: 'true', name: 'Ada Dokumen' },
+  { id: 'false', name: 'Belum Ada Dokumen' },
 ];
 
 const columnHelper = createColumnHelper();
@@ -307,6 +306,15 @@ const MutasiBankTableServerSide = forwardRef(({
           if (columnFilters.validation_status) {
             mappedFilters.validation_status = columnFilters.validation_status;
           }
+          if (columnFilters.invoice_number) {
+            if (Array.isArray(columnFilters.invoice_number)) {
+              if (columnFilters.invoice_number.length === 1) {
+                mappedFilters.has_document = columnFilters.invoice_number[0];
+              }
+            } else if (columnFilters.invoice_number !== '') {
+              mappedFilters.has_document = columnFilters.invoice_number;
+            }
+          }
           if (columnFilters.matched_document) {
             mappedFilters.has_document = columnFilters.matched_document;
           }
@@ -465,18 +473,20 @@ const MutasiBankTableServerSide = forwardRef(({
       columnHelper.display({
         id: 'invoice_number',
         header: ({ column }) => (
-          <div className='space-y-0.5'>
+          <div className='space-y-0.5 max-w-[130px]' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-[11px]'>No Invoice</div>
-            <select
-              value={column.getFilterValue() ?? ''}
+            <AutocompleteCheckboxLimitTag
+              options={HAS_DOCUMENT_OPTIONS}
+              value={column.getFilterValue() ?? []}
               onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              className='w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500'
-              onClick={(e) => e.stopPropagation()}
-            >
-              {HAS_DOCUMENT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              placeholder='Semua'
+              displayKey='name'
+              valueKey='id'
+              limitTags={1}
+              size='small'
+              fetchOnClose
+              sx={{ minWidth: '110px' }}
+            />
           </div>
         ),
         size: 210,

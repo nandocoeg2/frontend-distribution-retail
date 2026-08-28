@@ -220,6 +220,17 @@ const InvoicePengirimanTableServerSide = ({
           }
         }
 
+        // Handle no_lpb filter
+        if (mappedFilters.no_lpb) {
+          if (Array.isArray(mappedFilters.no_lpb)) {
+            if (mappedFilters.no_lpb.length === 1) {
+              mappedFilters.no_lpb = mappedFilters.no_lpb[0];
+            } else {
+              delete mappedFilters.no_lpb;
+            }
+          }
+        }
+
         return {
           ...rest,
           filters: mappedFilters,
@@ -307,6 +318,14 @@ const InvoicePengirimanTableServerSide = ({
       a.name.localeCompare(b.name)
     );
   }, [invoices, columnFilters]);
+
+  const lpbOptions = useMemo(
+    () => [
+      { id: 'true', name: 'Ada LPB' },
+      { id: 'false', name: 'Tidak Ada LPB' },
+    ],
+    []
+  );
 
   const totalGrandTotal = useMemo(() => {
     if (!invoices || !Array.isArray(invoices)) return 0;
@@ -436,21 +455,23 @@ const InvoicePengirimanTableServerSide = ({
         {
           id: "no_lpb",
           header: ({ column }) => (
-            <div className="space-y-1">
+            <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
               <div className="font-medium text-xs">No LPB</div>
-              <select
-                value={column.getFilterValue() ?? ""}
+              <AutocompleteCheckboxLimitTag
+                options={lpbOptions}
+                value={column.getFilterValue() ?? []}
                 onChange={(e) => {
                   column.setFilterValue(e.target.value);
                   setPage(1);
                 }}
-                className="w-full px-0.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <option value="">Semua</option>
-                <option value="true">Ada LPB</option>
-                <option value="false">Tidak Ada LPB</option>
-              </select>
+                placeholder="Semua"
+                displayKey="name"
+                valueKey="id"
+                limitTags={1}
+                size="small"
+                fetchOnClose
+                sx={{ minWidth: "90px" }}
+              />
             </div>
           ),
           cell: (info) => (

@@ -17,15 +17,26 @@ const matchesPurchaseOrderFilter = (row, filterId, filterValue) => {
   if (filterValue == null || filterValue === '') return true;
   if (Array.isArray(filterValue) && filterValue.length === 0) return true;
 
-  if (
-    filterId === 'company' ||
-    filterId === 'groupCustomer' ||
-    filterId === 'customer' ||
-    filterId === 'top' ||
-    filterId === 'type' ||
-    filterId === 'status'
-  ) {
-    if (!Array.isArray(filterValue)) return true;
+  const multiselectFields = [
+    'po',
+    'company',
+    'groupCustomer',
+    'customer',
+    'top',
+    'type',
+    'status',
+    'plu',
+    'barcode',
+    'internal_item_code',
+    'nama_barang',
+  ];
+
+  if (multiselectFields.includes(filterId)) {
+    if (!Array.isArray(filterValue)) {
+      const rowVal = String(row[filterId] ?? '').toLowerCase();
+      return rowVal.includes(String(filterValue).toLowerCase().trim());
+    }
+    if (filterValue.length === 0) return true;
     return filterValue.includes(row[filterId]);
   }
 
@@ -139,105 +150,38 @@ const PurchaseOrderExportPreviewModal = ({
     });
   }, [previewData]);
 
-  const customerOptions = useMemo(() => {
-    const matchingRows = getMatchingPurchaseOrderRowsExcluding(formattedData, columnFilters, 'customer');
+  const getDynamicOptions = (field) => {
+    const matchingRows = getMatchingPurchaseOrderRowsExcluding(formattedData, columnFilters, field);
     const map = new Map();
     matchingRows.forEach((row) => {
-      if (row.customer && row.customer !== '-') {
-        map.set(row.customer, { id: row.customer, name: row.customer });
+      const val = row[field];
+      if (val && val !== '-') {
+        map.set(val, { id: val, name: String(val) });
       }
     });
 
-    const activeFilter = columnFilters.find((f) => f.id === 'customer');
+    const activeFilter = columnFilters.find((f) => f.id === field);
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
       if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
+        map.set(val, { id: val, name: String(val) });
       }
     });
 
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
+  };
 
-  const groupCustomerOptions = useMemo(() => {
-    const matchingRows = getMatchingPurchaseOrderRowsExcluding(formattedData, columnFilters, 'groupCustomer');
-    const map = new Map();
-    matchingRows.forEach((row) => {
-      if (row.groupCustomer && row.groupCustomer !== '-') {
-        map.set(row.groupCustomer, { id: row.groupCustomer, name: row.groupCustomer });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'groupCustomer');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
-
-  const topOptions = useMemo(() => {
-    const matchingRows = getMatchingPurchaseOrderRowsExcluding(formattedData, columnFilters, 'top');
-    const map = new Map();
-    matchingRows.forEach((row) => {
-      if (row.top && row.top !== '-') {
-        map.set(row.top, { id: row.top, name: row.top });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'top');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
-
-  const typeOptions = useMemo(() => {
-    const matchingRows = getMatchingPurchaseOrderRowsExcluding(formattedData, columnFilters, 'type');
-    const map = new Map();
-    matchingRows.forEach((row) => {
-      if (row.type && row.type !== '-') {
-        map.set(row.type, { id: row.type, name: row.type });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'type');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
-
-  const statusOptions = useMemo(() => {
-    const matchingRows = getMatchingPurchaseOrderRowsExcluding(formattedData, columnFilters, 'status');
-    const map = new Map();
-    matchingRows.forEach((row) => {
-      if (row.status && row.status !== '-') {
-        map.set(row.status, { id: row.status, name: row.status });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'status');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
+  const poOptions = useMemo(() => getDynamicOptions('po'), [formattedData, columnFilters]);
+  const companyOptions = useMemo(() => getDynamicOptions('company'), [formattedData, columnFilters]);
+  const customerOptions = useMemo(() => getDynamicOptions('customer'), [formattedData, columnFilters]);
+  const groupCustomerOptions = useMemo(() => getDynamicOptions('groupCustomer'), [formattedData, columnFilters]);
+  const topOptions = useMemo(() => getDynamicOptions('top'), [formattedData, columnFilters]);
+  const typeOptions = useMemo(() => getDynamicOptions('type'), [formattedData, columnFilters]);
+  const statusOptions = useMemo(() => getDynamicOptions('status'), [formattedData, columnFilters]);
+  const pluOptions = useMemo(() => getDynamicOptions('plu'), [formattedData, columnFilters]);
+  const barcodeOptions = useMemo(() => getDynamicOptions('barcode'), [formattedData, columnFilters]);
+  const itemCodeOptions = useMemo(() => getDynamicOptions('internal_item_code'), [formattedData, columnFilters]);
+  const namaBarangOptions = useMemo(() => getDynamicOptions('nama_barang'), [formattedData, columnFilters]);
 
   const columns = useMemo(
     () => [
@@ -246,7 +190,17 @@ const PurchaseOrderExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">PO</div>
-            <TextColumnFilter column={column} placeholder="Filter PO..." />
+            <AutocompleteCheckboxLimitTag
+              options={poOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -255,9 +209,9 @@ const PurchaseOrderExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('company', {
@@ -265,7 +219,17 @@ const PurchaseOrderExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Company</div>
-            <TextColumnFilter column={column} placeholder="Filter Company..." />
+            <AutocompleteCheckboxLimitTag
+              options={companyOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -274,9 +238,9 @@ const PurchaseOrderExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('groupCustomer', {
@@ -510,7 +474,17 @@ const PurchaseOrderExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">PLU</div>
-            <TextColumnFilter column={column} placeholder="Filter PLU..." />
+            <AutocompleteCheckboxLimitTag
+              options={pluOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -519,9 +493,9 @@ const PurchaseOrderExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('barcode', {
@@ -529,7 +503,17 @@ const PurchaseOrderExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Barcode</div>
-            <TextColumnFilter column={column} placeholder="Filter Barcode..." />
+            <AutocompleteCheckboxLimitTag
+              options={barcodeOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -538,9 +522,9 @@ const PurchaseOrderExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('internal_item_code', {
@@ -548,7 +532,17 @@ const PurchaseOrderExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Kode Barang</div>
-            <TextColumnFilter column={column} placeholder="Filter Kode..." />
+            <AutocompleteCheckboxLimitTag
+              options={itemCodeOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -557,9 +551,9 @@ const PurchaseOrderExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('nama_barang', {
@@ -567,7 +561,17 @@ const PurchaseOrderExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Nama Barang</div>
-            <TextColumnFilter column={column} placeholder="Filter Nama..." />
+            <AutocompleteCheckboxLimitTag
+              options={namaBarangOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -576,9 +580,9 @@ const PurchaseOrderExportPreviewModal = ({
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || typeof filterValue !== 'string') return true;
-          const val = String(row.getValue(columnId) || '').toLowerCase();
-          return val.includes(filterValue.toLowerCase().trim());
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
         },
       }),
       columnHelper.accessor('qty', {

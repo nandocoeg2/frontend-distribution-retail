@@ -18,14 +18,15 @@ const matchesLpbFilter = (row, filterId, filterValue) => {
   if (filterValue == null || filterValue === '') return true;
   if (Array.isArray(filterValue) && filterValue.length === 0) return true;
 
-  if (filterId === 'customer') {
-    if (!Array.isArray(filterValue)) return true;
-    return filterValue.includes(row.customer);
-  }
+  const multiselectFields = ['no_lpb', 'po', 'customer', 'top', 'status', 'plu', 'nama_barang'];
 
-  if (filterId === 'status') {
-    if (!Array.isArray(filterValue)) return true;
-    return filterValue.includes(row.status);
+  if (multiselectFields.includes(filterId)) {
+    if (!Array.isArray(filterValue)) {
+      const rowVal = String(row[filterId] ?? '').toLowerCase();
+      return rowVal.includes(String(filterValue).toLowerCase().trim());
+    }
+    if (filterValue.length === 0) return true;
+    return filterValue.includes(row[filterId]);
   }
 
   if (filterId === 'tanggal') {
@@ -119,45 +120,34 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
     });
   }, [previewData]);
 
-  const customerOptions = useMemo(() => {
-    const matchingRows = getMatchingLpbRowsExcluding(formattedData, columnFilters, 'customer');
+  const getDynamicOptions = (field) => {
+    const matchingRows = getMatchingLpbRowsExcluding(formattedData, columnFilters, field);
     const map = new Map();
     matchingRows.forEach((row) => {
-      if (row.customer && row.customer !== '-') {
-        map.set(row.customer, { id: row.customer, name: row.customer });
+      const val = row[field];
+      if (val && val !== '-') {
+        map.set(val, { id: val, name: String(val) });
       }
     });
 
-    const activeFilter = columnFilters.find((f) => f.id === 'customer');
+    const activeFilter = columnFilters.find((f) => f.id === field);
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
       if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
+        map.set(val, { id: val, name: String(val) });
       }
     });
 
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
+  };
 
-  const statusOptions = useMemo(() => {
-    const matchingRows = getMatchingLpbRowsExcluding(formattedData, columnFilters, 'status');
-    const map = new Map();
-    matchingRows.forEach((row) => {
-      if (row.status && row.status !== '-') {
-        map.set(row.status, { id: row.status, name: row.status });
-      }
-    });
-
-    const activeFilter = columnFilters.find((f) => f.id === 'status');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
-      }
-    });
-
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [formattedData, columnFilters]);
+  const noLpbOptions = useMemo(() => getDynamicOptions('no_lpb'), [formattedData, columnFilters]);
+  const poOptions = useMemo(() => getDynamicOptions('po'), [formattedData, columnFilters]);
+  const customerOptions = useMemo(() => getDynamicOptions('customer'), [formattedData, columnFilters]);
+  const topOptions = useMemo(() => getDynamicOptions('top'), [formattedData, columnFilters]);
+  const statusOptions = useMemo(() => getDynamicOptions('status'), [formattedData, columnFilters]);
+  const pluOptions = useMemo(() => getDynamicOptions('plu'), [formattedData, columnFilters]);
+  const namaBarangOptions = useMemo(() => getDynamicOptions('nama_barang'), [formattedData, columnFilters]);
 
   const columns = useMemo(
     () => [
@@ -166,7 +156,17 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">No. LPB</div>
-            <TextColumnFilter column={column} placeholder="Filter LPB..." />
+            <AutocompleteCheckboxLimitTag
+              options={noLpbOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -174,6 +174,11 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
             {info.getValue() || '-'}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
         meta: {
           footer: () => <span className="font-bold text-xs text-gray-700">Total</span>,
         },
@@ -183,7 +188,17 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">PO</div>
-            <TextColumnFilter column={column} placeholder="Filter PO..." />
+            <AutocompleteCheckboxLimitTag
+              options={poOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -191,6 +206,11 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
             {info.getValue() || '-'}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
       }),
       columnHelper.accessor('customer', {
         id: 'customer',
@@ -244,7 +264,17 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">TOP</div>
-            <TextColumnFilter column={column} placeholder="TOP..." />
+            <AutocompleteCheckboxLimitTag
+              options={topOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -252,6 +282,11 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
             {info.getValue() || '-'}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
       }),
       columnHelper.accessor('status', {
         id: 'status',
@@ -287,7 +322,17 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">PLU</div>
-            <TextColumnFilter column={column} placeholder="PLU..." />
+            <AutocompleteCheckboxLimitTag
+              options={pluOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -295,13 +340,28 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
             {info.getValue() || '-'}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
       }),
       columnHelper.accessor('nama_barang', {
         id: 'nama_barang',
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Nama Barang</div>
-            <TextColumnFilter column={column} placeholder="Filter Barang..." />
+            <AutocompleteCheckboxLimitTag
+              options={namaBarangOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => column.setFilterValue(e.target.value)}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => (
@@ -309,6 +369,11 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
             {info.getValue() || '-'}
           </span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) return true;
+          const val = row.getValue(columnId);
+          return filterValue.includes(val);
+        },
       }),
       columnHelper.accessor('qty_dikirim', {
         id: 'qty_dikirim',
