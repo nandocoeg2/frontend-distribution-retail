@@ -734,9 +734,12 @@ const SuratJalanTableServerSide = forwardRef(({
         bodyClassName="bg-white divide-y divide-gray-100"
         rowClassName="hover:bg-gray-50 cursor-pointer h-7"
         getRowClassName={({ row }) => {
-          if (selectedSuratJalanId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
+          const isSelected = selectedSuratJalanId === row.original.id;
           const selectedIds = selectedSuratJalan.map(item => typeof item === 'string' ? item : item?.id);
-          return selectedIds.includes(row.original.id) ? 'bg-green-50' : undefined;
+          const isChecked = selectedIds.includes(row.original.id);
+          if (isSelected) return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
+          if (isChecked) return 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
+          return undefined;
         }}
         onRowClick={onRowClick}
         selectedRowId={selectedSuratJalanId}

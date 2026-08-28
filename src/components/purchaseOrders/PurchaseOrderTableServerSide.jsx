@@ -680,8 +680,10 @@ const PurchaseOrderTableServerSide = forwardRef(({
         bodyClassName="bg-white divide-y divide-gray-100"
         rowClassName="hover:bg-gray-50 h-7"
         getRowClassName={({ row }) => {
-          if (selectedOrderId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
-          if (selectedOrders.includes(row.original.id)) return 'bg-green-50';
+          const isSelected = selectedOrderId === row.original.id;
+          const isChecked = selectedOrders.includes(row.original.id);
+          if (isSelected) return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
+          if (isChecked) return 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
           return undefined;
         }}
         cellClassName="px-1.5 py-0.5 whitespace-nowrap text-xs text-gray-900"

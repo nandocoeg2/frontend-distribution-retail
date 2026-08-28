@@ -725,11 +725,13 @@ const FakturPajakTableServerSide = ({
           if (!row || !row.original) {
             return undefined;
           }
-          if (row.original.id === selectedFakturPajakId) {
-            return "bg-blue-50 border-l-4 border-blue-500";
+          const isSelected = row.original.id === selectedFakturPajakId;
+          const isChecked = selectedFakturIds.includes(row.original.id);
+          if (isSelected) {
+            return "bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900";
           }
-          if (selectedFakturIds.includes(row.original.id)) {
-            return "bg-green-50";
+          if (isChecked) {
+            return "bg-emerald-100 border-l-2 border-emerald-500 text-gray-900";
           }
           return undefined;
         }}

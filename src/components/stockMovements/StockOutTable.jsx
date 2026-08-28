@@ -762,8 +762,8 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
         bodyClassName="bg-white divide-y divide-gray-100"
         rowClassName="hover:bg-amber-50/40 h-7"
         getRowClassName={({ row }) => {
-          if (selectedMovementId && row.original.movementId === selectedMovementId) {
-            return 'bg-blue-50 border-l-2 border-blue-500';
+          if (selectedMovementId && (row.original.movementId === selectedMovementId || row.original.id === selectedMovementId)) {
+            return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
           }
           return undefined;
         }}

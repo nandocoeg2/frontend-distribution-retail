@@ -752,7 +752,7 @@ const TandaTerimaFakturTableServerSide = ({
         getRowClassName={({ row }) => {
           if (!row || !row.original) return undefined;
           if (row.original.id === selectedTTFId) {
-            return 'bg-blue-50 border-l-2 border-blue-500';
+            return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
           }
           return undefined;
         }}

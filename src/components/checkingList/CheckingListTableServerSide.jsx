@@ -684,15 +684,15 @@ const CheckingListTableServerSide = ({
         rowClassName="hover:bg-gray-50 cursor-pointer h-8"
         getRowClassName={({ row }) => {
           const checklistId = resolveChecklistId(row.original);
+          const isSelected = checklistId === selectedChecklistId;
+          const isChecked = checklistId && selectedChecklists.includes(checklistId);
 
-          if (checklistId === selectedChecklistId) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
+          if (isSelected) {
+            return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
           }
-
-          if (checklistId && selectedChecklists.includes(checklistId)) {
-            return 'bg-blue-50';
+          if (isChecked) {
+            return 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
           }
-
           return undefined;
         }}
         cellClassName="px-2 py-1 whitespace-nowrap text-xs text-gray-900"

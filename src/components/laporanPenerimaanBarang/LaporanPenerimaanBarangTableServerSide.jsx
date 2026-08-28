@@ -861,8 +861,10 @@ const LaporanPenerimaanBarangTableServerSide = ({
           onRowClick={(rowData) => rowData && onView && onView(rowData)}
           getRowClassName={({ row }) => {
             const reportId = resolveReportId(row.original);
-            if (reportId === selectedReportId) return 'bg-blue-50 border-l-2 border-blue-500';
-            if (reportId && selectedReports.includes(reportId)) return 'bg-green-50';
+            const isSelected = reportId === selectedReportId;
+            const isChecked = reportId && selectedReports.includes(reportId);
+            if (isSelected) return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
+            if (isChecked) return 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
             return undefined;
           }}
           selectedRowId={selectedReportId}

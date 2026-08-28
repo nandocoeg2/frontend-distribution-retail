@@ -172,9 +172,22 @@ const DataTable = ({
             <>
               {rows.map((row) => {
                 const context = { row };
+                const customClass = resolveClassName(getRowClassName, context);
+                const isSelectedRow = selectedRowId != null && (row.original?.[idAttribute] === selectedRowId || row.original?.id === selectedRowId);
+                const isCheckedRow = typeof row.getIsSelected === 'function' && row.getIsSelected();
+
+                let defaultSelectionClass = '';
+                if (!customClass) {
+                  if (isSelectedRow) {
+                    defaultSelectionClass = 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
+                  } else if (isCheckedRow) {
+                    defaultSelectionClass = 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
+                  }
+                }
+
                 const computedRowClass = [
                   resolveClassName(rowClassName, context),
-                  resolveClassName(getRowClassName, context),
+                  customClass || defaultSelectionClass,
                   onRowClick ? 'cursor-pointer' : '',
                 ]
                   .filter(Boolean)

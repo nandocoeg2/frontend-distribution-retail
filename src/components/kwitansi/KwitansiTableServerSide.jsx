@@ -643,15 +643,15 @@ const KwitansiTableServerSide = ({
         rowClassName="hover:bg-gray-50 cursor-pointer h-8"
         getRowClassName={({ row }) => {
           const kwitansiId = resolveKwitansiId(row.original);
+          const isSelected = kwitansiId === selectedKwitansiId;
+          const isChecked = kwitansiId && selectedKwitansis.includes(kwitansiId);
 
-          if (kwitansiId === selectedKwitansiId) {
-            return 'bg-blue-50 border-l-4 border-blue-500';
+          if (isSelected) {
+            return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
           }
-
-          if (kwitansiId && selectedKwitansis.includes(kwitansiId)) {
-            return 'bg-blue-50';
+          if (isChecked) {
+            return 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
           }
-
           return undefined;
         }}
         onRowClick={(rowData, event) => {

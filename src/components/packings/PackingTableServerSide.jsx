@@ -852,8 +852,10 @@ const PackingTableServerSide = forwardRef(({
         rowClassName='hover:bg-gray-50 cursor-pointer h-7'
         onRowClick={onRowClick}
         getRowClassName={({ row }) => {
-          if (selectedPackingId === row.original.id) return 'bg-blue-50 border-l-2 border-blue-500';
-          if (selectedPackings.includes(row.original.id)) return 'bg-green-50';
+          const isSelected = selectedPackingId === row.original.id;
+          const isChecked = selectedPackings.includes(row.original.id);
+          if (isSelected) return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
+          if (isChecked) return 'bg-emerald-100 border-l-2 border-emerald-500 text-gray-900';
           return undefined;
         }}
         selectedRowId={selectedPackingId}
