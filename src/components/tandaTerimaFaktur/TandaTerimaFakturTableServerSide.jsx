@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createColumnHelper, useReactTable } from '@tanstack/react-table';
 import { EyeIcon, LinkIcon, LinkSlashIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { StatusBadge } from '../ui/Badge';
@@ -15,6 +15,10 @@ import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
+import { ConfirmationDialog } from '../ui/ConfirmationDialog';
+import TandaTerimaFakturExportPreviewModal from './TandaTerimaFakturExportPreviewModal';
+import tandaTerimaFakturService from '../../services/tandaTerimaFakturService';
+import toastService from '../../services/toastService';
 
 const columnHelper = createColumnHelper();
 
@@ -44,19 +48,20 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
-const TandaTerimaFakturTableServerSide = ({
-  onView,
-  onEdit,
-  onDelete,
-  onAssignDocuments,
-  onUnassignDocuments,
-  deleteLoading = false,
-  assignLoading = false,
-  unassignLoading = false,
-  initialPage = 1,
-  initialLimit = 10,
-  selectedTTFId = null,
-}) => {
+const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
+  const {
+    onView,
+    onEdit,
+    onDelete,
+    onAssignDocuments,
+    onUnassignDocuments,
+    deleteLoading = false,
+    assignLoading = false,
+    unassignLoading = false,
+    initialPage = 1,
+    initialLimit = 10,
+    selectedTTFId = null,
+  } = props;
   const [groupCustomers, setGroupCustomers] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [termOfPayments, setTermOfPayments] = useState([]);
@@ -781,9 +786,72 @@ const TandaTerimaFakturTableServerSide = ({
     columns,
   });
 
+  const [showExportConfirmation, setShowExportConfirmation] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const activeQueryFilters = useMemo(() => {
+    const state = tableOptions?.state?.columnFilters || [];
+    const filterObj = {};
+    state.forEach((f) => {
+      filterObj[f.id] = f.value;
+    });
+    const queryObj = getQueryParams({ filters: filterObj });
+    return queryObj?.filters || {};
+  }, [tableOptions?.state?.columnFilters, getQueryParams]);
+
+  const handleConfirmExport = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportConfirmation(false);
+      toastService.info('Mengunduh file Excel...');
+
+      const blob = await tandaTerimaFakturService.exportExcel(activeQueryFilters);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `Tanda_Terima_Faktur_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toastService.success('Berhasil mendownload Excel Tanda Terima Faktur');
+    } catch (err) {
+      console.error('Error exporting excel:', err);
+      toastService.error('Gagal memproses export excel');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleConfirmPreview = async () => {
+    setShowPreviewModal(true);
+    setPreviewLoading(true);
+    try {
+      const res = await tandaTerimaFakturService.previewExportExcel(activeQueryFilters);
+      setPreviewData(res);
+    } catch (err) {
+      console.error('Error loading preview:', err);
+      toastService.error('Gagal memuat preview data excel');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  useImperativeHandle(ref, () => ({
+    openExportDialog: () => {
+      setShowExportConfirmation(true);
+    },
+    openPreviewDialog: () => {
+      handleConfirmPreview();
+    },
+  }));
+
   const loading = isLoading || isFetching;
-
-
 
   return (
     <div className="space-y-2">
@@ -836,8 +904,32 @@ const TandaTerimaFakturTableServerSide = ({
           </tr>
         }
       />
+
+      {/* Export Confirmation Dialog */}
+      <ConfirmationDialog
+        show={showExportConfirmation}
+        onClose={() => setShowExportConfirmation(false)}
+        onConfirm={handleConfirmExport}
+        title="Export Excel Tanda Terima Faktur"
+        message="Apakah Anda yakin ingin meng-export data tanda terima faktur ke Excel berdasarkan filter saat ini?"
+        confirmText="Export Excel"
+        cancelText="Batal"
+        type="info"
+      />
+
+      {/* Excel Preview Modal */}
+      <TandaTerimaFakturExportPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        previewData={previewData}
+        previewLoading={previewLoading}
+        onExport={handleConfirmExport}
+        isExporting={isExporting}
+      />
     </div>
   );
-};
+});
+
+TandaTerimaFakturTableServerSide.displayName = 'TandaTerimaFakturTableServerSide';
 
 export default TandaTerimaFakturTableServerSide;

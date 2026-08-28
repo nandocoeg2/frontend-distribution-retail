@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useTandaTerimaFakturPage from '@/hooks/useTandaTerimaFakturPage';
 import {
@@ -9,10 +9,11 @@ import {
   UploadTTF2Modal,
 } from '@/components/tandaTerimaFaktur';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
-import { PrinterIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
+import { PrinterIcon, ArrowUpTrayIcon, EyeIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 const TandaTerimaFakturPage = () => {
   const queryClient = useQueryClient();
+  const tableRef = useRef(null);
 
   const {
     createTandaTerimaFaktur,
@@ -28,6 +29,18 @@ const TandaTerimaFakturPage = () => {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const handleExportExcel = useCallback(() => {
+    if (tableRef.current) {
+      tableRef.current.openExportDialog();
+    }
+  }, []);
+
+  const handlePreviewExcel = useCallback(() => {
+    if (tableRef.current) {
+      tableRef.current.openPreviewDialog();
+    }
+  }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
     await deleteTandaTerimaFakturConfirmation.confirmDelete();
@@ -116,7 +129,23 @@ const TandaTerimaFakturPage = () => {
         <div className='px-3 py-3 space-y-2'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
             <h3 className='text-sm font-semibold text-gray-900'>Tanda Terima Faktur</h3>
-            <div className='flex flex-wrap gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <button
+                type='button'
+                onClick={handlePreviewExcel}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <EyeIcon className="h-4 w-4 mr-1.5" />
+                Preview Excel
+              </button>
+              <button
+                type='button'
+                onClick={handleExportExcel}
+                className="inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors shadow-sm"
+              >
+                <ArrowDownTrayIcon className="h-4 w-4 mr-1.5" />
+                Export Excel
+              </button>
               <button
                 onClick={openUploadModal}
                 className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-emerald-600 rounded hover:bg-emerald-700'
@@ -128,6 +157,7 @@ const TandaTerimaFakturPage = () => {
           </div>
 
           <TandaTerimaFakturTableServerSide
+            ref={tableRef}
             onView={handleViewDetail}
             onDelete={handleDelete}
             deleteLoading={deleteTandaTerimaFakturConfirmation.loading}

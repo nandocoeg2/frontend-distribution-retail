@@ -317,6 +317,132 @@ class TandaTerimaFakturService {
       throw error;
     }
   }
+
+  async exportExcel(params = {}) {
+    try {
+      const activeCompanyId = authService.getCompanyData()?.id;
+      const mergedParams = {
+        ...params,
+        ...(activeCompanyId && !params.companyId ? { companyId: activeCompanyId } : {}),
+      };
+
+      const response = await this.api.get('/export-excel', {
+        params: sanitizeParams(mergedParams),
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting tanda terima faktur to excel:', error);
+      throw error;
+    }
+  }
+
+  async previewExportExcel(params = {}) {
+    try {
+      const activeCompanyId = authService.getCompanyData()?.id;
+      const mergedParams = {
+        ...params,
+        ...(activeCompanyId && !params.companyId ? { companyId: activeCompanyId } : {}),
+        page: 1,
+        limit: 10000,
+      };
+
+      const response = await this.getAll(mergedParams);
+      const rawData = response?.data || response?.tandaTerimaFakturs || [];
+      const totalItems = response?.pagination?.totalItems || rawData.length;
+
+      const headers = [
+        'TANGGAL TAGIHAN',
+        'CUSTOMER',
+        'NO INVOICE',
+        'TOP',
+        'TOTAL TTF',
+        'TANGGAL KIRIM POS',
+        'TANGGAL PROSES DC',
+        'JATUH TEMPO',
+        'TANGGAL BAYAR',
+        'PAYMENT',
+        'SELISIH',
+        'KETERANGAN',
+        'STATUS',
+      ];
+
+      const rows = rawData.map((item) => {
+        const customer = item?.invoicePenagihan?.purchaseOrder?.customer;
+        const customerName =
+          customer?.namaCustomer ||
+          item?.customer?.namaCustomer ||
+          item?.groupCustomer?.nama_group ||
+          '-';
+        const customerCode = customer?.kodeCustomer
+          ? ` (${customer.kodeCustomer})`
+          : '';
+        const fullCustomer = customer?.namaCustomer
+          ? `${customerName}${customerCode}`
+          : customerName;
+
+        const invoiceNo = item?.invoicePenagihan?.no_invoice_penagihan || '-';
+        const topCode = item?.termOfPayment?.kode_top || '-';
+        const totalTTF = Number(item?.grand_total) || 0;
+
+        const tanggalTagihanStr = item?.tanggal
+          ? new Date(item.tanggal).toLocaleDateString('id-ID')
+          : '-';
+
+        const tanggalKirimPosStr = item?.tanggal_print_ttf1
+          ? new Date(item.tanggal_print_ttf1).toLocaleDateString('id-ID')
+          : '-';
+
+        const tanggalProsesDcStr = item?.tanggal_upload_ttf2
+          ? new Date(item.tanggal_upload_ttf2).toLocaleDateString('id-ID')
+          : '-';
+
+        let tanggalJatuhTempoStr = '-';
+        if (item?.tanggal_jatuh_tempo) {
+          tanggalJatuhTempoStr = new Date(item.tanggal_jatuh_tempo).toLocaleDateString('id-ID');
+        } else if (item?.tanggal) {
+          const batasHari = item?.termOfPayment?.batas_hari || 0;
+          const jatuhTempo = new Date(item.tanggal);
+          jatuhTempo.setDate(jatuhTempo.getDate() + batasHari);
+          tanggalJatuhTempoStr = jatuhTempo.toLocaleDateString('id-ID');
+        }
+
+        const tanggalBayarStr = item?.bankMutation?.tanggal_transaksi
+          ? new Date(item.bankMutation.tanggal_transaksi).toLocaleDateString('id-ID')
+          : '-';
+
+        const payment = Number(item?.bankMutation?.jumlah) || 0;
+        const selisih = totalTTF - payment;
+        const keterangan = item?.keterangan || item?.bankMutation?.keterangan || '-';
+        const status = item?.status?.status_name || item?.status?.status_code || '-';
+
+        return {
+          tanggal: tanggalTagihanStr,
+          customer: fullCustomer,
+          invoice_no: invoiceNo,
+          top: topCode,
+          grand_total: totalTTF,
+          tanggal_print_ttf1: tanggalKirimPosStr,
+          tanggal_upload_ttf2: tanggalProsesDcStr,
+          tanggal_jatuh_tempo: tanggalJatuhTempoStr,
+          tanggal_bayar: tanggalBayarStr,
+          payment: payment,
+          selisih: selisih,
+          keterangan: keterangan,
+          status: status,
+        };
+      });
+
+      return {
+        headers,
+        data: rows,
+        totalItems,
+      };
+    } catch (error) {
+      console.error('Error previewing tanda terima faktur export excel:', error);
+      throw error;
+    }
+  }
 }
 
 export default new TandaTerimaFakturService();

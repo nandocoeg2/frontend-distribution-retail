@@ -91,6 +91,35 @@ const formatSelisih = (selisih, uom) => {
   return `${prefix}${selisih} ${uom || 'PCS'}`;
 };
 
+/**
+ * Format price value
+ * @param {number|string|null} price - Price value
+ * @returns {string} Formatted price string
+ */
+const formatPrice = (price) => {
+  if (price === null || price === undefined || price === '') return '-';
+  const num = Number(price);
+  if (Number.isNaN(num)) return '-';
+  return num.toLocaleString('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+};
+
+/**
+ * Format percentage value (potongan / PPN)
+ * @param {number|string|null} percentage - Percentage value
+ * @returns {string} Formatted percentage string
+ */
+const formatPercentage = (percentage) => {
+  if (percentage === null || percentage === undefined || percentage === '') return '-';
+  const num = Number(percentage);
+  if (Number.isNaN(num)) {
+    return percentage.toString().endsWith('%') ? percentage : `${percentage}%`;
+  }
+  return `${num}%`;
+};
+
 const LaporanPenerimaanBarangDetailCard = ({
   report,
   onClose,
@@ -154,12 +183,29 @@ const LaporanPenerimaanBarangDetailCard = ({
           qtySelisih = qtyLPB - qtyPO;
         }
 
+        const harga = poDetail.harga ?? lpbDetail?.harga ?? null;
+        const potonganA = poDetail.potongan_a ?? lpbDetail?.potongan_a ?? null;
+        const potonganB = poDetail.potongan_b ?? lpbDetail?.potongan_b ?? null;
+        const ppn =
+          poDetail.vatRate ??
+          lpbDetail?.vatRate ??
+          poDetail.ppn ??
+          lpbDetail?.ppn ??
+          poDetail.ppn_percentage ??
+          lpbDetail?.ppn_percentage ??
+          report?.purchaseOrder?.invoice?.ppn_percentage ??
+          null;
+
         items.push({
           plu,
           nama_barang: poDetail.nama_barang || lpbDetail?.nama_barang || '-',
           qtyPO,
           qtyLPB,
           qtySelisih,
+          harga,
+          potongan_a: potonganA,
+          potongan_b: potonganB,
+          ppn,
           uom: poDetail.item?.uom || 'PCS',
         });
       }
@@ -177,6 +223,15 @@ const LaporanPenerimaanBarangDetailCard = ({
           qtyPO: null,
           qtyLPB: lpbDetail.total_quantity_order ?? null,
           qtySelisih: null, // Can't calculate if no PO
+          harga: lpbDetail.harga ?? null,
+          potongan_a: lpbDetail.potongan_a ?? null,
+          potongan_b: lpbDetail.potongan_b ?? null,
+          ppn:
+            lpbDetail.vatRate ??
+            lpbDetail.ppn ??
+            lpbDetail.ppn_percentage ??
+            report?.purchaseOrder?.invoice?.ppn_percentage ??
+            null,
           uom: 'PCS',
         });
       }
@@ -339,6 +394,10 @@ const LaporanPenerimaanBarangDetailCard = ({
                           <th className='px-2 py-2 text-left font-semibold text-gray-600 w-8'>No</th>
                           <th className='px-2 py-2 text-left font-semibold text-gray-600'>Nama Item</th>
                           <th className='px-2 py-2 text-left font-semibold text-gray-600 w-24'>PLU</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-24'>Harga</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-16'>Pot A</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-16'>Pot B</th>
+                          <th className='px-2 py-2 text-right font-semibold text-gray-600 w-16'>PPN</th>
                           <th className='px-2 py-2 text-right font-semibold text-gray-600 w-20'>Qty PO</th>
                           <th className='px-2 py-2 text-right font-semibold text-gray-600 w-20'>Qty LPB</th>
                           <th className='px-2 py-2 text-right font-semibold text-gray-600 w-24'>Qty Selisih</th>
@@ -350,6 +409,18 @@ const LaporanPenerimaanBarangDetailCard = ({
                             <td className='px-2 py-2 text-gray-500'>{index + 1}</td>
                             <td className='px-2 py-2 text-gray-900 font-medium'>{item.nama_barang}</td>
                             <td className='px-2 py-2 text-gray-600 font-mono'>{item.plu}</td>
+                            <td className='px-2 py-2 text-right text-gray-600 font-mono'>
+                              {formatPrice(item.harga)}
+                            </td>
+                            <td className='px-2 py-2 text-right text-gray-600'>
+                              {formatPercentage(item.potongan_a)}
+                            </td>
+                            <td className='px-2 py-2 text-right text-gray-600'>
+                              {formatPercentage(item.potongan_b)}
+                            </td>
+                            <td className='px-2 py-2 text-right text-gray-600'>
+                              {formatPercentage(item.ppn)}
+                            </td>
                             <td className='px-2 py-2 text-right text-gray-600'>
                               {formatQtyWithUom(item.qtyPO, item.uom)}
                             </td>
