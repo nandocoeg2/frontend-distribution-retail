@@ -261,7 +261,7 @@ const getMatchingStockInRowsExcluding = (rows, columnFilters, excludeFilterId) =
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal</div>
+              <div className="font-medium text-xs">Tanggal Kirim</div>
               <div className="flex flex-col gap-0.5">
                 <DateFilter
                   value={filterValue.from ?? ''}
