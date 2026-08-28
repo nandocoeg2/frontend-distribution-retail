@@ -14,6 +14,7 @@ import { formatCurrency, formatDate } from '../../utils/formatUtils';
 import DateFilter from '../common/DateFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import TextColumnFilter from '../common/TextColumnFilter';
 import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import MutasiBankExportPreviewModal from './MutasiBankExportPreviewModal';
 import toastService from '../../services/toastService';
@@ -315,6 +316,15 @@ const MutasiBankTableServerSide = forwardRef(({
               mappedFilters.has_document = columnFilters.invoice_number;
             }
           }
+          if (columnFilters.description) {
+            mappedFilters.description = columnFilters.description;
+          }
+          if (columnFilters.customer) {
+            mappedFilters.customer = columnFilters.customer;
+          }
+          if (columnFilters.validation_notes) {
+            mappedFilters.validation_notes = columnFilters.validation_notes;
+          }
           if (columnFilters.matched_document) {
             mappedFilters.has_document = columnFilters.matched_document;
           }
@@ -444,7 +454,12 @@ const MutasiBankTableServerSide = forwardRef(({
         (row) => row.keterangan || '',
         {
           id: 'description',
-          header: 'Deskripsi',
+          header: ({ column }) => (
+            <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
+              <div className='font-medium text-[11px]'>Deskripsi</div>
+              <TextColumnFilter column={column} placeholder="Filter..." />
+            </div>
+          ),
           size: 250,
           cell: (info) => {
             const value = info.getValue() || '-';
@@ -458,7 +473,12 @@ const MutasiBankTableServerSide = forwardRef(({
       ),
       columnHelper.display({
         id: 'customer',
-        header: 'Customer',
+        header: ({ column }) => (
+          <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
+            <div className='font-medium text-[11px]'>Customer</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
         size: 180,
         cell: ({ row }) => {
           const customer = resolveCustomer(row.original);
@@ -525,7 +545,12 @@ const MutasiBankTableServerSide = forwardRef(({
         (row) => row.validation_notes || '',
         {
           id: 'validation_notes',
-          header: 'Keterangan (Retur/Rebate)',
+          header: ({ column }) => (
+            <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
+              <div className='font-medium text-[11px]'>Keterangan</div>
+              <TextColumnFilter column={column} placeholder="Filter..." />
+            </div>
+          ),
           size: 200,
           cell: (info) => {
             const value = info.getValue() || '-';
