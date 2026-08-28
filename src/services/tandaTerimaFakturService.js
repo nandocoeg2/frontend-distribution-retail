@@ -276,22 +276,34 @@ class TandaTerimaFakturService {
   }
 
   async bulkUpload(groupCustomerId, file, processingMethod = 'ai') {
+    let actualGroupCustomerId = groupCustomerId;
+    let actualFile = file;
+    let actualMethod = processingMethod;
+
+    // Handle flexible argument order if called as bulkUpload(file, [groupCustomerId], [processingMethod])
+    if (groupCustomerId instanceof File || groupCustomerId instanceof Blob) {
+      actualFile = groupCustomerId;
+      actualGroupCustomerId = typeof file === 'string' ? file : null;
+      actualMethod = typeof processingMethod === 'string' ? processingMethod : 'ai';
+    }
+
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', actualFile);
 
       const token = authService.getToken();
-      const response = await fetch(
-        `${API_BASE_URL}/bulk-upload/${groupCustomerId}?processingMethod=${processingMethod}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formData,
-          credentials: 'include',
-        }
-      );
+      const url = actualGroupCustomerId
+        ? `${API_BASE_URL}/bulk-upload/${actualGroupCustomerId}?processingMethod=${actualMethod}`
+        : `${API_BASE_URL}/bulk-upload?processingMethod=${actualMethod}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+        credentials: 'include',
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

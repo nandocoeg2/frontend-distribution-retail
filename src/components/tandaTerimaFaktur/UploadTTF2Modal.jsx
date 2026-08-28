@@ -67,11 +67,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
   };
 
   const handleUpload = async () => {
-    if (!groupCustomerId) {
-      toastService.error('Group Customer harus diisi');
-      return;
-    }
-
     if (selectedFiles.length === 0) {
       toastService.error('Minimal 1 file PDF harus dipilih');
       return;
@@ -198,16 +193,16 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
         {/* Content */}
         <div className='flex-1 px-6 py-4 overflow-y-auto'>
           <div className='space-y-4'>
-            {/* Group Customer */}
+            {/* Group Customer (Opsional) */}
             <Autocomplete
-              label='Group Customer'
-              placeholder='Cari group customer...'
+              label='Group Customer (Opsional)'
+              placeholder='Otomatis terdeteksi dari dokumen atau pilih manual...'
               options={groupCustomerOptions}
               value={groupCustomerId}
               onChange={(e) => setGroupCustomerId(e.target.value)}
               displayKey='nama_group'
               valueKey='id'
-              required
+              required={false}
               onSearch={handleSearchGroupCustomer}
               onFocus={handleFocusGroupCustomer}
               loading={searchingGroupCustomer}
@@ -318,6 +313,11 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
 
                       {result.success && result.data?.data?.validation && (
                         <div className='text-xs text-gray-700 space-y-1'>
+                          {result.data?.data?.groupCustomer && (
+                            <p className='font-semibold text-blue-700'>
+                              • Group: {result.data.data.groupCustomer.nama_group}
+                            </p>
+                          )}
                           <p>• Total Item: {result.data.data.validation.totalItems || 0}</p>
                           <p>• Faktur Berhasil: {result.data.data.validation.updatedCount || 0}</p>
                           <p>• Faktur Gagal: {result.data.data.validation.invalidFakturPajak?.length || 0}</p>
@@ -438,7 +438,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
               <button
                 onClick={handleUpload}
                 className='flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed'
-                disabled={isUploading || !groupCustomerId || selectedFiles.length === 0}
+                disabled={isUploading || selectedFiles.length === 0}
               >
                 {isUploading ? (
                   <>

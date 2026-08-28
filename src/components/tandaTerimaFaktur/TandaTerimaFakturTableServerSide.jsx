@@ -148,6 +148,14 @@ const TandaTerimaFakturTableServerSide = ({
         }
         delete mappedFilters.invoice_no;
       }
+      if (Array.isArray(mappedFilters.invoice_nos) && mappedFilters.invoice_nos.length === 0) {
+        delete mappedFilters.invoice_nos;
+      }
+
+      // Handle Keterangan
+      if (typeof mappedFilters.keterangan === 'string' && !mappedFilters.keterangan.trim()) {
+        delete mappedFilters.keterangan;
+      }
 
       // Handle PO No
       if (mappedFilters.po_number) {
@@ -277,6 +285,28 @@ const TandaTerimaFakturTableServerSide = ({
     );
   }, [tandaTerimaFakturs, columnFilters]);
 
+  const invoiceOptions = useMemo(() => {
+    const map = new Map();
+    (tandaTerimaFakturs || []).forEach((item) => {
+      const invNo = item?.invoicePenagihan?.no_invoice_penagihan;
+      if (invNo && !map.has(invNo)) {
+        map.set(invNo, { no_invoice: invNo });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'invoice_no');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { no_invoice: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.no_invoice.localeCompare(b.no_invoice)
+    );
+  }, [tandaTerimaFakturs, columnFilters]);
+
   const statusOptions = useMemo(() => {
     const map = new Map();
     (tandaTerimaFakturs || []).forEach((item) => {
@@ -387,9 +417,20 @@ const TandaTerimaFakturTableServerSide = ({
       }, {
         id: 'invoice_no',
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Invoice</div>
-            <TextColumnFilter column={column} placeholder="Search..." />
+            <AutocompleteCheckboxLimitTag
+              options={invoiceOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="no_invoice"
+              valueKey="no_invoice"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '80px', maxWidth: '120px' }}
+            />
           </div>
         ),
         cell: (info) => {
@@ -596,7 +637,12 @@ const TandaTerimaFakturTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.keterangan || row.bankMutation?.keterangan || '', {
         id: 'keterangan',
-        header: () => <div className="font-medium text-xs">Keterangan</div>,
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs">Keterangan</div>
+            <TextColumnFilter column={column} placeholder="Search..." />
+          </div>
+        ),
         cell: (info) => (
           <div className="text-xs text-gray-700 max-w-[200px] truncate" title={info.getValue() ?? ''}>
             {info.getValue() || '-'}
@@ -707,6 +753,7 @@ const TandaTerimaFakturTableServerSide = ({
       unassignLoading,
       setPage,
       topOptions,
+      invoiceOptions,
       groupCustomerOptions,
       statusOptions,
       companies,

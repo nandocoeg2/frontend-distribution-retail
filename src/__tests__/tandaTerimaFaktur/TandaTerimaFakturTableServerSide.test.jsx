@@ -48,4 +48,15 @@ describe('TandaTerimaFakturTableServerSide', () => {
     expect(screen.getByText('Tanggal Kirim Pos')).toBeDefined();
     expect(screen.getByText('Tanggal Proses DC')).toBeDefined();
   });
+
+  it('renders Invoice and Keterangan column headers with their filters', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TandaTerimaFakturTableServerSide />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('Invoice')).toBeDefined();
+    expect(screen.getByText('Keterangan')).toBeDefined();
+  });
 });
