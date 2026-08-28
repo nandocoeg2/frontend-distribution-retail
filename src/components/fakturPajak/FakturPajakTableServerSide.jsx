@@ -193,6 +193,8 @@ const FakturPajakTableServerSide = ({
     [],
   );
 
+  const selectPagination = useCallback((response) => response?.pagination, []);
+
   const todayStr = useMemo(() => {
     const today = new Date();
     const year = today.getFullYear();
