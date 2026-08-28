@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import fileService from '../../services/fileService.js';
 import authService from '../../services/authService.js';
+import scheduledPriceService from '../../services/scheduledPriceService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
 import PurchaseOrderDetailsForm from './PurchaseOrderDetailsForm.jsx';
 import { toast } from 'react-toastify';
 import { TabContainer, Tab, TabContent, TabPanel } from '../ui/Tabs.jsx';
+import { useConfirmationDialog } from '../ui/ConfirmationDialog.jsx';
 import HeroIcon from '../atoms/HeroIcon.jsx';
 import { useNavigate } from 'react-router-dom';
 
@@ -39,6 +41,14 @@ const AddPurchaseOrderModal = ({
   const [activeTab, setActiveTab] = useState('bulk');
   const [uploadMode, setUploadMode] = useState('files');
   const processingMethod = 'text-extraction';
+
+  const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
+  const confirmActionRef = useRef(() => {});
+
+  const openConfirmationDialog = (options, onConfirm) => {
+    confirmActionRef.current = onConfirm;
+    showDialog(options);
+  };
 
   // Refs for file inputs
   const manualFileInputRef = useRef(null);
@@ -176,6 +186,72 @@ const AddPurchaseOrderModal = ({
     }
   };
 
+  const validateDetailsPrices = async () => {
+    const discrepancies = [];
+    const poDate = formData.tanggal_masuk_po || new Date().toISOString().split('T')[0];
+    const customerId = formData.customerId || null;
+
+    for (const detail of purchaseOrderDetails) {
+      const itemId = detail.itemId;
+      if (!itemId) continue;
+
+      try {
+        const response = await scheduledPriceService.getEffectivePrice(itemId, poDate, customerId);
+        const effectiveData = response?.data || response;
+        const masterPrice = Number(effectiveData?.harga) || 0;
+        const poPrice = Number(detail.harga) || 0;
+        const source = effectiveData?.source || 'current';
+
+        if (masterPrice > 0 && poPrice !== masterPrice) {
+          discrepancies.push({
+            itemName: detail.nama_barang,
+            plu: detail.plu,
+            poPrice,
+            masterPrice,
+            priceSource: source,
+          });
+        }
+      } catch (err) {
+        console.warn('Could not check scheduled price for item:', detail.plu, err);
+      }
+    }
+
+    return discrepancies;
+  };
+
+  const formatPriceDiscrepancyMessage = (discrepancies) => {
+    if (discrepancies.length === 0) return '';
+
+    const summary = `Ditemukan ${discrepancies.length} item dengan perbedaan harga antara PO dan scheduled price / master data:\n\n`;
+    const details = discrepancies.slice(0, 5).map(item => {
+      const sourceLabel = item.priceSource === 'scheduled' ? ' (Scheduled)' : ' (Master)';
+      return `• ${item.itemName} (${item.plu})\n` +
+        `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
+        `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}${sourceLabel}`;
+    }).join('\n\n');
+
+    const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
+
+    return summary + details + more + '\n\nApakah Anda yakin ingin melanjutkan proses?';
+  };
+
+  const executeCreatePurchaseOrder = async (submitData) => {
+    setLoading(true);
+    try {
+      const newOrder = await createPurchaseOrder(submitData, selectedFile || []);
+      if (newOrder) {
+        hideDialog();
+        if (onFinished) onFinished();
+      } else {
+        setError(
+          'Failed to create purchase order. Please check the form and try again.'
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.customerId || !formData.po_number) {
@@ -231,15 +307,27 @@ const AddPurchaseOrderModal = ({
           : undefined,
     };
 
-    const newOrder = await createPurchaseOrder(submitData, selectedFile || []);
-    setLoading(false);
-    if (newOrder) {
-      if (onFinished) onFinished();
-    } else {
-      setError(
-        'Failed to create purchase order. Please check the form and try again.'
-      );
+    // Validasi harga scheduled / master price untuk PO tipe SINGLE
+    if (formData.po_type === 'SINGLE') {
+      try {
+        const discrepancies = await validateDetailsPrices();
+        if (discrepancies.length > 0) {
+          setLoading(false);
+          openConfirmationDialog({
+            title: 'Perbedaan Harga Ditemukan',
+            message: formatPriceDiscrepancyMessage(discrepancies),
+            confirmText: 'Lanjutkan Proses',
+            cancelText: 'Batal',
+            type: 'warning',
+          }, () => executeCreatePurchaseOrder(submitData));
+          return;
+        }
+      } catch (err) {
+        console.warn('Error during price validation:', err);
+      }
     }
+
+    await executeCreatePurchaseOrder(submitData);
   };
 
   const resetForm = () => {
@@ -648,6 +736,8 @@ const AddPurchaseOrderModal = ({
           </TabPanel>
         </TabContent>
       </div>
+
+      <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
     </div>
   );
 };

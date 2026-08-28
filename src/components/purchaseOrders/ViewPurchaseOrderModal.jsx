@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ArchiveBoxIcon,
   ClockIcon,
@@ -21,6 +21,7 @@ import {
   StatusBadge,
   InfoTable,
   useAlert,
+  useConfirmationDialog,
 } from '../ui';
 import { getPackingById, exportPackingSticker } from '../../services/packingService';
 import authService from '../../services/authService';
@@ -37,6 +38,13 @@ const ViewPurchaseOrderModal = ({
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const { showSuccess, showError, AlertComponent } = useAlert();
+  const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
+  const confirmActionRef = useRef(() => {});
+
+  const openConfirmationDialog = (options, onConfirm) => {
+    confirmActionRef.current = onConfirm;
+    showDialog(options);
+  };
   const [expandedSections, setExpandedSections] = useState({
     basicInfo: true,
     customerSupplier: false,
@@ -153,9 +161,7 @@ const ViewPurchaseOrderModal = ({
     await fileService.downloadFile(fileId, fileName);
   };
 
-  const handleProcess = async () => {
-    if (!order?.id) return;
-
+  const executeProcessOrder = async () => {
     setProcessing(true);
     try {
       const result = await purchaseOrderService.processPurchaseOrder(
@@ -167,6 +173,7 @@ const ViewPurchaseOrderModal = ({
         if (onProcessed) {
           onProcessed();
         }
+        hideDialog();
         onClose();
       } else {
         throw new Error('Failed to process purchase order');
@@ -176,6 +183,67 @@ const ViewPurchaseOrderModal = ({
       showError(`Failed to process purchase order: ${error.message}`);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleProcess = async () => {
+    if (!order?.id) return;
+
+    // Check if tanggal masuk PO vs tanggal batas kirim are the same
+    const startDate = order.tanggal_masuk_po || order.po_date;
+    const endDate = order.tanggal_batas_kirim || order.delivery_date;
+    if (startDate && endDate && new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10)) {
+      openConfirmationDialog({
+        title: 'Peringatan: Tanggal PO & Expired Sama',
+        message: `PO "${order.po_number}" memiliki Tanggal Terbit dan Tanggal Expired/Delivery yang sama. PO dengan tanggal yang sama tidak akan diproses.`,
+        confirmText: 'Mengerti',
+        cancelText: '',
+        type: 'warning',
+      }, () => {
+        hideDialog();
+      });
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      const priceValidation = await purchaseOrderService.validateItemPrices([order.id]);
+      const discrepancies = priceValidation?.data?.discrepancies || [];
+      setProcessing(false);
+
+      if (discrepancies.length > 0) {
+        const summary = `Ditemukan ${discrepancies.length} item dengan perbedaan harga antara PO dan scheduled price / master data:\n\n`;
+        const details = discrepancies.slice(0, 5).map((item) => {
+          const sourceLabel = item.priceSource === 'scheduled' ? ' (Scheduled)' : ' (Master)';
+          return (
+            `• ${item.itemName} (${item.plu})\n` +
+            `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
+            `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}${sourceLabel}`
+          );
+        }).join('\n\n');
+        const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
+        const message = summary + details + more + '\n\nApakah Anda yakin ingin melanjutkan proses?';
+
+        openConfirmationDialog({
+          title: 'Perbedaan Harga Ditemukan',
+          message: message,
+          confirmText: 'Lanjutkan Proses',
+          cancelText: 'Batal',
+          type: 'warning',
+        }, () => executeProcessOrder());
+        return;
+      }
+
+      openConfirmationDialog({
+        title: 'Proses Purchase Order',
+        message: `Apakah Anda yakin ingin memproses Purchase Order "${order.po_number}"?`,
+        confirmText: 'Proses',
+        cancelText: 'Batal',
+        type: 'warning',
+      }, () => executeProcessOrder());
+    } catch (err) {
+      setProcessing(false);
+      showError(`Gagal memvalidasi harga item: ${err.message}`);
     }
   };
 
@@ -1231,6 +1299,9 @@ const ViewPurchaseOrderModal = ({
           </div>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
 
       {/* Alert Component */}
       <AlertComponent />
