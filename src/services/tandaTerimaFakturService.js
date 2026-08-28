@@ -348,8 +348,25 @@ class TandaTerimaFakturService {
       };
 
       const response = await this.getAll(mergedParams);
-      const rawData = response?.data || response?.tandaTerimaFakturs || [];
-      const totalItems = response?.pagination?.totalItems || rawData.length;
+      const payload = response?.data ?? response;
+      const dataCandidates = [
+        payload?.data,
+        payload?.items,
+        payload?.tandaTerimaFakturs,
+        payload?.results,
+        response?.data?.data,
+        response?.data?.items,
+        response?.data?.tandaTerimaFakturs,
+        response?.tandaTerimaFakturs,
+        Array.isArray(payload) ? payload : null,
+        Array.isArray(response) ? response : null,
+      ];
+      const items = dataCandidates.find((candidate) => Array.isArray(candidate)) || [];
+      const totalItems =
+        response?.pagination?.totalItems ??
+        payload?.pagination?.totalItems ??
+        response?.data?.pagination?.totalItems ??
+        items.length;
 
       const headers = [
         'TANGGAL TAGIHAN',
@@ -367,7 +384,7 @@ class TandaTerimaFakturService {
         'STATUS',
       ];
 
-      const rows = rawData.map((item) => {
+      const rows = items.map((item) => {
         const customer = item?.invoicePenagihan?.purchaseOrder?.customer;
         const customerName =
           customer?.namaCustomer ||
