@@ -119,6 +119,7 @@ const InventoryControl = () => {
           { periodKey: 'W2', label: 'W2', monthName: 'BULAN 1' },
           { periodKey: 'W3', label: 'W3', monthName: 'BULAN 1' },
           { periodKey: 'W4', label: 'W4', monthName: 'BULAN 1' },
+          { periodKey: 'W5', label: 'W5', monthName: 'BULAN 1' },
         ]);
       } else {
         setPeriodRange([]);
