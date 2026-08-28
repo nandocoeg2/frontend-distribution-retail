@@ -154,6 +154,21 @@ const SuratJalanTableServerSide = forwardRef(({
     };
   }, [companyId]);
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal_surat_jalan',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: suratJalan,
     pagination,
@@ -171,10 +186,16 @@ const SuratJalanTableServerSide = forwardRef(({
     selectPagination: (response) => response?.pagination,
     initialLimit: 9999,
     initialPage: 1,
+    initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
-    storageKey: 'surat-jalan', // Persist filter state to sessionStorage
   });
+
+  React.useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-surat-jalan');
+    } catch (_) {}
+  }, []);
 
   // Handle checkbox click
   const handleCheckboxChange = useCallback((item) => {

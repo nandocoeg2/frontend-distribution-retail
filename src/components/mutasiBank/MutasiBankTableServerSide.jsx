@@ -275,6 +275,21 @@ const MutasiBankTableServerSide = forwardRef(({
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState(null);
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'transaction_date',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: mutations,
     pagination,
@@ -291,6 +306,7 @@ const MutasiBankTableServerSide = forwardRef(({
     selectPagination: (response) => response?.pagination,
     initialPage,
     initialLimit,
+    initialColumnFilters,
     getQueryParams: useCallback(
       ({ filters: columnFilters, ...rest }) => {
         const sanitized = sanitizeFilters(filters);

@@ -193,7 +193,20 @@ const FakturPajakTableServerSide = ({
     [],
   );
 
-  const selectPagination = useCallback((response) => response?.pagination, []);
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: "tanggal_invoice",
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
 
   const {
     data: fakturPajaks,
@@ -213,6 +226,7 @@ const FakturPajakTableServerSide = ({
     selectPagination,
     initialPage: 1,
     initialLimit: 9999,
+    initialColumnFilters,
     getQueryParams,
   });
 

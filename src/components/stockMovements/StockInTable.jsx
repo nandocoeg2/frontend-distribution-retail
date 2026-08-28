@@ -94,6 +94,21 @@ const StockInTable = forwardRef(({
     [globalSearch]
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'createdAt',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: rows,
     pagination,
@@ -116,8 +131,14 @@ const StockInTable = forwardRef(({
     manualSorting: false,
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
-    storageKey: 'stock-in-table',
+    initialColumnFilters,
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-stock-in-table');
+    } catch (_) {}
+  }, []);
 
 // Helper to evaluate whether a row matches a specific filter
 const matchesStockInFilter = (row, filterId, filterValue) => {

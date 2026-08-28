@@ -231,6 +231,17 @@ const InvoicePengirimanTableServerSide = ({
           }
         }
 
+        // Handle tanggal date range filter
+        if (mappedFilters.tanggal && typeof mappedFilters.tanggal === 'object') {
+          if (mappedFilters.tanggal.from) {
+            mappedFilters.tanggal_start = mappedFilters.tanggal.from;
+          }
+          if (mappedFilters.tanggal.to) {
+            mappedFilters.tanggal_end = mappedFilters.tanggal.to;
+          }
+          delete mappedFilters.tanggal;
+        }
+
         return {
           ...rest,
           filters: mappedFilters,
@@ -246,6 +257,21 @@ const InvoicePengirimanTableServerSide = ({
   );
 
   const selectPagination = useCallback((response) => response?.pagination, []);
+
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
 
   const {
     data: invoices,
@@ -265,10 +291,16 @@ const InvoicePengirimanTableServerSide = ({
     initialLimit: 9999,
     initialPage: 1,
     globalFilter: globalFilterConfig,
+    initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
-    storageKey: "invoice-pengiriman", // Persist filter state to sessionStorage
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem("table-filter-invoice-pengiriman");
+    } catch (_) {}
+  }, []);
 
   const customerOptions = useMemo(() => {
     const map = new Map();

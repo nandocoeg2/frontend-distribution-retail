@@ -220,6 +220,21 @@ const TandaTerimaFakturTableServerSide = ({
     []
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal_print_ttf1',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: tandaTerimaFakturs,
     pagination,
@@ -238,6 +253,7 @@ const TandaTerimaFakturTableServerSide = ({
     initialPage: 1,
     initialLimit: 9999,
     globalFilter: globalFilterConfig,
+    initialColumnFilters,
     getQueryParams,
   });
 

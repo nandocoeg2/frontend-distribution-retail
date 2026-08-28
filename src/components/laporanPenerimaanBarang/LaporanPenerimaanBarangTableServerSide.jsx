@@ -127,6 +127,21 @@ const LaporanPenerimaanBarangTableServerSide = ({
     []
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal_po',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: reports,
     pagination,
@@ -146,9 +161,16 @@ const LaporanPenerimaanBarangTableServerSide = ({
     initialPage: 1,
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
+    initialColumnFilters,
     getQueryParams: useCallback(({ filters, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
+
+      if (mappedFilters.tanggal_po && typeof mappedFilters.tanggal_po === 'object') {
+        if (mappedFilters.tanggal_po.from) mappedFilters.tanggal_po_from = mappedFilters.tanggal_po.from;
+        if (mappedFilters.tanggal_po.to) mappedFilters.tanggal_po_to = mappedFilters.tanggal_po.to;
+        delete mappedFilters.tanggal_po;
+      }
 
       if (companyId) {
         mappedFilters.companyId = companyId;
@@ -159,8 +181,13 @@ const LaporanPenerimaanBarangTableServerSide = ({
         filters: mappedFilters,
       };
     }, []),
-    storageKey: 'laporan-penerimaan-barang', // Persist filter state to sessionStorage
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-laporan-penerimaan-barang');
+    } catch (_) {}
+  }, []);
 
   const customerOptions = useMemo(() => {
     const map = new Map();

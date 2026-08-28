@@ -150,6 +150,21 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     [companyId]
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: invoices,
     pagination,
@@ -167,10 +182,16 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     selectPagination: (response) => response?.pagination,
     initialPage: 1,
     initialLimit: 9999,
+    initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
-    storageKey: 'invoice-penagihan',
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-invoice-penagihan');
+    } catch (_) {}
+  }, []);
 
   const statusOptions = useMemo(() => {
     const map = new Map();

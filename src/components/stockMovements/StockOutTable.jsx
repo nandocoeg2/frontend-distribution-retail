@@ -213,6 +213,21 @@ const StockOutTable = forwardRef(({
     [globalSearch]
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tgl',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: rows,
     pagination,
@@ -235,8 +250,14 @@ const StockOutTable = forwardRef(({
     manualSorting: false,
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
-    storageKey: 'stock-out-table',
+    initialColumnFilters,
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-stock-out-table');
+    } catch (_) {}
+  }, []);
 
 // Helper to evaluate whether a row matches a specific filter in StockOut
 const matchesStockOutFilter = (row, filterId, filterValue) => {

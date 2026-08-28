@@ -132,16 +132,39 @@ const KwitansiTableServerSide = ({
   const getQueryParams = useMemo(
     () => ({ filters, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
+      const mappedFilters = { ...filters };
+
+      if (mappedFilters.tanggal && typeof mappedFilters.tanggal === 'object') {
+        if (mappedFilters.tanggal.from) mappedFilters.tanggal_start = mappedFilters.tanggal.from;
+        if (mappedFilters.tanggal.to) mappedFilters.tanggal_end = mappedFilters.tanggal.to;
+        delete mappedFilters.tanggal;
+      }
+
       return {
         ...rest,
         filters: {
-          ...filters,
+          ...mappedFilters,
           ...(companyId ? { companyId } : {}),
         },
       };
     },
     []
   );
+
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
 
   const {
     data: kwitansis,
@@ -160,6 +183,7 @@ const KwitansiTableServerSide = ({
     initialPage: 1,
     initialLimit: 9999,
     globalFilter: globalFilterConfig,
+    initialColumnFilters,
     getQueryParams,
   });
 
