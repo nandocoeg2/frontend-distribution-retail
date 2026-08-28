@@ -181,13 +181,11 @@ describe('PackingForm component', () => {
     expect(screen.queryByText('Tanggal Packing *')).toBeNull();
     expect(screen.queryByText('Purchase Order *')).toBeNull();
 
-    // Packing Boxes section should be rendered directly
-    expect(screen.getByText('Packing Boxes *')).toBeDefined();
-    expect(screen.getByDisplayValue('BOX-001')).toBeDefined();
-    expect(screen.getAllByDisplayValue('Item Alpha').length).toBeGreaterThan(0);
-
-    // Status box dropdown should contain option for Pending Item
-    expect(screen.getByText('Pending Item')).toBeDefined();
+    // Packing summary table should be rendered directly
+    expect(screen.getByText('Nomor Box Mulai Dari:')).toBeDefined();
+    expect(screen.getByText('Nama Barang')).toBeDefined();
+    expect(screen.getByText('Item Alpha')).toBeDefined();
+    expect(screen.getByText('Grand Total')).toBeDefined();
 
     unmount();
   });
