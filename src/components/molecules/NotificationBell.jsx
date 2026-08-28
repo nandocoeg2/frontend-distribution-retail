@@ -45,14 +45,21 @@ const NotificationBell = () => {
             setNotifications((prev) => [data.data, ...prev]);
             setUnreadCount((prev) => prev + 1);
 
-            // Show toast for BULK_PO_COMPLETE notifications
+            // Show toast & popup modal for BULK_PO_COMPLETE notifications
             if (data.data?.type === 'BULK_PO_COMPLETE') {
-              const hasError = data.data.title?.includes('gagal');
+              const hasError =
+                data.data.title?.includes('gagal') ||
+                data.data.message?.includes('tidak terdaftar') ||
+                data.data.message?.includes('Schedule Price') ||
+                data.data.message?.includes('Gagal');
+
               if (hasError) {
-                toast.warning(data.data.title, {
-                  autoClose: 8000,
-                  onClick: () => setShowDropdown(true),
+                toast.error(data.data.title, {
+                  autoClose: 10000,
+                  onClick: () => setDetailModal({ open: true, notification: data.data }),
                 });
+                // Automatically open detail popup modal so user immediately sees the error details
+                setDetailModal({ open: true, notification: data.data });
               } else {
                 toast.success(data.data.title, {
                   autoClose: 5000,
@@ -61,12 +68,13 @@ const NotificationBell = () => {
               }
             }
 
-            // Show toast for DUPLICATE_UPLOAD notifications
+            // Show toast & popup modal for DUPLICATE_UPLOAD notifications
             if (data.data?.type === 'DUPLICATE_UPLOAD') {
               toast.warning(data.data.title, {
-                autoClose: 8000,
-                onClick: () => setShowDropdown(true),
+                autoClose: 10000,
+                onClick: () => setDetailModal({ open: true, notification: data.data }),
               });
+              setDetailModal({ open: true, notification: data.data });
             }
           } else if (data.type === 'NEW_ALERTS') {
             // New alerts were created, refresh the list
