@@ -19,6 +19,7 @@ import { ConfirmationDialog } from '../ui/ConfirmationDialog';
 import MutasiBankExportPreviewModal from './MutasiBankExportPreviewModal';
 import toastService from '../../services/toastService';
 import mutasiBankService from '../../services/mutasiBankService';
+import customerService from '../../services/customerService';
 
 const STATUS_OPTIONS = [
   { id: 'MATCHED', name: 'Match' },
@@ -320,7 +321,13 @@ const MutasiBankTableServerSide = forwardRef(({
             mappedFilters.description = columnFilters.description;
           }
           if (columnFilters.customer) {
-            mappedFilters.customer = columnFilters.customer;
+            if (Array.isArray(columnFilters.customer)) {
+              if (columnFilters.customer.length > 0) {
+                mappedFilters.customer = columnFilters.customer;
+              }
+            } else if (columnFilters.customer !== '') {
+              mappedFilters.customer = columnFilters.customer;
+            }
           }
           if (columnFilters.validation_notes) {
             mappedFilters.validation_notes = columnFilters.validation_notes;
@@ -413,8 +420,54 @@ const MutasiBankTableServerSide = forwardRef(({
       }
     });
 
+  const [customers, setCustomers] = useState([]);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await customerService.getAllCustomers(1, 9999);
+        const data = response?.data?.data || response?.data?.customers || response?.data || [];
+        setCustomers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch customers:', error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  const dynamicCustomerOptions = useMemo(() => {
+    const map = new Map();
+
+    (mutations || []).forEach((item) => {
+      const resolved = resolveCustomer(item);
+      const id = item.customerId || item.customer?.id || resolved?.code || resolved?.name;
+      const name = resolved?.name ? (resolved.code ? `${resolved.name} (${resolved.code})` : resolved.name) : null;
+      if (id && name && !map.has(id)) {
+        map.set(id, { id, name });
+      }
+    });
+
+    (customers || []).forEach((c) => {
+      const id = c.id || c.kodeCustomer;
+      const name = c.namaCustomer ? (c.kodeCustomer ? `${c.namaCustomer} (${c.kodeCustomer})` : c.namaCustomer) : null;
+      if (id && name && !map.has(id)) {
+        map.set(id, { id, name });
+      }
+    });
+
+    const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'customer');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        const fallback = customers.find((c) => c.id === val || c.kodeCustomer === val || c.namaCustomer === val);
+        const name = fallback ? `${fallback.namaCustomer} (${fallback.kodeCustomer})` : val;
+        map.set(val, { id: val, name });
+      }
+    });
+
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [mutations, tableOptions?.state?.columnFilters]);
+  }, [mutations, customers, tableOptions?.state?.columnFilters]);
 
   const tableColumns = useMemo(() => {
     return [
@@ -474,9 +527,20 @@ const MutasiBankTableServerSide = forwardRef(({
       columnHelper.display({
         id: 'customer',
         header: ({ column }) => (
-          <div className='space-y-0.5' onClick={(e) => e.stopPropagation()}>
+          <div className='space-y-0.5 max-w-[160px]' onClick={(e) => e.stopPropagation()}>
             <div className='font-medium text-[11px]'>Customer</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicCustomerOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder='All'
+              displayKey='name'
+              valueKey='id'
+              limitTags={1}
+              size='small'
+              fetchOnClose
+              sx={{ minWidth: '130px' }}
+            />
           </div>
         ),
         size: 180,
@@ -654,6 +718,7 @@ const MutasiBankTableServerSide = forwardRef(({
     ];
   }, [
     dynamicStatusOptions,
+    dynamicCustomerOptions,
     onValidateMutation,
     onViewMutation,
     onAssignDocument,
