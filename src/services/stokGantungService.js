@@ -132,13 +132,18 @@ export const createReturn = async (payload) => {
     return response.json();
 };
 
-export const classifyReturn = async (movementId, action) => {
+export const classifyReturn = async (movementId, payloadOrAction) => {
+    const body =
+        typeof payloadOrAction === 'string'
+            ? { action: payloadOrAction }
+            : payloadOrAction;
+
     const response = await fetch(
         `${API_BASE_URL}/return/${movementId}/classify`,
         {
             method: 'POST',
             headers: buildHeaders(),
-            body: JSON.stringify({ action }),
+            body: JSON.stringify(body),
         }
     );
 

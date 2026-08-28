@@ -308,14 +308,18 @@ const useStokGantungPage = () => {
     );
 
     const classifyReturnMovement = useCallback(
-        async (movementId, action) => {
+        async (movementId, payloadOrAction) => {
             setError(null);
             try {
-                const result = await classifyReturn(movementId, action);
-                const successMessage =
-                    action === 'restock'
-                        ? 'Return berhasil direstock dan stok diperbarui'
-                        : 'Return ditolak dan stok tetap';
+                const result = await classifyReturn(movementId, payloadOrAction);
+                const isSplit = typeof payloadOrAction === 'object' && (payloadOrAction.restockQuantity > 0 && payloadOrAction.rejectQuantity > 0);
+                const isRestock = typeof payloadOrAction === 'string' ? payloadOrAction === 'restock' : (payloadOrAction.restockQuantity > 0 && payloadOrAction.rejectQuantity === 0);
+
+                const successMessage = isSplit
+                    ? `Status return berhasil diperbarui: ${payloadOrAction.restockQuantity} Restock, ${payloadOrAction.rejectQuantity} Reject`
+                    : isRestock
+                    ? 'Return berhasil direstock dan stok diperbarui (tercatat di Stock In)'
+                    : 'Status return berhasil diperbarui';
                 toastService.success(successMessage);
                 await refreshAfterMutation();
                 return result?.data || result;

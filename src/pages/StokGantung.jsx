@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 import useStokGantungPage from '../hooks/useStokGantungPage';
-import { StokGantungFilters, StokGantungTable, CreateReturnModal } from '../components/stokGantung';
-import { useConfirmationDialog } from '../components/ui';
+import {
+    StokGantungFilters,
+    StokGantungTable,
+    CreateReturnModal,
+    ClassifyReturnModal,
+} from '../components/stokGantung';
 import { getItems } from '../services/itemService';
 import toastService from '../services/toastService';
 
@@ -28,18 +32,11 @@ const StokGantung = () => {
     const [itemOptions, setItemOptions] = useState([]);
     const [optionsLoading, setOptionsLoading] = useState(false);
     const [classifyLoadingId, setClassifyLoadingId] = useState(null);
-    const [pendingClassification, setPendingClassification] = useState(null);
+    const [selectedMovementForClassify, setSelectedMovementForClassify] = useState(null);
+    const [classifyModalOpen, setClassifyModalOpen] = useState(false);
     const [editingMovement, setEditingMovement] = useState(null);
     const [editNotesValue, setEditNotesValue] = useState('');
     const [editNotesLoading, setEditNotesLoading] = useState(false);
-
-    const {
-        showDialog,
-        hideDialog,
-        setLoading: setDialogLoading,
-        ConfirmationDialog,
-        dialogState,
-    } = useConfirmationDialog();
 
     const loadReferenceData = useCallback(async () => {
         setOptionsLoading(true);
@@ -78,12 +75,6 @@ const StokGantung = () => {
         loadReferenceData();
     }, [loadReferenceData]);
 
-    useEffect(() => {
-        if (!dialogState.show) {
-            setPendingClassification(null);
-        }
-    }, [dialogState.show]);
-
     const handleRetry = useCallback(() => {
         const currentPage = pagination?.currentPage || pagination?.page || 1;
         const limit =
@@ -91,51 +82,31 @@ const StokGantung = () => {
         fetchMovements(currentPage, limit);
     }, [fetchMovements, pagination]);
 
-    const handleClassifyRequest = useCallback(
-        (movement, action) => {
-            if (!movement?.id) {
-                toastService.error('ID return tidak ditemukan.');
-                return;
+    const handleOpenClassifyModal = useCallback((movement) => {
+        setSelectedMovementForClassify(movement);
+        setClassifyModalOpen(true);
+    }, []);
+
+    const handleCloseClassifyModal = useCallback(() => {
+        setSelectedMovementForClassify(null);
+        setClassifyModalOpen(false);
+    }, []);
+
+    const handleConfirmClassifyPayload = useCallback(
+        async (payload) => {
+            if (!payload?.movementId) return;
+            setClassifyLoadingId(payload.movementId);
+            try {
+                await classifyReturnMovement(payload.movementId, payload);
+                handleCloseClassifyModal();
+            } catch (err) {
+                // handled in hook/toast
+            } finally {
+                setClassifyLoadingId(null);
             }
-
-            setPendingClassification({ movement, action });
-
-            const actionLabel = action === 'restock' ? 'Restock' : 'Reject';
-            const message =
-                action === 'restock'
-                    ? `Return ${movement.movementNumber || movement.id} akan diklasifikasikan sebagai restock. Stok item akan bertambah.`
-                    : `Return ${movement.movementNumber || movement.id} akan ditolak. Stok item tidak berubah.`;
-
-            showDialog({
-                title: 'Konfirmasi Klasifikasi Return',
-                message,
-                confirmText: actionLabel,
-                type: action === 'restock' ? 'success' : 'danger',
-            });
         },
-        [showDialog]
+        [classifyReturnMovement, handleCloseClassifyModal]
     );
-
-    const handleConfirmClassify = useCallback(async () => {
-        if (!pendingClassification?.movement?.id) {
-            hideDialog();
-            return;
-        }
-
-        const { movement, action } = pendingClassification;
-        setDialogLoading(true);
-        setClassifyLoadingId(movement.id);
-
-        try {
-            await classifyReturnMovement(movement.id, action);
-            hideDialog();
-        } catch (err) {
-            // Error handling already managed in hook/toast
-        } finally {
-            setDialogLoading(false);
-            setClassifyLoadingId(null);
-        }
-    }, [classifyReturnMovement, hideDialog, pendingClassification, setDialogLoading]);
 
     const handleEditNotes = useCallback((movement) => {
         setEditingMovement(movement);
@@ -215,7 +186,7 @@ const StokGantung = () => {
                             onLimitChange={handleLimitChange}
                             loading={loading}
                             searchLoading={searchLoading}
-                            onClassify={handleClassifyRequest}
+                            onClassify={handleOpenClassifyModal}
                             classifyLoadingId={classifyLoadingId}
                             onEditNotes={handleEditNotes}
                         />
@@ -231,7 +202,13 @@ const StokGantung = () => {
                 optionsLoading={optionsLoading}
             />
 
-            <ConfirmationDialog onConfirm={handleConfirmClassify} />
+            <ClassifyReturnModal
+                isOpen={classifyModalOpen}
+                onClose={handleCloseClassifyModal}
+                movement={selectedMovementForClassify}
+                onConfirm={handleConfirmClassifyPayload}
+                isLoading={Boolean(classifyLoadingId)}
+            />
 
             {/* Edit Notes Modal */}
             {editingMovement && (

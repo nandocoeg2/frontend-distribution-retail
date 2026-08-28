@@ -275,49 +275,56 @@ const StokGantungTable = ({
 
                                             {/* 8. Status */}
                                             <td className='px-2.5 py-1.5 whitespace-nowrap text-xs text-gray-900'>
-                                                <StatusBadge
-                                                    status={resolveTypeLabel(movement.status)}
-                                                    variant={resolveStatusVariant(movement.status)}
-                                                    size='xs'
-                                                    dot
-                                                />
+                                                {movement.notes?.includes('[SPLIT]') ? (
+                                                    <div className='flex flex-col gap-0.5'>
+                                                        <StatusBadge
+                                                            status='SPLIT'
+                                                            variant='warning'
+                                                            size='xs'
+                                                            dot
+                                                        />
+                                                        <span className='text-[10px] text-amber-700 font-medium'>
+                                                            {movement.notes.match(/Restock:\s*\d+,\s*Reject:\s*\d+/i)?.[0] || 'Restock & Reject'}
+                                                        </span>
+                                                    </div>
+                                                ) : movement.status === 'COMPLETED' ? (
+                                                    <StatusBadge
+                                                        status='RESTOCK'
+                                                        variant='success'
+                                                        size='xs'
+                                                        dot
+                                                    />
+                                                ) : (
+                                                    <StatusBadge
+                                                        status={resolveTypeLabel(movement.status)}
+                                                        variant={resolveStatusVariant(movement.status)}
+                                                        size='xs'
+                                                        dot
+                                                    />
+                                                )}
                                             </td>
 
                                             {/* 9. Action */}
                                             <td className='px-2.5 py-1.5 whitespace-nowrap text-right text-xs text-gray-500'>
-                                                <div className='flex justify-end gap-1'>
+                                                <div className='flex justify-end gap-1.5'>
+                                                    {typeof onClassify === 'function' && (
+                                                        <button
+                                                            type='button'
+                                                            onClick={() => onClassify(movement.source)}
+                                                            disabled={isClassifying}
+                                                            className='inline-flex h-7 items-center justify-center rounded border border-blue-200 bg-blue-50/50 px-2.5 text-xs font-medium text-blue-700 hover:border-blue-300 hover:bg-blue-100/70 transition-colors disabled:opacity-50'
+                                                        >
+                                                            {isClassifying ? 'Memproses...' : movement.status === 'PENDING' ? 'Klasifikasi' : 'Ganti Status'}
+                                                        </button>
+                                                    )}
                                                     {onEditNotes && (
                                                         <button
                                                             type='button'
                                                             onClick={() => onEditNotes(movement.source)}
-                                                            className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600'
+                                                            className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-gray-300 hover:bg-gray-50'
                                                         >
-                                                            Edit
+                                                            Notes
                                                         </button>
-                                                    )}
-                                                    {classificationEnabled && (
-                                                        <>
-                                                            <button
-                                                                type='button'
-                                                                onClick={() =>
-                                                                    onClassify(movement.source, 'restock')
-                                                                }
-                                                                disabled={isClassifying}
-                                                                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-green-200 hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-60'
-                                                            >
-                                                                {isClassifying ? 'Memproses...' : 'Restock'}
-                                                            </button>
-                                                            <button
-                                                                type='button'
-                                                                onClick={() =>
-                                                                    onClassify(movement.source, 'reject')
-                                                                }
-                                                                disabled={isClassifying}
-                                                                className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60'
-                                                            >
-                                                                {isClassifying ? 'Memproses...' : 'Reject'}
-                                                            </button>
-                                                        </>
                                                     )}
                                                 </div>
                                             </td>
