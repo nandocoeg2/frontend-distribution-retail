@@ -582,6 +582,46 @@ class LaporanPenerimaanBarangService {
       throw error;
     }
   }
+
+  async exportLPBHtml(lpbId, companyId) {
+    try {
+      if (!lpbId) {
+        throw new Error('ID laporan penerimaan barang diperlukan');
+      }
+
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const query = activeCompanyId ? `?companyId=${encodeURIComponent(activeCompanyId)}` : '';
+      const response = await this.api.get(`/laporan-penerimaan-barang/${lpbId}/export-html${query}`, {
+        responseType: 'text',
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting LPB HTML:', error);
+      throw error;
+    }
+  }
+
+  async exportLPBBulkHtml(ids, companyId) {
+    try {
+      if (!ids || ids.length === 0) {
+        throw new Error('Minimal satu ID laporan penerimaan barang diperlukan');
+      }
+
+      const activeCompanyId = companyId || authService.getCompanyData()?.id;
+      const response = await this.api.post('/laporan-penerimaan-barang/export/bulk-html', {
+        ids,
+        companyId: activeCompanyId,
+      }, {
+        responseType: 'text',
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error exporting bulk LPB HTML:', error);
+      throw error;
+    }
+  }
 }
 
 export default new LaporanPenerimaanBarangService();

@@ -14,6 +14,7 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
 import toastService from '@/services/toastService';
 import GenerateInvoicePenagihanDialog from '@/components/invoicePengiriman/GenerateInvoicePenagihanDialog';
+import PdfPreviewModal from '@/components/common/PdfPreviewModal';
 
 const LaporanPenerimaanBarang = () => {
   const queryClient = useQueryClient();
@@ -45,6 +46,11 @@ const LaporanPenerimaanBarang = () => {
     lpbIds: [],
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPreviewLpbLoading, setIsPreviewLpbLoading] = useState(false);
+  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
+  const [previewHtmlContent, setPreviewHtmlContent] = useState('');
+  const [previewTitle, setPreviewTitle] = useState('');
+  const [previewFileName, setPreviewFileName] = useState('');
 
   const {
     showDialog: showCompleteDialog,
@@ -143,6 +149,57 @@ const LaporanPenerimaanBarang = () => {
       setPreviewLoading(false);
     }
   }, [activeFilters]);
+
+  // Preview LPB in HTML document format (Formulir Laporan Penerimaan Barang)
+  const handlePreviewLpbHtml = useCallback(async (targetReportId = null) => {
+    let ids = [];
+    if (typeof targetReportId === 'string') {
+      ids = [targetReportId];
+    } else if (targetReportId && (targetReportId.id || targetReportId.lpbId)) {
+      ids = [targetReportId.id || targetReportId.lpbId];
+    } else if (selectedReportIds.length > 0) {
+      ids = selectedReportIds;
+    } else if (selectedReportForDetail?.id) {
+      ids = [selectedReportForDetail.id];
+    }
+
+    if (ids.length === 0) {
+      toastService.warning('Pilih minimal satu Laporan Penerimaan Barang untuk melihat preview Formulir LPB.');
+      return;
+    }
+
+    setIsPreviewLpbLoading(true);
+    try {
+      const activeCompanyId = localStorage.getItem('companyData')
+        ? JSON.parse(localStorage.getItem('companyData'))?.id
+        : undefined;
+
+      let html = '';
+      let title = '';
+      let fileName = '';
+
+      if (ids.length === 1) {
+        const id = ids[0];
+        html = await laporanPenerimaanBarangService.exportLPBHtml(id, activeCompanyId);
+        title = 'Preview Formulir Laporan Penerimaan Barang';
+        fileName = `LPB_${id}.pdf`;
+      } else {
+        html = await laporanPenerimaanBarangService.exportLPBBulkHtml(ids, activeCompanyId);
+        title = `Preview Formulir LPB Bulk (${ids.length} Dokumen)`;
+        fileName = `LPB_Bulk_${ids.length}_dokumen.pdf`;
+      }
+
+      setPreviewHtmlContent(html);
+      setPreviewTitle(title);
+      setPreviewFileName(fileName);
+      setPdfPreviewOpen(true);
+    } catch (error) {
+      console.error('Failed to preview LPB HTML:', error);
+      toastService.error(error.message || 'Gagal memuat preview HTML Laporan Penerimaan Barang.');
+    } finally {
+      setIsPreviewLpbLoading(false);
+    }
+  }, [selectedReportIds, selectedReportForDetail]);
 
   const hasSelectedReports = selectedReportIds.length > 0;
 
@@ -354,22 +411,40 @@ const LaporanPenerimaanBarang = () => {
             <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
             <div className='flex flex-wrap gap-2'>
               <button
+                onClick={() => handlePreviewLpbHtml()}
+                disabled={isPreviewLpbLoading}
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm'
+                title='Preview Formulir Laporan Penerimaan Barang (HTML)'
+              >
+                {isPreviewLpbLoading ? (
+                  <>
+                    <div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5'></div>
+                    Memuat LPB...
+                  </>
+                ) : (
+                  <>
+                    <HeroIcon name='document-text' className='w-4 h-4 mr-1.5' />
+                    Preview LPB
+                  </>
+                )}
+              </button>
+              <button
                 onClick={handlePreviewExportClick}
                 disabled={previewLoading}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 transition-colors'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm'
               >
-                <HeroIcon name='eye' className='w-4 h-4 mr-1.5 text-gray-500' />
-                {previewLoading ? 'Memuat Preview...' : 'Preview Excel'}
+                <HeroIcon name='eye' className='w-4 h-4 mr-1.5' />
+                {previewLoading ? 'Memuat...' : 'Preview Excel'}
               </button>
               <button
                 onClick={handleExportClick}
                 disabled={isExporting}
-                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm'
               >
                 <HeroIcon name='document-arrow-down' className='w-4 h-4 mr-1.5' />
                 {isExporting ? 'Exporting...' : 'Export Excel'}
               </button>
-              <button onClick={openCreateModal} className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors'>
+              <button onClick={openCreateModal} className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors shadow-sm'>
                 <HeroIcon name='plus' className='w-4 h-4 mr-1.5' />Tambah
               </button>
             </div>
@@ -436,6 +511,14 @@ const LaporanPenerimaanBarang = () => {
         previewLoading={previewLoading}
         onExport={handleConfirmExport}
         isExporting={isExporting}
+      />
+
+      <PdfPreviewModal
+        isOpen={pdfPreviewOpen}
+        onClose={() => setPdfPreviewOpen(false)}
+        htmlContent={previewHtmlContent}
+        title={previewTitle}
+        fileName={previewFileName}
       />
     </div>
   );
