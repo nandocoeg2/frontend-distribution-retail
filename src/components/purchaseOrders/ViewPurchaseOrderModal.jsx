@@ -27,6 +27,7 @@ import { getPackingById, exportPackingSticker, exportPackingTandaTerima } from '
 import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
+import { getPackingBoxes } from '../../utils/suratJalanHelpers';
 
 const ViewPurchaseOrderModal = ({
   isOpen,
@@ -477,8 +478,9 @@ const ViewPurchaseOrderModal = ({
           throw new Error('Failed to fetch surat jalan data');
         }
 
-        if (!suratJalanData.suratJalanDetails || suratJalanData.suratJalanDetails.length === 0) {
-          throw new Error('Tidak ada detail surat jalan untuk dicetak');
+        const packingBoxes = getPackingBoxes(suratJalanData);
+        if (!packingBoxes || packingBoxes.length === 0) {
+          throw new Error('Tidak ada data packing box pada surat jalan untuk dicetak');
         }
 
         // Get company ID from auth
