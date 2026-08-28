@@ -6,6 +6,7 @@ import {
   LaporanPenerimaanBarangModal,
   LaporanPenerimaanBarangDetailCard,
   LaporanPenerimaanBarangExportPreviewModal,
+  LpbFilePreviewModal,
 } from '@/components/laporanPenerimaanBarang';
 import {
   useConfirmationDialog,
@@ -14,7 +15,6 @@ import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import laporanPenerimaanBarangService from '@/services/laporanPenerimaanBarangService';
 import toastService from '@/services/toastService';
 import GenerateInvoicePenagihanDialog from '@/components/invoicePengiriman/GenerateInvoicePenagihanDialog';
-import PdfPreviewModal from '@/components/common/PdfPreviewModal';
 
 const LaporanPenerimaanBarang = () => {
   const queryClient = useQueryClient();
@@ -47,10 +47,8 @@ const LaporanPenerimaanBarang = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewLpbLoading, setIsPreviewLpbLoading] = useState(false);
-  const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false);
-  const [previewHtmlContent, setPreviewHtmlContent] = useState('');
-  const [previewTitle, setPreviewTitle] = useState('');
-  const [previewFileName, setPreviewFileName] = useState('');
+  const [lpbPreviewModalOpen, setLpbPreviewModalOpen] = useState(false);
+  const [lpbPreviewFiles, setLpbPreviewFiles] = useState([]);
 
   const {
     showDialog: showCompleteDialog,
@@ -150,8 +148,8 @@ const LaporanPenerimaanBarang = () => {
     }
   }, [activeFilters]);
 
-  // Preview LPB in HTML document format (Formulir Laporan Penerimaan Barang)
-  const handlePreviewLpbHtml = useCallback(async (targetReportId = null) => {
+  // Preview LPB using uploaded PDF/Image file from user upload
+  const handlePreviewLpb = useCallback(async (targetReportId = null) => {
     let ids = [];
     if (typeof targetReportId === 'string') {
       ids = [targetReportId];
@@ -164,42 +162,66 @@ const LaporanPenerimaanBarang = () => {
     }
 
     if (ids.length === 0) {
-      toastService.warning('Pilih minimal satu Laporan Penerimaan Barang untuk melihat preview Formulir LPB.');
+      toastService.warning('Pilih minimal satu Laporan Penerimaan Barang untuk melihat preview file LPB.');
       return;
     }
 
     setIsPreviewLpbLoading(true);
+    const loadedFiles = [];
+    let failCount = 0;
+
     try {
-      const activeCompanyId = localStorage.getItem('companyData')
-        ? JSON.parse(localStorage.getItem('companyData'))?.id
-        : undefined;
+      toastService.info(`Memuat preview ${ids.length} file LPB...`);
 
-      let html = '';
-      let title = '';
-      let fileName = '';
+      for (const id of ids) {
+        try {
+          const result = await laporanPenerimaanBarangService.exportLPB(id);
+          const blobUrl = window.URL.createObjectURL(result.blob);
+          const report = selectedReportForDetail?.id === id ? selectedReportForDetail : null;
 
-      if (ids.length === 1) {
-        const id = ids[0];
-        html = await laporanPenerimaanBarangService.exportLPBHtml(id, activeCompanyId);
-        title = 'Preview Formulir Laporan Penerimaan Barang';
-        fileName = `LPB_${id}.pdf`;
-      } else {
-        html = await laporanPenerimaanBarangService.exportLPBBulkHtml(ids, activeCompanyId);
-        title = `Preview Formulir LPB Bulk (${ids.length} Dokumen)`;
-        fileName = `LPB_Bulk_${ids.length}_dokumen.pdf`;
+          loadedFiles.push({
+            id,
+            url: blobUrl,
+            blob: result.blob,
+            filename: result.filename,
+            contentType: result.contentType,
+            lpbNumber: report?.no_lpb || result.filename,
+          });
+        } catch (err) {
+          failCount++;
+          console.error(`Gagal memuat file LPB untuk ID ${id}:`, err);
+        }
       }
 
-      setPreviewHtmlContent(html);
-      setPreviewTitle(title);
-      setPreviewFileName(fileName);
-      setPdfPreviewOpen(true);
+      if (loadedFiles.length === 0) {
+        toastService.error('Tidak ada file LPB yang dapat dimuat atau belum ada file yang diunggah untuk LPB ini.');
+        return;
+      }
+
+      if (failCount > 0) {
+        toastService.warning(`${loadedFiles.length} file berhasil dimuat, ${failCount} gagal.`);
+      }
+
+      setLpbPreviewFiles(loadedFiles);
+      setLpbPreviewModalOpen(true);
     } catch (error) {
-      console.error('Failed to preview LPB HTML:', error);
-      toastService.error(error.message || 'Gagal memuat preview HTML Laporan Penerimaan Barang.');
+      console.error('Failed to preview LPB:', error);
+      toastService.error(error.message || 'Gagal memuat preview file LPB.');
     } finally {
       setIsPreviewLpbLoading(false);
     }
   }, [selectedReportIds, selectedReportForDetail]);
+
+  const handleCloseLpbPreview = useCallback(() => {
+    // Revoke previous blob URLs to prevent memory leaks
+    lpbPreviewFiles.forEach((file) => {
+      if (file.url) {
+        window.URL.revokeObjectURL(file.url);
+      }
+    });
+    setLpbPreviewFiles([]);
+    setLpbPreviewModalOpen(false);
+  }, [lpbPreviewFiles]);
 
   const hasSelectedReports = selectedReportIds.length > 0;
 
@@ -411,10 +433,10 @@ const LaporanPenerimaanBarang = () => {
             <h3 className='text-sm font-semibold text-gray-900'>Laporan Penerimaan Barang</h3>
             <div className='flex flex-wrap gap-2'>
               <button
-                onClick={() => handlePreviewLpbHtml()}
+                onClick={() => handlePreviewLpb()}
                 disabled={isPreviewLpbLoading}
                 className='inline-flex items-center justify-center px-2.5 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm'
-                title='Preview Formulir Laporan Penerimaan Barang (HTML)'
+                title='Preview File LPB (PDF/Gambar yang diupload)'
               >
                 {isPreviewLpbLoading ? (
                   <>
@@ -513,12 +535,10 @@ const LaporanPenerimaanBarang = () => {
         isExporting={isExporting}
       />
 
-      <PdfPreviewModal
-        isOpen={pdfPreviewOpen}
-        onClose={() => setPdfPreviewOpen(false)}
-        htmlContent={previewHtmlContent}
-        title={previewTitle}
-        fileName={previewFileName}
+      <LpbFilePreviewModal
+        isOpen={lpbPreviewModalOpen}
+        onClose={handleCloseLpbPreview}
+        files={lpbPreviewFiles}
       />
     </div>
   );

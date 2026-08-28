@@ -333,9 +333,21 @@ class LaporanPenerimaanBarangService {
       return {
         blob: response.data,
         filename: filename,
-        contentType: response.headers['content-type'],
+        contentType: response.headers['content-type'] || 'application/pdf',
       };
     } catch (error) {
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          const customError = new Error(json.message || json.error || 'Gagal memuat file LPB');
+          throw customError;
+        } catch (parseErr) {
+          if (parseErr.message && !parseErr.message.includes('JSON')) {
+            throw parseErr;
+          }
+        }
+      }
       console.error('Error exporting LPB file:', error);
       throw error;
     }

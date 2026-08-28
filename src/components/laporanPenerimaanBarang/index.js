@@ -3,3 +3,5 @@ export { default as LaporanPenerimaanBarangModal } from './LaporanPenerimaanBara
 export { default as LaporanPenerimaanBarangDetailCard } from './LaporanPenerimaanBarangDetailCard';
 export { default as AssignPurchaseOrderModal } from './AssignPurchaseOrderModal';
 export { default as LaporanPenerimaanBarangExportPreviewModal } from './LaporanPenerimaanBarangExportPreviewModal';
+export { default as LpbFilePreviewModal } from './LpbFilePreviewModal';
+
