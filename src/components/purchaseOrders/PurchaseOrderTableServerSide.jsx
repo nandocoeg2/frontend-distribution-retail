@@ -130,6 +130,21 @@ const PurchaseOrderTableServerSide = forwardRef(({
     [companyId]
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal_masuk_po',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: orders,
     pagination,
@@ -149,9 +164,15 @@ const PurchaseOrderTableServerSide = forwardRef(({
     initialLimit: 9999, // Force fetching all data
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0, // Disable debounce to trigger immediately on manual commit
+    initialColumnFilters,
     getQueryParams,
-    storageKey: 'purchase-orders', // Persist filter state to sessionStorage
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-purchase-orders');
+    } catch (_) {}
+  }, []);
 
   const handleSelectAllInternalToggle = useCallback(() => {
     const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);
