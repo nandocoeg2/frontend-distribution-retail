@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useMemo, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   createColumnHelper,
   useReactTable,
