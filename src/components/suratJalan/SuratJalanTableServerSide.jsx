@@ -312,6 +312,28 @@ const SuratJalanTableServerSide = forwardRef(({
     }
   };
 
+  const dynamicNoSuratJalanOptions = useMemo(() => {
+    const map = new Map();
+    (suratJalan || []).forEach((item) => {
+      const sjNumber = item.no_surat_jalan;
+      if (sjNumber && !map.has(sjNumber)) {
+        map.set(sjNumber, { id: sjNumber, name: sjNumber });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'no_surat_jalan');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val && !map.has(val)) {
+        map.set(val, { id: val, name: val });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [suratJalan, columnFilters]);
+
   const dynamicPoOptions = useMemo(() => {
     const map = new Map();
     (suratJalan || []).forEach((item) => {
@@ -445,11 +467,24 @@ const SuratJalanTableServerSide = forwardRef(({
         },
       }),
       columnHelper.accessor('no_surat_jalan', {
+        id: 'no_surat_jalan',
         sortDescFirst: false,
         header: ({ column }) => (
-          <div className="space-y-1">
+          <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">No Surat Jalan</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
+            <AutocompleteCheckboxLimitTag
+              options={dynamicNoSuratJalanOptions}
+              value={column.getFilterValue() || []}
+              onChange={(e) => {
+                column.setFilterValue(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Filter..."
+              limitTags={1}
+              size="small"
+              fetchOnClose={true}
+              className="w-full"
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() || 'N/A'}</span>,
