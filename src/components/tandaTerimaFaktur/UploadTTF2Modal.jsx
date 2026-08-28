@@ -90,29 +90,48 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
         try {
           const result = await tandaTerimaFakturService.bulkUpload(groupCustomerId, file, processingMethod);
 
-          results.push({
-            fileName: file.name,
-            success: true,
-            data: result
-          });
-
           const validation = result.data?.validation;
           const updatedCount = validation?.updatedCount || 0;
           const invalidCount = validation?.invalidFakturPajak?.length || 0;
+          const totalItems = validation?.totalItems || (updatedCount + invalidCount);
+
+          const isSuccess = updatedCount > 0 && invalidCount === 0;
+          const isPartial = updatedCount > 0 && invalidCount > 0;
+          const fileStatus = isSuccess ? 'SUCCESS' : isPartial ? 'PARTIAL' : 'FAILED';
+
+          results.push({
+            fileName: file.name,
+            success: updatedCount > 0,
+            fileStatus,
+            updatedCount,
+            invalidCount,
+            totalItems,
+            data: result
+          });
 
           totalSuccess += updatedCount;
           totalFailed += invalidCount;
 
           setUploadProgress(prev => ({
             ...prev,
-            [i]: { status: 'success', fileName: file.name, result }
+            [i]: {
+              status: isSuccess ? 'success' : isPartial ? 'warning' : 'error',
+              fileName: file.name,
+              result
+            }
           }));
         } catch (error) {
           results.push({
             fileName: file.name,
             success: false,
+            fileStatus: 'FAILED',
+            updatedCount: 0,
+            invalidCount: 1,
+            totalItems: 1,
             error: error.message || 'Upload gagal'
           });
+
+          totalFailed += 1;
 
           setUploadProgress(prev => ({
             ...prev,
@@ -123,13 +142,19 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
 
       setUploadResults(results);
 
-      // Show summary toast
-      const successCount = results.filter(r => r.success).length;
-      const failedCount = results.filter(r => !r.success).length;
+      // Show summary toast based on accurate file & invoice counts
+      const successFiles = results.filter(r => r.fileStatus === 'SUCCESS').length;
+      const partialFiles = results.filter(r => r.fileStatus === 'PARTIAL').length;
+      const failedFiles = results.filter(r => r.fileStatus === 'FAILED').length;
+      const effectiveSuccessFiles = successFiles + partialFiles;
 
-      if (failedCount > 0) {
+      if (totalSuccess === 0) {
+        toastService.error(
+          `Upload gagal: Semua file (${selectedFiles.length} file) gagal diproses. Total ${totalFailed} faktur gagal.`
+        );
+      } else if (failedFiles > 0 || partialFiles > 0 || totalFailed > 0) {
         toastService.warning(
-          `Upload selesai: ${successCount}/${selectedFiles.length} file berhasil. Total ${totalSuccess} faktur diupdate, ${totalFailed} faktur gagal.`
+          `Upload selesai: ${effectiveSuccessFiles}/${selectedFiles.length} file berhasil (${failedFiles} file gagal). Total ${totalSuccess} faktur diupdate, ${totalFailed} faktur gagal.`
         );
       } else {
         toastService.success(
@@ -268,6 +293,9 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
                         {progress.status === 'success' && (
                           <span className='text-sm text-green-600 font-medium'>✓ Selesai</span>
                         )}
+                        {progress.status === 'warning' && (
+                          <span className='text-sm text-amber-600 font-medium'>⚠ Sebagian</span>
+                        )}
                         {progress.status === 'error' && (
                           <span className='text-sm text-red-600 font-medium'>✗ Gagal</span>
                         )}
@@ -284,55 +312,96 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
                 <h3 className='text-lg font-semibold mb-3'>Hasil Upload</h3>
 
                 {/* Summary */}
-                <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-                  <p className='text-sm font-medium text-blue-900 mb-2'>
-                    Upload Summary
-                  </p>
-                  <div className='text-sm text-blue-700'>
-                    <p>Total File: {uploadResults.length}</p>
-                    <p>Berhasil: {uploadResults.filter(r => r.success).length}</p>
-                    <p>Gagal: {uploadResults.filter(r => !r.success).length}</p>
-                    <p className='mt-1 pt-1 border-t border-blue-300'>
-                      Total Faktur Diupdate: {uploadResults.reduce((sum, r) => sum + (r.data?.data?.validation?.updatedCount || 0), 0)}
-                    </p>
-                  </div>
-                </div>
+                {(() => {
+                  const successFilesCount = uploadResults.filter(r => r.fileStatus === 'SUCCESS').length;
+                  const partialFilesCount = uploadResults.filter(r => r.fileStatus === 'PARTIAL').length;
+                  const failedFilesCount = uploadResults.filter(r => r.fileStatus === 'FAILED').length;
+                  const totalUpdatedCount = uploadResults.reduce((sum, r) => sum + (r.updatedCount ?? r.data?.data?.validation?.updatedCount ?? 0), 0);
+                  const totalFailedCount = uploadResults.reduce((sum, r) => sum + (r.invalidCount ?? r.data?.data?.validation?.invalidFakturPajak?.length ?? 0), 0);
+
+                  return (
+                    <div className='mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                      <p className='text-sm font-medium text-blue-900 mb-2'>
+                        Upload Summary
+                      </p>
+                      <div className='text-sm text-blue-700 space-y-1'>
+                        <p>Total File: {uploadResults.length}</p>
+                        <p>
+                          Berhasil: {successFilesCount}
+                          {partialFilesCount > 0 ? ` (${partialFilesCount} sebagian)` : ''}
+                        </p>
+                        <p>Gagal: {failedFilesCount}</p>
+                        <p className='mt-1 pt-1 border-t border-blue-300 font-medium'>
+                          Total Faktur Diupdate: {totalUpdatedCount}
+                        </p>
+                        {totalFailedCount > 0 && (
+                          <p className='text-red-600 font-medium'>
+                            Total Faktur Gagal: {totalFailedCount}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Per File Results */}
                 <div className='space-y-4'>
-                  {uploadResults.map((result, idx) => (
-                    <div key={idx} className={`p-3 rounded-lg border ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                      }`}>
-                      <div className='flex items-center justify-between mb-2'>
-                        <p className='text-sm font-medium truncate flex-1'>{result.fileName}</p>
-                        <span className={`text-xs font-semibold px-2 py-1 rounded ${result.success ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'
-                          }`}>
-                          {result.success ? '✓ Berhasil' : '✗ Gagal'}
-                        </span>
-                      </div>
+                  {uploadResults.map((result, idx) => {
+                    const isSuccess = result.fileStatus === 'SUCCESS';
+                    const isPartial = result.fileStatus === 'PARTIAL';
 
-                      {result.success && result.data?.data?.validation && (
-                        <div className='text-xs text-gray-700 space-y-1'>
-                          {result.data?.data?.groupCustomer && (
-                            <p className='font-semibold text-blue-700'>
-                              • Group: {result.data.data.groupCustomer.nama_group}
-                            </p>
-                          )}
-                          <p>• Total Item: {result.data.data.validation.totalItems || 0}</p>
-                          <p>• Faktur Berhasil: {result.data.data.validation.updatedCount || 0}</p>
-                          <p>• Faktur Gagal: {result.data.data.validation.invalidFakturPajak?.length || 0}</p>
+                    const cardBg = isSuccess
+                      ? 'bg-green-50 border-green-200'
+                      : isPartial
+                      ? 'bg-amber-50 border-amber-200'
+                      : 'bg-red-50 border-red-200';
+
+                    const badgeBg = isSuccess
+                      ? 'bg-green-200 text-green-800'
+                      : isPartial
+                      ? 'bg-amber-200 text-amber-800'
+                      : 'bg-red-200 text-red-800';
+
+                    const badgeText = isSuccess
+                      ? '✓ Berhasil'
+                      : isPartial
+                      ? '⚠ Sebagian'
+                      : '✗ Gagal';
+
+                    const validation = result.data?.data?.validation;
+
+                    return (
+                      <div key={idx} className={`p-3 rounded-lg border ${cardBg}`}>
+                        <div className='flex items-center justify-between mb-2'>
+                          <p className='text-sm font-medium truncate flex-1'>{result.fileName}</p>
+                          <span className={`text-xs font-semibold px-2 py-1 rounded ${badgeBg}`}>
+                            {badgeText}
+                          </span>
                         </div>
-                      )}
 
-                      {!result.success && (
-                        <p className='text-xs text-red-700'>Error: {result.error}</p>
-                      )}
-                    </div>
-                  ))}
+                        {validation ? (
+                          <div className='text-xs text-gray-700 space-y-1'>
+                            {result.data?.data?.groupCustomer && (
+                              <p className='font-semibold text-blue-700'>
+                                • Group: {result.data.data.groupCustomer.nama_group}
+                              </p>
+                            )}
+                            <p>• Total Item: {validation.totalItems || (result.updatedCount + result.invalidCount) || 0}</p>
+                            <p className='text-green-700'>• Faktur Berhasil: {result.updatedCount ?? validation.updatedCount ?? 0}</p>
+                            <p className={result.invalidCount > 0 ? 'text-red-700 font-medium' : ''}>
+                              • Faktur Gagal: {result.invalidCount ?? validation.invalidFakturPajak?.length ?? 0}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className='text-xs text-red-700'>Error: {result.error || 'Gagal memproses file'}</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Detailed Valid Faktur Pajak - Aggregated from all files */}
-                {uploadResults.some(r => r.success && r.data?.data?.validation?.validFakturPajak?.length > 0) && (
+                {uploadResults.some(r => (r.data?.data?.validation?.validFakturPajak?.length || 0) > 0) && (
                   <div className='mb-4 mt-4'>
                     <h4 className='text-md font-semibold mb-2 text-green-700'>
                       ✓ Semua Faktur Pajak Berhasil ({uploadResults.reduce((sum, r) => sum + (r.data?.data?.validation?.validFakturPajak?.length || 0), 0)})
@@ -349,7 +418,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
                         </thead>
                         <tbody className='bg-white divide-y divide-gray-200'>
                           {uploadResults.map((result, resultIdx) =>
-                            result.success && result.data?.data?.validation?.validFakturPajak?.map((item, itemIdx) => (
+                            result.data?.data?.validation?.validFakturPajak?.map((item, itemIdx) => (
                               <tr key={`${resultIdx}-${itemIdx}`}>
                                 <td className='px-3 py-2 text-xs text-gray-600 truncate max-w-xs'>{result.fileName}</td>
                                 <td className='px-3 py-2 whitespace-nowrap'>{item.noFakturPajak}</td>
@@ -369,7 +438,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
                 )}
 
                 {/* Detailed Invalid Faktur Pajak - Aggregated from all files */}
-                {uploadResults.some(r => r.success && r.data?.data?.validation?.invalidFakturPajak?.length > 0) && (
+                {uploadResults.some(r => (r.data?.data?.validation?.invalidFakturPajak?.length || 0) > 0) && (
                   <div>
                     <h4 className='text-md font-semibold mb-2 text-red-700'>
                       ✗ Semua Faktur Pajak Gagal ({uploadResults.reduce((sum, r) => sum + (r.data?.data?.validation?.invalidFakturPajak?.length || 0), 0)})
@@ -386,7 +455,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
                         </thead>
                         <tbody className='bg-white divide-y divide-gray-200'>
                           {uploadResults.map((result, resultIdx) =>
-                            result.success && result.data?.data?.validation?.invalidFakturPajak?.map((item, itemIdx) => (
+                            result.data?.data?.validation?.invalidFakturPajak?.map((item, itemIdx) => (
                               <tr key={`${resultIdx}-${itemIdx}`}>
                                 <td className='px-3 py-2 text-xs text-gray-600 truncate max-w-xs'>{result.fileName}</td>
                                 <td className='px-3 py-2 whitespace-nowrap'>{item.noFakturPajak}</td>

@@ -617,7 +617,11 @@ const MutasiBankTableServerSide = forwardRef(({
         }
       ),
       columnHelper.accessor(
-        (row) => row.validation_notes || '',
+        (row) =>
+          row.validation_notes ||
+          row.tandaTerimaFaktur?.keterangan ||
+          row.invoicePenagihan?.tandaTerimaFaktur?.keterangan ||
+          '',
         {
           id: 'validation_notes',
           header: ({ column }) => (

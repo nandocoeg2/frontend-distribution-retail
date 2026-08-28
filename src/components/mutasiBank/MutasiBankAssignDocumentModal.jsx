@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   XMarkIcon,
   LinkIcon,
@@ -6,6 +6,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Autocomplete from '../common/Autocomplete';
 import useTandaTerimaFakturAutocomplete from '../../hooks/useTandaTerimaFakturAutocomplete';
+import { formatCurrency } from '../../utils/formatUtils';
 
 const MutasiBankAssignDocumentModal = ({
   open,
@@ -32,6 +33,21 @@ const MutasiBankAssignDocumentModal = ({
       searchTTF('');
     }
   }, [open, searchTTF]);
+
+  const selectedTtfOption = useMemo(
+    () => ttfOptions.find((opt) => String(opt.id) === String(tandaTerimaFakturId)),
+    [ttfOptions, tandaTerimaFakturId]
+  );
+
+  const mutationAmount = Number(mutation?.jumlah || mutation?.amount || 0);
+  const ttfGross = Number(selectedTtfOption?.raw?.grand_total || 0);
+  const ttfRetur = Array.isArray(selectedTtfOption?.raw?.notaReturs)
+    ? selectedTtfOption.raw.notaReturs.reduce((sum, nr) => sum + Number(nr.nominal || 0), 0)
+    : 0;
+  const ttfNet = ttfGross - ttfRetur;
+  const targetTtfAmount = ttfNet > 0 ? ttfNet : ttfGross;
+  const amountDiff = Math.abs(mutationAmount - targetTtfAmount);
+  const hasAmountMismatch = Boolean(selectedTtfOption && mutationAmount > 0 && targetTtfAmount > 0 && amountDiff > 1000);
 
   if (!open) {
     return null;
@@ -117,6 +133,24 @@ const MutasiBankAssignDocumentModal = ({
               required
             />
           </div>
+
+          {hasAmountMismatch ? (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 space-y-1'>
+              <div className='flex items-center gap-1 font-semibold text-amber-900'>
+                <ExclamationTriangleIcon className='h-4 w-4 flex-shrink-0' />
+                <span>Peringatan Perbedaan Nominal:</span>
+              </div>
+              <p>
+                Nominal mutasi: <strong>{formatCurrency(mutationAmount)}</strong>
+              </p>
+              <p>
+                Nominal TTF {ttfRetur > 0 ? '(setelah retur)' : ''}: <strong>{formatCurrency(targetTtfAmount)}</strong> (Selisih: {formatCurrency(amountDiff)})
+              </p>
+              <p className='text-[11px] text-amber-700'>
+                Pastikan dokumen yang dipilih sudah sesuai sebelum mengaitkan dokumen.
+              </p>
+            </div>
+          ) : null}
 
           {mutation && !hasDocument ? (
             <div className='rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600'>

@@ -272,13 +272,19 @@ class MutasiBankService {
           ? new Date(item.tanggal_transaksi).toLocaleDateString('id-ID')
           : '-';
 
+        const keteranganRetur =
+          item.validation_notes ||
+          item.tandaTerimaFaktur?.keterangan ||
+          item.invoicePenagihan?.tandaTerimaFaktur?.keterangan ||
+          '';
+
         return [
           tanggalStr,
           item.keterangan || '-',
           customerName,
           invoiceNumber,
           Number(item.jumlah) || 0,
-          item.validation_notes || '',
+          keteranganRetur,
         ];
       });
 
