@@ -141,6 +141,24 @@ export const createStockIn = async (payload) => {
   return response.json();
 };
 
+export const updateStockIn = async (id, payload) => {
+  const response = await fetch(`${API_BASE_URL}/stock-in/${id}`, {
+    method: 'PUT',
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const message = await parseErrorMessage(
+      response,
+      'Failed to update stock-in movement'
+    );
+    throw new Error(message);
+  }
+
+  return response.json();
+};
+
 /**
  * Check whether a no_surat_jalan already exists for a supplier on Stock In.
  * Returns `{ exists: boolean, movementNumber: string | null, movementId: string | null }`.

@@ -12,6 +12,7 @@ const StockIn = () => {
   const tableRef = useRef(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editMovement, setEditMovement] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
 
   const handleExportExcel = async () => {
@@ -38,6 +39,12 @@ const StockIn = () => {
     } finally {
       setExportLoading(false);
     }
+  };
+
+  const handleEditSuccess = () => {
+    setEditMovement(null);
+    queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+    tableRef.current?.refetch?.();
   };
 
   return (
@@ -78,6 +85,7 @@ const StockIn = () => {
           <div className="flex-1 flex flex-col min-h-0">
             <StockInTable
               ref={tableRef}
+              onEdit={(movement) => setEditMovement(movement)}
             />
           </div>
         </div>
@@ -93,6 +101,15 @@ const StockIn = () => {
             tableRef.current?.refetch?.();
             toastService.success('Stock In berhasil dibuat.');
           }}
+        />
+      )}
+
+      {/* Edit Stock In Modal */}
+      {Boolean(editMovement) && (
+        <CreateStockInModal
+          editMovement={editMovement}
+          onClose={() => setEditMovement(null)}
+          onSuccess={handleEditSuccess}
         />
       )}
     </div>

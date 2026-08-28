@@ -13,11 +13,13 @@ import { DataTable, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
+import HeroIcon from '../atoms/HeroIcon.jsx';
 
 const columnHelper = createColumnHelper();
 
 const StockInTable = forwardRef(({
   onViewDetail,
+  onEdit,
   selectedMovementId = null,
   globalSearch = '',
 }, ref) => {
@@ -424,8 +426,25 @@ const getMatchingStockInRowsExcluding = (rows, columnFilters, excludeFilterId) =
           return filterValue.includes(val);
         },
       }),
+
+      columnHelper.display({
+        id: 'actions',
+        size: 60,
+        header: () => <div className="text-center font-medium text-xs">Aksi</div>,
+        cell: (info) => (
+          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => onEdit?.(info.row.original)}
+              className="p-1 rounded text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 transition-colors"
+              title="Edit / Ubah Stock In"
+            >
+              <HeroIcon name="pencil" className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ),
+      }),
     ],
-    [suratJalanOptions, namaBarangOptions, supplierOptions]
+    [suratJalanOptions, namaBarangOptions, supplierOptions, onEdit]
   );
 
   const table = useReactTable({
