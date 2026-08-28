@@ -19,7 +19,7 @@ import {
   useAlert,
 } from '../ui';
 import purchaseOrderService from '../../services/purchaseOrderService';
-import { getPackingById, exportPackingSticker } from '../../services/packingService';
+import { getPackingById, exportPackingSticker, exportPackingTandaTerima } from '../../services/packingService';
 import authService from '../../services/authService';
 import invoicePengirimanService from '../../services/invoicePengirimanService';
 import suratJalanService from '../../services/suratJalanService';
@@ -175,15 +175,31 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
           throw new Error('Company ID tidak ditemukan. Silakan login ulang.');
         }
 
-        const html = await exportPackingSticker(packingId, companyData.id);
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(html);
-          printWindow.document.close();
+        // Print Sticker
+        const stickerHtml = await exportPackingSticker(packingId, companyData.id);
+        const stickerWindow = window.open('', '_blank');
+        if (stickerWindow) {
+          stickerWindow.document.write(stickerHtml);
+          stickerWindow.document.close();
 
-          printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
+          stickerWindow.onload = () => {
+            stickerWindow.focus();
+            stickerWindow.print();
+          };
+        } else {
+          throw new Error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
+        }
+
+        // Print Tanda Terima
+        const tandaTerimaHtml = await exportPackingTandaTerima(packingId, companyData.id);
+        const tandaTerimaWindow = window.open('', '_blank');
+        if (tandaTerimaWindow) {
+          tandaTerimaWindow.document.write(tandaTerimaHtml);
+          tandaTerimaWindow.document.close();
+
+          tandaTerimaWindow.onload = () => {
+            tandaTerimaWindow.focus();
+            tandaTerimaWindow.print();
           };
         } else {
           throw new Error('Popup window diblokir. Silakan izinkan popup untuk mencetak.');
