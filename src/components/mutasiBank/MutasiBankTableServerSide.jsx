@@ -412,13 +412,8 @@ const MutasiBankTableServerSide = forwardRef(({
     });
 
     const activeFilter = tableOptions?.state?.columnFilters?.find((f) => f.id === 'validation_status');
-    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
-    selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
-        const fallback = STATUS_OPTIONS.find((s) => s.id === val);
-        map.set(val, { id: val, name: fallback?.name || val });
-      }
-    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [mutations, tableOptions?.state?.columnFilters]);
 
   const [customers, setCustomers] = useState([]);
 
