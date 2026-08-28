@@ -68,6 +68,7 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
             totalFiles: response.data.totalFiles,
             createdCount: response.data.rowStatistics?.createdCount || 0,
             updatedCount: response.data.rowStatistics?.updatedCount || 0,
+            skippedCount: response.data.rowStatistics?.skippedCount || 0,
             errorCount: response.data.rowStatistics?.errorCount || 0,
           }
         });
@@ -315,13 +316,15 @@ const BulkUploadScheduledPrice = ({ onClose, onSuccess }) => {
                   <span className="text-sm font-medium text-gray-900">{uploadStatus.statistics.totalFiles || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Data Baru:</span>
+                  <span className="text-sm text-gray-600">Data Baru / Diupdate:</span>
                   <span className="text-sm font-medium text-green-600">{uploadStatus.statistics.createdCount || 0}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Data Diupdate:</span>
-                  <span className="text-sm font-medium text-blue-600">{uploadStatus.statistics.updatedCount || 0}</span>
-                </div>
+                {uploadStatus.statistics.skippedCount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Dilewati (Harga & Tanggal Sama):</span>
+                    <span className="text-sm font-medium text-gray-500">{uploadStatus.statistics.skippedCount}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Gagal:</span>
                   <span className="text-sm font-medium text-red-600">{uploadStatus.statistics.errorCount || 0}</span>
