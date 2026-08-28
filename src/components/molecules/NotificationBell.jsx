@@ -47,11 +47,14 @@ const NotificationBell = () => {
 
             // Show toast & popup modal for BULK_PO_COMPLETE notifications
             if (data.data?.type === 'BULK_PO_COMPLETE') {
+              const titleLower = data.data.title?.toLowerCase() || '';
+              const messageLower = data.data.message?.toLowerCase() || '';
               const hasError =
-                data.data.title?.includes('gagal') ||
-                data.data.message?.includes('tidak terdaftar') ||
-                data.data.message?.includes('Schedule Price') ||
-                data.data.message?.includes('Gagal');
+                titleLower.includes('gagal') ||
+                messageLower.includes('tidak terdaftar') ||
+                messageLower.includes('schedule price') ||
+                messageLower.includes('harga tidak sesuai') ||
+                messageLower.includes('gagal');
 
               if (hasError) {
                 toast.error(data.data.title, {
