@@ -334,6 +334,21 @@ const PackingTableServerSide = forwardRef(({
     []
   );
 
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const initialColumnFilters = useMemo(() => [
+    {
+      id: 'tanggal_packing',
+      value: { from: todayStr, to: todayStr },
+    },
+  ], [todayStr]);
+
   const {
     data: packings,
     pagination,
@@ -353,10 +368,16 @@ const PackingTableServerSide = forwardRef(({
     initialLimit: 9999,
     initialPage: 1,
     globalFilter: globalFilterConfig,
+    initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
-    storageKey: 'packings', // Persist filter state to sessionStorage
   });
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('table-filter-packings');
+    } catch (_) {}
+  }, []);
 
   // Export functionality
   const handleConfirmExport = async () => {

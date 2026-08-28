@@ -130,6 +130,7 @@ export const useServerSideTable = ({
   autoResetPageOnColumnFilterChange = true,
   columnFilterDebounceMs = 500,
   initialSorting = [],
+  initialColumnFilters = [],
   tableOptions: extraTableOptions = DEFAULT_TABLE_OPTIONS,
   storageKey, // NEW: Optional key for sessionStorage persistence
 } = {}) => {
@@ -192,14 +193,14 @@ export const useServerSideTable = ({
     if (storedState?.columnFilters && Array.isArray(storedState.columnFilters)) {
       return mergeLockedFilters(storedState.columnFilters, normalizedLockedFilters);
     }
-    return mergeLockedFilters([], normalizedLockedFilters);
+    return mergeLockedFilters(initialColumnFilters, normalizedLockedFilters);
   });
   const [columnFiltersApplied, setColumnFiltersApplied] = useState(() => {
     // If we have stored state with column filters, use them (merged with locked filters)
     if (storedState?.columnFilters && Array.isArray(storedState.columnFilters)) {
       return mergeLockedFilters(storedState.columnFilters, normalizedLockedFilters);
     }
-    return mergeLockedFilters([], normalizedLockedFilters);
+    return mergeLockedFilters(initialColumnFilters, normalizedLockedFilters);
   });
 
   useEffect(() => {
