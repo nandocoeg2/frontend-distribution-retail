@@ -229,6 +229,33 @@ const NotificationBell = () => {
     setDetailModal({ open: false, notification: null });
   };
 
+  const renderFormattedMessage = (text) => {
+    if (!text) return null;
+
+    // Split text by markdown bold (**...**) or "Harga tidak sesuai schedule price" (case-insensitive)
+    const regex = /(\*\*.*?\*\*|harga tidak sesuai schedule price)/gi;
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+      if (!part) return null;
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={index} className='font-bold text-gray-900'>
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.toLowerCase() === 'harga tidak sesuai schedule price') {
+        return (
+          <strong key={index} className='font-bold text-gray-900'>
+            {part}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'LOW_STOCK':
@@ -434,7 +461,7 @@ const NotificationBell = () => {
                             {notification.title}
                           </p>
                           <p className='text-sm text-gray-600 mt-1 line-clamp-2'>
-                            {notification.message}
+                            {renderFormattedMessage(notification.message)}
                           </p>
                         </div>
                         <div className='flex items-center gap-1 ml-2'>
@@ -547,9 +574,9 @@ const NotificationBell = () => {
                 {formatRelativeTime(detailModal.notification.createdAt)}
               </p>
               <div className='bg-gray-50 rounded-lg p-4'>
-                <pre className='text-sm text-gray-700 whitespace-pre-wrap font-sans break-words select-text'>
-                  {detailModal.notification.message}
-                </pre>
+                <div className='text-sm text-gray-700 whitespace-pre-wrap font-sans break-words select-text'>
+                  {renderFormattedMessage(detailModal.notification.message)}
+                </div>
               </div>
             </div>
             {/* Footer */}
