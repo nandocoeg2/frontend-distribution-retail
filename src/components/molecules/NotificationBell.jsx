@@ -547,7 +547,7 @@ const NotificationBell = () => {
                 {formatRelativeTime(detailModal.notification.createdAt)}
               </p>
               <div className='bg-gray-50 rounded-lg p-4'>
-                <pre className='text-sm text-gray-700 whitespace-pre-wrap font-sans'>
+                <pre className='text-sm text-gray-700 whitespace-pre-wrap font-sans break-words select-text'>
                   {detailModal.notification.message}
                 </pre>
               </div>
