@@ -47,7 +47,11 @@ const StockInTable = forwardRef(({
         movement?.reportPoSuppliers?.[0]?.no_surat_jalan ||
         '-';
 
-      const movementDate = movement?.createdAt || null;
+      const movementDate =
+        movement?.reportPoSuppliers?.[0]?.tanggal_kirim ||
+        movement?.tanggal_kirim ||
+        movement?.createdAt ||
+        null;
       const items = Array.isArray(movement?.items) ? movement.items : [];
 
       if (items.length === 0) {

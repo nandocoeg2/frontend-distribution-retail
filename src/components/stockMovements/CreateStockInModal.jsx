@@ -84,7 +84,12 @@ const CreateStockInModal = ({ onClose, onSuccess, editMovement = null }) => {
       const itemName = itemInfo.nama_barang || itemInfo.name || editMovement.nama_barang || '';
       const itemPlu = itemInfo.plu || editMovement.plu || '';
 
-      const dateRaw = src.createdAt || editMovement.createdAt;
+      const dateRaw =
+        src.reportPoSuppliers?.[0]?.tanggal_kirim ||
+        src.tanggal_kirim ||
+        src.createdAt ||
+        editMovement.tanggal_kirim ||
+        editMovement.createdAt;
       const formattedDate = dateRaw
         ? new Date(dateRaw).toISOString().slice(0, 10)
         : new Date().toISOString().slice(0, 10);
