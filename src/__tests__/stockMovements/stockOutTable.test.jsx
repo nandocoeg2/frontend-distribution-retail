@@ -12,6 +12,9 @@ describe('StockOutTable data transformation and calculation', () => {
       purchaseOrder: {
         po_number: 'PO-2026-001',
         grand_total: 500000,
+        laporanPenerimaanBarang: {
+          tanggal_po: '2026-08-25T10:00:00.000Z',
+        },
         purchaseOrderDetails: [
           { itemId: 'itm-1', plu: '1001', total_quantity_order: 100 },
           { itemId: 'itm-2', plu: '1002', quantity_pcs: 50 },
@@ -71,7 +74,12 @@ describe('StockOutTable data transformation and calculation', () => {
       const movementDate = movement?.createdAt || null;
       const poNumber = movement?.no_po || movement?.purchaseOrder?.po_number || '-';
       const invoiceNumber = movement?.no_invoice || '-';
-      const totalPenagihanVal = Number(movement?.purchaseOrder?.grand_total || 0);
+
+      const lpb =
+        movement?.purchaseOrder?.laporanPenerimaanBarang ||
+        movement?.suratJalan?.purchaseOrder?.laporanPenerimaanBarang;
+      const hasLpb = Boolean(lpb);
+      const tanggalLpbVal = lpb?.tanggal_po || lpb?.createdAt || null;
 
       const items = Array.isArray(movement?.items) ? movement.items : [];
       const poDetails = Array.isArray(movement?.purchaseOrder?.purchaseOrderDetails)
@@ -142,7 +150,7 @@ describe('StockOutTable data transformation and calculation', () => {
         );
 
         const selisih = poQuantity - totalPengiriman;
-        const stokGantung = totalPenagihan - totalPengiriman;
+        const stokGantung = hasLpb ? (totalPenagihan - totalPengiriman) : 0;
 
         flatRows.push({
           id: `${movement.id}-${idx}`,
@@ -156,7 +164,7 @@ describe('StockOutTable data transformation and calculation', () => {
           poQuantity,
           selisih,
           noPo: poNumber,
-          totalPenagihan,
+          tanggalLpb: tanggalLpbVal,
           stokGantung,
           source: movement,
         });
@@ -170,7 +178,7 @@ describe('StockOutTable data transformation and calculation', () => {
     expect(flatRows[0].totalPengiriman).toBe(90);
     expect(flatRows[0].poQuantity).toBe(100);
     expect(flatRows[0].selisih).toBe(10); // 100 - 90
-    expect(flatRows[0].totalPenagihan).toBe(90);
+    expect(flatRows[0].tanggalLpb).toBe('2026-08-25T10:00:00.000Z');
     expect(flatRows[0].stokGantung).toBe(0); // 90 - 90
 
     // Item 2: Minyak 2L
@@ -178,7 +186,7 @@ describe('StockOutTable data transformation and calculation', () => {
     expect(flatRows[1].totalPengiriman).toBe(40);
     expect(flatRows[1].poQuantity).toBe(50);
     expect(flatRows[1].selisih).toBe(10); // 50 - 40
-    expect(flatRows[1].totalPenagihan).toBe(50);
+    expect(flatRows[1].tanggalLpb).toBe('2026-08-25T10:00:00.000Z');
     expect(flatRows[1].stokGantung).toBe(10); // 50 - 40
   });
 });

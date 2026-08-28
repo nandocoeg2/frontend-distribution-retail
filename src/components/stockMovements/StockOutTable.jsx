@@ -84,6 +84,12 @@ const StockOutTable = forwardRef(({
         ? movement.suratJalan.purchaseOrder.purchaseOrderDetails
         : [];
 
+      const lpb =
+        movement?.purchaseOrder?.laporanPenerimaanBarang ||
+        movement?.suratJalan?.purchaseOrder?.laporanPenerimaanBarang;
+      const hasLpb = Boolean(lpb);
+      const tanggalLpbVal = lpb?.tanggal_po || lpb?.createdAt || null;
+
       if (items.length === 0) {
         flatRows.push({
           id: movement.id,
@@ -97,7 +103,7 @@ const StockOutTable = forwardRef(({
           poQuantity: 0,
           selisih: 0,
           noPo: poNumber,
-          totalPenagihan: totalPenagihanVal,
+          tanggalLpb: tanggalLpbVal,
           stokGantung: 0,
           source: movement,
         });
@@ -178,8 +184,8 @@ const StockOutTable = forwardRef(({
           // Selisih = PO Quantity - Total Pengiriman
           const selisih = poQuantity - totalPengiriman;
 
-          // Stok Gantung = Total Penagihan - Total Kirim (totalPengiriman)
-          const stokGantung = totalPenagihan - totalPengiriman;
+          // Stok Gantung: jika LPB belum update buat jadi 0, jika sudah update totalPenagihan - totalPengiriman
+          const stokGantung = hasLpb ? (totalPenagihan - totalPengiriman) : 0;
 
           flatRows.push({
             id: `${movement.id}-${idx}`,
@@ -193,7 +199,7 @@ const StockOutTable = forwardRef(({
             poQuantity,
             selisih,
             noPo: poNumber,
-            totalPenagihan,
+            tanggalLpb: tanggalLpbVal,
             stokGantung,
             source: movement,
           });
@@ -317,8 +323,27 @@ const matchesStockOutFilter = (row, filterId, filterValue) => {
     return val.includes(String(filterValue).trim());
   }
 
-  if (filterId === 'totalPenagihan') {
-    const val = String(row.totalPenagihan ?? '');
+  if (filterId === 'tanggalLpb') {
+    if (!filterValue.from && !filterValue.to) return true;
+    const rowDateVal = row.tanggalLpb;
+    if (!rowDateVal) return false;
+    const date = new Date(rowDateVal);
+    if (isNaN(date.getTime())) return false;
+    if (filterValue.from) {
+      const fromDate = new Date(filterValue.from);
+      fromDate.setHours(0, 0, 0, 0);
+      if (date < fromDate) return false;
+    }
+    if (filterValue.to) {
+      const toDate = new Date(filterValue.to);
+      toDate.setHours(23, 59, 59, 999);
+      if (date > toDate) return false;
+    }
+    return true;
+  }
+
+  if (filterId === 'stokGantung') {
+    const val = String(row.stokGantung ?? '');
     return val.includes(String(filterValue).trim());
   }
 
@@ -678,29 +703,57 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
         },
       }),
 
-      // 10. Total Penagihan
-      columnHelper.accessor('totalPenagihan', {
-        id: 'totalPenagihan',
-        size: 120,
-        header: ({ column }) => (
-          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
-            <div className="font-medium text-xs">Total Penagihan</div>
-            <TextColumnFilter
-              column={column}
-              placeholder="Filter..."
-              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        ),
+      // 10. Tanggal LPB
+      columnHelper.accessor('tanggalLpb', {
+        id: 'tanggalLpb',
+        size: 110,
+        header: ({ column }) => {
+          const filterValue = column.getFilterValue() || { from: '', to: '' };
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tanggal LPB</div>
+              <div className="flex flex-col gap-0.5">
+                <DateFilter
+                  value={filterValue.from ?? ''}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, from: val });
+                  }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to ?? ''}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, to: val });
+                  }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => (
-          <span className="text-xs text-right text-gray-800 block whitespace-nowrap">
-            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
+          <span className="text-xs text-gray-700 whitespace-nowrap">
+            {info.getValue() ? formatDate(info.getValue()) : '-'}
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (filterValue == null || filterValue === '') return true;
-          const val = String(row.getValue(columnId) ?? '');
-          return val.includes(String(filterValue).trim());
+          if (!filterValue || (!filterValue.from && !filterValue.to)) return true;
+          const rowDateVal = row.getValue(columnId);
+          if (!rowDateVal) return false;
+          const date = new Date(rowDateVal);
+          if (isNaN(date.getTime())) return false;
+
+          if (filterValue.from) {
+            const fromDate = new Date(filterValue.from);
+            fromDate.setHours(0, 0, 0, 0);
+            if (date < fromDate) return false;
+          }
+          if (filterValue.to) {
+            const toDate = new Date(filterValue.to);
+            toDate.setHours(23, 59, 59, 999);
+            if (date > toDate) return false;
+          }
+          return true;
         },
       }),
 
@@ -708,10 +761,14 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
       columnHelper.accessor('stokGantung', {
         id: 'stokGantung',
         size: 110,
-        header: () => (
-          <div className="space-y-0.5 text-right">
+        header: ({ column }) => (
+          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Stok Gantung</div>
-            <div className="h-6"></div>
+            <TextColumnFilter
+              column={column}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
         ),
         cell: (info) => {
@@ -725,6 +782,11 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
               {val.toLocaleString('id-ID')}
             </span>
           );
+        },
+        filterFn: (row, columnId, filterValue) => {
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '');
+          return val.includes(String(filterValue).trim());
         },
       }),
     ],
