@@ -594,13 +594,30 @@ const LaporanPenerimaanBarangTableServerSide = ({
         enableHiding: false,
         enableColumnFilter: false,
       }),
+      columnHelper.accessor(
+        (row) => row.purchaseOrder?.invoice?.tanggal || row.detailInvoice?.tanggal || null,
+        {
+          id: 'tanggal_faktur',
+          header: () => (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Tanggal Faktur</div>
+            </div>
+          ),
+          cell: (info) => (
+            <span className="text-xs text-gray-600">
+              {info.getValue() ? formatDate(info.getValue()) : '-'}
+            </span>
+          ),
+          enableColumnFilter: false,
+        }
+      ),
       columnHelper.accessor('tanggal_po', {
         id: 'tanggal_po',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal</div>
+              <div className="font-medium text-xs">Tanggal LPB</div>
               <div className="flex flex-col gap-0.5">
                 <DateFilter
                   value={filterValue.from ?? ''}
