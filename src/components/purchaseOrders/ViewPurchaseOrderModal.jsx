@@ -228,7 +228,7 @@ const ViewPurchaseOrderModal = ({
         openConfirmationDialog({
           title: 'Perbedaan Harga Ditemukan',
           message: message,
-          confirmText: 'Lanjutkan Proses',
+          confirmText: 'Proses',
           cancelText: 'Batal',
           type: 'warning',
         }, () => executeProcessOrder());

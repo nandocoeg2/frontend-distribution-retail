@@ -175,7 +175,7 @@ const AddScheduledPriceModal = ({ onClose, onSuccess }) => {
       const submitData = {
         itemPriceId: formData.itemPriceId,
         customerId: formData.customerId || null,
-        effectiveDate: new Date(formData.effectiveDate).toISOString(),
+        effectiveDate: new Date(`${formData.effectiveDate}T00:00:00+07:00`).toISOString(),
         harga: parseFloat(formData.harga),
         pot1: formData.pot1 ? parseFloat(formData.pot1) : null,
         harga1: formData.harga1 ? parseFloat(formData.harga1) : null,

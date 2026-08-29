@@ -1,13 +1,13 @@
-import React from 'react';
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import useScheduledPriceOperations from '../../hooks/useScheduledPriceOperations';
+import { formatDateForInput } from '../../utils/formatUtils';
 
 const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
   const { updateSchedule, loading, validateScheduleData } = useScheduledPriceOperations();
 
   const [formData, setFormData] = useState({
-    effectiveDate: schedule.effectiveDate ? schedule.effectiveDate.split('T')[0] : '',
+    effectiveDate: schedule.effectiveDate ? formatDateForInput(schedule.effectiveDate) : '',
     harga: schedule.harga || '',
     pot1: schedule.pot1 || '',
     harga1: schedule.harga1 || '',
@@ -72,7 +72,7 @@ const EditScheduledPriceModal = ({ schedule, onClose, onSuccess }) => {
     try {
       // Prepare data for submission
       const submitData = {
-        effectiveDate: new Date(formData.effectiveDate).toISOString(),
+        effectiveDate: new Date(`${formData.effectiveDate}T00:00:00+07:00`).toISOString(),
         harga: parseFloat(formData.harga),
         pot1: formData.pot1 ? parseFloat(formData.pot1) : null,
         harga1: formData.harga1 ? parseFloat(formData.harga1) : null,

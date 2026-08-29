@@ -49,6 +49,17 @@ export const formatDate = (value, { withDayName = false } = {}) => {
   return withDayName ? `${dayName}, ${base}` : base;
 };
 
+export const formatDateForInput = (value) => {
+  const jakartaDate = toJakartaDate(value);
+  if (!jakartaDate) return '';
+
+  const year = jakartaDate.getFullYear();
+  const month = pad2(jakartaDate.getMonth() + 1);
+  const day = pad2(jakartaDate.getDate());
+
+  return `${year}-${month}-${day}`;
+};
+
 export const formatCurrency = (amount) => {
   if (amount === null || amount === undefined || amount === '') {
     return 'N/A';

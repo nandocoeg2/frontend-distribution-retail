@@ -316,7 +316,7 @@ const AddPurchaseOrderModal = ({
           openConfirmationDialog({
             title: 'Perbedaan Harga Ditemukan',
             message: formatPriceDiscrepancyMessage(discrepancies),
-            confirmText: 'Lanjutkan Proses',
+            confirmText: 'Proses',
             cancelText: 'Batal',
             type: 'warning',
           }, () => executeCreatePurchaseOrder(submitData));

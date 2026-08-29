@@ -399,7 +399,7 @@ const PurchaseOrders = () => {
         openConfirmationDialog({
           title: "Perbedaan Harga Ditemukan",
           message: formatPriceDiscrepancyMessage(priceDiscrepancies),
-          confirmText: "Lanjutkan Proses",
+          confirmText: "Proses",
           cancelText: "Batal",
           type: "warning"
         }, () => handleConfirmBulkProcess(idsSnapshot));

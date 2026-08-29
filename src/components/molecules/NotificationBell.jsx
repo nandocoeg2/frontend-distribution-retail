@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import notificationService from '../../services/notificationService.js';
+import authService from '../../services/authService.js';
 
 const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
@@ -16,7 +17,7 @@ const NotificationBell = () => {
   // Setup SSE connection for real-time notifications
   useEffect(() => {
     const connectSSE = () => {
-      const token = localStorage.getItem('token');
+      const token = authService.getToken() || localStorage.getItem('token');
       if (!token) return;
 
       // Close existing connection if any
@@ -24,9 +25,8 @@ const NotificationBell = () => {
         eventSourceRef.current.close();
       }
 
-      // Note: EventSource doesn't support custom headers, so we'll use a workaround
-      // We'll pass token as query param (backend should support this)
-      const sseUrl = `${process.env.BACKEND_BASE_URL}api/v1/notifications/stream`;
+      // Pass token as query param for SSE authentication
+      const sseUrl = `${process.env.BACKEND_BASE_URL}api/v1/notifications/stream?token=${encodeURIComponent(token)}`;
 
       // Create EventSource with fetch polyfill for auth support
       const eventSource = new EventSource(sseUrl, { withCredentials: true });
@@ -41,6 +41,12 @@ const NotificationBell = () => {
           const data = JSON.parse(event.data);
 
           if (data.type === 'NEW_NOTIFICATION') {
+            const currentUserId = authService.getUserData()?.id;
+            // If notification is targeted to a specific user, ensure it matches current user
+            if (data.data?.userId && currentUserId && data.data.userId !== currentUserId) {
+              return;
+            }
+
             // Add new notification to the list
             setNotifications((prev) => [data.data, ...prev]);
             setUnreadCount((prev) => prev + 1);
