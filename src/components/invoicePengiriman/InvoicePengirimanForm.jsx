@@ -3,40 +3,106 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import toastService from '../../services/toastService';
 import { formatCurrency } from '../../utils/formatUtils';
 
-const DEFAULT_FORM = {
-  deliver_to: '',
-  expired_date: '',
-  termOfPaymentId: '',
-  type: 'PEMBAYARAN',
-  sub_total: '',
-  total_discount: '',
-  total_price: '',
-  ppn_percentage: '11',
-  ppnRupiah: '',
-  grand_total: '',
+const formatNumber = (val) => {
+  if (val === null || val === undefined || val === '') return '-';
+  const num = Number(val);
+  if (Number.isNaN(num)) return String(val);
+  return num.toLocaleString('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
 };
 
-const numericFields = [
-  'sub_total',
-  'total_discount',
-  'total_price',
-  'ppn_percentage',
-  'ppnRupiah',
-  'grand_total',
-];
+const enrichInvoiceDetails = (invoice) => {
+  if (!invoice) return [];
+  const details = invoice.invoiceDetails || [];
+  const poDetails = invoice.purchaseOrder?.purchaseOrderDetails || [];
 
-const toStringValue = (value) => {
-  if (value === null || value === undefined) return '';
-  return String(value);
+  const poByItemId = new Map();
+  const poByPlu = new Map();
+  const poByName = new Map();
+
+  for (const poItem of poDetails) {
+    if (poItem.itemId) poByItemId.set(String(poItem.itemId), poItem);
+    const pluKey = (poItem.plu || poItem.PLU || '').trim().toLowerCase();
+    if (pluKey) poByPlu.set(pluKey, poItem);
+    const nameKey = (poItem.nama_barang || '').trim().toLowerCase();
+    if (nameKey) poByName.set(nameKey, poItem);
+  }
+
+  return details.map((item) => {
+    const itemPlu = (item.PLU || item.plu || '').trim().toLowerCase();
+    const itemName = (item.nama_barang || '').trim().toLowerCase();
+    const itemIdStr = item.itemId ? String(item.itemId) : '';
+
+    const matchedPo =
+      (itemIdStr && poByItemId.get(itemIdStr)) ||
+      (itemPlu && poByPlu.get(itemPlu)) ||
+      (itemName && poByName.get(itemName)) ||
+      null;
+
+    const potA =
+      item.potongan_a ??
+      item.potonganA ??
+      matchedPo?.potongan_a ??
+      item.discount_percentage ??
+      item.discountPercentage ??
+      0;
+    const potB = item.potongan_b ?? item.potonganB ?? matchedPo?.potongan_b ?? 0;
+    const vatRate =
+      item.PPN_pecentage ??
+      item.ppn_percentage ??
+      item.vatRate ??
+      matchedPo?.vatRate ??
+      invoice.ppn_percentage ??
+      11;
+
+    return {
+      id: item.id,
+      itemId: item.itemId,
+      plu: item.PLU || item.plu || '',
+      nama_barang: item.nama_barang || '',
+      quantity: item.quantity ?? item.qty ?? 0,
+      satuan: item.satuan || 'PCS',
+      harga: Number(item.harga) || 0,
+      potongan_a: Number(potA) || 0,
+      potongan_b: Number(potB) || 0,
+      vatRate: Number(vatRate) || 11,
+    };
+  });
 };
 
-const toNumberValue = (value) => {
-  if (value === '' || value === null || value === undefined) return 0;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
+const calculateRow = (item) => {
+  const qty = item.quantity === '' ? 0 : Number(item.quantity) || 0;
+  const harga = item.harga === '' ? 0 : Number(item.harga) || 0;
+  const potA = item.potongan_a === '' ? 0 : Number(item.potongan_a) || 0;
+  const potB = item.potongan_b === '' ? 0 : Number(item.potongan_b) || 0;
+  const vatRate = item.vatRate === '' ? 0 : Number(item.vatRate ?? 11) || 0;
 
-const formatCurrencyDisplay = (value) => formatCurrency(toNumberValue(value));
+  const hargaPotA = potA > 0 ? Number((harga * (1 - potA / 100)).toFixed(2)) : harga;
+  const hargaPotB = potB > 0 ? Number((hargaPotA * (1 - potB / 100)).toFixed(2)) : hargaPotA;
+  const subtotal = Number((qty * harga).toFixed(2));
+  const total = Number((qty * hargaPotB).toFixed(2));
+  const discountRupiah = Number((subtotal - total).toFixed(2));
+  const ppnRupiah = Number(((total * vatRate) / 100).toFixed(2));
+  const grandTotal = Number((total + ppnRupiah).toFixed(2));
+
+  return {
+    ...item,
+    qty,
+    harga,
+    potA,
+    potB,
+    vatRate,
+    hargaPotA,
+    hargaPotB,
+    subtotal,
+    total,
+    discountRupiah,
+    ppnRupiah,
+    grandTotal,
+  };
+};
 
 const InvoicePengirimanForm = ({
   initialValues,
@@ -45,342 +111,369 @@ const InvoicePengirimanForm = ({
   isSubmitting = false,
   formId,
 }) => {
-  const [formData, setFormData] = useState(DEFAULT_FORM);
-  const [errors, setErrors] = useState({});
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
     if (initialValues) {
-      setFormData({
-        deliver_to: toStringValue(initialValues.deliver_to),
-        expired_date: initialValues.expired_date
-          ? initialValues.expired_date.substring(0, 10)
-          : '',
-        termOfPaymentId: toStringValue(
-          initialValues.termOfPaymentId ??
-          initialValues.term_of_payment_id ??
-          initialValues.termOfPayment?.id
-        ),
-        type: toStringValue(initialValues.type || 'PEMBAYARAN'),
-        sub_total: toStringValue(initialValues.sub_total),
-        total_discount: toStringValue(initialValues.total_discount),
-        total_price: toStringValue(initialValues.total_price),
-        ppn_percentage: toStringValue(initialValues.ppn_percentage ?? '11'),
-        ppnRupiah: toStringValue(initialValues.ppnRupiah ?? initialValues.ppn_rupiah),
-        grand_total: toStringValue(initialValues.grand_total),
-      });
-      setErrors({});
+      setItems(enrichInvoiceDetails(initialValues));
     } else {
-      setFormData(DEFAULT_FORM);
-      setErrors({});
+      setItems([]);
     }
   }, [initialValues]);
 
-  const derivedTotals = useMemo(
-    () => ({
-      subTotal: toNumberValue(formData.sub_total),
-      discount: toNumberValue(formData.total_discount),
-      totalPrice: toNumberValue(formData.total_price),
-      ppnPercentage: toNumberValue(formData.ppn_percentage),
-      ppnRupiah: toNumberValue(formData.ppnRupiah),
-      grandTotal: toNumberValue(formData.grand_total),
-    }),
-    [formData]
-  );
+  const calculatedItems = useMemo(() => {
+    return items.map(calculateRow);
+  }, [items]);
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: undefined,
-      }));
-    }
+  const totals = useMemo(() => {
+    const totalQty = calculatedItems.reduce((sum, it) => sum + it.qty, 0);
+    const subTotal = calculatedItems.reduce((sum, it) => sum + it.subtotal, 0);
+    const totalPrice = calculatedItems.reduce((sum, it) => sum + it.total, 0);
+    const totalDiscount = Math.max(Number((subTotal - totalPrice).toFixed(2)), 0);
+    const totalPpn = calculatedItems.reduce((sum, it) => sum + it.ppnRupiah, 0);
+    const grandTotal = Number((totalPrice + totalPpn).toFixed(2));
+    const ppnPercentage =
+      calculatedItems.length > 0 ? calculatedItems[0].vatRate : 11;
+
+    return {
+      totalQty,
+      subTotal: Number(subTotal.toFixed(2)),
+      totalDiscount: Number(totalDiscount.toFixed(2)),
+      totalPrice: Number(totalPrice.toFixed(2)),
+      totalPpn: Number(totalPpn.toFixed(2)),
+      grandTotal,
+      ppnPercentage,
+    };
+  }, [calculatedItems]);
+
+  const handleItemChange = (index, field, value) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        [field]: value === '' ? '' : value,
+      };
+      return updated;
+    });
   };
 
   const recalculateFinancials = () => {
-    const subTotal = toNumberValue(formData.sub_total);
-    const discount = toNumberValue(formData.total_discount);
-    const ppnPercentage = toNumberValue(formData.ppn_percentage);
-
-    const totalPrice = Math.max(subTotal - discount, 0);
-    const ppnRupiah = Math.round(totalPrice * (ppnPercentage / 100));
-    const grandTotal = totalPrice + ppnRupiah;
-
-    setFormData((prev) => ({
-      ...prev,
-      total_price: String(totalPrice),
-      ppnRupiah: String(ppnRupiah),
-      grand_total: String(grandTotal),
-    }));
+    setItems((prev) => [...prev]);
     toastService.info(
       'Nilai finansial dihitung otomatis. Silakan simpan untuk menerapkan.'
     );
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    numericFields.forEach((field) => {
-      const value = formData[field];
-      if (value !== '' && Number.isNaN(Number(value))) {
-        newErrors[field] = 'Masukkan angka yang valid.';
-      }
-      if (Number(value) < 0) {
-        newErrors[field] = 'Nilai tidak boleh negatif.';
-      }
-    });
-
-    if (!formData.sub_total) {
-      newErrors.sub_total = 'Sub total wajib diisi.';
-    }
-    if (!formData.total_price) {
-      newErrors.total_price = 'Total harga wajib diisi.';
-    }
-    if (!formData.grand_total) {
-      newErrors.grand_total = 'Grand total wajib diisi.';
-    }
-
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) {
-      toastService.error('Periksa kembali isian formulir.');
-      return false;
-    }
-    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!onSubmit) return;
 
-    if (!validateForm()) {
+    if (calculatedItems.length === 0) {
+      toastService.error('Invoice tidak memiliki detail item.');
       return;
     }
 
-    const payload = { ...formData };
-    numericFields.forEach((field) => {
-      payload[field] = toNumberValue(formData[field]);
-    });
+    const payload = {
+      ...(initialValues || {}),
+      sub_total: totals.subTotal,
+      total_discount: totals.totalDiscount,
+      total_price: totals.totalPrice,
+      ppn_percentage: totals.ppnPercentage,
+      ppnRupiah: totals.totalPpn,
+      grand_total: totals.grandTotal,
+      invoiceDetails: calculatedItems.map((item) => ({
+        ...(item.id ? { id: item.id } : {}),
+        ...(item.itemId ? { itemId: item.itemId } : {}),
+        PLU: item.plu || '',
+        nama_barang: item.nama_barang || '',
+        quantity: Math.round(item.qty),
+        satuan: item.satuan || 'PCS',
+        harga: item.harga,
+        discount_percentage: item.potA,
+        discount_rupiah: item.discountRupiah,
+        dasar_pengenaan_pajak: item.total,
+        total: item.total,
+        PPN_pecentage: item.vatRate,
+        ppnRupiah: item.ppnRupiah,
+        potongan_a: item.potA,
+        potongan_b: item.potB,
+        harga_after_potongan_a: item.hargaPotA,
+        harga_after_potongan_b: item.hargaPotB,
+      })),
+    };
 
     onSubmit(payload);
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit} className='space-y-6'>
-
+    <form id={formId} onSubmit={handleSubmit} className="space-y-4">
       <section>
-        <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+        {/* Header section */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className='text-lg font-semibold text-gray-900'>
+            <h3 className="text-lg font-semibold text-gray-900">
               Rincian Finansial
             </h3>
-            <p className='text-sm text-gray-500'>
-              Pastikan nilai sesuai dengan dokumen dan perhitungan
-              pajak.
+            <p className="text-sm text-gray-500">
+              Pastikan nilai sesuai dengan dokumen dan perhitungan pajak.
             </p>
           </div>
           <button
-            type='button'
+            type="button"
             onClick={recalculateFinancials}
-            className='inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-60'
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
             disabled={isSubmitting}
           >
-            <ArrowPathIcon className='h-4 w-4' /> Hitung otomatis
+            <ArrowPathIcon className="h-4 w-4" /> Hitung otomatis
           </button>
         </div>
 
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-3 mb-6'>
-          <div className='rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-blue-500'>
+        {/* 3 Summary Cards */}
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3 mb-4">
+          <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
               Grand Total
             </p>
-            <p className='mt-2 text-xl font-bold text-blue-700'>
-              {formatCurrencyDisplay(formData.grand_total)}
+            <p className="mt-2 text-xl font-bold text-blue-700">
+              {formatCurrency(totals.grandTotal)}
             </p>
           </div>
-          <div className='rounded-xl border border-gray-100 bg-gray-50 p-4'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-gray-500'>
+          <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Total Harga (setelah diskon)
             </p>
-            <p className='mt-2 text-lg font-semibold text-gray-800'>
-              {formatCurrencyDisplay(derivedTotals.totalPrice)}
+            <p className="mt-2 text-lg font-semibold text-gray-800">
+              {formatCurrency(totals.totalPrice)}
             </p>
           </div>
-          <div className='rounded-xl border border-gray-100 bg-gray-50 p-4'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-gray-500'>
+          <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               PPN
             </p>
-            <p className='mt-2 text-lg font-semibold text-gray-800'>
-              {formatCurrencyDisplay(derivedTotals.ppnRupiah)} (
-              {derivedTotals.ppnPercentage}% )
+            <p className="mt-2 text-lg font-semibold text-gray-800">
+              {formatCurrency(totals.totalPpn)} ({totals.ppnPercentage}% )
             </p>
           </div>
         </div>
 
-        <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
-          <div>
-            <label
-              htmlFor='sub_total'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Sub Total *
-            </label>
-            <input
-              id='sub_total'
-              name='sub_total'
-              type='number'
-              step='0.01'
-              value={formData.sub_total}
-              onChange={(e) =>
-                handleChange('sub_total', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.sub_total ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Subtotal sebelum diskon'
-              disabled={isSubmitting}
-            />
-            {errors.sub_total && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.sub_total}
-              </p>
-            )}
-          </div>
+        {/* Editable Details Table */}
+        <div className="overflow-x-auto overflow-y-auto max-h-[400px] border border-gray-200 rounded bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200 text-xs table-fixed">
+            <thead className="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
+              <tr>
+                <th className="px-2 py-2 text-left font-medium text-gray-500 uppercase tracking-wider w-24">
+                  PLU
+                </th>
+                <th className="px-2 py-2 text-left font-medium text-gray-500 uppercase tracking-wider w-52">
+                  Nama Barang
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-20">
+                  QTY
+                </th>
+                <th className="px-2 py-2 text-left font-medium text-gray-500 uppercase tracking-wider w-16">
+                  Satuan
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-28">
+                  Harga
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-24">
+                  Pot A
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-28">
+                  Harga Pot A
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-24">
+                  Pot B
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-28">
+                  Harga Pot B
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-28">
+                  Total
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-24">
+                  PPN Rp
+                </th>
+                <th className="px-2 py-2 text-right font-medium text-gray-500 uppercase tracking-wider w-32">
+                  Grand Total
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {calculatedItems.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={12}
+                    className="py-4 text-center text-xs text-gray-500"
+                  >
+                    Tidak ada detail barang
+                  </td>
+                </tr>
+              ) : (
+                calculatedItems.map((item, index) => (
+                  <tr key={item.id || index} className="hover:bg-gray-50">
+                    {/* PLU (Readonly) */}
+                    <td className="px-2 py-1 whitespace-nowrap text-gray-900">
+                      <span className="truncate block" title={item.plu}>
+                        {item.plu || '-'}
+                      </span>
+                    </td>
 
-          <div>
-            <label
-              htmlFor='total_discount'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Total Diskon
-            </label>
-            <input
-              id='total_discount'
-              name='total_discount'
-              type='number'
-              step='0.01'
-              value={formData.total_discount}
-              onChange={(e) =>
-                handleChange('total_discount', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.total_discount ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Diskon total (opsional)'
-              disabled={isSubmitting}
-            />
-            {errors.total_discount && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.total_discount}
-              </p>
-            )}
-          </div>
+                    {/* Nama Barang (Readonly) */}
+                    <td className="px-2 py-1 text-gray-900">
+                      <span
+                        className="truncate block max-w-[200px]"
+                        title={item.nama_barang}
+                      >
+                        {item.nama_barang || '-'}
+                      </span>
+                    </td>
 
-          <div>
-            <label
-              htmlFor='total_price'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Total Harga *
-            </label>
-            <input
-              id='total_price'
-              name='total_price'
-              type='number'
-              step='0.01'
-              value={formData.total_price}
-              onChange={(e) =>
-                handleChange('total_price', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.total_price ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Harga setelah diskon'
-              disabled={isSubmitting}
-            />
-            {errors.total_price && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.total_price}
-              </p>
-            )}
-          </div>
+                    {/* QTY (Editable) */}
+                    <td className="px-1.5 py-1">
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          handleItemChange(index, 'quantity', e.target.value)
+                        }
+                        disabled={isSubmitting}
+                        className="w-full text-right px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      />
+                    </td>
 
-          <div>
-            <label
-              htmlFor='ppn_percentage'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              PPN (%)
-            </label>
-            <input
-              id='ppn_percentage'
-              name='ppn_percentage'
-              type='number'
-              step='0.01'
-              value={formData.ppn_percentage}
-              onChange={(e) =>
-                handleChange('ppn_percentage', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.ppn_percentage ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Persentase PPN'
-              disabled={isSubmitting}
-            />
-            {errors.ppn_percentage && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.ppn_percentage}
-              </p>
-            )}
-          </div>
+                    {/* Satuan (Readonly) */}
+                    <td className="px-2 py-1 whitespace-nowrap text-gray-600">
+                      {item.satuan || '-'}
+                    </td>
 
-          <div>
-            <label
-              htmlFor='ppnRupiah'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              PPN (Rp)
-            </label>
-            <input
-              id='ppnRupiah'
-              name='ppnRupiah'
-              type='number'
-              step='0.01'
-              value={formData.ppnRupiah}
-              onChange={(e) =>
-                handleChange('ppnRupiah', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.ppnRupiah ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Nilai PPN dalam Rupiah'
-              disabled={isSubmitting}
-            />
-            {errors.ppnRupiah && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.ppnRupiah}
-              </p>
-            )}
-          </div>
+                    {/* Harga (Editable) */}
+                    <td className="px-1.5 py-1">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.harga}
+                        onChange={(e) =>
+                          handleItemChange(index, 'harga', e.target.value)
+                        }
+                        disabled={isSubmitting}
+                        className="w-full text-right px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white font-mono"
+                      />
+                    </td>
 
-          <div>
-            <label
-              htmlFor='grand_total'
-              className='mb-1 block text-sm font-medium text-gray-700'
-            >
-              Grand Total *
-            </label>
-            <input
-              id='grand_total'
-              name='grand_total'
-              type='number'
-              step='0.01'
-              value={formData.grand_total}
-              onChange={(e) =>
-                handleChange('grand_total', e.target.value)
-              }
-              className={`w-full rounded-md border px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.grand_total ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder='Total akhir termasuk PPN'
-              disabled={isSubmitting}
-            />
-            {errors.grand_total && (
-              <p className='mt-1 text-sm text-red-600'>
-                {errors.grand_total}
-              </p>
+                    {/* Pot A (Editable) */}
+                    <td className="px-1.5 py-1">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={item.potongan_a}
+                          onChange={(e) =>
+                            handleItemChange(index, 'potongan_a', e.target.value)
+                          }
+                          disabled={isSubmitting}
+                          className="w-full text-right pr-4 px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white font-mono"
+                        />
+                        <span className="absolute right-1 top-1 text-xs text-gray-400 pointer-events-none">
+                          %
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Harga Pot A (Readonly, Auto-calculate) */}
+                    <td className="px-2 py-1 text-right text-gray-700 whitespace-nowrap font-mono bg-gray-50/50">
+                      {formatNumber(item.hargaPotA)}
+                    </td>
+
+                    {/* Pot B (Editable) */}
+                    <td className="px-1.5 py-1">
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={item.potongan_b}
+                          onChange={(e) =>
+                            handleItemChange(index, 'potongan_b', e.target.value)
+                          }
+                          disabled={isSubmitting}
+                          className="w-full text-right pr-4 px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white font-mono"
+                        />
+                        <span className="absolute right-1 top-1 text-xs text-gray-400 pointer-events-none">
+                          %
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Harga Pot B (Readonly, Auto-calculate) */}
+                    <td className="px-2 py-1 text-right text-gray-700 whitespace-nowrap font-mono bg-gray-50/50">
+                      {formatNumber(item.hargaPotB)}
+                    </td>
+
+                    {/* Total / DPP (Readonly, Auto-calculate) */}
+                    <td className="px-2 py-1 text-right text-gray-800 whitespace-nowrap font-mono bg-gray-50/50">
+                      {formatNumber(item.total)}
+                    </td>
+
+                    {/* PPN Rp (Readonly, Auto-calculate) */}
+                    <td className="px-2 py-1 text-right text-gray-800 whitespace-nowrap font-mono bg-gray-50/50">
+                      {formatNumber(item.ppnRupiah)}
+                    </td>
+
+                    {/* Grand Total (Readonly, Auto-calculate) */}
+                    <td className="px-2 py-1 text-right font-semibold text-gray-900 whitespace-nowrap font-mono bg-gray-50/50">
+                      {formatNumber(item.grandTotal)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {calculatedItems.length > 0 && (
+              <tfoot className="bg-gray-100 font-bold sticky bottom-0 border-t border-gray-300 z-10">
+                <tr>
+                  <td colSpan={2} className="px-2 py-1 text-left text-xs">
+                    Total
+                  </td>
+                  <td className="px-2 py-1 text-right text-xs font-mono">
+                    {formatNumber(totals.totalQty)}
+                  </td>
+                  <td className="px-2 py-1 text-center text-xs text-gray-400">
+                    -
+                  </td>
+                  <td className="px-2 py-1 text-center text-xs text-gray-400">
+                    -
+                  </td>
+                  <td className="px-2 py-1 text-center text-xs text-gray-400">
+                    -
+                  </td>
+                  <td className="px-2 py-1 text-center text-xs text-gray-400">
+                    -
+                  </td>
+                  <td className="px-2 py-1 text-center text-xs text-gray-400">
+                    -
+                  </td>
+                  <td className="px-2 py-1 text-center text-xs text-gray-400">
+                    -
+                  </td>
+                  <td className="px-2 py-1 text-right text-xs font-mono">
+                    {formatNumber(totals.totalPrice)}
+                  </td>
+                  <td className="px-2 py-1 text-right text-xs font-mono">
+                    {formatNumber(totals.totalPpn)}
+                  </td>
+                  <td className="px-2 py-1 text-right text-xs font-mono font-bold text-blue-700">
+                    {formatNumber(totals.grandTotal)}
+                  </td>
+                </tr>
+              </tfoot>
             )}
-          </div>
+          </table>
         </div>
       </section>
     </form>
