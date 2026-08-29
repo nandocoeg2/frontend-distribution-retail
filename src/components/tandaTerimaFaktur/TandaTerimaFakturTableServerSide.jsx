@@ -384,8 +384,9 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
   }, [tandaTerimaFakturs, columnFilters, statuses]);
 
   const keteranganOptions = useMemo(() => [
-    { value: 'REBATE', label: 'Rebate' },
     { value: 'RETUR', label: 'Retur' },
+    { value: 'REBATE', label: 'Rebate' },
+    { value: 'RETUR & REBATE', label: 'Retur & Rebate' },
   ], []);
 
   const totals = useMemo(() => {
