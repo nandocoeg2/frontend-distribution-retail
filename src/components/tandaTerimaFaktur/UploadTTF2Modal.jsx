@@ -1,51 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { XMarkIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
-import Autocomplete from '@/components/common/Autocomplete';
-import groupCustomerService from '@/services/groupCustomerService';
 import tandaTerimaFakturService from '@/services/tandaTerimaFakturService';
 import toastService from '@/services/toastService';
 
 const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () => { } }) => {
-  const [groupCustomerId, setGroupCustomerId] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResults, setUploadResults] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const processingMethod = 'text-extraction';
-
-  // Autocomplete options state
-  const [groupCustomerOptions, setGroupCustomerOptions] = useState([]);
-  const [searchingGroupCustomer, setSearchingGroupCustomer] = useState(false);
-
-  // Search group customers
-  const handleSearchGroupCustomer = useCallback(async (query) => {
-    if (!query) return;
-    setSearchingGroupCustomer(true);
-    try {
-      const response = await groupCustomerService.search(query);
-      if (response?.data?.data) {
-        setGroupCustomerOptions(response.data.data);
-      }
-    } catch (error) {
-      console.error('Error searching group customers:', error);
-    } finally {
-      setSearchingGroupCustomer(false);
-    }
-  }, []);
-
-  // Load initial data on focus
-  const handleFocusGroupCustomer = useCallback(async () => {
-    if (groupCustomerOptions.length === 0) {
-      try {
-        const response = await groupCustomerService.getAllGroupCustomers(1, 20);
-        if (response?.data?.data) {
-          setGroupCustomerOptions(response.data.data);
-        }
-      } catch (error) {
-        console.error('Error loading group customers:', error);
-      }
-    }
-  }, [groupCustomerOptions.length]);
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -88,7 +51,7 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
         }));
 
         try {
-          const result = await tandaTerimaFakturService.bulkUpload(groupCustomerId, file, processingMethod);
+          const result = await tandaTerimaFakturService.bulkUpload(null, file, processingMethod);
 
           const validation = result.data?.validation;
           const updatedCount = validation?.updatedCount || 0;
@@ -173,7 +136,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
   };
 
   const handleCloseModal = () => {
-    setGroupCustomerId('');
     setSelectedFiles([]);
     setUploadResults([]);
     setUploadProgress({});
@@ -182,7 +144,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
   };
 
   const handleReset = () => {
-    setGroupCustomerId('');
     setSelectedFiles([]);
     setUploadResults([]);
     setUploadProgress({});
@@ -218,23 +179,6 @@ const UploadTTF2Modal = ({ isOpen = false, onClose = () => { }, onSuccess = () =
         {/* Content */}
         <div className='flex-1 px-6 py-4 overflow-y-auto'>
           <div className='space-y-4'>
-            {/* Group Customer (Opsional) */}
-            <Autocomplete
-              label='Group Customer (Opsional)'
-              placeholder='Otomatis terdeteksi dari dokumen atau pilih manual...'
-              options={groupCustomerOptions}
-              value={groupCustomerId}
-              onChange={(e) => setGroupCustomerId(e.target.value)}
-              displayKey='nama_group'
-              valueKey='id'
-              required={false}
-              onSearch={handleSearchGroupCustomer}
-              onFocus={handleFocusGroupCustomer}
-              loading={searchingGroupCustomer}
-              showId={true}
-              disabled={isUploading}
-            />
-
             {/* File Upload */}
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
