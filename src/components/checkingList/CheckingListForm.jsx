@@ -4,12 +4,10 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
-import statusService from '../../services/statusService';
 import AddSuratJalanToChecklistModal from './AddSuratJalanToChecklistModal';
 import { formatDate } from '../../utils/formatUtils';
 
 const defaultValues = {
-  statusId: '',
   tanggal: '',
   checker: '',
   ekspedisi: '',
@@ -50,7 +48,6 @@ const normalizeInitialValues = (initialValues) => {
   }
 
   return {
-    statusId: initialValues.statusId || initialValues.status?.id || '',
     tanggal: toDateTimeLocalValue(initialValues.tanggal),
     checker: initialValues.checker || '',
     ekspedisi: initialValues.ekspedisi || '',
@@ -126,7 +123,6 @@ const CheckingListForm = ({
     setValidationError('');
 
     const payload = {
-      statusId: formData.statusId?.trim(),
       checker: formData.checker?.trim(),
       ekspedisi: formData.ekspedisi?.trim(),
       mobil: formData.mobil?.trim(),
@@ -153,22 +149,6 @@ const CheckingListForm = ({
         )}
 
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-          <div className='md:col-span-2'>
-            <label className='mb-1 block text-sm font-medium text-gray-700'>
-              Status ID <span className='text-red-500'>*</span>
-            </label>
-            <input
-              type='text'
-              value={
-                initialValues?.status?.status_code ||
-                initialValues?.status?.status_name ||
-                formData.statusId ||
-                '-'
-              }
-              disabled
-              className='w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed text-sm'
-            />
-          </div>
 
           <div>
             <label
