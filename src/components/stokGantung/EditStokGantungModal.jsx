@@ -62,14 +62,21 @@ const EditStokGantungModal = ({
                 movement.suratJalan?.checklistSuratJalan ||
                 movement.purchaseOrder?.suratJalan?.checklistSuratJalan ||
                 null;
+            const expedisiFromNotes = movement.notes?.match(/\[EKSPEDISI:\s*([^\]]+)\]/i)?.[1]?.trim() ||
+                movement.rawNotes?.match(/\[EKSPEDISI:\s*([^\]]+)\]/i)?.[1]?.trim() ||
+                '';
             const currentEkspedisi =
                 movement.expedisi ||
                 checklist?.ekspedisi ||
+                expedisiFromNotes ||
                 '';
+
+            const rawNotes = movement.notes || movement.rawNotes || '';
+            const cleanNotes = rawNotes.replace(/\[EKSPEDISI:[^\]]*\]/gi, '').trim();
 
             setCustomerId(currentCustId);
             setEkspedisi(currentEkspedisi);
-            setNotes(movement.notes || '');
+            setNotes(cleanNotes);
             setError('');
         }
     }, [isOpen, movement]);

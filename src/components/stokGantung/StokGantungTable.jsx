@@ -101,12 +101,16 @@ const StokGantungTable = ({
                 movement.suratJalan?.checklistSuratJalan ||
                 movement.purchaseOrder?.suratJalan?.checklistSuratJalan ||
                 null;
-            const expedisi = movement.expedisi || checklist?.ekspedisi || null;
+            const expedisiFromNotes = movement.notes?.match(/\[EKSPEDISI:\s*([^\]]+)\]/i)?.[1]?.trim() || null;
+            const expedisi = movement.expedisi || checklist?.ekspedisi || expedisiFromNotes || null;
             const mobil = movement.mobil || checklist?.mobil || null;
             const expedisiDriver =
                 movement.expedisiDriver ||
                 [expedisi, mobil].filter(Boolean).join(' - ') ||
                 '-';
+
+            const rawNotes = movement.notes || '';
+            const cleanNotes = rawNotes.replace(/\[EKSPEDISI:[^\]]*\]/gi, '').trim();
 
             return {
                 id: movement.id,
@@ -118,7 +122,8 @@ const StokGantungTable = ({
                 totalQuantity,
                 tanggalLpbFormatted,
                 tanggalLpbRaw,
-                notes: movement.notes || '',
+                notes: cleanNotes,
+                rawNotes,
                 expedisiDriver,
                 status: movement.status || 'UNKNOWN',
                 createdAt: movement.createdAt || movement.updatedAt || null,

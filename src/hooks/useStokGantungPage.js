@@ -108,10 +108,15 @@ const parseStokGantungResponse = (response) => {
             movement?.suratJalan?.checklistSuratJalan ||
             movement?.purchaseOrder?.suratJalan?.checklistSuratJalan ||
             null;
-        const expedisi = checklist?.ekspedisi || null;
+        const expedisiFromNotes = movement?.notes?.match(/\[EKSPEDISI:\s*([^\]]+)\]/i)?.[1]?.trim() || null;
+        const expedisi = movement?.expedisi || checklist?.ekspedisi || expedisiFromNotes || null;
         const mobil = checklist?.mobil || null;
         const expedisiDriver =
+            movement?.expedisiDriver ||
             [expedisi, mobil].filter(Boolean).join(' - ') || null;
+
+        const rawNotes = movement.notes || movement.description || '';
+        const cleanNotes = rawNotes.replace(/\[EKSPEDISI:[^\]]*\]/gi, '').trim();
 
         return {
             ...movement,
@@ -123,7 +128,8 @@ const parseStokGantungResponse = (response) => {
                 movement.documentNumber ||
                 movement.document_number ||
                 '-',
-            notes: movement.notes || movement.description || '',
+            notes: cleanNotes,
+            rawNotes,
             poNumber,
             customerName,
             tanggalLpb,
