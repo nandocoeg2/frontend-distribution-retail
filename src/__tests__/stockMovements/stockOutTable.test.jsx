@@ -149,27 +149,51 @@ describe('StockOutTable data transformation and calculation', () => {
           0
         );
 
-        const selisih = poQuantity - totalPengiriman;
-        const stokGantung = hasLpb ? (totalPenagihan - totalPengiriman) : 0;
+          // Calculate Total LPB (Qty LPB) for this item
+          const lpbDetails = Array.isArray(lpb?.detailItems) ? lpb.detailItems : [];
+          const matchingLpbDetails = lpbDetails.filter(
+            (det) =>
+              (itemInfo?.plu && (det?.plu === itemInfo?.plu || det?.PLU === itemInfo?.plu)) ||
+              (itemInfo?.nama_barang && det?.nama_barang === itemInfo?.nama_barang)
+          );
 
-        flatRows.push({
-          id: `${movement.id}-${idx}`,
-          movementId: movement.id,
-          tgl: movementDate,
-          noInvoice: invoiceNumber,
-          plu: itemInfo?.plu || '-',
-          namaCustomer: customerName,
-          namaBarang: itemInfo?.nama_barang || '-',
-          totalPengiriman,
-          poQuantity,
-          selisih,
-          noPo: poNumber,
-          tanggalLpb: tanggalLpbVal,
-          stokGantung,
-          source: movement,
+          const totalLpb = hasLpb
+            ? matchingLpbDetails.length > 0
+              ? matchingLpbDetails.reduce(
+                  (sum, det) =>
+                    sum +
+                    Number(
+                      det?.total_quantity_order ??
+                      det?.quantity_pcs ??
+                      det?.quantity ??
+                      0
+                    ),
+                  0
+                )
+              : (totalPenagihan > 0 ? totalPenagihan : totalPengiriman)
+            : 0;
+
+          const selisih = poQuantity - totalPengiriman;
+          const stokGantung = hasLpb ? (totalPenagihan - totalPengiriman) : 0;
+
+          flatRows.push({
+            id: `${movement.id}-${idx}`,
+            movementId: movement.id,
+            tgl: movementDate,
+            noInvoice: invoiceNumber,
+            plu: itemInfo?.plu || '-',
+            namaCustomer: customerName,
+            namaBarang: itemInfo?.nama_barang || '-',
+            totalPengiriman,
+            poQuantity,
+            selisih,
+            noPo: poNumber,
+            totalLpb,
+            stokGantung,
+            source: movement,
+          });
         });
       });
-    });
 
     expect(flatRows).toHaveLength(2);
 
@@ -178,7 +202,7 @@ describe('StockOutTable data transformation and calculation', () => {
     expect(flatRows[0].totalPengiriman).toBe(90);
     expect(flatRows[0].poQuantity).toBe(100);
     expect(flatRows[0].selisih).toBe(10); // 100 - 90
-    expect(flatRows[0].tanggalLpb).toBe('2026-08-25T10:00:00.000Z');
+    expect(flatRows[0].totalLpb).toBe(90);
     expect(flatRows[0].stokGantung).toBe(0); // 90 - 90
 
     // Item 2: Minyak 2L
@@ -186,7 +210,7 @@ describe('StockOutTable data transformation and calculation', () => {
     expect(flatRows[1].totalPengiriman).toBe(40);
     expect(flatRows[1].poQuantity).toBe(50);
     expect(flatRows[1].selisih).toBe(10); // 50 - 40
-    expect(flatRows[1].tanggalLpb).toBe('2026-08-25T10:00:00.000Z');
+    expect(flatRows[1].totalLpb).toBe(50);
     expect(flatRows[1].stokGantung).toBe(10); // 50 - 40
   });
 });

@@ -88,7 +88,6 @@ const StockOutTable = forwardRef(({
         movement?.purchaseOrder?.laporanPenerimaanBarang ||
         movement?.suratJalan?.purchaseOrder?.laporanPenerimaanBarang;
       const hasLpb = Boolean(lpb);
-      const tanggalLpbVal = lpb?.tanggal_po || lpb?.createdAt || null;
 
       if (items.length === 0) {
         flatRows.push({
@@ -103,7 +102,7 @@ const StockOutTable = forwardRef(({
           poQuantity: 0,
           selisih: 0,
           noPo: poNumber,
-          tanggalLpb: tanggalLpbVal,
+          totalLpb: 0,
           stokGantung: 0,
           source: movement,
         });
@@ -181,6 +180,30 @@ const StockOutTable = forwardRef(({
             0
           );
 
+          // Calculate Total LPB (Qty LPB) for this item
+          const lpbDetails = Array.isArray(lpb?.detailItems) ? lpb.detailItems : [];
+          const matchingLpbDetails = lpbDetails.filter(
+            (det) =>
+              (itemInfo?.plu && (det?.plu === itemInfo?.plu || det?.PLU === itemInfo?.plu)) ||
+              (itemInfo?.nama_barang && det?.nama_barang === itemInfo?.nama_barang)
+          );
+
+          const totalLpb = hasLpb
+            ? matchingLpbDetails.length > 0
+              ? matchingLpbDetails.reduce(
+                  (sum, det) =>
+                    sum +
+                    Number(
+                      det?.total_quantity_order ??
+                      det?.quantity_pcs ??
+                      det?.quantity ??
+                      0
+                    ),
+                  0
+                )
+              : (totalPenagihan > 0 ? totalPenagihan : totalPengiriman)
+            : 0;
+
           // Selisih = PO Quantity - Total Pengiriman
           const selisih = poQuantity - totalPengiriman;
 
@@ -199,7 +222,7 @@ const StockOutTable = forwardRef(({
             poQuantity,
             selisih,
             noPo: poNumber,
-            tanggalLpb: tanggalLpbVal,
+            totalLpb,
             stokGantung,
             source: movement,
           });
@@ -318,23 +341,9 @@ const matchesStockOutFilter = (row, filterId, filterValue) => {
     return val.includes(String(filterValue).trim());
   }
 
-  if (filterId === 'tanggalLpb') {
-    if (!filterValue.from && !filterValue.to) return true;
-    const rowDateVal = row.tanggalLpb;
-    if (!rowDateVal) return false;
-    const date = new Date(rowDateVal);
-    if (isNaN(date.getTime())) return false;
-    if (filterValue.from) {
-      const fromDate = new Date(filterValue.from);
-      fromDate.setHours(0, 0, 0, 0);
-      if (date < fromDate) return false;
-    }
-    if (filterValue.to) {
-      const toDate = new Date(filterValue.to);
-      toDate.setHours(23, 59, 59, 999);
-      if (date > toDate) return false;
-    }
-    return true;
+  if (filterId === 'totalLpb') {
+    const val = String(row.totalLpb ?? '');
+    return val.includes(String(filterValue).trim());
   }
 
   if (filterId === 'stokGantung') {
@@ -698,57 +707,29 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
         },
       }),
 
-      // 10. Tanggal LPB
-      columnHelper.accessor('tanggalLpb', {
-        id: 'tanggalLpb',
+      // 10. Total LPB
+      columnHelper.accessor('totalLpb', {
+        id: 'totalLpb',
         size: 110,
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal LPB</div>
-              <div className="flex flex-col gap-0.5">
-                <DateFilter
-                  value={filterValue.from ?? ''}
-                  onChange={(val) => {
-                    column.setFilterValue({ ...filterValue, from: val });
-                  }}
-                  placeholder="Dari"
-                />
-                <DateFilter
-                  value={filterValue.to ?? ''}
-                  onChange={(val) => {
-                    column.setFilterValue({ ...filterValue, to: val });
-                  }}
-                  placeholder="Sampai"
-                />
-              </div>
-            </div>
-          );
-        },
+        header: ({ column }) => (
+          <div className="space-y-0.5 text-right" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Total LPB</div>
+            <TextColumnFilter
+              column={column}
+              placeholder="Filter..."
+              className="w-full px-2 py-1 text-xs text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        ),
         cell: (info) => (
-          <span className="text-xs text-gray-700 whitespace-nowrap">
-            {info.getValue() ? formatDate(info.getValue()) : '-'}
+          <span className="text-xs font-bold text-right text-gray-900 block whitespace-nowrap">
+            {Math.round(Number(info.getValue() || 0)).toLocaleString('id-ID')}
           </span>
         ),
         filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || (!filterValue.from && !filterValue.to)) return true;
-          const rowDateVal = row.getValue(columnId);
-          if (!rowDateVal) return false;
-          const date = new Date(rowDateVal);
-          if (isNaN(date.getTime())) return false;
-
-          if (filterValue.from) {
-            const fromDate = new Date(filterValue.from);
-            fromDate.setHours(0, 0, 0, 0);
-            if (date < fromDate) return false;
-          }
-          if (filterValue.to) {
-            const toDate = new Date(filterValue.to);
-            toDate.setHours(23, 59, 59, 999);
-            if (date > toDate) return false;
-          }
-          return true;
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '');
+          return val.includes(String(filterValue).trim());
         },
       }),
 
