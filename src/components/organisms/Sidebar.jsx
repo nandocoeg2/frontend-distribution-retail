@@ -182,7 +182,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, menus = [], onLogout }) => {
       .map((item) => ({
         ...item,
         children: item.children ? sanitizeMenuTree(item.children) : [],
-      }));
+      }))
+      .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
   };
 
   const filteredMenus = useMemo(() => {
