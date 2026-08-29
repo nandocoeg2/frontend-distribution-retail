@@ -219,6 +219,14 @@ const AddPurchaseOrderModal = ({
       const errorMessage = err.message || 'Failed to upload bulk files';
       setError(errorMessage);
       toast.error(errorMessage);
+
+      openConfirmationDialog({
+        title: '❌ Upload Purchase Order Gagal',
+        message: `Upload Purchase Order GAGAL.\n\nData PO TIDAK dimasukkan ke dalam sistem.\n\n📋 Penyebab:\n${errorMessage}\n\nSilakan pastikan Schedule Price dan Master Data sudah lengkap sebelum mengunggah kembali.`,
+        confirmText: 'Tutup',
+        cancelText: null,
+        type: 'danger',
+      });
     } finally {
       setLoading(false);
     }
@@ -285,6 +293,16 @@ const AddPurchaseOrderModal = ({
           'Failed to create purchase order. Please check the form and try again.'
         );
       }
+    } catch (err) {
+      const errorMessage = err?.response?.data?.error?.message || err?.message || 'Failed to create purchase order';
+      setError(errorMessage);
+      openConfirmationDialog({
+        title: '❌ Pembuatan Purchase Order Gagal',
+        message: `Pembuatan Purchase Order GAGAL.\n\nData PO TIDAK dimasukkan ke dalam sistem.\n\n📋 Penyebab:\n${errorMessage}\n\nSilakan pastikan Schedule Price dan Master Data sudah lengkap sebelum mencoba kembali.`,
+        confirmText: 'Tutup',
+        cancelText: null,
+        type: 'danger',
+      });
     } finally {
       setLoading(false);
     }

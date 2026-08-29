@@ -9,7 +9,7 @@ const formatNumber = (val) => {
   if (Number.isNaN(num)) return String(val);
   return num.toLocaleString('id-ID', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 4,
+    maximumFractionDigits: 2,
   });
 };
 

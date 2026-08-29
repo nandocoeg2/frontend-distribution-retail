@@ -124,7 +124,7 @@ const TableFooterCell = ({ column, table, data = [] }) => {
         const sum = numericValues.reduce((acc, curr) => acc + curr, 0);
         return Number.isInteger(sum)
           ? sum.toLocaleString("id-ID")
-          : sum.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+          : sum.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       }
       case "avg": {
         if (numericValues.length === 0) return "0";
@@ -132,7 +132,7 @@ const TableFooterCell = ({ column, table, data = [] }) => {
         const avg = sum / numericValues.length;
         return Number.isInteger(avg)
           ? avg.toLocaleString("id-ID")
-          : avg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+          : avg.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
       }
       case "count":
       default:

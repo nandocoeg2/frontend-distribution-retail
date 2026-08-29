@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 import ActivityTimeline from '../common/ActivityTimeline';
-import { formatDate, formatDateTime } from '../../utils/formatUtils';
+import { formatDate, formatDateTime, formatCurrency } from '../../utils/formatUtils';
 import { getAuditTrails } from '../../services/auditTrailService';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
@@ -539,7 +539,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
                 <InfoTable compact data={[
                   { label: 'No. Invoice', value: order.invoice.no_invoice, copyable: true },
                   { label: 'Tanggal', value: formatDate(order.invoice.tanggal) },
-                  { label: 'Grand Total', value: `Rp ${parseInt(order.invoice.grand_total).toLocaleString('id-ID')}` },
+                  { label: 'Grand Total', value: formatCurrency(order.invoice.grand_total) },
                   { label: 'PPN', value: `${order.invoice.ppn_percentage}%` },
                   { label: 'TOP', value: `${order.invoice.TOP} hari` },
                   { label: 'Status', component: <StatusBadge status={order.invoice.status?.status_name || order.invoice.statusPembayaran?.status_name || '-'} variant={resolveStatusVariant(order.invoice.status?.status_name || order.invoice.statusPembayaran?.status_name)} size='xs' dot /> },

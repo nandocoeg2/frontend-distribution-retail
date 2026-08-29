@@ -13,7 +13,7 @@ import fileService from '../../services/fileService';
 import PurchaseOrderDetailsTable from './PurchaseOrderDetailsTable';
 import purchaseOrderService from '../../services/purchaseOrderService';
 import ActivityTimeline from '../common/ActivityTimeline';
-import { formatDate, formatDateTime } from '../../utils/formatUtils';
+import { formatDate, formatDateTime, formatCurrency } from '../../utils/formatUtils';
 import { resolveStatusVariant } from '../../utils/modalUtils';
 import {
   AccordionItem,
@@ -1153,19 +1153,19 @@ const ViewPurchaseOrderModal = ({
                           },
                           {
                             label: 'Sub Total',
-                            value: `Rp ${parseInt(order.invoice.sub_total).toLocaleString('id-ID')}`,
+                            value: formatCurrency(order.invoice.sub_total),
                           },
                           {
                             label: 'Total Discount',
-                            value: `Rp ${parseInt(order.invoice.total_discount).toLocaleString('id-ID')}`,
+                            value: formatCurrency(order.invoice.total_discount),
                           },
                           {
                             label: 'Total Price',
-                            value: `Rp ${parseInt(order.invoice.total_price).toLocaleString('id-ID')}`,
+                            value: formatCurrency(order.invoice.total_price),
                           },
                           {
                             label: 'Grand Total',
-                            value: `Rp ${parseInt(order.invoice.grand_total).toLocaleString('id-ID')}`,
+                            value: formatCurrency(order.invoice.grand_total),
                           },
                           {
                             label: 'PPN Percentage',

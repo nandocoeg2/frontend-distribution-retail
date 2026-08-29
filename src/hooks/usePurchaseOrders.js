@@ -225,7 +225,7 @@ const usePurchaseOrders = () => {
       }
       const message = err?.response?.data?.error?.message || err?.message || 'Failed to create purchase order';
       toastService.error(message);
-      return null;
+      throw err;
     }
   }, [authHandler, refreshAfterMutation]);
 
