@@ -80,13 +80,9 @@ const MutasiBank = () => {
 
   const handleUploadFile = useCallback(
     async (file) => {
-      try {
-        await uploadMutationFile(file);
-        setUploadModalOpen(false);
-        invalidateMutations();
-      } catch (error) {
-        console.error('Upload mutasi bank gagal:', error);
-      }
+      await uploadMutationFile(file);
+      setUploadModalOpen(false);
+      invalidateMutations();
     },
     [uploadMutationFile, invalidateMutations]
   );
