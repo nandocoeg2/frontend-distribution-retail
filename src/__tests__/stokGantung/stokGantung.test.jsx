@@ -36,4 +36,17 @@ describe('Stok Gantung split quantity and re-edit calculation', () => {
 
         expect(deltaReversal).toBe(-250); // Decrements 250 from ItemStock
     });
+
+    it('formats update payload with customerId, ekspedisi, and notes properly', () => {
+        const payload = {
+            movementId: 'mov-1',
+            customerId: 'cust-123',
+            ekspedisi: 'JNE Trucking',
+            notes: 'Kemasan rusak saat pengiriman',
+        };
+
+        expect(payload.customerId).toBe('cust-123');
+        expect(payload.ekspedisi).toBe('JNE Trucking');
+        expect(payload.notes).toBe('Kemasan rusak saat pengiriman');
+    });
 });

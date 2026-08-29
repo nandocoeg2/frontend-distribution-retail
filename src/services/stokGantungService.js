@@ -158,20 +158,29 @@ export const classifyReturn = async (movementId, payloadOrAction) => {
     return response.json();
 };
 
-export const updateNotes = async (movementId, notes) => {
-    const response = await fetch(`${API_BASE_URL}/${movementId}/notes`, {
+export const updateStokGantung = async (movementId, payload) => {
+    const body =
+        typeof payload === 'string'
+            ? { notes: payload }
+            : payload;
+
+    const response = await fetch(`${API_BASE_URL}/${movementId}`, {
         method: 'PATCH',
         headers: buildHeaders(),
-        body: JSON.stringify({ notes }),
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {
         const message = await parseErrorMessage(
             response,
-            'Failed to update notes'
+            'Failed to update stok gantung data'
         );
         throw new Error(message);
     }
 
     return response.json();
+};
+
+export const updateNotes = async (movementId, notes) => {
+    return updateStokGantung(movementId, { notes });
 };

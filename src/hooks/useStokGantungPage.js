@@ -5,6 +5,7 @@ import {
     createReturn,
     classifyReturn,
     updateNotes,
+    updateStokGantung,
 } from '../services/stokGantungService';
 import toastService from '../services/toastService';
 
@@ -335,23 +336,30 @@ const useStokGantungPage = () => {
         [refreshAfterMutation, setError]
     );
 
-    const updateMovementNotes = useCallback(
-        async (movementId, notes) => {
+    const updateMovementDetails = useCallback(
+        async (movementId, payload) => {
             setError(null);
             try {
-                const result = await updateNotes(movementId, notes);
-                toastService.success('Notes berhasil diperbarui');
+                const result = await updateStokGantung(movementId, payload);
+                toastService.success('Data stok gantung berhasil diperbarui');
                 await refreshAfterMutation();
                 return result?.data || result;
             } catch (err) {
                 const message =
-                    resolveStokGantungError(err) || 'Failed to update notes';
+                    resolveStokGantungError(err) || 'Failed to update stok gantung data';
                 setError(message);
                 toastService.error(message);
                 throw err;
             }
         },
         [refreshAfterMutation, setError]
+    );
+
+    const updateMovementNotes = useCallback(
+        async (movementId, notes) => {
+            return updateMovementDetails(movementId, { notes });
+        },
+        [updateMovementDetails]
     );
 
     const handleFiltersChange = useCallback(
@@ -368,8 +376,8 @@ const useStokGantungPage = () => {
     const handleResetFilters = useCallback(() => {
         const defaults = { ...INITIAL_FILTERS };
         setFilters(defaults);
-        performSearch(defaults, 1, resolveLimit());
-    }, [performSearch, resolveLimit, setFilters]);
+        debouncedSearch({ ...defaults }, 1, resolveLimit());
+    }, [debouncedSearch, resolveLimit, setFilters]);
 
     useEffect(() => {
         const defaults = { ...INITIAL_FILTERS };
@@ -398,6 +406,7 @@ const useStokGantungPage = () => {
         createReturnMovement,
         classifyReturnMovement,
         updateMovementNotes,
+        updateMovementDetails,
     };
 };
 

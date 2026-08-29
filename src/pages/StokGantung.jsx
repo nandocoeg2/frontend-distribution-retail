@@ -6,6 +6,7 @@ import {
     StokGantungTable,
     CreateReturnModal,
     ClassifyReturnModal,
+    EditStokGantungModal,
 } from '../components/stokGantung';
 import { getItems } from '../services/itemService';
 import toastService from '../services/toastService';
@@ -25,7 +26,7 @@ const StokGantung = () => {
         fetchMovements,
         createReturnMovement,
         classifyReturnMovement,
-        updateMovementNotes,
+        updateMovementDetails,
     } = useStokGantungPage();
 
     const [showReturnModal, setShowReturnModal] = useState(false);
@@ -35,8 +36,8 @@ const StokGantung = () => {
     const [selectedMovementForClassify, setSelectedMovementForClassify] = useState(null);
     const [classifyModalOpen, setClassifyModalOpen] = useState(false);
     const [editingMovement, setEditingMovement] = useState(null);
-    const [editNotesValue, setEditNotesValue] = useState('');
-    const [editNotesLoading, setEditNotesLoading] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editLoading, setEditLoading] = useState(false);
 
     const loadReferenceData = useCallback(async () => {
         setOptionsLoading(true);
@@ -108,29 +109,33 @@ const StokGantung = () => {
         [classifyReturnMovement, handleCloseClassifyModal]
     );
 
-    const handleEditNotes = useCallback((movement) => {
+    const handleOpenEditModal = useCallback((movement) => {
         setEditingMovement(movement);
-        setEditNotesValue(movement.notes || '');
+        setEditModalOpen(true);
     }, []);
 
-    const handleCloseEditNotes = useCallback(() => {
+    const handleCloseEditModal = useCallback(() => {
         setEditingMovement(null);
-        setEditNotesValue('');
+        setEditModalOpen(false);
     }, []);
 
-    const handleSaveNotes = useCallback(async () => {
-        if (!editingMovement?.id) return;
+    const handleSaveEdit = useCallback(async (payload) => {
+        if (!payload?.movementId) return;
 
-        setEditNotesLoading(true);
+        setEditLoading(true);
         try {
-            await updateMovementNotes(editingMovement.id, editNotesValue);
-            handleCloseEditNotes();
+            await updateMovementDetails(payload.movementId, {
+                customerId: payload.customerId,
+                ekspedisi: payload.ekspedisi,
+                notes: payload.notes,
+            });
+            handleCloseEditModal();
         } catch (err) {
             // Error handling already managed in hook/toast
         } finally {
-            setEditNotesLoading(false);
+            setEditLoading(false);
         }
-    }, [editingMovement, editNotesValue, updateMovementNotes, handleCloseEditNotes]);
+    }, [updateMovementDetails, handleCloseEditModal]);
 
     return (
         <div className='h-full flex flex-col p-3'>
@@ -188,7 +193,7 @@ const StokGantung = () => {
                             searchLoading={searchLoading}
                             onClassify={handleOpenClassifyModal}
                             classifyLoadingId={classifyLoadingId}
-                            onEditNotes={handleEditNotes}
+                            onEdit={handleOpenEditModal}
                         />
                     </div>
                 </div>
@@ -210,48 +215,14 @@ const StokGantung = () => {
                 isLoading={Boolean(classifyLoadingId)}
             />
 
-            {/* Edit Notes Modal */}
-            {editingMovement && (
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
-                    <div className='w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
-                        <h3 className='mb-4 text-lg font-semibold text-gray-900'>
-                            Edit Notes
-                        </h3>
-                        <p className='mb-2 text-sm text-gray-500'>
-                            Movement: {editingMovement.movementNumber || editingMovement.id}
-                        </p>
-                        <textarea
-                            value={editNotesValue}
-                            onChange={(e) => setEditNotesValue(e.target.value)}
-                            className='w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500'
-                            rows={4}
-                            placeholder='Masukkan catatan...'
-                            maxLength={255}
-                        />
-                        <p className='mt-1 text-xs text-gray-400'>
-                            {editNotesValue.length}/255 karakter
-                        </p>
-                        <div className='mt-4 flex justify-end gap-3'>
-                            <button
-                                type='button'
-                                onClick={handleCloseEditNotes}
-                                disabled={editNotesLoading}
-                                className='rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type='button'
-                                onClick={handleSaveNotes}
-                                disabled={editNotesLoading}
-                                className='rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50'
-                            >
-                                {editNotesLoading ? 'Menyimpan...' : 'Simpan'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Edit Stok Gantung Modal */}
+            <EditStokGantungModal
+                isOpen={editModalOpen}
+                onClose={handleCloseEditModal}
+                movement={editingMovement}
+                onSave={handleSaveEdit}
+                isLoading={editLoading}
+            />
         </div>
     );
 };

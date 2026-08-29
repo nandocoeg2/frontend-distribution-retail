@@ -34,7 +34,9 @@ const StokGantungTable = ({
     onClassify,
     classifyLoadingId = null,
     onEditNotes,
+    onEdit,
 }) => {
+    const editHandler = onEdit || onEditNotes;
     const hasMovements = Array.isArray(movements) && movements.length > 0;
 
     const renderedMovements = useMemo(() => {
@@ -317,13 +319,13 @@ const StokGantungTable = ({
                                                             {isClassifying ? 'Memproses...' : movement.status === 'PENDING' ? 'Klasifikasi' : 'Ganti Status'}
                                                         </button>
                                                     )}
-                                                    {onEditNotes && (
+                                                    {editHandler && (
                                                         <button
                                                             type='button'
-                                                            onClick={() => onEditNotes(movement.source)}
-                                                            className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                            onClick={() => editHandler(movement.source)}
+                                                            className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2.5 text-xs font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors'
                                                         >
-                                                            Notes
+                                                            Edit
                                                         </button>
                                                     )}
                                                 </div>
