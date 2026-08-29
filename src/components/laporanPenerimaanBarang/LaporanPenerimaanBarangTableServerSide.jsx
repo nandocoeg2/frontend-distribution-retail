@@ -173,6 +173,12 @@ const LaporanPenerimaanBarangTableServerSide = ({
         delete mappedFilters.tanggal_po;
       }
 
+      if (mappedFilters.tanggal_faktur && typeof mappedFilters.tanggal_faktur === 'object') {
+        if (mappedFilters.tanggal_faktur.from) mappedFilters.tanggal_faktur_from = mappedFilters.tanggal_faktur.from;
+        if (mappedFilters.tanggal_faktur.to) mappedFilters.tanggal_faktur_to = mappedFilters.tanggal_faktur.to;
+        delete mappedFilters.tanggal_faktur;
+      }
+
       if (companyId) {
         mappedFilters.companyId = companyId;
       }
@@ -598,17 +604,31 @@ const LaporanPenerimaanBarangTableServerSide = ({
         (row) => row.purchaseOrder?.invoice?.tanggal || row.detailInvoice?.tanggal || null,
         {
           id: 'tanggal_faktur',
-          header: () => (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal Faktur</div>
-            </div>
-          ),
+          header: ({ column }) => {
+            const filterValue = column.getFilterValue() || { from: '', to: '' };
+            return (
+              <div className="space-y-0.5">
+                <div className="font-medium text-xs">Tanggal Faktur</div>
+                <div className="flex flex-col gap-0.5">
+                  <DateFilter
+                    value={filterValue.from ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                    placeholder="Dari"
+                  />
+                  <DateFilter
+                    value={filterValue.to ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                    placeholder="Sampai"
+                  />
+                </div>
+              </div>
+            );
+          },
           cell: (info) => (
             <span className="text-xs text-gray-600">
               {info.getValue() ? formatDate(info.getValue()) : '-'}
             </span>
           ),
-          enableColumnFilter: false,
         }
       ),
       columnHelper.accessor('tanggal_po', {

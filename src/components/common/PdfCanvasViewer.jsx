@@ -1,15 +1,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import 'pdfjs-dist/build/pdf.worker.entry';
 import {
   MagnifyingGlassPlusIcon,
   MagnifyingGlassMinusIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-
-// Set worker source for pdfjs-dist v3
-if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
-}
 
 const PdfCanvasViewer = ({ fileUrl, blob, filename }) => {
   const [numPages, setNumPages] = useState(0);
