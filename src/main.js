@@ -29,6 +29,7 @@ const createWindow = () => {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
+      plugins: true,
       // Disable Autofill CDP to suppress protocol errors in DevTools
       chromiumFlags: ["--disable-features=Autofill"],
     },

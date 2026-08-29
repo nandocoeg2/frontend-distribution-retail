@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
+import PdfCanvasViewer from '../common/PdfCanvasViewer';
 
 /**
  * Modal to preview actual uploaded LPB PDF/Image files.
@@ -175,11 +176,11 @@ const LpbFilePreviewModal = ({
       {/* Main File Viewer Area */}
       <div className="flex-1 w-full h-full bg-slate-950 p-2 sm:p-4 flex items-center justify-center overflow-hidden">
         {isPdf ? (
-          <div className="w-full h-full bg-white rounded-lg shadow-2xl overflow-hidden border border-slate-700">
-            <iframe
-              src={currentFile.url}
-              className="w-full h-full border-0"
-              title={`LPB Preview - ${currentFile.filename}`}
+          <div className="w-full h-full rounded-lg shadow-2xl overflow-hidden border border-slate-700">
+            <PdfCanvasViewer
+              fileUrl={currentFile.url}
+              blob={currentFile.blob}
+              filename={currentFile.filename}
             />
           </div>
         ) : isImage ? (
