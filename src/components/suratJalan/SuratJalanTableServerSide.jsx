@@ -189,13 +189,8 @@ const SuratJalanTableServerSide = forwardRef(({
     initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'surat-jalan',
   });
-
-  React.useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-surat-jalan');
-    } catch (_) {}
-  }, []);
 
   // Handle checkbox click
   const handleCheckboxChange = useCallback((item) => {

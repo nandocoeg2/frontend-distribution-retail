@@ -257,13 +257,8 @@ const StockOutTable = forwardRef(({
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
     initialColumnFilters,
+    storageKey: 'stock-out-table',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-stock-out-table');
-    } catch (_) {}
-  }, []);
 
 // Helper to evaluate whether a row matches a specific filter in StockOut
 const matchesStockOutFilter = (row, filterId, filterValue) => {

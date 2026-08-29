@@ -185,13 +185,8 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'invoice-penagihan',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-invoice-penagihan');
-    } catch (_) {}
-  }, []);
 
   const statusOptions = useMemo(() => {
     const map = new Map();

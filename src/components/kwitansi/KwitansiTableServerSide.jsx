@@ -185,6 +185,7 @@ const KwitansiTableServerSide = ({
     globalFilter: globalFilterConfig,
     initialColumnFilters,
     getQueryParams,
+    storageKey: 'kwitansi',
   });
 
   const customerOptions = useMemo(() => {

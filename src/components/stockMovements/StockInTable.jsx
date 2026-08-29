@@ -136,13 +136,8 @@ const StockInTable = forwardRef(({
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
     initialColumnFilters,
+    storageKey: 'stock-in-table',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-stock-in-table');
-    } catch (_) {}
-  }, []);
 
 // Helper to evaluate whether a row matches a specific filter
 const matchesStockInFilter = (row, filterId, filterValue) => {

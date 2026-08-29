@@ -166,13 +166,8 @@ const PurchaseOrderTableServerSide = forwardRef(({
     columnFilterDebounceMs: 0, // Disable debounce to trigger immediately on manual commit
     initialColumnFilters,
     getQueryParams,
+    storageKey: 'purchase-orders',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-purchase-orders');
-    } catch (_) {}
-  }, []);
 
   const handleSelectAllInternalToggle = useCallback(() => {
     const currentPageOrderIds = orders.map((order) => order.id).filter(Boolean);

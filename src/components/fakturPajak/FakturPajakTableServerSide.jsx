@@ -230,6 +230,7 @@ const FakturPajakTableServerSide = ({
     initialLimit: 9999,
     initialColumnFilters,
     getQueryParams,
+    storageKey: 'faktur-pajak',
   });
 
   // Dynamic filter options based on current filtered fakturPajaks data

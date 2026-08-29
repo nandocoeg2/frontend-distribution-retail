@@ -260,6 +260,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
     globalFilter: globalFilterConfig,
     initialColumnFilters,
     getQueryParams,
+    storageKey: 'tanda-terima-faktur',
   });
 
   const groupCustomerOptions = useMemo(() => {

@@ -67,8 +67,27 @@ const SkeletonRow = ({ colCount }) => (
    ════════════════════════════════════════ */
 const InventoryControl = () => {
   const defaults = getDefaultDates();
-  const [startDate, setStartDate] = useState(defaults.start);
-  const [endDate, setEndDate] = useState(defaults.end);
+  const [startDate, setStartDate] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('table-filter-inventory-control-startDate');
+      if (saved) return saved;
+    } catch (_) {}
+    return defaults.start;
+  });
+  const [endDate, setEndDate] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('table-filter-inventory-control-endDate');
+      if (saved) return saved;
+    } catch (_) {}
+    return defaults.end;
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('table-filter-inventory-control-startDate', startDate);
+      sessionStorage.setItem('table-filter-inventory-control-endDate', endDate);
+    } catch (_) {}
+  }, [startDate, endDate]);
   const [viewMode, setViewMode] = useState('weekly'); // 'weekly' | 'monthly'
 
   const [search, setSearch] = useState('');

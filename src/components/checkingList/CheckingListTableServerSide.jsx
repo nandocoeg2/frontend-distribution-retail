@@ -189,13 +189,8 @@ const CheckingListTableServerSide = ({
     initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'checking-list',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-checking-list');
-    } catch (_) {}
-  }, []);
 
   // Handler untuk select all toggle
   const handleSelectAllInternalToggle = useCallback(() => {

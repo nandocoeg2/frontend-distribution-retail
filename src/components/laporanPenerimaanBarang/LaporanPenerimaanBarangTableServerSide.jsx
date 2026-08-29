@@ -162,6 +162,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
     initialColumnFilters,
+    storageKey: 'laporan-penerimaan-barang',
     getQueryParams: useCallback(({ filters, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
@@ -182,12 +183,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
       };
     }, []),
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-laporan-penerimaan-barang');
-    } catch (_) {}
-  }, []);
 
   const customerOptions = useMemo(() => {
     const map = new Map();

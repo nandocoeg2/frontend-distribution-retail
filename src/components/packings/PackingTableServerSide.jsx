@@ -371,13 +371,8 @@ const PackingTableServerSide = forwardRef(({
     initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'packings',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-packings');
-    } catch (_) {}
-  }, []);
 
   // Export functionality
   const handleConfirmExport = async () => {
