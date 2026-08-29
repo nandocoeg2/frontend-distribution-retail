@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {
   MagnifyingGlassPlusIcon,
   MagnifyingGlassMinusIcon,
   ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 
-// Configure PDF.js worker
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+// Set worker source for pdfjs-dist v3
+if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 }
 
 const PdfCanvasViewer = ({ fileUrl, blob, filename }) => {
@@ -120,7 +119,7 @@ const PdfCanvasViewer = ({ fileUrl, blob, filename }) => {
         renderTasksRef.current.push(renderTask);
         await renderTask.promise;
       } catch (err) {
-        if (err.name !== 'RenderingCancelledException') {
+        if (err?.name !== 'RenderingCancelledException') {
           console.error(`Error rendering page ${pageNum}:`, err);
         }
       }
