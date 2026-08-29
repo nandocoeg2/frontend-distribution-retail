@@ -430,7 +430,7 @@ class TandaTerimaFakturService {
 
         const payment = Number(item?.bankMutation?.jumlah) || 0;
         const selisih = totalTTF - payment;
-        const keterangan = item?.keterangan || item?.bankMutation?.keterangan || '-';
+        const keterangan = item?.keterangan || '-';
         const status = item?.status?.status_name || item?.status?.status_code || '-';
 
         return {

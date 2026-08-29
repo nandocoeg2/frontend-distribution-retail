@@ -211,7 +211,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
         const discount = toNumber(next.potongan_harga);
         const dpp = Math.max(total - discount, 0);
         if (Number.isFinite(dpp)) {
-          next.dasar_pengenaan_pajak = String(Math.round(dpp));
+          next.dasar_pengenaan_pajak = String(Number(dpp.toFixed(2)));
         }
       }
     }
@@ -224,7 +224,7 @@ const FakturPajakDetailCard = ({ fakturPajak, onClose, loading = false, updateFa
         const percentValue = toNumber(next.ppn_percentage);
         const ppn = dppValue * (percentValue / 100);
         if (Number.isFinite(ppn)) {
-          next.ppn_rp = String(Math.round(ppn));
+          next.ppn_rp = String(Number(ppn.toFixed(2)));
         }
       }
     }

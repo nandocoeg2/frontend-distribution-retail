@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from '@/utils/formatUtils';
 import { useServerSideTable } from '../../hooks/useServerSideTable';
 import { DataTable, DataTablePagination, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
+import customerService from '../../services/customerService';
 import groupCustomerService from '../../services/groupCustomerService';
 import companyService from '../../services/companyService';
 import { termOfPaymentService } from '../../services/termOfPaymentService';
@@ -62,6 +63,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
     initialLimit = 10,
     selectedTTFId = null,
   } = props;
+  const [customers, setCustomers] = useState([]);
   const [groupCustomers, setGroupCustomers] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [termOfPayments, setTermOfPayments] = useState([]);
@@ -70,13 +72,15 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [gcData, companyData, topData, statusData] = await Promise.all([
+        const [customerData, gcData, companyData, topData, statusData] = await Promise.all([
+          customerService.getAllCustomers(1, 100).then(res => res?.data?.data || res?.data || []),
           groupCustomerService.getAllGroupCustomers(1, 100).then(res => res?.data?.data || res?.data || []),
           companyService.getCompanies(1, 100).then(res => res?.data?.data || res?.data || []),
           termOfPaymentService.getAllTermOfPayments(1, 100).then(res => res?.data?.data || res?.data || []),
           statusService.getTandaTerimaFakturStatuses().then(res => res?.data || [])
         ]);
 
+        setCustomers(Array.isArray(customerData) ? customerData : []);
         setGroupCustomers(Array.isArray(gcData) ? gcData : []);
         setCompanies(Array.isArray(companyData) ? companyData : []);
         setTermOfPayments(Array.isArray(topData) ? topData : []);
@@ -108,7 +112,25 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
         delete mappedFilters.tanggal;
       }
 
-      // Handle Group Customer Name array
+      // Handle Customer Name array
+      if (mappedFilters.customer_names) {
+        if (Array.isArray(mappedFilters.customer_names) && mappedFilters.customer_names.length > 0) {
+          // keep as customer_names
+        } else {
+          delete mappedFilters.customer_names;
+        }
+      }
+      if (mappedFilters.customer_name) {
+        if (Array.isArray(mappedFilters.customer_name) && mappedFilters.customer_name.length > 0) {
+          mappedFilters.customer_names = mappedFilters.customer_name;
+        }
+        delete mappedFilters.customer_name;
+      }
+      if (Array.isArray(mappedFilters.customer_names) && mappedFilters.customer_names.length === 0) {
+        delete mappedFilters.customer_names;
+      }
+
+      // Handle Group Customer Name array (if any)
       if (mappedFilters.group_customer_name) {
         if (Array.isArray(mappedFilters.group_customer_name) && mappedFilters.group_customer_name.length > 0) {
           mappedFilters.group_customer_names = mappedFilters.group_customer_name;
@@ -263,27 +285,31 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
     storageKey: 'tanda-terima-faktur',
   });
 
-  const groupCustomerOptions = useMemo(() => {
+  const customerOptions = useMemo(() => {
     const map = new Map();
+    // 1. Add all customers from current tandaTerimaFakturs
     (tandaTerimaFakturs || []).forEach((item) => {
-      const group = item?.invoicePenagihan?.purchaseOrder?.customer?.groupCustomer?.nama_group || item?.groupCustomer?.nama_group;
-      if (group && !map.has(group)) {
-        map.set(group, { nama_group: group });
+      const customer = item?.invoicePenagihan?.purchaseOrder?.customer;
+      const name = customer?.namaCustomer;
+      if (name && !map.has(name)) {
+        map.set(name, customer);
       }
     });
 
-    const activeFilter = columnFilters.find((f) => f.id === 'group_customer_name');
+    // 2. Keep any currently selected customers
+    const activeFilter = columnFilters.find((f) => f.id === 'customer_names' || f.id === 'customer_name');
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
       if (val && !map.has(val)) {
-        map.set(val, { nama_group: val });
+        const found = customers.find((c) => c.namaCustomer === val);
+        map.set(val, found || { namaCustomer: val, kodeCustomer: val });
       }
     });
 
     return Array.from(map.values()).sort((a, b) =>
-      a.nama_group.localeCompare(b.nama_group)
+      (a.namaCustomer || '').localeCompare(b.namaCustomer || '')
     );
-  }, [tandaTerimaFakturs, columnFilters]);
+  }, [tandaTerimaFakturs, customers, columnFilters]);
 
   const topOptions = useMemo(() => {
     const map = new Map();
@@ -402,17 +428,17 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       columnHelper.accessor(
         (row) => row?.invoicePenagihan?.purchaseOrder?.customer?.namaCustomer ?? '-',
         {
-          id: 'group_customer_name',
+          id: 'customer_names',
           header: ({ column }) => (
             <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
               <div className="font-medium text-xs">Customer</div>
               <AutocompleteCheckboxLimitTag
-                options={groupCustomerOptions}
+                options={customerOptions}
                 value={column.getFilterValue() ?? []}
                 onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
                 placeholder="All"
-                displayKey="nama_group"
-                valueKey="nama_group"
+                displayKey="namaCustomer"
+                valueKey="namaCustomer"
                 limitTags={1}
                 size="small"
                 fetchOnClose
@@ -776,7 +802,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       setPage,
       topOptions,
       invoiceOptions,
-      groupCustomerOptions,
+      customerOptions,
       statusOptions,
       companies,
     ]

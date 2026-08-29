@@ -109,6 +109,8 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={item.harga || 0}
                   onChange={(e) => handleItemChange(index, 'harga', parseFloat(e.target.value) || 0)}
                   className="w-32 px-2 py-1 border border-gray-300 rounded-md"
@@ -117,6 +119,8 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={item.potongan_a || 0}
                   onChange={(e) => handleItemChange(index, 'potongan_a', parseFloat(e.target.value) || 0)}
                   className="w-24 px-2 py-1 border border-gray-300 rounded-md"
@@ -125,6 +129,8 @@ const EditablePurchaseOrderDetailsTable = ({ details, onDetailsChange }) => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <input
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={item.potongan_b || 0}
                   onChange={(e) => handleItemChange(index, 'potongan_b', parseFloat(e.target.value) || 0)}
                   className="w-24 px-2 py-1 border border-gray-300 rounded-md"

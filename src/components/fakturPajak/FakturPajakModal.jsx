@@ -172,7 +172,7 @@ const FakturPajakModal = ({
           const percentValue = toNumber(next.ppn_percentage);
           const ppn = dppValue * (percentValue / 100);
           if (Number.isFinite(ppn)) {
-            next.ppn_rp = String(Math.round(ppn));
+            next.ppn_rp = String(Number(ppn.toFixed(2)));
           }
         }
       }
