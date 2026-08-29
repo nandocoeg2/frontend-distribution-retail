@@ -13,7 +13,7 @@ const createWindow = () => {
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self'; connect-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; frame-src 'self' blob: data:;",
+          "default-src 'self'; connect-src 'self' *; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; frame-src 'self' blob: data:;",
         ],
       },
     });
@@ -29,6 +29,7 @@ const createWindow = () => {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
+      plugins: true,
       // Disable Autofill CDP to suppress protocol errors in DevTools
       chromiumFlags: ["--disable-features=Autofill"],
     },

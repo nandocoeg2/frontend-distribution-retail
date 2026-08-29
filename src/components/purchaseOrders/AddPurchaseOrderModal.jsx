@@ -152,15 +152,57 @@ const AddPurchaseOrderModal = ({
         : await fileService.uploadBulkPurchaseOrdersTextExtraction(selectedFile, companyId);
 
       if (result.success) {
-        const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
         const data = result.data?.data || result.data;
-        const totalFiles = data?.totalFiles || selectedFile.length;
+        const totalFiles = data?.totalFiles || (selectedFile ? selectedFile.length : 1);
+        const successFiles = data?.successFiles ?? 0;
+        const errorFiles = data?.errorFiles ?? 0;
+        const failedFiles = data?.failedFiles || [];
 
-        // Show info toast (blue) for background processing
-        toast.info(
-          `${totalFiles} file sedang diproses di background (${methodLabel}). Anda akan menerima notifikasi saat selesai.`,
-          { autoClose: 5000 }
-        );
+        // If backend returned immediate results (e.g., text extraction mode)
+        if (typeof data?.errorFiles === 'number') {
+          if (errorFiles > 0) {
+            const errorDetails = failedFiles
+              .map((f, i) => `${i + 1}. File: ${f.filename || '-'}\n   Penyebab: ${f.reason || f.error || 'Gagal diproses'}`)
+              .join('\n\n');
+
+            const popupMessage = `Upload Purchase Order GAGAL untuk ${errorFiles} dari ${totalFiles} file.\n\n` +
+              `Data PO yang gagal TIDAK dimasukkan ke dalam sistem.\n\n` +
+              `📋 Detail Kegagalan:\n${errorDetails}\n\n` +
+              `Silakan pastikan Schedule Price dan Master Data sudah lengkap sebelum mengunggah kembali.`;
+
+            openConfirmationDialog({
+              title: '❌ Upload Purchase Order Gagal',
+              message: popupMessage,
+              confirmText: 'Tutup',
+              cancelText: null,
+              type: 'danger',
+            }, () => {
+              if (successFiles > 0) {
+                onClose();
+                if (onFinished) onFinished();
+              }
+            });
+
+            toast.error(`Upload gagal: ${errorFiles} file tidak dapat diproses.`);
+
+            if (successFiles > 0 && onFinished) {
+              onFinished();
+            }
+          } else {
+            toast.success(`${successFiles || totalFiles} file Purchase Order berhasil di-upload.`);
+            onClose();
+            if (onFinished) onFinished();
+          }
+        } else {
+          // Asynchronous background fallback
+          const methodLabel = processingMethod === 'ai' ? 'AI' : 'Text Extraction';
+          toast.info(
+            `${totalFiles} file sedang diproses di background (${methodLabel}). Anda akan menerima notifikasi saat selesai.`,
+            { autoClose: 5000 }
+          );
+          onClose();
+          if (onFinished) onFinished();
+        }
 
         // Clear inputs
         setSelectedFile(null);
@@ -170,10 +212,6 @@ const AddPurchaseOrderModal = ({
         if (folderInputRef.current) {
           folderInputRef.current.value = '';
         }
-
-        // Close modal and notify parent
-        onClose();
-        if (onFinished) onFinished();
       } else {
         throw new Error(result.error);
       }

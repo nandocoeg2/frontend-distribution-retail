@@ -330,10 +330,13 @@ class LaporanPenerimaanBarangService {
         }
       }
 
+      const contentType = response.headers['content-type'] || 'application/pdf';
+      const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
+
       return {
-        blob: response.data,
+        blob,
         filename: filename,
-        contentType: response.headers['content-type'] || 'application/pdf',
+        contentType: contentType,
       };
     } catch (error) {
       if (error.response?.data instanceof Blob) {

@@ -307,6 +307,7 @@ const MutasiBankTableServerSide = forwardRef(({
     initialPage,
     initialLimit,
     initialColumnFilters,
+    storageKey: 'mutasi-bank',
     getQueryParams: useCallback(
       ({ filters: columnFilters, ...rest }) => {
         const sanitized = sanitizeFilters(filters);

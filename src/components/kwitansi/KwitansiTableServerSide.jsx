@@ -50,10 +50,7 @@ const resolveStatusVariant = (status) => {
 
 const STATUS_OPTIONS = [
   { id: 'PENDING KWITANSI', name: 'Pending' },
-  { id: 'PROCESSING KWITANSI', name: 'Processing' },
   { id: 'PAID KWITANSI', name: 'Paid' },
-  { id: 'OVERDUE KWITANSI', name: 'Overdue' },
-  { id: 'COMPLETED KWITANSI', name: 'Completed' },
   { id: 'CANCELLED KWITANSI', name: 'Cancelled' },
 ];
 
@@ -185,6 +182,7 @@ const KwitansiTableServerSide = ({
     globalFilter: globalFilterConfig,
     initialColumnFilters,
     getQueryParams,
+    storageKey: 'kwitansi',
   });
 
   const customerOptions = useMemo(() => {

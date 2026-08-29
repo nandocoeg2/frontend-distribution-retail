@@ -5,6 +5,7 @@ import {
     createReturn,
     classifyReturn,
     updateNotes,
+    updateStokGantung,
 } from '../services/stokGantungService';
 import toastService from '../services/toastService';
 
@@ -107,10 +108,15 @@ const parseStokGantungResponse = (response) => {
             movement?.suratJalan?.checklistSuratJalan ||
             movement?.purchaseOrder?.suratJalan?.checklistSuratJalan ||
             null;
-        const expedisi = checklist?.ekspedisi || null;
+        const expedisiFromNotes = movement?.notes?.match(/\[EKSPEDISI:\s*([^\]]+)\]/i)?.[1]?.trim() || null;
+        const expedisi = movement?.expedisi || checklist?.ekspedisi || expedisiFromNotes || null;
         const mobil = checklist?.mobil || null;
         const expedisiDriver =
+            movement?.expedisiDriver ||
             [expedisi, mobil].filter(Boolean).join(' - ') || null;
+
+        const rawNotes = movement.notes || movement.description || '';
+        const cleanNotes = rawNotes.replace(/\[EKSPEDISI:[^\]]*\]/gi, '').trim();
 
         return {
             ...movement,
@@ -122,7 +128,8 @@ const parseStokGantungResponse = (response) => {
                 movement.documentNumber ||
                 movement.document_number ||
                 '-',
-            notes: movement.notes || movement.description || '',
+            notes: cleanNotes,
+            rawNotes,
             poNumber,
             customerName,
             tanggalLpb,
@@ -335,23 +342,30 @@ const useStokGantungPage = () => {
         [refreshAfterMutation, setError]
     );
 
-    const updateMovementNotes = useCallback(
-        async (movementId, notes) => {
+    const updateMovementDetails = useCallback(
+        async (movementId, payload) => {
             setError(null);
             try {
-                const result = await updateNotes(movementId, notes);
-                toastService.success('Notes berhasil diperbarui');
+                const result = await updateStokGantung(movementId, payload);
+                toastService.success('Data stok gantung berhasil diperbarui');
                 await refreshAfterMutation();
                 return result?.data || result;
             } catch (err) {
                 const message =
-                    resolveStokGantungError(err) || 'Failed to update notes';
+                    resolveStokGantungError(err) || 'Failed to update stok gantung data';
                 setError(message);
                 toastService.error(message);
                 throw err;
             }
         },
         [refreshAfterMutation, setError]
+    );
+
+    const updateMovementNotes = useCallback(
+        async (movementId, notes) => {
+            return updateMovementDetails(movementId, { notes });
+        },
+        [updateMovementDetails]
     );
 
     const handleFiltersChange = useCallback(
@@ -368,8 +382,8 @@ const useStokGantungPage = () => {
     const handleResetFilters = useCallback(() => {
         const defaults = { ...INITIAL_FILTERS };
         setFilters(defaults);
-        performSearch(defaults, 1, resolveLimit());
-    }, [performSearch, resolveLimit, setFilters]);
+        debouncedSearch({ ...defaults }, 1, resolveLimit());
+    }, [debouncedSearch, resolveLimit, setFilters]);
 
     useEffect(() => {
         const defaults = { ...INITIAL_FILTERS };
@@ -398,6 +412,7 @@ const useStokGantungPage = () => {
         createReturnMovement,
         classifyReturnMovement,
         updateMovementNotes,
+        updateMovementDetails,
     };
 };
 

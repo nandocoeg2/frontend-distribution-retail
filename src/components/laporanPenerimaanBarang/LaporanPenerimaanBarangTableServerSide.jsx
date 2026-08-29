@@ -162,6 +162,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
     initialColumnFilters,
+    storageKey: 'laporan-penerimaan-barang',
     getQueryParams: useCallback(({ filters, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
@@ -170,6 +171,12 @@ const LaporanPenerimaanBarangTableServerSide = ({
         if (mappedFilters.tanggal_po.from) mappedFilters.tanggal_po_from = mappedFilters.tanggal_po.from;
         if (mappedFilters.tanggal_po.to) mappedFilters.tanggal_po_to = mappedFilters.tanggal_po.to;
         delete mappedFilters.tanggal_po;
+      }
+
+      if (mappedFilters.tanggal_faktur && typeof mappedFilters.tanggal_faktur === 'object') {
+        if (mappedFilters.tanggal_faktur.from) mappedFilters.tanggal_faktur_from = mappedFilters.tanggal_faktur.from;
+        if (mappedFilters.tanggal_faktur.to) mappedFilters.tanggal_faktur_to = mappedFilters.tanggal_faktur.to;
+        delete mappedFilters.tanggal_faktur;
       }
 
       if (companyId) {
@@ -182,12 +189,6 @@ const LaporanPenerimaanBarangTableServerSide = ({
       };
     }, []),
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-laporan-penerimaan-barang');
-    } catch (_) {}
-  }, []);
 
   const customerOptions = useMemo(() => {
     const map = new Map();
@@ -599,13 +600,44 @@ const LaporanPenerimaanBarangTableServerSide = ({
         enableHiding: false,
         enableColumnFilter: false,
       }),
+      columnHelper.accessor(
+        (row) => row.purchaseOrder?.invoice?.tanggal || row.detailInvoice?.tanggal || null,
+        {
+          id: 'tanggal_faktur',
+          header: ({ column }) => {
+            const filterValue = column.getFilterValue() || { from: '', to: '' };
+            return (
+              <div className="space-y-0.5">
+                <div className="font-medium text-xs">Tanggal Faktur</div>
+                <div className="flex flex-col gap-0.5">
+                  <DateFilter
+                    value={filterValue.from ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                    placeholder="Dari"
+                  />
+                  <DateFilter
+                    value={filterValue.to ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                    placeholder="Sampai"
+                  />
+                </div>
+              </div>
+            );
+          },
+          cell: (info) => (
+            <span className="text-xs text-gray-600">
+              {info.getValue() ? formatDate(info.getValue()) : '-'}
+            </span>
+          ),
+        }
+      ),
       columnHelper.accessor('tanggal_po', {
         id: 'tanggal_po',
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal</div>
+              <div className="font-medium text-xs">Tanggal LPB</div>
               <div className="flex flex-col gap-0.5">
                 <DateFilter
                   value={filterValue.from ?? ''}

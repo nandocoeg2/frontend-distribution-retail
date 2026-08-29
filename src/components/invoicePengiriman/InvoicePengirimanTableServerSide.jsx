@@ -294,13 +294,8 @@ const InvoicePengirimanTableServerSide = ({
     initialColumnFilters,
     getQueryParams,
     columnFilterDebounceMs: 0,
+    storageKey: 'invoice-pengiriman',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem("table-filter-invoice-pengiriman");
-    } catch (_) {}
-  }, []);
 
   const customerOptions = useMemo(() => {
     const map = new Map();

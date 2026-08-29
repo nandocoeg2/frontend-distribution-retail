@@ -20,6 +20,7 @@ const columnHelper = createColumnHelper();
 const StockInTable = forwardRef(({
   onViewDetail,
   onEdit,
+  onDelete,
   selectedMovementId = null,
   globalSearch = '',
 }, ref) => {
@@ -136,13 +137,8 @@ const StockInTable = forwardRef(({
     globalFilter: globalFilterConfig,
     columnFilterDebounceMs: 0,
     initialColumnFilters,
+    storageKey: 'stock-in-table',
   });
-
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem('table-filter-stock-in-table');
-    } catch (_) {}
-  }, []);
 
 // Helper to evaluate whether a row matches a specific filter
 const matchesStockInFilter = (row, filterId, filterValue) => {
@@ -454,10 +450,10 @@ const getMatchingStockInRowsExcluding = (rows, columnFilters, excludeFilterId) =
 
       columnHelper.display({
         id: 'actions',
-        size: 60,
+        size: 70,
         header: () => <div className="text-center font-medium text-xs">Aksi</div>,
         cell: (info) => (
-          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => onEdit?.(info.row.original)}
               className="p-1 rounded text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 transition-colors"
@@ -465,11 +461,18 @@ const getMatchingStockInRowsExcluding = (rows, columnFilters, excludeFilterId) =
             >
               <HeroIcon name="pencil" className="w-3.5 h-3.5" />
             </button>
+            <button
+              onClick={() => onDelete?.(info.row.original)}
+              className="p-1 rounded text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors"
+              title="Hapus Stock In"
+            >
+              <HeroIcon name="trash" className="w-3.5 h-3.5" />
+            </button>
           </div>
         ),
       }),
     ],
-    [suratJalanOptions, namaBarangOptions, supplierOptions, onEdit]
+    [suratJalanOptions, namaBarangOptions, supplierOptions, onEdit, onDelete]
   );
 
   const table = useReactTable({

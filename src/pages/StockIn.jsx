@@ -1,11 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import HeroIcon from '../components/atoms/HeroIcon.jsx';
 import StockInTable from '../components/stockMovements/StockInTable.jsx';
 import CreateStockInModal from '../components/stockMovements/CreateStockInModal.jsx';
+import { useConfirmationDialog } from '../components/ui/ConfirmationDialog.jsx';
 import toastService from '../services/toastService';
-import { exportStockInExcel } from '../services/stockMovementService';
+import { exportStockInExcel, deleteStockIn } from '../services/stockMovementService';
 
 const StockIn = () => {
   const queryClient = useQueryClient();
@@ -14,6 +15,14 @@ const StockIn = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editMovement, setEditMovement] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const {
+    showDialog,
+    hideDialog,
+    setLoading: setDialogLoading,
+    ConfirmationDialog: ConfirmationDialogComponent,
+  } = useConfirmationDialog();
 
   const handleExportExcel = async () => {
     setExportLoading(true);
@@ -45,6 +54,47 @@ const StockIn = () => {
     setEditMovement(null);
     queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
     tableRef.current?.refetch?.();
+  };
+
+  const handleDelete = useCallback(
+    (row) => {
+      const movementId = row?.movementId || row?.id || row?.source?.id;
+      const suratJalan = row?.no_surat_jalan && row.no_surat_jalan !== '-' ? ` (No. SJ: ${row.no_surat_jalan})` : '';
+      const barang = row?.nama_barang && row.nama_barang !== '-' ? ` barang "${row.nama_barang}"` : '';
+
+      if (!movementId) {
+        toastService.error('ID Stock In tidak ditemukan.');
+        return;
+      }
+
+      setDeletingId(movementId);
+      showDialog({
+        title: 'Hapus Stock In',
+        message: `Apakah Anda yakin ingin menghapus data Stock In${suratJalan}${barang ? ` untuk${barang}` : ''}? Tindakan ini akan mengembalikan stok barang terkait.`,
+        type: 'danger',
+        confirmText: 'Hapus',
+        cancelText: 'Batal',
+      });
+    },
+    [showDialog]
+  );
+
+  const handleConfirmDelete = async () => {
+    if (!deletingId) return;
+
+    setDialogLoading(true);
+    try {
+      await deleteStockIn(deletingId);
+      toastService.success('Stock In berhasil dihapus.');
+      queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
+      tableRef.current?.refetch?.();
+      hideDialog();
+    } catch (err) {
+      toastService.error(err?.message || 'Gagal menghapus data Stock In.');
+    } finally {
+      setDialogLoading(false);
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -86,6 +136,7 @@ const StockIn = () => {
             <StockInTable
               ref={tableRef}
               onEdit={(movement) => setEditMovement(movement)}
+              onDelete={handleDelete}
             />
           </div>
         </div>
@@ -112,6 +163,9 @@ const StockIn = () => {
           onSuccess={handleEditSuccess}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialogComponent onConfirm={handleConfirmDelete} />
     </div>
   );
 };

@@ -34,7 +34,9 @@ const StokGantungTable = ({
     onClassify,
     classifyLoadingId = null,
     onEditNotes,
+    onEdit,
 }) => {
+    const editHandler = onEdit || onEditNotes;
     const hasMovements = Array.isArray(movements) && movements.length > 0;
 
     const renderedMovements = useMemo(() => {
@@ -99,12 +101,16 @@ const StokGantungTable = ({
                 movement.suratJalan?.checklistSuratJalan ||
                 movement.purchaseOrder?.suratJalan?.checklistSuratJalan ||
                 null;
-            const expedisi = movement.expedisi || checklist?.ekspedisi || null;
+            const expedisiFromNotes = movement.notes?.match(/\[EKSPEDISI:\s*([^\]]+)\]/i)?.[1]?.trim() || null;
+            const expedisi = movement.expedisi || checklist?.ekspedisi || expedisiFromNotes || null;
             const mobil = movement.mobil || checklist?.mobil || null;
             const expedisiDriver =
                 movement.expedisiDriver ||
                 [expedisi, mobil].filter(Boolean).join(' - ') ||
                 '-';
+
+            const rawNotes = movement.notes || '';
+            const cleanNotes = rawNotes.replace(/\[EKSPEDISI:[^\]]*\]/gi, '').trim();
 
             return {
                 id: movement.id,
@@ -116,7 +122,8 @@ const StokGantungTable = ({
                 totalQuantity,
                 tanggalLpbFormatted,
                 tanggalLpbRaw,
-                notes: movement.notes || '',
+                notes: cleanNotes,
+                rawNotes,
                 expedisiDriver,
                 status: movement.status || 'UNKNOWN',
                 createdAt: movement.createdAt || movement.updatedAt || null,
@@ -317,13 +324,13 @@ const StokGantungTable = ({
                                                             {isClassifying ? 'Memproses...' : movement.status === 'PENDING' ? 'Klasifikasi' : 'Ganti Status'}
                                                         </button>
                                                     )}
-                                                    {onEditNotes && (
+                                                    {editHandler && (
                                                         <button
                                                             type='button'
-                                                            onClick={() => onEditNotes(movement.source)}
-                                                            className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2 text-xs text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                            onClick={() => editHandler(movement.source)}
+                                                            className='inline-flex h-7 items-center justify-center rounded border border-gray-200 px-2.5 text-xs font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors'
                                                         >
-                                                            Notes
+                                                            Edit
                                                         </button>
                                                     )}
                                                 </div>
