@@ -180,8 +180,12 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       }
 
       // Handle Keterangan
-      if (typeof mappedFilters.keterangan === 'string' && !mappedFilters.keterangan.trim()) {
-        delete mappedFilters.keterangan;
+      if (mappedFilters.keterangan) {
+        if (Array.isArray(mappedFilters.keterangan) && mappedFilters.keterangan.length === 0) {
+          delete mappedFilters.keterangan;
+        } else if (typeof mappedFilters.keterangan === 'string' && !mappedFilters.keterangan.trim()) {
+          delete mappedFilters.keterangan;
+        }
       }
 
       // Handle PO No
@@ -378,6 +382,11 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       a.status_name.localeCompare(b.status_name)
     );
   }, [tandaTerimaFakturs, columnFilters, statuses]);
+
+  const keteranganOptions = useMemo(() => [
+    { value: 'REBATE', label: 'Rebate' },
+    { value: 'RETUR', label: 'Retur' },
+  ], []);
 
   const totals = useMemo(() => {
     if (!tandaTerimaFakturs || !Array.isArray(tandaTerimaFakturs)) {
@@ -686,9 +695,20 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       columnHelper.accessor((row) => row.keterangan || row.bankMutation?.keterangan || '', {
         id: 'keterangan',
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Keterangan</div>
-            <TextColumnFilter column={column} placeholder="Search..." />
+            <AutocompleteCheckboxLimitTag
+              options={keteranganOptions}
+              value={column.getFilterValue() ?? []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="label"
+              valueKey="value"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+              sx={{ minWidth: '80px', maxWidth: '120px' }}
+            />
           </div>
         ),
         cell: (info) => (
@@ -804,6 +824,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       invoiceOptions,
       customerOptions,
       statusOptions,
+      keteranganOptions,
       companies,
     ]
   );
