@@ -67,7 +67,14 @@ const useMutasiBankPage = () => {
       setUploading(true);
       try {
         const response = await mutasiBankService.uploadMutationFile({ file });
-        toastService.success('File mutasi bank berhasil diunggah.');
+        const duplicateCount = response?.data?.summary?.duplicateCount || response?.summary?.duplicateCount || 0;
+        if (duplicateCount > 0) {
+          toastService.info(
+            `File mutasi bank berhasil diunggah. ${duplicateCount} data duplikat dilewati.`
+          );
+        } else {
+          toastService.success('File mutasi bank berhasil diunggah.');
+        }
         return response;
       } catch (error) {
         if (!handleAuthError(error)) {
