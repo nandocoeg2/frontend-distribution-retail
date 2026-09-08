@@ -95,6 +95,7 @@ const PackingTableServerSide = forwardRef(({
   selectedPackings = [],
   onSelectPacking,
   onSelectAllPackings,
+  setSelectedPackings,
   onProcessSelected,
   onCompleteSelected,
   isProcessing = false,
@@ -237,18 +238,26 @@ const PackingTableServerSide = forwardRef(({
         return;
       }
 
-      toastService.info(`Memproses ${selectedPackings.length} stiker (${printerType === 'type1' ? 'Tipe 1' : 'Tipe 2'})...`);
+      const visibleIds = new Set((packings || []).map((p) => p.id));
+      const validIds = selectedPackings.filter((id) => visibleIds.has(id));
+
+      if (validIds.length === 0) {
+        toastService.error('Tidak ada packing terpilih pada data saat ini');
+        return;
+      }
+
+      toastService.info(`Memproses ${validIds.length} stiker (${printerType === 'type1' ? 'Tipe 1' : 'Tipe 2'})...`);
 
       // Call backend API to get Bulk HTML
-      const html = await exportPackingStickerBulk(selectedPackings, companyData.id, printerType);
+      const html = await exportPackingStickerBulk(validIds, companyData.id, printerType);
 
       // Open preview modal with HTML content
       setPreviewHtmlContent(html);
-      setPreviewTitle(`Stiker Preview (${selectedPackings.length} dokumen) - ${printerType === 'type1' ? 'Tipe 1' : 'Tipe 2'}`);
+      setPreviewTitle(`Stiker Preview (${validIds.length} dokumen) - ${printerType === 'type1' ? 'Tipe 1' : 'Tipe 2'}`);
       setPreviewFileName(`stiker-bulk-${printerType}-${Date.now()}.pdf`);
       setPdfPreviewOpen(true);
 
-      toastService.success(`Berhasil membuka stiker untuk ${selectedPackings.length} packing`);
+      toastService.success(`Berhasil membuka stiker untuk ${validIds.length} packing`);
     } catch (error) {
       console.error('Error in bulk print sticker:', error);
       toastService.error(error.message || 'Gagal mencetak stiker');
@@ -258,7 +267,10 @@ const PackingTableServerSide = forwardRef(({
   };
 
   const handleBulkPrintTandaTerimaGrouped = async () => {
-    if (!selectedPackings || selectedPackings.length === 0) {
+    const visibleIds = new Set((packings || []).map((p) => p.id));
+    const validIds = selectedPackings.filter((id) => visibleIds.has(id));
+
+    if (validIds.length === 0) {
       toastService.error('Tidak ada packing yang dipilih');
       return;
     }
@@ -272,18 +284,18 @@ const PackingTableServerSide = forwardRef(({
         return;
       }
 
-      toastService.info(`Memproses ${selectedPackings.length} tanda terima grouped...`);
+      toastService.info(`Memproses ${validIds.length} tanda terima grouped...`);
 
       // Call backend API to get Bulk HTML
-      const html = await exportPackingTandaTerimaGroupedBulk(selectedPackings, companyData.id);
+      const html = await exportPackingTandaTerimaGroupedBulk(validIds, companyData.id);
 
       // Open preview modal with HTML content
       setPreviewHtmlContent(html);
-      setPreviewTitle(`Tanda Terima Grouped Preview (${selectedPackings.length} dokumen)`);
+      setPreviewTitle(`Tanda Terima Grouped Preview (${validIds.length} dokumen)`);
       setPreviewFileName(`tanda-terima-grouped-bulk-${Date.now()}.pdf`);
       setPdfPreviewOpen(true);
 
-      toastService.success(`Berhasil membuka ${selectedPackings.length} tanda terima grouped`);
+      toastService.success(`Berhasil membuka ${validIds.length} tanda terima grouped`);
     } catch (error) {
       console.error('Error in bulk print tanda terima grouped:', error);
       toastService.error(error.message || 'Gagal mencetak tanda terima grouped');
@@ -307,12 +319,23 @@ const PackingTableServerSide = forwardRef(({
       return;
     }
 
+    const visibleIds = new Set((packings || []).map((p) => p.id));
+    const validIds = selectedPackings.filter((id) => visibleIds.has(id));
+
+    if (validIds.length === 0) {
+      toastService.error('Tidak ada packing terpilih pada data saat ini');
+      return;
+    }
+
     setEditTanggalLoading(true);
     try {
-      const result = await bulkUpdateTanggalPacking(selectedPackings, selectedTanggal);
-      toastService.success(result?.data?.message || `Berhasil mengupdate tanggal ${selectedPackings.length} packing`);
+      const result = await bulkUpdateTanggalPacking(validIds, selectedTanggal);
+      toastService.success(result?.data?.message || `Berhasil mengupdate tanggal ${validIds.length} packing`);
       setIsEditTanggalModalOpen(false);
       setSelectedTanggal('');
+      if (setSelectedPackings) {
+        setSelectedPackings([]);
+      }
       // Refresh table data
       if (refetch) {
         refetch();
@@ -357,6 +380,7 @@ const PackingTableServerSide = forwardRef(({
     resetFilters,
     refetch,
     isLoading,
+    isFetching,
     error,
     tableOptions,
     columnFilters,
@@ -373,6 +397,17 @@ const PackingTableServerSide = forwardRef(({
     columnFilterDebounceMs: 0,
     storageKey: 'packings',
   });
+
+  // When packings data updates after filtering, prune selectedPackings so only matching items stay checked
+  useEffect(() => {
+    if (!isLoading && !isFetching && Array.isArray(packings) && selectedPackings.length > 0 && setSelectedPackings) {
+      const visibleIds = new Set(packings.map((p) => p.id));
+      const pruned = selectedPackings.filter((id) => visibleIds.has(id));
+      if (pruned.length !== selectedPackings.length) {
+        setSelectedPackings(pruned);
+      }
+    }
+  }, [packings, isLoading, isFetching, selectedPackings, setSelectedPackings]);
 
   // Export functionality
   const handleConfirmExport = async () => {
@@ -531,11 +566,14 @@ const PackingTableServerSide = forwardRef(({
       columnHelper.display({
         id: 'select',
         header: () => {
+          const visibleIds = (packings || []).map((p) => p.id);
+          const selectedVisibleCount = visibleIds.filter((id) =>
+            selectedPackings.includes(id)
+          ).length;
           const isAllSelected =
-            packings.length > 0 && selectedPackings.length === packings.length;
+            visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
           const isIndeterminate =
-            selectedPackings.length > 0 &&
-            selectedPackings.length < packings.length;
+            selectedVisibleCount > 0 && selectedVisibleCount < visibleIds.length;
 
           return (
             <input

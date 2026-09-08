@@ -246,6 +246,7 @@ const PackingsPage = () => {
                   selectedPackings={selectedPackings}
                   onSelectPacking={handleSelectPacking}
                   onSelectAllPackings={handleSelectAllPackings}
+                  setSelectedPackings={setSelectedPackings}
                   onProcessSelected={handleProcessSelected}
                   onCompleteSelected={handleCompleteSelected}
                   isProcessing={isProcessing}

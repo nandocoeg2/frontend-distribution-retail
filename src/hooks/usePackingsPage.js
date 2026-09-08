@@ -233,16 +233,8 @@ const usePackingsPage = () => {
       // Deselect all visible items
       setSelectedPackings(prev => prev.filter(id => !allIds.includes(id)));
     } else {
-      // Select all visible items (merge with existing selections)
-      setSelectedPackings(prev => {
-        const newSelection = [...prev];
-        allIds.forEach(id => {
-          if (!newSelection.includes(id)) {
-            newSelection.push(id);
-          }
-        });
-        return newSelection;
-      });
+      // Select all visible items only (don't retain foreign hidden items)
+      setSelectedPackings(allIds);
     }
   }, [packings, selectedPackings]);
 
