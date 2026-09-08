@@ -43,7 +43,7 @@ export const usePackingsQuery = ({
 
       // Add column filters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
+        if (value !== undefined && value !== null && value !== '') {
           params[key] = value;
         }
       });

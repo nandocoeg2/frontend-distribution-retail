@@ -136,7 +136,7 @@ const SuratJalanTableServerSide = forwardRef(({
       delete mappedFilters.tanggal_surat_jalan;
     }
 
-    if (mappedFilters.is_printed) {
+    if (mappedFilters.is_printed !== undefined && mappedFilters.is_printed !== null) {
       if (Array.isArray(mappedFilters.is_printed)) {
         if (mappedFilters.is_printed.length === 1) {
           mappedFilters.is_printed = mappedFilters.is_printed[0] === 'true';
