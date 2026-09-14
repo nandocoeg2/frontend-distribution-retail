@@ -57,6 +57,19 @@ const InvoicePengirimanDetailsTable = ({ details = [], purchaseOrderDetails = []
         (itemName && poByName.get(itemName)) ||
         null;
 
+      if (item.priceSource === 'scheduled') {
+        return {
+          ...item,
+          potongan_a: item.potongan_a ?? null,
+          harga_after_potongan_a: item.harga_after_potongan_a ?? null,
+          potongan_b: item.potongan_b ?? null,
+          harga_after_potongan_b: item.harga_after_potongan_b ?? null,
+          harga_netto: item.harga_netto ?? item.harga_after_potongan_b ?? null,
+          total_pembelian: item.dasar_pengenaan_pajak ?? item.total ?? null,
+          vatRate: item.vatRate ?? item.PPN_pecentage ?? null,
+        };
+      }
+
       if (!matchedPo) return item;
 
       return {

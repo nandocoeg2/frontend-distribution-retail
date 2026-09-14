@@ -109,6 +109,63 @@ describe('InvoicePengirimanDetailCard', () => {
     expect(screen.getAllByText('1.033.410').length).toBeGreaterThan(0);
   });
 
+  it('prioritizes active scheduled price over purchaseOrderDetails when priceSource is scheduled', () => {
+    const invoiceWithScheduled = {
+      id: 'inv-3',
+      no_invoice: 'INV-TEST-003',
+      invoiceDetails: [
+        {
+          id: 'det-1',
+          itemId: 'item-1',
+          plu: 'PLU01',
+          nama_barang: 'Product Scheduled',
+          quantity: 10,
+          satuan: 'pcs',
+          harga: 120000,
+          potongan_a: 10,
+          harga_after_potongan_a: 108000,
+          potongan_b: 5,
+          harga_after_potongan_b: 102600,
+          dasar_pengenaan_pajak: 1026000,
+          PPN_pecentage: 11,
+          ppnRupiah: 112860,
+          priceSource: 'scheduled',
+        },
+      ],
+      purchaseOrder: {
+        id: 'po-1',
+        purchaseOrderDetails: [
+          {
+            itemId: 'item-1',
+            plu: 'PLU01',
+            nama_barang: 'Product Scheduled',
+            potongan_a: 1,
+            harga_after_potongan_a: 99000,
+            potongan_b: 1,
+            harga_after_potongan_b: 98010,
+            total_pembelian: 980100,
+          },
+        ],
+      },
+    };
+
+    render(
+      <InvoicePengirimanDetailCard
+        invoice={invoiceWithScheduled}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Product Scheduled')).toBeDefined();
+    expect(screen.getByText('10%')).toBeDefined();
+    expect(screen.getByText('5%')).toBeDefined();
+    expect(screen.getAllByText('108.000').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('102.600').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('1.026.000').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('112.860').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('1.138.860').length).toBeGreaterThan(0);
+  });
+
   it('enters edit mode and displays financial summary cards and editable table', async () => {
     const invoiceWithPO = {
       id: 'inv-edit',

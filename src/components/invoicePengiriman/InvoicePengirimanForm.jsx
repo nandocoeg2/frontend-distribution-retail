@@ -42,13 +42,18 @@ const enrichInvoiceDetails = (invoice) => {
       null;
 
     const potA =
-      item.potongan_a ??
-      item.potonganA ??
-      matchedPo?.potongan_a ??
-      item.discount_percentage ??
-      item.discountPercentage ??
-      0;
-    const potB = item.potongan_b ?? item.potonganB ?? matchedPo?.potongan_b ?? 0;
+      item.priceSource === 'scheduled'
+        ? (item.potongan_a ?? 0)
+        : (item.potongan_a ??
+          item.potonganA ??
+          matchedPo?.potongan_a ??
+          item.discount_percentage ??
+          item.discountPercentage ??
+          0);
+    const potB =
+      item.priceSource === 'scheduled'
+        ? (item.potongan_b ?? 0)
+        : (item.potongan_b ?? item.potonganB ?? matchedPo?.potongan_b ?? 0);
     const vatRate =
       item.PPN_pecentage ??
       item.ppn_percentage ??
