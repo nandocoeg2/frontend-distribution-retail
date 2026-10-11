@@ -48,6 +48,11 @@ export const resolveStatusVariant = (status) => {
     return 'secondary';
   }
 
+  // Menunggu konfirmasi user (mis. Indikasi PO Pengganti) = Kuning
+  if (value.includes('awaiting confirmation') || value.includes('menunggu konfirmasi')) {
+    return 'warning';
+  }
+
   // Complete = Hijau
   if (
     value.includes('complete') ||

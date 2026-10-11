@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import fileService from '../../services/fileService.js';
+import bulkPurchaseOrderService from '../../services/bulkPurchaseOrderService.js';
+import IndikasiPenggantiDialog from './IndikasiPenggantiDialog.jsx';
 import authService from '../../services/authService.js';
 import scheduledPriceService from '../../services/scheduledPriceService.js';
 import PurchaseOrderForm from './PurchaseOrderForm.jsx';
@@ -44,6 +46,14 @@ const AddPurchaseOrderModal = ({
 
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
   const confirmActionRef = useRef(() => {});
+
+  // Indikasi PO Pengganti (tanggal pesan == tanggal kirim): user must answer Iya/Tidak.
+  // Bulk upload: files held by the backend, answered one by one.
+  const [indikasiQueue, setIndikasiQueue] = useState([]);
+  const [indikasiLoading, setIndikasiLoading] = useState(false);
+  const indikasiRunRef = useRef({ data: null, confirmed: 0, rejected: 0, failed: [] });
+  // Manual form: submission is paused until the user answers.
+  const [manualIndikasi, setManualIndikasi] = useState(null);
 
   const openConfirmationDialog = (options, onConfirm) => {
     confirmActionRef.current = onConfirm;
@@ -135,6 +145,91 @@ const AddPurchaseOrderModal = ({
     }
   };
 
+  const finishBulkUpload = (
+    data,
+    { extraFailed = [], confirmedCount = 0, rejectedCount = 0 } = {}
+  ) => {
+    const totalFiles = data?.totalFiles || (selectedFile ? selectedFile.length : 1);
+    const successFiles = (data?.successFiles ?? 0) + confirmedCount;
+    const failedFiles = [...(data?.failedFiles || []), ...extraFailed];
+    const errorFiles = (data?.errorFiles ?? 0) + extraFailed.length;
+
+    if (errorFiles > 0) {
+      const errorDetails = failedFiles
+        .map((f, i) => `${i + 1}. File: ${f.filename || '-'}\n   Penyebab: ${f.reason || f.error || 'Gagal diproses'}`)
+        .join('\n\n');
+
+      const popupMessage = `Upload Purchase Order GAGAL untuk ${errorFiles} dari ${totalFiles} file.\n\n` +
+        `Data PO yang gagal TIDAK dimasukkan ke dalam sistem.\n\n` +
+        `📋 Detail Kegagalan:\n${errorDetails}\n\n` +
+        `Silakan pastikan Schedule Price dan Master Data sudah lengkap sebelum mengunggah kembali.`;
+
+      openConfirmationDialog({
+        title: '❌ Upload Purchase Order Gagal',
+        message: popupMessage,
+        confirmText: 'Tutup',
+        cancelText: null,
+        type: 'danger',
+      }, () => {
+        if (successFiles > 0) {
+          onClose();
+          if (onFinished) onFinished();
+        }
+      });
+
+      toast.error(`Upload gagal: ${errorFiles} file tidak dapat diproses.`);
+
+      if (successFiles > 0 && onFinished) {
+        onFinished();
+      }
+    } else {
+      if (successFiles > 0 || rejectedCount === 0) {
+        toast.success(`${successFiles || totalFiles} file Purchase Order berhasil di-upload.`);
+      }
+      if (rejectedCount > 0) {
+        toast.info(`${rejectedCount} PO Indikasi Pengganti tidak dimasukkan ke sistem.`);
+      }
+      onClose();
+      if (onFinished) onFinished();
+    }
+  };
+
+  const handleIndikasiAnswer = async (confirm) => {
+    const current = indikasiQueue[0];
+    if (!current) return;
+
+    const run = indikasiRunRef.current;
+    setIndikasiLoading(true);
+    try {
+      const res = await bulkPurchaseOrderService.resolveIndikasiPengganti(current.fileId, confirm);
+      const result = res?.data?.data || res?.data || res;
+      if (result?.result === 'success') {
+        run.confirmed += 1;
+      } else if (result?.result === 'rejected') {
+        run.rejected += 1;
+      } else {
+        run.failed.push({ filename: current.filename, reason: result?.message || 'Gagal diproses' });
+      }
+    } catch (err) {
+      run.failed.push({
+        filename: current.filename,
+        reason: err?.response?.data?.message || err?.message || 'Gagal menyimpan jawaban konfirmasi',
+      });
+    } finally {
+      setIndikasiLoading(false);
+    }
+
+    const rest = indikasiQueue.slice(1);
+    setIndikasiQueue(rest);
+    if (rest.length === 0) {
+      finishBulkUpload(run.data, {
+        extraFailed: run.failed,
+        confirmedCount: run.confirmed,
+        rejectedCount: run.rejected,
+      });
+    }
+  };
+
   const handleBulkUpload = async () => {
     if (!selectedFile || selectedFile.length === 0) {
       setError('Please select at least one PDF (.pdf) or EDI (.edi) file to upload.');
@@ -154,44 +249,16 @@ const AddPurchaseOrderModal = ({
       if (result.success) {
         const data = result.data?.data || result.data;
         const totalFiles = data?.totalFiles || (selectedFile ? selectedFile.length : 1);
-        const successFiles = data?.successFiles ?? 0;
-        const errorFiles = data?.errorFiles ?? 0;
-        const failedFiles = data?.failedFiles || [];
 
         // If backend returned immediate results (e.g., text extraction mode)
         if (typeof data?.errorFiles === 'number') {
-          if (errorFiles > 0) {
-            const errorDetails = failedFiles
-              .map((f, i) => `${i + 1}. File: ${f.filename || '-'}\n   Penyebab: ${f.reason || f.error || 'Gagal diproses'}`)
-              .join('\n\n');
-
-            const popupMessage = `Upload Purchase Order GAGAL untuk ${errorFiles} dari ${totalFiles} file.\n\n` +
-              `Data PO yang gagal TIDAK dimasukkan ke dalam sistem.\n\n` +
-              `📋 Detail Kegagalan:\n${errorDetails}\n\n` +
-              `Silakan pastikan Schedule Price dan Master Data sudah lengkap sebelum mengunggah kembali.`;
-
-            openConfirmationDialog({
-              title: '❌ Upload Purchase Order Gagal',
-              message: popupMessage,
-              confirmText: 'Tutup',
-              cancelText: null,
-              type: 'danger',
-            }, () => {
-              if (successFiles > 0) {
-                onClose();
-                if (onFinished) onFinished();
-              }
-            });
-
-            toast.error(`Upload gagal: ${errorFiles} file tidak dapat diproses.`);
-
-            if (successFiles > 0 && onFinished) {
-              onFinished();
-            }
+          const awaitingFiles = data?.awaitingFiles || [];
+          if (awaitingFiles.length > 0) {
+            // PO Indikasi Pengganti belum masuk sistem: tanya user Iya/Tidak dulu
+            indikasiRunRef.current = { data, confirmed: 0, rejected: 0, failed: [] };
+            setIndikasiQueue(awaitingFiles);
           } else {
-            toast.success(`${successFiles || totalFiles} file Purchase Order berhasil di-upload.`);
-            onClose();
-            if (onFinished) onFinished();
+            finishBulkUpload(data);
           }
         } else {
           // Asynchronous background fallback
@@ -349,6 +416,34 @@ const AddPurchaseOrderModal = ({
       }
     }
 
+    // Indikasi PO Pengganti: tanggal pesan sama dengan tanggal kirim -> tanya Iya/Tidak
+    if (
+      formData.tanggal_masuk_po &&
+      formData.tanggal_batas_kirim &&
+      formData.tanggal_masuk_po === formData.tanggal_batas_kirim
+    ) {
+      setError(null);
+      setManualIndikasi({
+        poNumber: formData.po_number,
+        poDate: formData.tanggal_masuk_po,
+        deliveryDate: formData.tanggal_batas_kirim,
+      });
+      return;
+    }
+
+    await submitPurchaseOrder();
+  };
+
+  const handleManualIndikasiAnswer = async (confirm) => {
+    setManualIndikasi(null);
+    if (!confirm) {
+      toast.info('PO Indikasi Pengganti tidak dimasukkan ke sistem.');
+      return;
+    }
+    await submitPurchaseOrder();
+  };
+
+  const submitPurchaseOrder = async () => {
     setLoading(true);
     setError(null);
 
@@ -794,6 +889,23 @@ const AddPurchaseOrderModal = ({
       </div>
 
       <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
+
+      <IndikasiPenggantiDialog
+        show={indikasiQueue.length > 0 || !!manualIndikasi}
+        item={indikasiQueue[0] || manualIndikasi}
+        remaining={Math.max(indikasiQueue.length - 1, 0)}
+        loading={indikasiLoading}
+        onYes={() =>
+          indikasiQueue.length > 0
+            ? handleIndikasiAnswer(true)
+            : handleManualIndikasiAnswer(true)
+        }
+        onNo={() =>
+          indikasiQueue.length > 0
+            ? handleIndikasiAnswer(false)
+            : handleManualIndikasiAnswer(false)
+        }
+      />
     </div>
   );
 };

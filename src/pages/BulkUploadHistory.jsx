@@ -4,6 +4,9 @@ import toastService from '../services/toastService';
 import { formatDateTime } from '../utils/formatUtils';
 import { truncateText, getStatusVariant } from '../utils/modalUtils';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import IndikasiPenggantiDialog from '../components/purchaseOrders/IndikasiPenggantiDialog.jsx';
+
+const AWAITING_STATUS = 'AWAITING CONFIRMATION BULK PURCHASE ORDER';
 
 const StatusBadgeInline = ({ status }) => {
   const variant = getStatusVariant(status);
@@ -155,6 +158,8 @@ const BulkUploadHistory = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [retryingFiles, setRetryingFiles] = useState(new Set());
   const [showRetryMenu, setShowRetryMenu] = useState(null);
+  const [indikasiItem, setIndikasiItem] = useState(null);
+  const [indikasiLoading, setIndikasiLoading] = useState(false);
 
   const fetchData = async (status) => {
     setLoading(true);
@@ -194,6 +199,45 @@ const BulkUploadHistory = () => {
       console.error('Failed to fetch file details:', e);
       setError(e?.response?.data?.message || 'Gagal memuat detail file');
       setSelected(null);
+    }
+  };
+
+  const openIndikasiDialog = async (fileId, filename) => {
+    try {
+      const res = await bulkPurchaseOrderService.getFileById(fileId);
+      const pending = res?.data?.pendingIndikasi;
+      if (!pending) {
+        toastService.warning('File ini sudah tidak menunggu konfirmasi.');
+        await fetchData(filterStatus);
+        return;
+      }
+      setIndikasiItem({ fileId, filename, ...pending });
+    } catch (e) {
+      toastService.error(e?.response?.data?.message || 'Gagal memuat data konfirmasi');
+    }
+  };
+
+  const handleIndikasiAnswer = async (confirm) => {
+    if (!indikasiItem) return;
+    setIndikasiLoading(true);
+    try {
+      const res = await bulkPurchaseOrderService.resolveIndikasiPengganti(indikasiItem.fileId, confirm);
+      const result = res?.data;
+      if (result?.result === 'success') {
+        toastService.success(`PO ${indikasiItem.poNumber || ''} masuk ke sistem dan bisa diproses.`);
+      } else if (result?.result === 'rejected') {
+        toastService.info(`PO ${indikasiItem.poNumber || ''} tidak dimasukkan ke sistem.`);
+      } else {
+        toastService.warning(result?.message || 'PO gagal dimasukkan ke sistem. Lihat detail untuk informasi lebih lanjut.');
+      }
+      setIndikasiItem(null);
+      await fetchData(filterStatus);
+    } catch (e) {
+      toastService.error(e?.response?.data?.message || 'Gagal menyimpan jawaban konfirmasi');
+      setIndikasiItem(null);
+      await fetchData(filterStatus);
+    } finally {
+      setIndikasiLoading(false);
     }
   };
 
@@ -263,6 +307,8 @@ const BulkUploadHistory = () => {
                 <option value="PROCESSING BULK PURCHASE ORDER">PROCESSING BULK PURCHASE ORDER</option>
                 <option value="COMPLETED BULK PURCHASE ORDER">COMPLETED BULK PURCHASE ORDER</option>
                 <option value="FAILED BULK PURCHASE ORDER">FAILED BULK PURCHASE ORDER</option>
+                <option value="AWAITING CONFIRMATION BULK PURCHASE ORDER">AWAITING CONFIRMATION BULK PURCHASE ORDER</option>
+                <option value="REJECTED BULK PURCHASE ORDER">REJECTED BULK PURCHASE ORDER</option>
               </select>
               <button onClick={() => fetchData(filterStatus)} className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-sm">Refresh</button>
             </div>
@@ -295,6 +341,7 @@ const BulkUploadHistory = () => {
                 ) : (
                   items.map((it) => {
                     const isFailed = it.status?.status_code === 'FAILED BULK PURCHASE ORDER';
+                    const isAwaiting = it.status?.status_code === AWAITING_STATUS;
                     const isRetrying = retryingFiles.has(it.id);
                     
                     return (
@@ -305,6 +352,15 @@ const BulkUploadHistory = () => {
                         <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(it.updatedAt)}</td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            {isAwaiting && (
+                              <button
+                                onClick={() => openIndikasiDialog(it.id, it.filename)}
+                                className="px-3 py-1.5 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
+                                title="Indikasi PO Pengganti: pilih Iya atau Tidak"
+                              >
+                                Konfirmasi
+                              </button>
+                            )}
                             {isFailed && (
                               <div className="relative">
                                 <button
@@ -332,6 +388,14 @@ const BulkUploadHistory = () => {
       </div>
 
       <DetailModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} item={selected} />
+
+      <IndikasiPenggantiDialog
+        show={!!indikasiItem}
+        item={indikasiItem}
+        loading={indikasiLoading}
+        onYes={() => handleIndikasiAnswer(true)}
+        onNo={() => handleIndikasiAnswer(false)}
+      />
     </div>
   );
 };
