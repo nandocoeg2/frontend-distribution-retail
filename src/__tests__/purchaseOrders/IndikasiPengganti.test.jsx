@@ -169,3 +169,34 @@ describe('AddPurchaseOrderModal - bulk upload with held Indikasi Pengganti PO', 
     expect(bulkPurchaseOrderService.resolveIndikasiPengganti).toHaveBeenNthCalledWith(2, 'f2', false);
   });
 });
+
+describe('ConfirmationDialog onCancel', () => {
+  it('calls onCancel when cancel button is clicked', async () => {
+    const { ConfirmationDialog } = await import('../../components/ui/ConfirmationDialog');
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <ConfirmationDialog
+        show
+        title="Konfirmasi: PO Indikasi Pengganti"
+        message="Terindikasi sebagai PO Pengganti"
+        confirmText="Proses"
+        cancelText="Hapus"
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+        onClose={onClose}
+      />
+    );
+
+    expect(screen.getByText('Konfirmasi: PO Indikasi Pengganti')).toBeDefined();
+    const deleteBtn = screen.getByRole('button', { name: 'Hapus' });
+    fireEvent.click(deleteBtn);
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
+

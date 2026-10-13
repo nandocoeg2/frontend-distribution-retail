@@ -41,9 +41,11 @@ const ViewPurchaseOrderModal = ({
   const { showSuccess, showError, AlertComponent } = useAlert();
   const { showDialog, hideDialog, ConfirmationDialog } = useConfirmationDialog();
   const confirmActionRef = useRef(() => {});
+  const cancelActionRef = useRef(() => {});
 
-  const openConfirmationDialog = (options, onConfirm) => {
+  const openConfirmationDialog = (options, onConfirm, onCancel) => {
     confirmActionRef.current = onConfirm;
+    cancelActionRef.current = onCancel;
     showDialog(options);
   };
   const [expandedSections, setExpandedSections] = useState({
@@ -193,7 +195,11 @@ const ViewPurchaseOrderModal = ({
     // Check if tanggal masuk PO vs tanggal batas kirim are the same
     const startDate = order.tanggal_masuk_po || order.po_date;
     const endDate = order.tanggal_batas_kirim || order.delivery_date;
-    if (startDate && endDate && new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10)) {
+    const isSameDate = startDate && endDate && new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10);
+    const statusCode = order.status?.status_code || order.status_code;
+    const isIndikasiPengganti = statusCode === 'INDIKASI PENGGANTI';
+
+    if (isSameDate && !isIndikasiPengganti) {
       openConfirmationDialog({
         title: 'Peringatan: Tanggal PO & Expired Sama',
         message: `PO "${order.po_number}" memiliki Tanggal Terbit dan Tanggal Expired/Delivery yang sama. PO dengan tanggal yang sama tidak akan diproses.`,
@@ -206,46 +212,90 @@ const ViewPurchaseOrderModal = ({
       return;
     }
 
-    try {
-      setProcessing(true);
-      const priceValidation = await purchaseOrderService.validateItemPrices([order.id]);
-      const discrepancies = priceValidation?.data?.discrepancies || [];
-      setProcessing(false);
+    const proceedWithPricingValidation = async () => {
+      try {
+        setProcessing(true);
+        const priceValidation = await purchaseOrderService.validateItemPrices([order.id]);
+        const discrepancies = priceValidation?.data?.discrepancies || [];
+        setProcessing(false);
 
-      if (discrepancies.length > 0) {
-        const summary = `Ditemukan ${discrepancies.length} item dengan perbedaan harga antara PO dan scheduled price / master data:\n\n`;
-        const details = discrepancies.slice(0, 5).map((item) => {
-          const sourceLabel = item.priceSource === 'scheduled' ? ' (Scheduled)' : ' (Master)';
-          return (
-            `• ${item.itemName} (${item.plu})\n` +
-            `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
-            `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}${sourceLabel}`
-          );
-        }).join('\n\n');
-        const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
-        const message = summary + details + more + '\n\nApakah Anda yakin ingin melanjutkan proses?';
+        if (discrepancies.length > 0) {
+          const summary = `Ditemukan ${discrepancies.length} item dengan perbedaan harga antara PO dan scheduled price / master data:\n\n`;
+          const details = discrepancies.slice(0, 5).map((item) => {
+            const sourceLabel = item.priceSource === 'scheduled' ? ' (Scheduled)' : ' (Master)';
+            return (
+              `• ${item.itemName} (${item.plu})\n` +
+              `  PO: Rp ${item.poPrice.toLocaleString('id-ID')} | ` +
+              `Master: Rp ${item.masterPrice.toLocaleString('id-ID')}${sourceLabel}`
+            );
+          }).join('\n\n');
+          const more = discrepancies.length > 5 ? `\n\n... dan ${discrepancies.length - 5} item lainnya` : '';
+          const message = summary + details + more + '\n\nApakah Anda yakin ingin melanjutkan proses?';
+
+          openConfirmationDialog({
+            title: 'Perbedaan Harga Ditemukan',
+            message: message,
+            confirmText: 'Proses',
+            cancelText: 'Batal',
+            type: 'warning',
+          }, () => executeProcessOrder());
+          return;
+        }
 
         openConfirmationDialog({
-          title: 'Perbedaan Harga Ditemukan',
-          message: message,
+          title: 'Proses Purchase Order',
+          message: `Apakah Anda yakin ingin memproses Purchase Order "${order.po_number}"?`,
           confirmText: 'Proses',
           cancelText: 'Batal',
           type: 'warning',
         }, () => executeProcessOrder());
-        return;
+      } catch (err) {
+        setProcessing(false);
+        showError(`Gagal memvalidasi harga item: ${err.message}`);
       }
+    };
 
-      openConfirmationDialog({
-        title: 'Proses Purchase Order',
-        message: `Apakah Anda yakin ingin memproses Purchase Order "${order.po_number}"?`,
-        confirmText: 'Proses',
-        cancelText: 'Batal',
-        type: 'warning',
-      }, () => executeProcessOrder());
-    } catch (err) {
-      setProcessing(false);
-      showError(`Gagal memvalidasi harga item: ${err.message}`);
+    if (isIndikasiPengganti || (isSameDate && isIndikasiPengganti)) {
+      openConfirmationDialog(
+        {
+          title: 'Konfirmasi: PO Indikasi Pengganti',
+          message: `PO "${order.po_number}" terindikasi sebagai PO Pengganti (Tanggal Terbit dan Expired sama). Apakah Anda yakin ingin tetap memproses PO ini? Jika Ya, PO akan diproses ke Packing. Jika Tidak, data PO akan dihapus dari database.`,
+          confirmText: 'Proses',
+          cancelText: 'Hapus',
+          type: 'warning',
+        },
+        // Jika Ya / Proses: lanjut validasi harga & eksekusi proses
+        () => {
+          proceedWithPricingValidation();
+        },
+        // Jika Tidak / Hapus: hapus record PO dari database
+        async () => {
+          setProcessing(true);
+          try {
+            const result = await purchaseOrderService.bulkDeletePurchaseOrders([order.id]);
+            const resultData = result?.data || result;
+            const successCount = resultData?.successCount || 0;
+            if (successCount > 0) {
+              showSuccess(`Berhasil menghapus PO "${order.po_number}" dari database.`);
+              if (onProcessed) {
+                onProcessed();
+              }
+              hideDialog();
+              onClose();
+            } else {
+              showError(`Gagal menghapus PO "${order.po_number}".`);
+            }
+          } catch (err) {
+            showError(`Gagal menghapus PO: ${err.message}`);
+          } finally {
+            setProcessing(false);
+          }
+        }
+      );
+      return;
     }
+
+    await proceedWithPricingValidation();
   };
 
   const handleDocumentCheckbox = (documentType) => {
@@ -1315,7 +1365,10 @@ const ViewPurchaseOrderModal = ({
       </div>
 
       {/* Confirmation Dialog */}
-      <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
+      <ConfirmationDialog
+        onConfirm={() => confirmActionRef.current?.()}
+        onCancel={() => cancelActionRef.current?.()}
+      />
 
       {/* Alert Component */}
       <AlertComponent />

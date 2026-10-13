@@ -94,9 +94,11 @@ const PurchaseOrders = () => {
   const { showSuccess, showError, showWarning, AlertComponent } = useAlert();
 
   const confirmActionRef = useRef(() => { });
+  const cancelActionRef = useRef(() => { });
 
-  const openConfirmationDialog = (options, onConfirm) => {
+  const openConfirmationDialog = (options, onConfirm, onCancel) => {
     confirmActionRef.current = onConfirm;
+    cancelActionRef.current = onCancel;
     showDialog(options);
   };
 
@@ -374,8 +376,17 @@ const PurchaseOrders = () => {
       return new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10);
     });
 
-    if (sameDateOrders.length > 0) {
-      const poNumbers = sameDateOrders.map(o => `"${o.po_number}"`).join(', ');
+    const isOrderIndikasiPengganti = (order) => {
+      const statusCode = order.status?.status_code || order.status_code;
+      return statusCode === 'INDIKASI PENGGANTI';
+    };
+
+    const indikasiOrders = sameDateOrders.filter(isOrderIndikasiPengganti);
+    const nonIndikasiSameDateOrders = sameDateOrders.filter(order => !isOrderIndikasiPengganti(order));
+
+    // Jika ada PO dengan tanggal sama yang BUKAN berstatus INDIKASI PENGGANTI, tampilkan peringatan tolak
+    if (nonIndikasiSameDateOrders.length > 0) {
+      const poNumbers = nonIndikasiSameDateOrders.map(o => `"${o.po_number}"`).join(', ');
       openConfirmationDialog({
         title: "Peringatan: Tanggal PO & Expired Sama",
         message: `PO berikut: ${poNumbers} memiliki Tanggal Terbit dan Tanggal Expired/Delivery yang sama. PO dengan tanggal yang sama tidak akan diproses.`,
@@ -388,35 +399,80 @@ const PurchaseOrders = () => {
       return;
     }
 
-    // Validasi harga item
-    try {
-      setLoading(true);
-      const priceDiscrepancies = await validateItemPrices(idsSnapshot);
-      setLoading(false);
+    const proceedWithPricingValidation = async (targetIds) => {
+      // Validasi harga item
+      try {
+        setLoading(true);
+        const priceDiscrepancies = await validateItemPrices(targetIds);
+        setLoading(false);
 
-      // Jika ada perbedaan harga, tampilkan konfirmasi
-      if (priceDiscrepancies.length > 0) {
-        openConfirmationDialog({
-          title: "Perbedaan Harga Ditemukan",
-          message: formatPriceDiscrepancyMessage(priceDiscrepancies),
-          confirmText: "Proses",
-          cancelText: "Batal",
-          type: "warning"
-        }, () => handleConfirmBulkProcess(idsSnapshot));
-      } else {
-        // Tidak ada perbedaan, lanjutkan proses
-        openConfirmationDialog({
-          title: "Proses Purchase Orders",
-          message: `Apakah Anda yakin ingin memproses ${idsSnapshot.length} purchase order yang dipilih?`,
-          confirmText: "Proses",
-          cancelText: "Batal",
-          type: "warning"
-        }, () => handleConfirmBulkProcess(idsSnapshot));
+        // Jika ada perbedaan harga, tampilkan konfirmasi
+        if (priceDiscrepancies.length > 0) {
+          openConfirmationDialog({
+            title: "Perbedaan Harga Ditemukan",
+            message: formatPriceDiscrepancyMessage(priceDiscrepancies),
+            confirmText: "Proses",
+            cancelText: "Batal",
+            type: "warning"
+          }, () => handleConfirmBulkProcess(targetIds));
+        } else {
+          // Tidak ada perbedaan, lanjutkan proses
+          openConfirmationDialog({
+            title: "Proses Purchase Orders",
+            message: `Apakah Anda yakin ingin memproses ${targetIds.length} purchase order yang dipilih?`,
+            confirmText: "Proses",
+            cancelText: "Batal",
+            type: "warning"
+          }, () => handleConfirmBulkProcess(targetIds));
+        }
+      } catch (error) {
+        setLoading(false);
+        showError(`Gagal memvalidasi harga item: ${error.message}`);
       }
-    } catch (error) {
-      setLoading(false);
-      showError(`Gagal memvalidasi harga item: ${error.message}`);
+    };
+
+    // Jika terdapat PO dengan status INDIKASI PENGGANTI, tanyakan konfirmasi ke pengguna
+    if (indikasiOrders.length > 0) {
+      const poNumbers = indikasiOrders.map(o => `"${o.po_number}"`).join(', ');
+      const indikasiIds = indikasiOrders.map(o => o.id);
+
+      openConfirmationDialog(
+        {
+          title: "Konfirmasi: PO Indikasi Pengganti",
+          message: `PO berikut: ${poNumbers} terindikasi sebagai PO Pengganti (Tanggal Terbit dan Expired sama). Apakah Anda yakin ingin tetap memproses PO ini? Jika Ya, PO akan diproses ke Packing. Jika Tidak, data PO akan dihapus dari database.`,
+          confirmText: "Proses",
+          cancelText: "Hapus",
+          type: "warning"
+        },
+        // Jika Ya / Proses: lanjutkan validasi harga & proses PO ke packing
+        () => {
+          proceedWithPricingValidation(idsSnapshot);
+        },
+        // Jika Tidak / Hapus: hapus record PO dari database
+        async () => {
+          setLoading(true);
+          try {
+            const result = await purchaseOrderService.bulkDeletePurchaseOrders(indikasiIds);
+            const resultData = result?.data || result;
+            const successCount = resultData?.successCount || 0;
+            if (successCount > 0) {
+              showSuccess(`Berhasil menghapus ${successCount} PO Indikasi Pengganti dari database.`);
+            } else {
+              showWarning('Gagal menghapus PO Indikasi Pengganti.');
+            }
+            queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+            setSelectedOrders(prev => prev.filter(id => !indikasiIds.includes(id)));
+          } catch (err) {
+            showError(`Gagal menghapus PO Indikasi Pengganti: ${err.message}`);
+          } finally {
+            setLoading(false);
+          }
+        }
+      );
+      return;
     }
+
+    await proceedWithPricingValidation(idsSnapshot);
   };
 
   const handleConfirmBulkProcess = async (ids = [], options = {}) => {
@@ -661,7 +717,10 @@ const PurchaseOrders = () => {
         fileName={previewFileName}
       />
 
-      <ConfirmationDialog onConfirm={() => confirmActionRef.current?.()} />
+      <ConfirmationDialog
+        onConfirm={() => confirmActionRef.current?.()}
+        onCancel={() => cancelActionRef.current?.()}
+      />
       <AlertComponent />
     </div>
   );

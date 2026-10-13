@@ -19,6 +19,7 @@ export const ConfirmationDialog = ({
   show,
   onClose,
   onConfirm,
+  onCancel,
   title = "Konfirmasi",
   message = "Apakah Anda yakin?",
   confirmText = "Ya",
@@ -70,6 +71,9 @@ export const ConfirmationDialog = ({
 
   const handleCancel = () => {
     if (!loading) {
+      if (onCancel) {
+        onCancel();
+      }
       onClose();
     }
   };
@@ -171,11 +175,12 @@ export const useConfirmationDialog = () => {
     }));
   };
 
-  const ConfirmationDialogComponent = ({ onConfirm }) => (
+  const ConfirmationDialogComponent = ({ onConfirm, onCancel }) => (
     <ConfirmationDialog
       {...dialogState}
       onClose={hideDialog}
       onConfirm={onConfirm || dialogState.onConfirm}
+      onCancel={onCancel || dialogState.onCancel}
     />
   );
 
