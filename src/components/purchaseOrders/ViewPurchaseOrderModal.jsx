@@ -192,25 +192,12 @@ const ViewPurchaseOrderModal = ({
   const handleProcess = async () => {
     if (!order?.id) return;
 
-    // Check if tanggal masuk PO vs tanggal batas kirim are the same
+    // Check if tanggal masuk PO vs tanggal batas kirim are the same or status is INDIKASI PENGGANTI
     const startDate = order.tanggal_masuk_po || order.po_date;
     const endDate = order.tanggal_batas_kirim || order.delivery_date;
     const isSameDate = startDate && endDate && new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10);
     const statusCode = order.status?.status_code || order.status_code;
-    const isIndikasiPengganti = statusCode === 'INDIKASI PENGGANTI';
-
-    if (isSameDate && !isIndikasiPengganti) {
-      openConfirmationDialog({
-        title: 'Peringatan: Tanggal PO & Expired Sama',
-        message: `PO "${order.po_number}" memiliki Tanggal Terbit dan Tanggal Expired/Delivery yang sama. PO dengan tanggal yang sama tidak akan diproses.`,
-        confirmText: 'Mengerti',
-        cancelText: '',
-        type: 'warning',
-      }, () => {
-        hideDialog();
-      });
-      return;
-    }
+    const isIndikasiPengganti = statusCode === 'INDIKASI PENGGANTI' || Boolean(isSameDate);
 
     const proceedWithPricingValidation = async () => {
       try {

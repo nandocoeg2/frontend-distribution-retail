@@ -369,35 +369,19 @@ const PurchaseOrders = () => {
 
     // Validasi Tanggal Terbit vs Expired PO yang sama di client-side
     const selectedOrdersData = (tableRef.current?.getOrders?.() || []).filter(order => idsSnapshot.includes(order.id));
-    const sameDateOrders = selectedOrdersData.filter(order => {
-      const startDate = order.tanggal_masuk_po || order.po_date;
-      const endDate = order.tanggal_batas_kirim || order.delivery_date;
-      if (!startDate || !endDate) return false;
-      return new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10);
-    });
-
     const isOrderIndikasiPengganti = (order) => {
       const statusCode = order.status?.status_code || order.status_code;
-      return statusCode === 'INDIKASI PENGGANTI';
+      if (statusCode === 'INDIKASI PENGGANTI') return true;
+
+      const startDate = order.tanggal_masuk_po || order.po_date;
+      const endDate = order.tanggal_batas_kirim || order.delivery_date;
+      if (startDate && endDate) {
+        return new Date(startDate).toISOString().slice(0, 10) === new Date(endDate).toISOString().slice(0, 10);
+      }
+      return false;
     };
 
-    const indikasiOrders = sameDateOrders.filter(isOrderIndikasiPengganti);
-    const nonIndikasiSameDateOrders = sameDateOrders.filter(order => !isOrderIndikasiPengganti(order));
-
-    // Jika ada PO dengan tanggal sama yang BUKAN berstatus INDIKASI PENGGANTI, tampilkan peringatan tolak
-    if (nonIndikasiSameDateOrders.length > 0) {
-      const poNumbers = nonIndikasiSameDateOrders.map(o => `"${o.po_number}"`).join(', ');
-      openConfirmationDialog({
-        title: "Peringatan: Tanggal PO & Expired Sama",
-        message: `PO berikut: ${poNumbers} memiliki Tanggal Terbit dan Tanggal Expired/Delivery yang sama. PO dengan tanggal yang sama tidak akan diproses.`,
-        confirmText: "Mengerti",
-        cancelText: "",
-        type: "warning"
-      }, () => {
-        hideDialog();
-      });
-      return;
-    }
+    const indikasiOrders = selectedOrdersData.filter(isOrderIndikasiPengganti);
 
     const proceedWithPricingValidation = async (targetIds) => {
       // Validasi harga item
