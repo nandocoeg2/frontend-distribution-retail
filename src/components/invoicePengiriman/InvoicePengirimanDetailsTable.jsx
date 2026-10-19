@@ -64,7 +64,7 @@ const InvoicePengirimanDetailsTable = ({ details = [], purchaseOrderDetails = []
           harga_after_potongan_a: item.harga_after_potongan_a ?? null,
           potongan_b: item.potongan_b ?? null,
           harga_after_potongan_b: item.harga_after_potongan_b ?? null,
-          harga_netto: item.harga_netto ?? item.harga_after_potongan_b ?? null,
+          harga_netto: item.harga_netto ?? item.harga_after_potongan_a ?? null,
           total_pembelian: item.dasar_pengenaan_pajak ?? item.total ?? null,
           vatRate: item.vatRate ?? item.PPN_pecentage ?? null,
         };

@@ -106,7 +106,7 @@ const PurchaseOrderDetailsTable = ({ details = [] }) => {
           </div>
         ),
       }),
-      columnHelper.accessor((row) => Number(row.harga_netto ?? row.harga_after_potongan_b ?? row.harga_after_potongan_a ?? row.harga) || 0, {
+      columnHelper.accessor((row) => Number(row.harga_netto ?? row.harga_after_potongan_a ?? row.harga) || 0, {
         id: 'harga_netto',
         size: 95,
         header: () => <div className="text-right">Netto</div>,
