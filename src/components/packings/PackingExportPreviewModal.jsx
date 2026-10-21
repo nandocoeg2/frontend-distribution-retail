@@ -3,12 +3,14 @@ import {
   createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
+import { dateSortingFn } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
@@ -70,10 +72,12 @@ const PackingExportPreviewModal = ({
   onExport,
 }) => {
   const [columnFilters, setColumnFilters] = useState([]);
+  const [sorting, setSorting] = useState([]);
 
   useEffect(() => {
     if (!isOpen) {
       setColumnFilters([]);
+      setSorting([]);
     }
   }, [isOpen]);
 
@@ -179,6 +183,7 @@ const PackingExportPreviewModal = ({
       }),
       columnHelper.accessor('tanggal_packing', {
         id: 'tanggal_packing',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Tanggal Packing</div>
@@ -341,10 +346,13 @@ const PackingExportPreviewModal = ({
     columns,
     state: {
       columnFilters,
+      sorting,
     },
     onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   if (!isOpen) return null;

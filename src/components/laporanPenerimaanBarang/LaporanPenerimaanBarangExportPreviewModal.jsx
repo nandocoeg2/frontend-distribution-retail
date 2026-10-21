@@ -3,13 +3,14 @@ import {
   createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
-import { formatCurrency, formatNumber } from '../../utils/formatUtils';
+import { formatCurrency, formatNumber, dateSortingFn } from '../../utils/formatUtils';
 import HeroIcon from '../atoms/HeroIcon.jsx';
 
 const columnHelper = createColumnHelper();
@@ -73,10 +74,12 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
   isExporting = false,
 }) => {
   const [columnFilters, setColumnFilters] = useState([]);
+  const [sorting, setSorting] = useState([]);
 
   useEffect(() => {
     if (!isOpen) {
       setColumnFilters([]);
+      setSorting([]);
     }
   }, [isOpen]);
 
@@ -243,6 +246,7 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
       }),
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Tanggal</div>
@@ -516,10 +520,13 @@ const LaporanPenerimaanBarangExportPreviewModal = ({
     columns,
     state: {
       columnFilters,
+      sorting,
     },
     onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   if (!isOpen) return null;

@@ -3,13 +3,14 @@ import {
   createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable, TableFooterCell } from '../table';
 import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
-import { formatCurrency } from '../../utils/formatUtils';
+import { formatCurrency, dateSortingFn } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
@@ -80,10 +81,12 @@ const TandaTerimaFakturExportPreviewModal = ({
   isExporting = false,
 }) => {
   const [columnFilters, setColumnFilters] = useState([]);
+  const [sorting, setSorting] = useState([]);
 
   useEffect(() => {
     if (!isOpen) {
       setColumnFilters([]);
+      setSorting([]);
     }
   }, [isOpen]);
 
@@ -155,6 +158,7 @@ const TandaTerimaFakturExportPreviewModal = ({
     () => [
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Tanggal Tagihan</div>
@@ -299,6 +303,7 @@ const TandaTerimaFakturExportPreviewModal = ({
       }),
       columnHelper.accessor('tanggal_print_ttf1', {
         id: 'tanggal_print_ttf1',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Tanggal Kirim Pos</div>
@@ -328,6 +333,7 @@ const TandaTerimaFakturExportPreviewModal = ({
       }),
       columnHelper.accessor('tanggal_upload_ttf2', {
         id: 'tanggal_upload_ttf2',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Tanggal Proses DC</div>
@@ -357,6 +363,7 @@ const TandaTerimaFakturExportPreviewModal = ({
       }),
       columnHelper.accessor('tanggal_jatuh_tempo', {
         id: 'tanggal_jatuh_tempo',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Jatuh Tempo</div>
@@ -386,6 +393,7 @@ const TandaTerimaFakturExportPreviewModal = ({
       }),
       columnHelper.accessor('tanggal_bayar', {
         id: 'tanggal_bayar',
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Tanggal Bayar</div>
@@ -532,10 +540,13 @@ const TandaTerimaFakturExportPreviewModal = ({
     columns,
     state: {
       columnFilters,
+      sorting,
     },
     onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   if (!isOpen) return null;

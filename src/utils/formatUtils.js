@@ -88,3 +88,28 @@ export const formatNumber = (value) => {
   }
   return num.toLocaleString('id-ID');
 };
+
+export const compareDates = (a, b) => {
+  const parse = (val) => {
+    if (!val || val === '-') return 0;
+    if (val instanceof Date) return val.getTime();
+    const str = String(val).trim();
+    const parts = str.split(/[/.-]/);
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD
+        return new Date(parts[0], parts[1] - 1, parts[2]).getTime() || 0;
+      }
+      // DD/MM/YYYY
+      return new Date(parts[2], parts[1] - 1, parts[0]).getTime() || 0;
+    }
+    const t = new Date(str).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  };
+  return parse(a) - parse(b);
+};
+
+export const dateSortingFn = (rowA, rowB, columnId) => {
+  return compareDates(rowA.getValue(columnId), rowB.getValue(columnId));
+};
+
