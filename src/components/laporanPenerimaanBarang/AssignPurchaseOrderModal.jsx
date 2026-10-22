@@ -192,10 +192,10 @@ const AssignPurchaseOrderModal = ({
                     purchaseOrders.map((po) => {
                       const isSelected = selectedPurchaseOrderId === po.id;
                       const grandTotal =
+                        po.invoice?.grand_total ??
                         po.grand_total ??
                         po.grandTotal ??
                         po.total_amount ??
-                        po.invoice?.grand_total ??
                         (po.purchaseOrderDetails && Array.isArray(po.purchaseOrderDetails) && po.purchaseOrderDetails.length > 0
                           ? po.purchaseOrderDetails.reduce((acc, item) => acc + (Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.qty) || 0)), 0)
                           : null);
@@ -242,10 +242,10 @@ const AssignPurchaseOrderModal = ({
             {/* Selected PO summary */}
             {selectedPO && (() => {
               const selectedGrandTotal =
+                selectedPO.invoice?.grand_total ??
                 selectedPO.grand_total ??
                 selectedPO.grandTotal ??
                 selectedPO.total_amount ??
-                selectedPO.invoice?.grand_total ??
                 (selectedPO.purchaseOrderDetails && Array.isArray(selectedPO.purchaseOrderDetails) && selectedPO.purchaseOrderDetails.length > 0
                   ? selectedPO.purchaseOrderDetails.reduce((acc, item) => acc + (Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.qty) || 0)), 0)
                   : null);
