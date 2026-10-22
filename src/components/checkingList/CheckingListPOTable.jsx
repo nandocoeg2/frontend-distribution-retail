@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   createColumnHelper,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
 import { DataTable } from '../table';
@@ -11,6 +12,7 @@ const columnHelper = createColumnHelper();
 
 const CheckingListPOTable = ({ suratJalan = [] }) => {
   const [columnSizing, setColumnSizing] = useState({});
+  const [sorting, setSorting] = useState([]);
 
   const tableData = useMemo(() => {
     const list = Array.isArray(suratJalan)
@@ -84,6 +86,13 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
       columnHelper.accessor('tanggal', {
         id: 'tanggal',
         header: 'Tanggal',
+        sortingFn: (rowA, rowB, columnId) => {
+          const valA = rowA.getValue(columnId);
+          const valB = rowB.getValue(columnId);
+          const timeA = valA ? new Date(valA).getTime() : 0;
+          const timeB = valB ? new Date(valB).getTime() : 0;
+          return (Number.isNaN(timeA) ? 0 : timeA) - (Number.isNaN(timeB) ? 0 : timeB);
+        },
         cell: (info) => (
           <span className="text-gray-500">
             {info.getValue() ? formatDate(info.getValue()) : '-'}
@@ -98,12 +107,15 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
     data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     enableColumnResizing: true,
     columnResizeMode: 'onChange',
     state: {
       columnSizing,
+      sorting,
     },
     onColumnSizingChange: setColumnSizing,
+    onSortingChange: setSorting,
   });
 
   if (!tableData || tableData.length === 0) {
