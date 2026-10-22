@@ -825,20 +825,21 @@ const LaporanPenerimaanBarangTableServerSide = ({
 
           return (
             <div className="flex items-center space-x-1">
-              <button
-                onClick={() => handleOpenAssignModal(report)}
-                className="text-green-600 hover:text-green-900"
-                title={hasAssignedPO ? 'Ubah Assign Purchase Order' : 'Assign Purchase Order'}
-              >
-                <LinkIcon className="h-4 w-4" />
-              </button>
-              {hasAssignedPO && (
+              {hasAssignedPO ? (
                 <button
                   onClick={() => handleUnassignClick(report)}
                   className="text-orange-600 hover:text-orange-900"
                   title="Unassign Purchase Order"
                 >
                   <LinkSlashIcon className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleOpenAssignModal(report)}
+                  className="text-green-600 hover:text-green-900"
+                  title="Assign Purchase Order"
+                >
+                  <LinkIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
