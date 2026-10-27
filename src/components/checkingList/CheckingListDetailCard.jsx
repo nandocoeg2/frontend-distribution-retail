@@ -159,9 +159,9 @@ const CheckingListDetailCard = ({
   ];
 
   return (
-    <div className="bg-white shadow rounded-lg p-3 mt-3">
+    <div className="bg-white shadow rounded-lg p-3 h-full flex flex-col min-h-0 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-2 shrink-0">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-teal-100 rounded">
             <ClipboardDocumentCheckIcon className="h-4 w-4 text-teal-600" />
@@ -185,13 +185,13 @@ const CheckingListDetailCard = ({
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-4">
+        <div className="flex justify-center items-center py-4 flex-1">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
           <span className="ml-2 text-xs text-gray-600">Loading...</span>
         </div>
       ) : (
-        <div>
-          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant="underline" className="mb-2">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant="underline" className="mb-2 shrink-0">
             <Tab
               id="po"
               label="Surat Jalan & No PO"
@@ -211,7 +211,7 @@ const CheckingListDetailCard = ({
             />
           </TabContainer>
 
-          <TabContent activeTab={activeTab}>
+          <TabContent activeTab={activeTab} className="!mt-0 flex-1 min-h-0 overflow-y-auto">
             {/* Tab 1: Surat Jalan & No PO */}
             <TabPanel tabId="po">
               <div className="space-y-2">
@@ -229,7 +229,7 @@ const CheckingListDetailCard = ({
                     <span>Tambah Faktur / Surat Jalan</span>
                   </button>
                 </div>
-                <div className="overflow-hidden bg-white border border-gray-200 rounded">
+                <div className="overflow-auto max-h-full bg-white border border-gray-200 rounded">
                   <CheckingListPOTable suratJalan={suratJalanData} />
                 </div>
               </div>

@@ -455,10 +455,10 @@ const SuratJalan = () => {
   };
 
   return (
-    <div>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
+      <div className={`overflow-hidden bg-white rounded-lg shadow flex flex-col min-h-0 ${selectedSuratJalanForDetail ? 'flex-1' : 'h-full'}`}>
+        <div className='px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Surat Jalan</h3>
             <button
               onClick={handleExportExcel}
@@ -479,30 +479,34 @@ const SuratJalan = () => {
             </button>
           </div>
 
-          <SuratJalanTableServerSide
-            ref={tableRef}
-            onDelete={handleDelete}
-            onCancel={handleCancel}
-            cancelLoading={cancelLoading}
-            selectedSuratJalan={selectedSuratJalan}
-            onSelectSuratJalan={handleSelectSuratJalan}
-            onSelectAllSuratJalan={handleSelectAllSuratJalan}
-            onProcessSelected={handleProcessSelected}
-            onUnprocessSelected={handleUnprocessSelected}
-            isProcessing={isProcessing}
-            isUnprocessing={isUnprocessing}
-            hasSelectedSuratJalan={selectedSuratJalan.length > 0}
-            onRowClick={handleViewDetail}
-            selectedSuratJalanId={selectedSuratJalanForDetail?.id}
-            onBulkEditNoSuratJalan={handleOpenBulkEdit}
-          />
+          <div className='flex-1 flex flex-col min-h-0'>
+            <SuratJalanTableServerSide
+              ref={tableRef}
+              onDelete={handleDelete}
+              onCancel={handleCancel}
+              cancelLoading={cancelLoading}
+              selectedSuratJalan={selectedSuratJalan}
+              onSelectSuratJalan={handleSelectSuratJalan}
+              onSelectAllSuratJalan={handleSelectAllSuratJalan}
+              onProcessSelected={handleProcessSelected}
+              onUnprocessSelected={handleUnprocessSelected}
+              isProcessing={isProcessing}
+              isUnprocessing={isUnprocessing}
+              hasSelectedSuratJalan={selectedSuratJalan.length > 0}
+              onRowClick={handleViewDetail}
+              selectedSuratJalanId={selectedSuratJalanForDetail?.id}
+              onBulkEditNoSuratJalan={handleOpenBulkEdit}
+            />
+          </div>
         </div>
       </div>
 
       <DeleteConfirmationDialog />
 
       {selectedSuratJalanForDetail && (
-        <SuratJalanDetailCard suratJalan={selectedSuratJalanForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleSuratJalanUpdated} />
+        <div className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+          <SuratJalanDetailCard suratJalan={selectedSuratJalanForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleSuratJalanUpdated} />
+        </div>
       )}
 
       {/* Export Confirmation Dialog */}

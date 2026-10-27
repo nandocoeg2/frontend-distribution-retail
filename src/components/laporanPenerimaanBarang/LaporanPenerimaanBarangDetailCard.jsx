@@ -351,8 +351,8 @@ const LaporanPenerimaanBarangDetailCard = ({
   if (!report) return null;
 
   return (
-    <div className='bg-white shadow rounded-lg p-3 mt-3'>
-      <div className='flex justify-between items-center mb-2'>
+    <div className='bg-white shadow rounded-lg p-3 h-full flex flex-col min-h-0 overflow-hidden'>
+      <div className='flex justify-between items-center mb-2 shrink-0'>
         <div className='flex items-center gap-2'>
           <TagIcon className='h-4 w-4 text-orange-600' />
           <div>
@@ -371,21 +371,21 @@ const LaporanPenerimaanBarangDetailCard = ({
       </div>
 
       {loading ? (
-        <div className='flex justify-center items-center py-4'>
+        <div className='flex justify-center items-center py-4 flex-1'>
           <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600'></div>
           <span className='ml-2 text-xs text-gray-600'>Loading...</span>
         </div>
       ) : (
-        <div>
-          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
+        <div className='flex-1 flex flex-col min-h-0 overflow-hidden'>
+          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2 shrink-0'>
             <Tab id='items' label='Detail Item' icon={<ListBulletIcon className='w-3 h-3' />} badge={itemsBadge} />
             <Tab id='timeline' label='Timeline' icon={<ClockIcon className='w-3 h-3' />} badge={auditTrailCount} />
           </TabContainer>
 
-          <TabContent activeTab={activeTab}>
+          <TabContent activeTab={activeTab} className='!mt-0 flex-1 min-h-0 overflow-y-auto'>
             {/* Tab 1: Detail Item */}
             <TabPanel tabId='items'>
-              <div className='border border-gray-200 rounded overflow-hidden'>
+              <div className='border border-gray-200 rounded overflow-auto max-h-full'>
                 {mergedItems.length > 0 ? (
                   <div className='overflow-x-auto'>
                     <table className='min-w-full divide-y divide-gray-200 text-xs'>

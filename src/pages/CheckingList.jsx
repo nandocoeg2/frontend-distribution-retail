@@ -229,10 +229,10 @@ const CheckingList = () => {
   }, [bulkDeleteChecklists, selectedChecklists, hideDeleteDialog, setDeleteDialogLoading, queryClient]);
 
   return (
-    <div>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
+      <div className={`overflow-hidden bg-white rounded-lg shadow flex flex-col min-h-0 ${selectedChecklist ? 'flex-1' : 'h-full'}`}>
+        <div className='px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Checklist Surat Jalan</h3>
           </div>
 
@@ -250,27 +250,31 @@ const CheckingList = () => {
               </button>
             </div>
           ) : (
-            <CheckingListTableServerSide
-              onViewDetail={handleViewDetail}
-              onEdit={openEditModal}
-              selectedChecklistId={selectedChecklist?.id}
-              selectedChecklists={selectedChecklists}
-              onSelectChecklist={handleSelectChecklist}
-              onDeleteSelected={handleDeleteSelected}
-              isDeleting={isDeleting}
-              hasSelectedChecklists={hasSelectedChecklists}
-            />
+            <div className='flex-1 flex flex-col min-h-0'>
+              <CheckingListTableServerSide
+                onViewDetail={handleViewDetail}
+                onEdit={openEditModal}
+                selectedChecklistId={selectedChecklist?.id}
+                selectedChecklists={selectedChecklists}
+                onSelectChecklist={handleSelectChecklist}
+                onDeleteSelected={handleDeleteSelected}
+                isDeleting={isDeleting}
+                hasSelectedChecklists={hasSelectedChecklists}
+              />
+            </div>
           )}
         </div>
       </div>
 
       {selectedChecklist && (
-        <CheckingListDetailCard
-          checklist={selectedChecklist}
-          onClose={handleCloseDetail}
-          isLoading={detailLoading}
-          onUpdate={handleChecklistUpdated}
-        />
+        <div className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+          <CheckingListDetailCard
+            checklist={selectedChecklist}
+            onClose={handleCloseDetail}
+            isLoading={detailLoading}
+            onUpdate={handleChecklistUpdated}
+          />
+        </div>
       )}
 
       {/* Edit Modal */}

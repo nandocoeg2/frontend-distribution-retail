@@ -414,8 +414,8 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
   }
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className='flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50'>
+    <div className="bg-white shadow rounded-lg overflow-hidden h-full flex flex-col min-h-0">
+      <div className='flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-green-50 shrink-0'>
         <div className='flex items-center gap-2'>
           <div className='p-1.5 rounded bg-emerald-100'>
             <ShoppingCartIcon className='w-4 h-4 text-emerald-600' />
@@ -430,7 +430,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         </button>
       </div>
 
-      <div className='border-b border-gray-200 bg-gray-50'>
+      <div className='border-b border-gray-200 bg-gray-50 shrink-0'>
         <nav className='flex px-2 gap-1'>
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`py-1.5 px-2 border-b-2 text-xs font-medium flex items-center gap-1 ${activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
@@ -441,7 +441,7 @@ const PurchaseOrderDetailCard = ({ order, onClose, onUpdate }) => {
         </nav>
       </div>
 
-      <div className='p-3 max-h-[500px] overflow-y-auto'>
+      <div className='p-3 flex-1 min-h-0 overflow-y-auto'>
         {activeTab === 'overview' && (
           <div className='space-y-2'>
             <AccordionItem title='Basic Info' isExpanded={expandedSections.basicInfo} onToggle={() => toggleSection('basicInfo')} bgColor='bg-emerald-50' compact>

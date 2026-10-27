@@ -202,10 +202,10 @@ const PackingsPage = () => {
   }, []);
 
   return (
-    <div>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
+      <div className={`overflow-hidden bg-white rounded-lg shadow flex flex-col min-h-0 ${selectedPackingForDetail ? 'h-[60%]' : 'h-full'}`}>
+        <div className='px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Packing</h3>
             <div className="flex items-center gap-2">
               <button
@@ -232,12 +232,12 @@ const PackingsPage = () => {
           ) : (
             <>
               {tableLoading && (
-                <div className='flex items-center mb-2 text-xs text-gray-500'>
+                <div className='flex items-center text-xs text-gray-500 shrink-0'>
                   <div className='w-3 h-3 mr-1 border-b-2 border-blue-600 rounded-full animate-spin'></div>
                   Memuat...
                 </div>
               )}
-              <div className='space-y-2'>
+              <div className='flex-1 flex flex-col min-h-0'>
                 <PackingTableServerSide
                   ref={tableRef}
                   onEdit={openEditModal}
@@ -262,7 +262,9 @@ const PackingsPage = () => {
       </div>
 
       {selectedPackingForDetail && (
-        <PackingDetailCard packing={selectedPackingForDetail} onClose={handleCloseDetail} loading={detailLoading} />
+        <div className='h-[40%] min-h-0 flex flex-col overflow-hidden'>
+          <PackingDetailCard packing={selectedPackingForDetail} onClose={handleCloseDetail} loading={detailLoading} />
+        </div>
       )}
 
       {/* Modals */}

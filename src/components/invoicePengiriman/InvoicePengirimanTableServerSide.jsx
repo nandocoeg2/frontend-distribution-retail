@@ -609,9 +609,9 @@ const InvoicePengirimanTableServerSide = ({
   const loading = isLoading || isFetching;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 flex-1 flex flex-col min-h-0">
       {/* Toolbar - Always show Export Excel, conditionally show selection and filter actions */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center shrink-0">
         {/* Left side: Selection actions */}
         {hasSelectedInvoices ? (
           <div className="flex items-center gap-2">
@@ -705,7 +705,7 @@ const InvoicePengirimanTableServerSide = ({
         emptyFilteredMessage="Tidak ada data sesuai filter"
         tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
-        wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
+        wrapperClassName="overflow-x-auto overflow-y-auto flex-1 min-h-0"
         headerCellClassName="px-1.5 py-1 text-left text-xs text-gray-500 uppercase tracking-wider"
         bodyClassName="divide-y divide-gray-100"
         rowClassName="hover:bg-gray-50 cursor-pointer h-7"

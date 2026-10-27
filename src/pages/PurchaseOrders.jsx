@@ -580,10 +580,10 @@ const PurchaseOrders = () => {
   };
 
   return (
-    <div>
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-3 py-3 space-y-2">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
+      <div className={`bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0 ${selectedOrderForDetail ? 'flex-1' : 'h-full'}`}>
+        <div className="px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0">
             <h3 className="text-sm font-semibold text-gray-900">Purchase Orders</h3>
             <div className="flex flex-wrap gap-2">
               <button
@@ -649,29 +649,33 @@ const PurchaseOrders = () => {
           </div>
 
           {/* TanStack Table with Server-Side Features */}
-          <PurchaseOrderTableServerSide
-            ref={tableRef}
-            onViewDetail={handleViewDetail}
-            selectedOrders={selectedOrders}
-            onSelectionChange={handleSelectionChange}
-            onBulkProcess={handleBulkProcess}
-            onBulkCancel={handleBulkCancel}
-            onBulkDelete={handleBulkDelete}
-            isProcessing={bulkProcessing}
-            isCancelling={bulkCancelling}
-            isDeleting={bulkDeleting}
-            hasSelectedOrders={selectedOrders.length > 0}
-            selectedOrderId={selectedOrderForDetail?.id}
-          />
+          <div className='flex-1 flex flex-col min-h-0'>
+            <PurchaseOrderTableServerSide
+              ref={tableRef}
+              onViewDetail={handleViewDetail}
+              selectedOrders={selectedOrders}
+              onSelectionChange={handleSelectionChange}
+              onBulkProcess={handleBulkProcess}
+              onBulkCancel={handleBulkCancel}
+              onBulkDelete={handleBulkDelete}
+              isProcessing={bulkProcessing}
+              isCancelling={bulkCancelling}
+              isDeleting={bulkDeleting}
+              hasSelectedOrders={selectedOrders.length > 0}
+              selectedOrderId={selectedOrderForDetail?.id}
+            />
+          </div>
         </div>
       </div>
 
       {selectedOrderForDetail && (
-        <PurchaseOrderDetailCard
-          order={selectedOrderForDetail}
-          onClose={handleCloseDetail}
-          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] })}
-        />
+        <div className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+          <PurchaseOrderDetailCard
+            order={selectedOrderForDetail}
+            onClose={handleCloseDetail}
+            onUpdate={() => queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] })}
+          />
+        </div>
       )}
 
       {isAddModalOpen && (

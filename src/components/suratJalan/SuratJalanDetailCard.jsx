@@ -98,8 +98,8 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
   const packingBoxes = useMemo(() => getPackingBoxes(suratJalan), [suratJalan]);
 
   return (
-    <div className='bg-white shadow rounded-lg p-3 mt-3'>
-      <div className='flex justify-between items-center mb-2'>
+    <div className='bg-white shadow rounded-lg p-3 h-full flex flex-col min-h-0 overflow-hidden'>
+      <div className='flex justify-between items-center mb-2 shrink-0'>
         <div className='flex items-center gap-2'>
           <div className='p-1.5 bg-teal-100 rounded'>
             <TruckIcon className='w-4 h-4 text-teal-600' />
@@ -133,12 +133,12 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
       </div>
 
       {loading ? (
-        <div className='flex justify-center items-center py-4'>
+        <div className='flex justify-center items-center py-4 flex-1'>
           <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600'></div>
           <span className='ml-2 text-xs text-gray-600'>Loading...</span>
         </div>
       ) : isEditMode ? (
-        <div className='bg-gray-50 rounded p-3'>
+        <div className='bg-gray-50 rounded p-3 flex-1 min-h-0 overflow-y-auto'>
           <SuratJalanForm
             suratJalan={suratJalan}
             onSubmit={handleSave}
@@ -148,15 +148,15 @@ const SuratJalanDetailCard = ({ suratJalan, onClose, loading = false, onUpdate }
           />
         </div>
       ) : (
-        <div>
-          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2'>
+        <div className='flex-1 flex flex-col min-h-0 overflow-hidden'>
+          <TabContainer activeTab={activeTab} onTabChange={setActiveTab} variant='underline' className='mb-2 shrink-0'>
             <Tab id='details' label='Boxes' icon={<ListBulletIcon className='w-3 h-3' />} badge={packingBoxes.length} />
             <Tab id='activity' label='Activity' icon={<ClockIcon className='w-3 h-3' />} badge={normalizedAuditTrails.length || null} />
           </TabContainer>
 
-          <TabContent activeTab={activeTab}>
+          <TabContent activeTab={activeTab} className='!mt-0 flex-1 min-h-0 overflow-y-auto'>
             <TabPanel tabId='details'>
-              <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+              <div className='overflow-auto max-h-full bg-white border border-gray-200 rounded'>
                 <SuratJalanDetailsTable packingBoxes={packingBoxes} />
               </div>
             </TabPanel>

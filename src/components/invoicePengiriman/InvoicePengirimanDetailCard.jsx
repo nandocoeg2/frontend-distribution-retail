@@ -42,8 +42,8 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
   if (!invoice) return null;
 
   return (
-    <div className='bg-white shadow rounded-lg p-3 mt-3'>
-      <div className='flex justify-between items-center mb-2'>
+    <div className='bg-white shadow rounded-lg p-3 h-full flex flex-col min-h-0 overflow-hidden'>
+      <div className='flex justify-between items-center mb-2 shrink-0'>
         <div className='flex items-center gap-2'>
           <DocumentTextIcon className='h-4 w-4 text-indigo-600' />
           <div>
@@ -90,12 +90,12 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
       </div>
 
       {loading ? (
-        <div className='flex justify-center items-center py-4'>
+        <div className='flex justify-center items-center py-4 flex-1'>
           <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600'></div>
           <span className='ml-2 text-xs text-gray-600'>Loading...</span>
         </div>
       ) : isEditMode ? (
-        <div className='bg-gray-50 rounded p-3'>
+        <div className='bg-gray-50 rounded p-3 flex-1 min-h-0 overflow-y-auto'>
           <InvoicePengirimanForm
             initialValues={invoice}
             onSubmit={handleSave}
@@ -105,7 +105,7 @@ const InvoicePengirimanDetailCard = ({ invoice, onClose, loading = false, onUpda
           />
         </div>
       ) : (
-        <div className='overflow-hidden bg-white border border-gray-200 rounded'>
+        <div className='overflow-auto max-h-full flex-1 min-h-0 bg-white border border-gray-200 rounded'>
           <InvoicePengirimanDetailsTable
             details={invoice.invoiceDetails || []}
             purchaseOrderDetails={invoice.purchaseOrder?.purchaseOrderDetails || []}

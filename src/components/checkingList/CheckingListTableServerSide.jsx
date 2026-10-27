@@ -636,10 +636,10 @@ const CheckingListTableServerSide = ({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex-1 flex flex-col min-h-0">
       {/* Reset Filter Button */}
       {hasActiveFilters && (
-        <div className="flex justify-end">
+        <div className="flex justify-end shrink-0">
           <button
             onClick={resetFilters}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -651,7 +651,7 @@ const CheckingListTableServerSide = ({
 
       {/* Bulk Action Bar */}
       {hasSelectedChecklists && (
-        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-md px-3 py-2">
+        <div className="flex justify-between items-center bg-blue-50 border border-blue-200 rounded-md px-3 py-2 shrink-0">
           <span className="text-xs font-medium text-blue-900">
             {selectedChecklists.length} dipilih
           </span>
@@ -692,7 +692,7 @@ const CheckingListTableServerSide = ({
         loadingMessage="Memuat data checklist surat jalan..."
         emptyMessage="Belum ada checklist surat jalan."
         emptyFilteredMessage="Tidak ada checklist surat jalan yang cocok dengan pencarian."
-        wrapperClassName="overflow-x-auto overflow-y-auto min-h-[300px] max-h-[calc(85vh-300px)]"
+        wrapperClassName="overflow-x-auto overflow-y-auto flex-1 min-h-0"
         tableClassName="min-w-full bg-white border border-gray-200 text-xs table-fixed"
         headerRowClassName="bg-gray-50"
         headerCellClassName="px-2 py-1.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"

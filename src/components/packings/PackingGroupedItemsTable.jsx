@@ -112,9 +112,9 @@ const PackingGroupedItemsTable = ({ packingBoxes }) => {
     }
 
     return (
-        <div className="overflow-hidden border border-gray-200 rounded-lg">
+        <div className="overflow-auto max-h-full border border-gray-200 rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
                         <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-r">No</th>
                         <th scope="col" className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-r">Nama Barang</th>

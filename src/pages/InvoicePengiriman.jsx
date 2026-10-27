@@ -210,31 +210,35 @@ const InvoicePengirimanPage = () => {
 
 
   return (
-    <div>
-      <div className='overflow-hidden bg-white rounded-lg shadow'>
-        <div className='px-3 py-3 space-y-2'>
-          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+    <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
+      <div className={`overflow-hidden bg-white rounded-lg shadow flex flex-col min-h-0 ${selectedInvoiceForDetail ? 'flex-1' : 'h-full'}`}>
+        <div className='px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2'>
+          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0'>
             <h3 className='text-sm font-semibold text-gray-900'>Invoice Pengiriman</h3>
           </div>
 
-          <InvoicePengirimanTableServerSide
-            onBulkDelete={handleBulkDeleteSuccess}
-            selectedInvoices={selectedInvoices}
-            onSelectInvoice={handleSelectInvoice}
-            onSelectAllInvoices={handleSelectAllInvoices}
-            hasSelectedInvoices={hasSelectedInvoices}
-            onViewDetail={handleViewDetail}
-            selectedInvoiceId={selectedInvoiceForDetail?.id}
-            onExportExcel={handleExportExcel}
-            exportLoading={exportLoading}
-            onPreviewExcel={handlePreviewExcel}
-            previewLoading={previewLoading}
-          />
+          <div className='flex-1 flex flex-col min-h-0'>
+            <InvoicePengirimanTableServerSide
+              onBulkDelete={handleBulkDeleteSuccess}
+              selectedInvoices={selectedInvoices}
+              onSelectInvoice={handleSelectInvoice}
+              onSelectAllInvoices={handleSelectAllInvoices}
+              hasSelectedInvoices={hasSelectedInvoices}
+              onViewDetail={handleViewDetail}
+              selectedInvoiceId={selectedInvoiceForDetail?.id}
+              onExportExcel={handleExportExcel}
+              exportLoading={exportLoading}
+              onPreviewExcel={handlePreviewExcel}
+              previewLoading={previewLoading}
+            />
+          </div>
         </div>
       </div>
 
       {selectedInvoiceForDetail && (
-        <InvoicePengirimanDetailCard invoice={selectedInvoiceForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleInvoiceUpdated} />
+        <div className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+          <InvoicePengirimanDetailCard invoice={selectedInvoiceForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleInvoiceUpdated} />
+        </div>
       )}
 
       <ConfirmationDialog
