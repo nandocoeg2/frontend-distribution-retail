@@ -581,7 +581,7 @@ const PurchaseOrders = () => {
 
   return (
     <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
-      <div className={`bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0 ${selectedOrderForDetail ? 'flex-1' : 'h-full'}`}>
+      <div className={`bg-white shadow rounded-lg overflow-hidden flex flex-col min-h-0 ${selectedOrderForDetail ? 'h-[60%]' : 'h-full'}`}>
         <div className="px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0">
             <h3 className="text-sm font-semibold text-gray-900">Purchase Orders</h3>
@@ -669,7 +669,7 @@ const PurchaseOrders = () => {
       </div>
 
       {selectedOrderForDetail && (
-        <div className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+        <div className='h-[40%] min-h-0 flex flex-col overflow-hidden'>
           <PurchaseOrderDetailCard
             order={selectedOrderForDetail}
             onClose={handleCloseDetail}

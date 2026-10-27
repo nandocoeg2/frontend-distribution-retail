@@ -456,7 +456,7 @@ const SuratJalan = () => {
 
   return (
     <div className='h-full flex flex-col gap-2 min-h-0 overflow-hidden'>
-      <div className={`overflow-hidden bg-white rounded-lg shadow flex flex-col min-h-0 ${selectedSuratJalanForDetail ? 'flex-1' : 'h-full'}`}>
+      <div className={`overflow-hidden bg-white rounded-lg shadow flex flex-col min-h-0 ${selectedSuratJalanForDetail ? 'h-[60%]' : 'h-full'}`}>
         <div className='px-3 py-2 flex flex-col flex-1 min-h-0 space-y-2'>
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between shrink-0'>
             <h3 className='text-sm font-semibold text-gray-900'>Manajemen Surat Jalan</h3>
@@ -504,7 +504,7 @@ const SuratJalan = () => {
       <DeleteConfirmationDialog />
 
       {selectedSuratJalanForDetail && (
-        <div className='flex-1 min-h-0 flex flex-col overflow-hidden'>
+        <div className='h-[40%] min-h-0 flex flex-col overflow-hidden'>
           <SuratJalanDetailCard suratJalan={selectedSuratJalanForDetail} onClose={handleCloseDetail} loading={detailLoading} onUpdate={handleSuratJalanUpdated} />
         </div>
       )}
