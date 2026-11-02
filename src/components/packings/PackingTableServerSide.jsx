@@ -835,6 +835,21 @@ const PackingTableServerSide = forwardRef(({
     columns,
   });
 
+  const handleProcessWithTableOrder = () => {
+    if (!selectedPackings || selectedPackings.length === 0) {
+      return;
+    }
+    const selectedSet = new Set(selectedPackings);
+    const sortedRowIds = table.getRowModel().rows.map((r) => r.original?.id).filter(Boolean);
+    const orderedSelectedIds = sortedRowIds.filter((id) => selectedSet.has(id));
+
+    // Fallback if rows model doesn't cover all selected (e.g. cross-page if any)
+    const remainingIds = selectedPackings.filter((id) => !orderedSelectedIds.includes(id));
+    const finalOrderedIds = [...orderedSelectedIds, ...remainingIds];
+
+    onProcessSelected(finalOrderedIds);
+  };
+
   const actionDisabled = isProcessing || isCompleting || !hasSelectedPackings;
 
   return (
@@ -866,7 +881,7 @@ const PackingTableServerSide = forwardRef(({
             <CalendarIcon className="h-3 w-3 mr-1" />{editTanggalLoading ? '...' : 'Edit Tanggal'}
           </button>
           <button
-            onClick={onProcessSelected}
+            onClick={handleProcessWithTableOrder}
             disabled={actionDisabled}
             className="inline-flex items-center px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >

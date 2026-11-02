@@ -28,6 +28,11 @@ import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
+// Custom filter function for range filters so TanStack Table doesn't auto-remove
+// filters formatted as { min, max } using its default inNumberRange logic.
+const rangeColumnFilterFn = () => true;
+rangeColumnFilterFn.autoRemove = (val) => !val || ((val.min === '' || val.min == null) && (val.max === '' || val.max == null));
+
 
 
 const resolveStatusVariant = (status) => {
@@ -153,6 +158,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     tableOptions,
     filters,
     columnFilters,
+    sorting,
   } = useServerSideTable({
     queryHook: useLaporanPenerimaanBarangQuery,
     selectData: (response) => response?.reports ?? [],
@@ -163,7 +169,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
     columnFilterDebounceMs: 0,
     initialColumnFilters,
     storageKey: 'laporan-penerimaan-barang',
-    getQueryParams: useCallback(({ filters, ...rest }) => {
+    getQueryParams: useCallback(({ filters, sorting, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
 
@@ -179,12 +185,23 @@ const LaporanPenerimaanBarangTableServerSide = ({
         delete mappedFilters.tanggal_faktur;
       }
 
+      // Do not forward client-side virtual column filter to backend
+      if ('selisih' in mappedFilters) {
+        delete mappedFilters.selisih;
+      }
+
       if (companyId) {
         mappedFilters.companyId = companyId;
       }
 
+      // Do not forward client-side virtual column sorting to backend
+      const serverSorting = Array.isArray(sorting)
+        ? sorting.filter((s) => s.id !== 'selisih')
+        : sorting;
+
       return {
         ...rest,
+        sorting: serverSorting,
         filters: mappedFilters,
       };
     }, []),
@@ -784,6 +801,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.detailInvoice?.grand_total ?? null, {
         id: 'grandtotal_lpb',
+        filterFn: rangeColumnFilterFn,
         header: ({ column }) => (
           <div className="space-y-0.5">
             <div className="font-medium text-xs">Grandtotal LPB</div>
@@ -794,6 +812,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.grand_total ?? null, {
         id: 'grandtotal_invoice',
+        filterFn: rangeColumnFilterFn,
         header: ({ column }) => (
           <div className="space-y-0.5">
             <div className="font-medium text-xs">Grandtotal Inv</div>
@@ -802,20 +821,32 @@ const LaporanPenerimaanBarangTableServerSide = ({
         ),
         cell: (info) => <span className="font-medium">{info.getValue() ? formatCurrency(info.getValue()) : '-'}</span>,
       }),
-      columnHelper.display({
-        id: 'selisih',
-        header: () => <div className="font-medium text-xs">Selisih</div>,
-        cell: ({ row }) => {
-          const lpb = parseFloat(row.original.detailInvoice?.grand_total) || 0;
-          const inv = parseFloat(row.original.purchaseOrder?.invoice?.grand_total) || 0;
-          const diff = lpb - inv;
-          return (
-            <span className={`font-medium ${diff > 0 ? 'text-red-600' : diff < 0 ? 'text-green-600' : 'text-gray-600'}`}>
-              {formatCurrency(diff)}
-            </span>
-          );
+      columnHelper.accessor(
+        (row) => {
+          const lpb = parseFloat(row.detailInvoice?.grand_total) || 0;
+          const inv = parseFloat(row.purchaseOrder?.invoice?.grand_total) || 0;
+          return lpb - inv;
         },
-      }),
+        {
+          id: 'selisih',
+          filterFn: rangeColumnFilterFn,
+          header: ({ column }) => (
+            <div className="space-y-0.5">
+              <div className="font-medium text-xs">Selisih</div>
+              <RangeColumnFilter column={column} setPage={setPage} />
+            </div>
+          ),
+          cell: (info) => {
+            const diff = info.getValue() ?? 0;
+            return (
+              <span className={`font-medium ${diff > 0 ? 'text-red-600' : diff < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                {formatCurrency(diff)}
+              </span>
+            );
+          },
+          enableSorting: true,
+        }
+      ),
       columnHelper.display({
         id: 'actions',
         header: () => <div className="font-medium text-xs">Aksi</div>,
@@ -865,8 +896,38 @@ const LaporanPenerimaanBarangTableServerSide = ({
     ]
   );
 
+  const processedReports = useMemo(() => {
+    let data = reports || [];
+
+    // Filter client-side untuk selisih
+    const selisihFilter = columnFilters.find((f) => f.id === 'selisih')?.value;
+    if (selisihFilter && (selisihFilter.min !== '' || selisihFilter.max !== '')) {
+      const min = selisihFilter.min !== '' && selisihFilter.min != null ? parseFloat(selisihFilter.min) : -Infinity;
+      const max = selisihFilter.max !== '' && selisihFilter.max != null ? parseFloat(selisihFilter.max) : Infinity;
+      data = data.filter((row) => {
+        const lpb = parseFloat(row.detailInvoice?.grand_total) || 0;
+        const inv = parseFloat(row.purchaseOrder?.invoice?.grand_total) || 0;
+        const diff = lpb - inv;
+        return diff >= min && diff <= max;
+      });
+    }
+
+    // Sort client-side untuk selisih
+    const selisihSort = (sorting || []).find((s) => s.id === 'selisih');
+    if (selisihSort) {
+      data = [...data].sort((a, b) => {
+        const diffA = (parseFloat(a.detailInvoice?.grand_total) || 0) - (parseFloat(a.purchaseOrder?.invoice?.grand_total) || 0);
+        const diffB = (parseFloat(b.detailInvoice?.grand_total) || 0) - (parseFloat(b.purchaseOrder?.invoice?.grand_total) || 0);
+        return selisihSort.desc ? diffB - diffA : diffA - diffB;
+      });
+    }
+
+    return data;
+  }, [reports, columnFilters, sorting]);
+
   const table = useReactTable({
     ...tableOptions,
+    data: processedReports,
     columns,
   });
 

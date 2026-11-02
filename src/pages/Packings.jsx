@@ -97,9 +97,17 @@ const PackingsPage = () => {
     }
   }, [closeEditModal, editingPacking, refreshPackings, selectedPackingForDetail, setSelectedPackings, queryClient]);
 
-  const handleProcessSelected = useCallback(() => {
+  const [orderedProcessingIds, setOrderedProcessingIds] = useState(null);
+
+  const handleProcessSelected = useCallback((orderedIds = null) => {
     if (!hasSelectedPackings) {
       return;
+    }
+
+    if (Array.isArray(orderedIds) && orderedIds.length > 0) {
+      setOrderedProcessingIds(orderedIds);
+    } else {
+      setOrderedProcessingIds(null);
     }
 
     showProcessDialog({
@@ -114,16 +122,17 @@ const PackingsPage = () => {
   const handleConfirmProcess = useCallback(async () => {
     setProcessDialogLoading(true);
     try {
-      await handleProcessPackings();
+      await handleProcessPackings(orderedProcessingIds);
       // Invalidate queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ['packings'] });
       hideProcessDialog();
     } catch (processError) {
       console.error('Error processing packings:', processError);
     } finally {
+      setOrderedProcessingIds(null);
       setProcessDialogLoading(false);
     }
-  }, [handleProcessPackings, hideProcessDialog, setProcessDialogLoading, queryClient]);
+  }, [handleProcessPackings, hideProcessDialog, setProcessDialogLoading, queryClient, orderedProcessingIds]);
 
   const handleCompleteSelected = useCallback(() => {
     if (!hasSelectedPackings) {

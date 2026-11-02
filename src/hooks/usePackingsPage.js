@@ -238,15 +238,17 @@ const usePackingsPage = () => {
     }
   }, [packings, selectedPackings]);
 
-  const handleProcessPackings = useCallback(async () => {
-    if (selectedPackings.length === 0) {
+  const handleProcessPackings = useCallback(async (customIds = null) => {
+    const idsToProcess = Array.isArray(customIds) && customIds.length > 0 ? customIds : selectedPackings;
+
+    if (idsToProcess.length === 0) {
       toastService.error('Pilih minimal satu packing untuk diproses');
       return;
     }
 
     setIsProcessing(true);
     try {
-      const response = await processPackings(selectedPackings);
+      const response = await processPackings(idsToProcess);
       if (response?.success) {
         const { processedCount, processedPackingItemsCount } = response.data;
         toastService.success(`Berhasil memproses ${processedCount} packing dengan ${processedPackingItemsCount} item`);
