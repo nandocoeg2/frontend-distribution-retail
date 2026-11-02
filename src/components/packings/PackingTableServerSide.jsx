@@ -722,22 +722,26 @@ const PackingTableServerSide = forwardRef(({
           );
         },
       }),
-      columnHelper.accessor('updatedAt', {
-        id: 'print_date',
-        header: 'Tanggal Print Terakhir',
-        cell: (info) => {
-          const isPrinted = info.row.original.is_printed;
-          return isPrinted
-            ? new Date(info.getValue()).toLocaleDateString('id-ID', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-            : '-';
-        },
-      }),
+      columnHelper.accessor(
+        (row) => row.last_printed_at || (row.is_printed ? row.updatedAt : null),
+        {
+          id: 'print_date',
+          header: 'Tanggal Print Terakhir',
+          cell: (info) => {
+            const isPrinted = info.row.original.is_printed;
+            const val = info.getValue();
+            return isPrinted && val
+              ? new Date(val).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+              : '-';
+          },
+        }
+      ),
       columnHelper.accessor('status.status_name', {
         id: 'status',
         header: ({ column }) => (

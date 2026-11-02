@@ -255,68 +255,101 @@ const LaporanPenerimaanBarangTableServerSide = ({
 
   const dynamicPoOptions = useMemo(() => {
     const map = new Map();
+    let hasEmpty = false;
     (reports || []).forEach((item) => {
       const val = item.purchaseOrder?.po_number || item.po_number;
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
+      if (val) {
+        if (!map.has(val)) {
+          map.set(val, { id: val, name: val });
+        }
+      } else {
+        hasEmpty = true;
       }
     });
 
     const activeFilter = columnFilters.find((f) => f.id === 'po_number');
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
+      if (val && val !== '__EMPTY__' && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
 
-    return Array.from(map.values()).sort((a, b) =>
+    const sortedOptions = Array.from(map.values()).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
+
+    if (hasEmpty || selectedValues.includes('__EMPTY__')) {
+      sortedOptions.unshift({ id: '__EMPTY__', name: '(Kosong / Belum Assign)' });
+    }
+
+    return sortedOptions;
   }, [reports, columnFilters]);
 
   const dynamicNoPoPenggantiOptions = useMemo(() => {
     const map = new Map();
+    let hasEmpty = false;
     (reports || []).forEach((item) => {
       const val = item.no_po_pengganti;
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
+      if (val && val.trim() !== '') {
+        if (!map.has(val)) {
+          map.set(val, { id: val, name: val });
+        }
+      } else {
+        hasEmpty = true;
       }
     });
 
     const activeFilter = columnFilters.find((f) => f.id === 'no_po_pengganti');
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
+      if (val && val !== '__EMPTY__' && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
 
-    return Array.from(map.values()).sort((a, b) =>
+    const sortedOptions = Array.from(map.values()).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
+
+    if (hasEmpty || selectedValues.includes('__EMPTY__')) {
+      sortedOptions.unshift({ id: '__EMPTY__', name: '(Kosong / Tanpa PO Pengganti)' });
+    }
+
+    return sortedOptions;
   }, [reports, columnFilters]);
 
   const dynamicInvoiceOptions = useMemo(() => {
     const map = new Map();
+    let hasEmpty = false;
     (reports || []).forEach((item) => {
       const val = item.purchaseOrder?.invoice?.no_invoice || item.invoice;
-      if (val && !map.has(val)) {
-        map.set(val, { id: val, name: val });
+      if (val) {
+        if (!map.has(val)) {
+          map.set(val, { id: val, name: val });
+        }
+      } else {
+        hasEmpty = true;
       }
     });
 
     const activeFilter = columnFilters.find((f) => f.id === 'invoice');
     const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
     selectedValues.forEach((val) => {
-      if (val && !map.has(val)) {
+      if (val && val !== '__EMPTY__' && !map.has(val)) {
         map.set(val, { id: val, name: val });
       }
     });
 
-    return Array.from(map.values()).sort((a, b) =>
+    const sortedOptions = Array.from(map.values()).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
+
+    if (hasEmpty || selectedValues.includes('__EMPTY__')) {
+      sortedOptions.unshift({ id: '__EMPTY__', name: '(Kosong / Belum Ada Invoice)' });
+    }
+
+    return sortedOptions;
   }, [reports, columnFilters]);
 
   const statusOptions = useMemo(() => {
@@ -898,6 +931,48 @@ const LaporanPenerimaanBarangTableServerSide = ({
 
   const processedReports = useMemo(() => {
     let data = reports || [];
+
+    // Filter client-side untuk PO Number (termasuk __EMPTY__)
+    const poFilter = columnFilters.find((f) => f.id === 'po_number')?.value;
+    if (Array.isArray(poFilter) && poFilter.length > 0) {
+      const matchEmpty = poFilter.includes('__EMPTY__');
+      const actualValues = poFilter.filter((v) => v !== '__EMPTY__');
+      data = data.filter((row) => {
+        const poNum = row.purchaseOrder?.po_number || row.po_number;
+        const isEmpty = !poNum;
+        if (matchEmpty && isEmpty) return true;
+        if (actualValues.length > 0 && poNum && actualValues.includes(poNum)) return true;
+        return false;
+      });
+    }
+
+    // Filter client-side untuk No PO Pengganti (termasuk __EMPTY__)
+    const poPenggantiFilter = columnFilters.find((f) => f.id === 'no_po_pengganti')?.value;
+    if (Array.isArray(poPenggantiFilter) && poPenggantiFilter.length > 0) {
+      const matchEmpty = poPenggantiFilter.includes('__EMPTY__');
+      const actualValues = poPenggantiFilter.filter((v) => v !== '__EMPTY__');
+      data = data.filter((row) => {
+        const poPengganti = row.no_po_pengganti;
+        const isEmpty = !poPengganti || poPengganti.trim() === '';
+        if (matchEmpty && isEmpty) return true;
+        if (actualValues.length > 0 && poPengganti && actualValues.includes(poPengganti)) return true;
+        return false;
+      });
+    }
+
+    // Filter client-side untuk Invoice (termasuk __EMPTY__)
+    const invFilter = columnFilters.find((f) => f.id === 'invoice')?.value;
+    if (Array.isArray(invFilter) && invFilter.length > 0) {
+      const matchEmpty = invFilter.includes('__EMPTY__');
+      const actualValues = invFilter.filter((v) => v !== '__EMPTY__');
+      data = data.filter((row) => {
+        const invNum = row.purchaseOrder?.invoice?.no_invoice || row.invoice;
+        const isEmpty = !invNum;
+        if (matchEmpty && isEmpty) return true;
+        if (actualValues.length > 0 && invNum && actualValues.includes(invNum)) return true;
+        return false;
+      });
+    }
 
     // Filter client-side untuk selisih
     const selisihFilter = columnFilters.find((f) => f.id === 'selisih')?.value;
