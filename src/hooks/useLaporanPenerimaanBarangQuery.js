@@ -106,6 +106,17 @@ export const useLaporanPenerimaanBarangQuery = ({
           delete searchCriteria.tanggal_po;
         }
 
+        // Handle date range filter (tanggal_tiba with from/to)
+        if (searchCriteria.tanggal_tiba && typeof searchCriteria.tanggal_tiba === 'object') {
+          if (searchCriteria.tanggal_tiba.from) {
+            searchCriteria.tanggal_tiba_from = searchCriteria.tanggal_tiba.from;
+          }
+          if (searchCriteria.tanggal_tiba.to) {
+            searchCriteria.tanggal_tiba_to = searchCriteria.tanggal_tiba.to;
+          }
+          delete searchCriteria.tanggal_tiba;
+        }
+
         // Handle grandtotal_lpb filter (min/max)
         if (searchCriteria.grandtotal_lpb && typeof searchCriteria.grandtotal_lpb === 'object') {
           if (searchCriteria.grandtotal_lpb.min) {

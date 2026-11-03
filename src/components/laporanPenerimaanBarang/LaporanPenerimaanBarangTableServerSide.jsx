@@ -142,7 +142,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
 
   const initialColumnFilters = useMemo(() => [
     {
-      id: 'tanggal_po',
+      id: 'tanggal_tiba',
       value: { from: todayStr, to: todayStr },
     },
   ], [todayStr]);
@@ -172,6 +172,12 @@ const LaporanPenerimaanBarangTableServerSide = ({
     getQueryParams: useCallback(({ filters, sorting, ...rest }) => {
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
+
+      if (mappedFilters.tanggal_tiba && typeof mappedFilters.tanggal_tiba === 'object') {
+        if (mappedFilters.tanggal_tiba.from) mappedFilters.tanggal_tiba_from = mappedFilters.tanggal_tiba.from;
+        if (mappedFilters.tanggal_tiba.to) mappedFilters.tanggal_tiba_to = mappedFilters.tanggal_tiba.to;
+        delete mappedFilters.tanggal_tiba;
+      }
 
       if (mappedFilters.tanggal_po && typeof mappedFilters.tanggal_po === 'object') {
         if (mappedFilters.tanggal_po.from) mappedFilters.tanggal_po_from = mappedFilters.tanggal_po.from;
@@ -681,30 +687,33 @@ const LaporanPenerimaanBarangTableServerSide = ({
           ),
         }
       ),
-      columnHelper.accessor('tanggal_po', {
-        id: 'tanggal_po',
-        header: ({ column }) => {
-          const filterValue = column.getFilterValue() || { from: '', to: '' };
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tanggal LPB</div>
-              <div className="flex flex-col gap-0.5">
-                <DateFilter
-                  value={filterValue.from ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
-                  placeholder="Dari"
-                />
-                <DateFilter
-                  value={filterValue.to ?? ''}
-                  onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
-                  placeholder="Sampai"
-                />
+      columnHelper.accessor(
+        (row) => row.tanggal_tiba || row.tanggal_po || null,
+        {
+          id: 'tanggal_tiba',
+          header: ({ column }) => {
+            const filterValue = column.getFilterValue() || { from: '', to: '' };
+            return (
+              <div className="space-y-0.5">
+                <div className="font-medium text-xs">Tanggal LPB</div>
+                <div className="flex flex-col gap-0.5">
+                  <DateFilter
+                    value={filterValue.from ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, from: val }); setPage(1); }}
+                    placeholder="Dari"
+                  />
+                  <DateFilter
+                    value={filterValue.to ?? ''}
+                    onChange={(val) => { column.setFilterValue({ ...filterValue, to: val }); setPage(1); }}
+                    placeholder="Sampai"
+                  />
+                </div>
               </div>
-            </div>
-          );
-        },
-        cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
-      }),
+            );
+          },
+          cell: (info) => <span className="text-xs text-gray-600">{info.getValue() ? formatDate(info.getValue()) : '-'}</span>,
+        }
+      ),
       columnHelper.accessor('no_lpb', {
         id: 'no_lpb',
         header: ({ column }) => (
