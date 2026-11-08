@@ -30,6 +30,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Reporting from './pages/Reporting.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Users from './pages/Users.jsx';
+import LogError from './pages/LogError.jsx';
 import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
 import SettingProfile from './pages/SettingProfile.jsx';
@@ -144,6 +145,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <SettingProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/log-error'
+        element={
+          <ProtectedRoute>
+            <LogError />
           </ProtectedRoute>
         }
       />
