@@ -40,7 +40,8 @@ const AssignPurchaseOrderModal = ({
       }
 
       if (lpbData?.customerId) {
-        params.customerId = lpbData.customerId;
+        // Sertakan PO dari seluruh DC pecahan dalam induk yang sama (mis. Palembang + Bengkulu)
+        params.sameDcGroupAsCustomerId = lpbData.customerId;
       }
 
       if (query) {

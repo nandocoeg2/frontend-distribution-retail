@@ -557,15 +557,23 @@ const LaporanPenerimaanBarangModal = ({
         const data = result?.data || result;
         const successFiles = data?.successFiles;
         const errorFiles = data?.errorFiles;
+        const failedFiles = Array.isArray(data?.failedFiles) ? data.failedFiles : [];
+        const failedDetail = failedFiles
+          .slice(0, 3)
+          .map((f) => `${f.filename}: ${f.reason}`)
+          .join('; ');
+        const failedSuffix = failedDetail
+          ? ` — ${failedDetail}${failedFiles.length > 3 ? ` (+${failedFiles.length - 3} lainnya)` : ''}`
+          : '';
 
         // Show appropriate toast based on results
         if (typeof successFiles === 'number' && typeof errorFiles === 'number') {
           if (errorFiles === 0) {
             toastService.success(`${successFiles} file berhasil diproses (${methodLabel})`);
           } else if (successFiles === 0) {
-            toastService.error(`${errorFiles} file gagal diproses (${methodLabel})`);
+            toastService.error(`${errorFiles} file gagal diproses (${methodLabel})${failedSuffix}`);
           } else {
-            toastService.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`);
+            toastService.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})${failedSuffix}`);
           }
         } else {
           toastService.success(data?.message || `File uploaded successfully using ${methodLabel}!`);

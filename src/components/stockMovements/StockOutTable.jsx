@@ -41,7 +41,9 @@ const StockOutTable = forwardRef(({
         movement?.suratJalan?.purchaseOrder?.customer?.namaCustomer ||
         '-';
 
-      const movementDate = movement?.createdAt || null;
+      // Tanggal Stock Out = tanggal Surat Jalan (fallback ke createdAt bila tanpa Surat Jalan)
+      const movementDate =
+        movement?.suratJalan?.tanggal_surat_jalan || movement?.createdAt || null;
 
       const poNumber =
         movement?.no_po ||
@@ -426,15 +428,15 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
   // Define TanStack Table columns (11 columns matching user requirements)
   const columns = useMemo(
     () => [
-      // 1. Tgl
+      // 1. Tgl Surat Jalan
       columnHelper.accessor('tgl', {
         id: 'tgl',
-        size: 110,
+        size: 120,
         header: ({ column }) => {
           const filterValue = column.getFilterValue() || { from: '', to: '' };
           return (
             <div className="space-y-0.5">
-              <div className="font-medium text-xs">Tgl</div>
+              <div className="font-medium text-xs">Tgl Surat Jalan</div>
               <div className="flex flex-col gap-0.5">
                 <DateFilter
                   value={filterValue.from ?? ''}

@@ -71,7 +71,8 @@ describe('StockOutTable data transformation and calculation', () => {
         movement?.customerName ||
         '-';
 
-      const movementDate = movement?.createdAt || null;
+      const movementDate =
+        movement?.suratJalan?.tanggal_surat_jalan || movement?.createdAt || null;
       const poNumber = movement?.no_po || movement?.purchaseOrder?.po_number || '-';
       const invoiceNumber = movement?.no_invoice || '-';
 
