@@ -21,6 +21,32 @@ const defaultFormValues = {
   notes: '',
 };
 
+const MAX_REASON_LENGTH = 140;
+
+// Isi notifikasi: judul + daftar SEMUA file yang gagal (nama file & alasannya)
+export const UploadFailedFilesMessage = ({ title, failedFiles }) => (
+  <div>
+    <div>{title}</div>
+    {failedFiles.length > 0 && (
+      <ul
+        data-testid="failed-files-list"
+        style={{ margin: '6px 0 0', paddingLeft: 16, maxHeight: 180, overflowY: 'auto', fontSize: 12 }}
+      >
+        {failedFiles.map((f, idx) => {
+          const reason = String(f?.reason || 'Unknown error');
+          return (
+            <li key={`${f?.filename}-${idx}`} style={{ listStyle: 'disc', marginBottom: 2 }}>
+              <strong>{f?.filename || '(tanpa nama)'}</strong>
+              {' — '}
+              {reason.length > MAX_REASON_LENGTH ? `${reason.slice(0, MAX_REASON_LENGTH - 3)}...` : reason}
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+);
+
 const formatFileSize = (bytes) => {
   if (bytes === null || bytes === undefined) {
     return '-';
@@ -558,22 +584,29 @@ const LaporanPenerimaanBarangModal = ({
         const successFiles = data?.successFiles;
         const errorFiles = data?.errorFiles;
         const failedFiles = Array.isArray(data?.failedFiles) ? data.failedFiles : [];
-        const failedDetail = failedFiles
-          .slice(0, 3)
-          .map((f) => `${f.filename}: ${f.reason}`)
-          .join('; ');
-        const failedSuffix = failedDetail
-          ? ` — ${failedDetail}${failedFiles.length > 3 ? ` (+${failedFiles.length - 3} lainnya)` : ''}`
-          : '';
+        // Notifikasi gagal tetap tampil lebih lama agar daftar file bisa dibaca
+        const failedToastOptions = { autoClose: 20000 };
 
         // Show appropriate toast based on results
         if (typeof successFiles === 'number' && typeof errorFiles === 'number') {
           if (errorFiles === 0) {
             toastService.success(`${successFiles} file berhasil diproses (${methodLabel})`);
           } else if (successFiles === 0) {
-            toastService.error(`${errorFiles} file gagal diproses (${methodLabel})${failedSuffix}`);
+            toastService.error(
+              <UploadFailedFilesMessage
+                title={`${errorFiles} file gagal diproses (${methodLabel})`}
+                failedFiles={failedFiles}
+              />,
+              failedToastOptions
+            );
           } else {
-            toastService.warning(`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})${failedSuffix}`);
+            toastService.warning(
+              <UploadFailedFilesMessage
+                title={`${successFiles} file berhasil, ${errorFiles} file gagal (${methodLabel})`}
+                failedFiles={failedFiles}
+              />,
+              failedToastOptions
+            );
           }
         } else {
           toastService.success(data?.message || `File uploaded successfully using ${methodLabel}!`);
