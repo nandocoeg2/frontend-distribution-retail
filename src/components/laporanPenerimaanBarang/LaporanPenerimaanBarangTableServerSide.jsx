@@ -24,14 +24,45 @@ import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
 import TextColumnFilter from '../common/TextColumnFilter';
-import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
 
-// Custom filter function for range filters so TanStack Table doesn't auto-remove
-// filters formatted as { min, max } using its default inNumberRange logic.
-const rangeColumnFilterFn = () => true;
-rangeColumnFilterFn.autoRemove = (val) => !val || ((val.min === '' || val.min == null) && (val.max === '' || val.max == null));
+// Filter Selisih / Grandtotal LPB / Grandtotal Inv berbentuk checklist (seperti filter Excel);
+// disaring client-side di processedReports
+const selisihChecklistFilterFn = () => true;
+selisihChecklistFilterFn.autoRemove = (val) => !Array.isArray(val) || val.length === 0;
+
+const getSelisihValue = (row) => {
+  const lpb = parseFloat(row.detailInvoice?.grand_total) || 0;
+  const inv = parseFloat(row.purchaseOrder?.invoice?.grand_total) || 0;
+  return lpb - inv;
+};
+const getSelisihKey = (row) => String(Math.round(getSelisihValue(row) * 100) / 100);
+
+// Grandtotal LPB / Invoice: kunci filter = nilai dibulatkan 2 desimal, atau '__EMPTY__' bila belum ada
+const toAmountKey = (raw) => {
+  if (raw === null || raw === undefined || raw === '') return '__EMPTY__';
+  return String(Math.round((parseFloat(raw) || 0) * 100) / 100);
+};
+const getLpbTotalKey = (row) => toAmountKey(row.detailInvoice?.grand_total);
+const getInvoiceTotalKey = (row) => toAmountKey(row.purchaseOrder?.invoice?.grand_total);
+
+// Opsi checklist (nilai unik, urut naik, "(Kosong)" di paling atas jika ada)
+const buildAmountOptions = (rows, getKey, selectedValues, emptyLabel) => {
+  const map = new Map();
+  const add = (key) => {
+    if (map.has(key)) return;
+    map.set(
+      key,
+      key === '__EMPTY__'
+        ? { id: key, name: emptyLabel, sortValue: -Infinity }
+        : { id: key, name: formatCurrency(parseFloat(key)), sortValue: parseFloat(key) }
+    );
+  };
+  (rows || []).forEach((row) => add(getKey(row)));
+  selectedValues.forEach((val) => val != null && add(val));
+  return Array.from(map.values()).sort((a, b) => a.sortValue - b.sortValue);
+};
 
 
 
@@ -195,6 +226,9 @@ const LaporanPenerimaanBarangTableServerSide = ({
       if ('selisih' in mappedFilters) {
         delete mappedFilters.selisih;
       }
+      // Filter checklist Grandtotal LPB / Inv juga disaring di sisi klien
+      delete mappedFilters.grandtotal_lpb;
+      delete mappedFilters.grandtotal_invoice;
 
       if (companyId) {
         mappedFilters.companyId = companyId;
@@ -356,6 +390,36 @@ const LaporanPenerimaanBarangTableServerSide = ({
     }
 
     return sortedOptions;
+  }, [reports, columnFilters]);
+
+  const grandtotalLpbOptions = useMemo(() => {
+    const active = columnFilters.find((f) => f.id === 'grandtotal_lpb')?.value;
+    return buildAmountOptions(reports, getLpbTotalKey, Array.isArray(active) ? active : [], '(Kosong)');
+  }, [reports, columnFilters]);
+
+  const grandtotalInvoiceOptions = useMemo(() => {
+    const active = columnFilters.find((f) => f.id === 'grandtotal_invoice')?.value;
+    return buildAmountOptions(reports, getInvoiceTotalKey, Array.isArray(active) ? active : [], '(Kosong)');
+  }, [reports, columnFilters]);
+
+  const selisihOptions = useMemo(() => {
+    const map = new Map();
+    (reports || []).forEach((item) => {
+      const key = getSelisihKey(item);
+      if (!map.has(key)) {
+        map.set(key, { id: key, name: formatCurrency(parseFloat(key)), sortValue: parseFloat(key) });
+      }
+    });
+
+    const activeFilter = columnFilters.find((f) => f.id === 'selisih');
+    const selectedValues = Array.isArray(activeFilter?.value) ? activeFilter.value : [];
+    selectedValues.forEach((val) => {
+      if (val != null && !map.has(val)) {
+        map.set(val, { id: val, name: formatCurrency(parseFloat(val)), sortValue: parseFloat(val) });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.sortValue - b.sortValue);
   }, [reports, columnFilters]);
 
   const statusOptions = useMemo(() => {
@@ -843,22 +907,44 @@ const LaporanPenerimaanBarangTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.detailInvoice?.grand_total ?? null, {
         id: 'grandtotal_lpb',
-        filterFn: rangeColumnFilterFn,
+        filterFn: selisihChecklistFilterFn,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Grandtotal LPB</div>
-            <RangeColumnFilter column={column} setPage={setPage} />
+            <AutocompleteCheckboxLimitTag
+              options={grandtotalLpbOptions}
+              showSelectAll
+              value={Array.isArray(column.getFilterValue()) ? column.getFilterValue() : []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() ? formatCurrency(info.getValue()) : '-'}</span>,
       }),
       columnHelper.accessor((row) => row.purchaseOrder?.invoice?.grand_total ?? null, {
         id: 'grandtotal_invoice',
-        filterFn: rangeColumnFilterFn,
+        filterFn: selisihChecklistFilterFn,
         header: ({ column }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
             <div className="font-medium text-xs">Grandtotal Inv</div>
-            <RangeColumnFilter column={column} setPage={setPage} />
+            <AutocompleteCheckboxLimitTag
+              options={grandtotalInvoiceOptions}
+              showSelectAll
+              value={Array.isArray(column.getFilterValue()) ? column.getFilterValue() : []}
+              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+              placeholder="All"
+              displayKey="name"
+              valueKey="id"
+              limitTags={1}
+              size="small"
+              fetchOnClose
+            />
           </div>
         ),
         cell: (info) => <span className="font-medium">{info.getValue() ? formatCurrency(info.getValue()) : '-'}</span>,
@@ -871,11 +957,22 @@ const LaporanPenerimaanBarangTableServerSide = ({
         },
         {
           id: 'selisih',
-          filterFn: rangeColumnFilterFn,
+          filterFn: selisihChecklistFilterFn,
           header: ({ column }) => (
-            <div className="space-y-0.5">
+            <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
               <div className="font-medium text-xs">Selisih</div>
-              <RangeColumnFilter column={column} setPage={setPage} />
+              <AutocompleteCheckboxLimitTag
+                options={selisihOptions}
+                showSelectAll
+                value={Array.isArray(column.getFilterValue()) ? column.getFilterValue() : []}
+                onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+                placeholder="All"
+                displayKey="name"
+                valueKey="id"
+                limitTags={1}
+                size="small"
+                fetchOnClose
+              />
             </div>
           ),
           cell: (info) => {
@@ -935,6 +1032,9 @@ const LaporanPenerimaanBarangTableServerSide = ({
       dynamicPoOptions,
       dynamicNoPoPenggantiOptions,
       dynamicInvoiceOptions,
+      selisihOptions,
+      grandtotalLpbOptions,
+      grandtotalInvoiceOptions,
     ]
   );
 
@@ -983,17 +1083,20 @@ const LaporanPenerimaanBarangTableServerSide = ({
       });
     }
 
+    // Filter client-side untuk Grandtotal LPB dan Grandtotal Inv (checklist)
+    const lpbTotalFilter = columnFilters.find((f) => f.id === 'grandtotal_lpb')?.value;
+    if (Array.isArray(lpbTotalFilter) && lpbTotalFilter.length > 0) {
+      data = data.filter((row) => lpbTotalFilter.includes(getLpbTotalKey(row)));
+    }
+    const invTotalFilter = columnFilters.find((f) => f.id === 'grandtotal_invoice')?.value;
+    if (Array.isArray(invTotalFilter) && invTotalFilter.length > 0) {
+      data = data.filter((row) => invTotalFilter.includes(getInvoiceTotalKey(row)));
+    }
+
     // Filter client-side untuk selisih
     const selisihFilter = columnFilters.find((f) => f.id === 'selisih')?.value;
-    if (selisihFilter && (selisihFilter.min !== '' || selisihFilter.max !== '')) {
-      const min = selisihFilter.min !== '' && selisihFilter.min != null ? parseFloat(selisihFilter.min) : -Infinity;
-      const max = selisihFilter.max !== '' && selisihFilter.max != null ? parseFloat(selisihFilter.max) : Infinity;
-      data = data.filter((row) => {
-        const lpb = parseFloat(row.detailInvoice?.grand_total) || 0;
-        const inv = parseFloat(row.purchaseOrder?.invoice?.grand_total) || 0;
-        const diff = lpb - inv;
-        return diff >= min && diff <= max;
-      });
+    if (Array.isArray(selisihFilter) && selisihFilter.length > 0) {
+      data = data.filter((row) => selisihFilter.includes(getSelisihKey(row)));
     }
 
     // Sort client-side untuk selisih

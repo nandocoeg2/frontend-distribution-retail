@@ -3,6 +3,26 @@ import authService from './authService';
 
 const API_BASE_URL = `${process.env.BACKEND_BASE_URL}api/v1`;
 
+// Deteksi tipe file dari "magic bytes" (PDF / PNG / JPEG / GIF / WEBP / BMP)
+export const detectFileType = async (blob) => {
+  try {
+    const head = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+    const startsWith = (...bytes) => bytes.every((b, i) => head[i] === b);
+
+    if (startsWith(0x25, 0x50, 0x44, 0x46)) return { mime: 'application/pdf', ext: 'pdf' }; // %PDF
+    if (startsWith(0x89, 0x50, 0x4e, 0x47)) return { mime: 'image/png', ext: 'png' };
+    if (startsWith(0xff, 0xd8, 0xff)) return { mime: 'image/jpeg', ext: 'jpg' };
+    if (startsWith(0x47, 0x49, 0x46, 0x38)) return { mime: 'image/gif', ext: 'gif' };
+    if (startsWith(0x42, 0x4d)) return { mime: 'image/bmp', ext: 'bmp' };
+    if (startsWith(0x52, 0x49, 0x46, 0x46) && head[8] === 0x57 && head[9] === 0x45) {
+      return { mime: 'image/webp', ext: 'webp' };
+    }
+  } catch (_) {
+    // abaikan; pakai tipe dari header
+  }
+  return null;
+};
+
 class LaporanPenerimaanBarangService {
   constructor() {
     this.api = axios.create({
@@ -324,14 +344,24 @@ class LaporanPenerimaanBarangService {
       const contentDisposition = response.headers['content-disposition'];
       let filename = 'lpb-file.pdf';
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        // Toleran terhadap spasi di sekitar "=" (mis. `inline; filename = "x.pdf"`)
+        const filenameMatch = contentDisposition.match(/filename\s*=\s*"?([^";]+)"?/i);
         if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1];
+          filename = filenameMatch[1].trim();
         }
       }
 
-      const contentType = response.headers['content-type'] || 'application/pdf';
+      let contentType = response.headers['content-type'] || 'application/pdf';
       const blob = response.data instanceof Blob ? response.data : new Blob([response.data], { type: contentType });
+
+      // Tentukan tipe file sebenarnya dari isi file, bukan dari header/nama file yang bisa salah
+      const sniffedType = await detectFileType(blob);
+      if (sniffedType) {
+        contentType = sniffedType.mime;
+        if (!filename.toLowerCase().endsWith(`.${sniffedType.ext}`)) {
+          filename = filename.replace(/\.[^./\\]+$/, '') + `.${sniffedType.ext}`;
+        }
+      }
 
       return {
         blob,

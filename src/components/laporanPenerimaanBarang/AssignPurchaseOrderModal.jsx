@@ -3,6 +3,11 @@ import { XMarkIcon, LinkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/ou
 import purchaseOrderService from '../../services/purchaseOrderService';
 import { formatCurrency, formatDate } from '../../utils/formatUtils';
 
+// Tanggal expired harus sama dengan kolom "Tgl Expired" di halaman Packing,
+// yaitu purchaseOrder.delivery_date (bukan tanggal_batas_kirim).
+export const getPoExpiredDate = (po) =>
+  po?.delivery_date || po?.tanggal_expired || po?.expired_date || po?.tanggal_batas_kirim || null;
+
 const AssignPurchaseOrderModal = ({
   show,
   onClose,
@@ -45,7 +50,8 @@ const AssignPurchaseOrderModal = ({
       }
 
       if (query) {
-        params.po_number = query;
+        // Cari berdasarkan No. PO atau Nama DC
+        params.search = query;
       }
 
       const response = await purchaseOrderService.getPurchaseOrders(params);
@@ -156,7 +162,7 @@ const AssignPurchaseOrderModal = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari No. PO..."
+                placeholder="Cari No. PO atau Nama DC..."
                 className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -200,7 +206,7 @@ const AssignPurchaseOrderModal = ({
                         (po.purchaseOrderDetails && Array.isArray(po.purchaseOrderDetails) && po.purchaseOrderDetails.length > 0
                           ? po.purchaseOrderDetails.reduce((acc, item) => acc + (Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.qty) || 0)), 0)
                           : null);
-                      const expiredDate = po.tanggal_batas_kirim || po.delivery_date || po.tanggal_expired || po.expired_date || null;
+                      const expiredDate = getPoExpiredDate(po);
                       return (
                         <tr
                           key={po.id}
@@ -250,7 +256,7 @@ const AssignPurchaseOrderModal = ({
                 (selectedPO.purchaseOrderDetails && Array.isArray(selectedPO.purchaseOrderDetails) && selectedPO.purchaseOrderDetails.length > 0
                   ? selectedPO.purchaseOrderDetails.reduce((acc, item) => acc + (Number(item.total_harga) || (Number(item.harga) || 0) * (Number(item.qty) || 0)), 0)
                   : null);
-              const selectedExpiredDate = selectedPO.tanggal_batas_kirim || selectedPO.delivery_date || selectedPO.tanggal_expired || selectedPO.expired_date || null;
+              const selectedExpiredDate = getPoExpiredDate(selectedPO);
               return (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-xs">
                   <div className="flex items-center gap-1.5">
