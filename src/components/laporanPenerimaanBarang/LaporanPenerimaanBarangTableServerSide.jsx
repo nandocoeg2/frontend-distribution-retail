@@ -110,6 +110,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
   onFiltersChange,
   onOpenGenerateDialog,
   isGenerating = false,
+  onAssignmentChanged,
 }) => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedLpbForAssign, setSelectedLpbForAssign] = useState(null);
@@ -502,6 +503,8 @@ const LaporanPenerimaanBarangTableServerSide = ({
       setSelectedLpbForAssign(null);
       setSelectedPurchaseOrderId(null);
       // Cache will be automatically invalidated by the mutation
+      // Panel detail (jika sedang membuka LPB ini) dimuat ulang agar PO & status terbaru tampil
+      onAssignmentChanged?.(reportId);
     } catch (error) {
       console.error('Error assigning purchase order:', error);
     }
@@ -529,6 +532,7 @@ const LaporanPenerimaanBarangTableServerSide = ({
       setShowUnassignConfirmation(false);
       setLpbToUnassign(null);
       // Cache will be automatically invalidated by the mutation
+      onAssignmentChanged?.(reportId);
     } catch (error) {
       console.error('Error unassigning purchase order:', error);
     }

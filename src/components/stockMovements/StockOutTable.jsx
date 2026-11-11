@@ -41,9 +41,13 @@ const StockOutTable = forwardRef(({
         movement?.suratJalan?.purchaseOrder?.customer?.namaCustomer ||
         '-';
 
-      // Tanggal Stock Out = tanggal Surat Jalan (fallback ke createdAt bila tanpa Surat Jalan)
+      // Tanggal Stock Out = tanggal faktur di Packing (sama dengan halaman Surat Jalan & Invoice Pengiriman),
+      // bukan tanggal saat checklist dibuat. Fallback: tanggal Surat Jalan, lalu createdAt bila tanpa Surat Jalan.
       const movementDate =
-        movement?.suratJalan?.tanggal_surat_jalan || movement?.createdAt || null;
+        movement?.suratJalan?.purchaseOrder?.packing?.tanggal_packing ||
+        movement?.suratJalan?.tanggal_surat_jalan ||
+        movement?.createdAt ||
+        null;
 
       const poNumber =
         movement?.no_po ||
@@ -232,7 +236,22 @@ const StockOutTable = forwardRef(({
       }
     });
 
-    return flatRows;
+    // Stock out yang dibatalkan (status REJECTED) hanya riwayat: tidak memotong stok,
+    // jadi semua angkanya 0 (agar total di footer tidak ikut terhitung) + ada keterangan alasan.
+    return flatRows.map((row) => {
+      const cancelled = row.source?.status === 'REJECTED';
+      if (!cancelled) return { ...row, cancelled: false, keterangan: '' };
+      return {
+        ...row,
+        cancelled: true,
+        keterangan: row.source?.notes || 'Dibatalkan',
+        totalPengiriman: 0,
+        poQuantity: 0,
+        selisih: 0,
+        totalLpb: 0,
+        stokGantung: 0,
+      };
+    });
   }, []);
 
   const globalFilterConfig = useMemo(
@@ -352,6 +371,10 @@ const matchesStockOutFilter = (row, filterId, filterValue) => {
     const val = String(row.stokGantung ?? '');
     return val.includes(String(filterValue).trim());
   }
+  if (filterId === 'keterangan') {
+    const val = String(row.keterangan ?? '').toLowerCase();
+    return val.includes(String(filterValue).trim().toLowerCase());
+  }
 
   return true;
 };
@@ -428,7 +451,7 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
   // Define TanStack Table columns (11 columns matching user requirements)
   const columns = useMemo(
     () => [
-      // 1. Tgl Surat Jalan
+      // 1. Tgl Surat Jalan (isinya tanggal faktur di Packing)
       columnHelper.accessor('tgl', {
         id: 'tgl',
         size: 120,
@@ -767,6 +790,32 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
           return val.includes(String(filterValue).trim());
         },
       }),
+
+      // 12. Keterangan (alasan pembatalan untuk stock out yang dibatalkan)
+      columnHelper.accessor('keterangan', {
+        id: 'keterangan',
+        size: 220,
+        header: ({ column }) => (
+          <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-medium text-xs">Keterangan</div>
+            <TextColumnFilter column={column} placeholder="Filter..." />
+          </div>
+        ),
+        cell: (info) => {
+          const val = info.getValue();
+          if (!val) return <span className="text-xs text-gray-400">-</span>;
+          return (
+            <span className="text-xs text-red-600 whitespace-normal" title={val}>
+              {val}
+            </span>
+          );
+        },
+        filterFn: (row, columnId, filterValue) => {
+          if (filterValue == null || filterValue === '') return true;
+          const val = String(row.getValue(columnId) ?? '').toLowerCase();
+          return val.includes(String(filterValue).trim().toLowerCase());
+        },
+      }),
     ],
     [invoiceOptions, customerOptions, namaBarangOptions, poOptions]
   );
@@ -825,6 +874,10 @@ const getMatchingStockOutRowsExcluding = (rows, columnFilters, excludeFilterId) 
         getRowClassName={({ row }) => {
           if (selectedMovementId && (row.original.movementId === selectedMovementId || row.original.id === selectedMovementId)) {
             return 'bg-blue-200 border-l-4 border-blue-600 font-medium text-gray-900';
+          }
+          // Riwayat batal: ditandai merah muda & teks pudar (tidak memotong stok)
+          if (row.original.cancelled) {
+            return 'bg-red-50 text-gray-500';
           }
           return undefined;
         }}

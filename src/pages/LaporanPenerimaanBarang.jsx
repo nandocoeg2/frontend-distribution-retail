@@ -405,6 +405,21 @@ const LaporanPenerimaanBarang = () => {
     }
   }, [fetchReportById]);
 
+  // Setelah assign/unassign PO, muat ulang panel detail bila LPB yang sama sedang dibuka
+  const handleAssignmentChanged = useCallback(async (reportId) => {
+    if (!reportId || selectedReportForDetail?.id !== reportId) {
+      return;
+    }
+    try {
+      const detail = await fetchReportById(reportId);
+      if (detail) {
+        setSelectedReportForDetail(detail);
+      }
+    } catch (error) {
+      console.error('Failed to refresh laporan penerimaan barang detail:', error);
+    }
+  }, [fetchReportById, selectedReportForDetail?.id]);
+
   const handleCloseDetail = useCallback(() => {
     setSelectedReportForDetail(null);
     setDetailLoading(false);
@@ -487,6 +502,7 @@ const LaporanPenerimaanBarang = () => {
               onFiltersChange={handleFiltersChange}
               onOpenGenerateDialog={openGenerateDialog}
               isGenerating={isGenerating}
+              onAssignmentChanged={handleAssignmentChanged}
             />
           </div>
         </div>
