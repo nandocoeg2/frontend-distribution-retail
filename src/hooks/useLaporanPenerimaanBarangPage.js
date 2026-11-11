@@ -112,9 +112,8 @@ const useLaporanPenerimaanBarangPage = () => {
           );
         }
 
-        toastService.success(
-          result?.message || 'Bulk upload LPB dengan Text Extraction berhasil.'
-        );
+        // Tidak menampilkan toast "berhasil" di sini: prosesnya sinkron dan sebagian file
+        // bisa gagal. Hasil sebenarnya (berhasil/gagal + daftar file gagal) ditampilkan modal.
         return result?.data || result;
       } catch (error) {
         if (isAuthError(error)) {

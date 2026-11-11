@@ -98,6 +98,15 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
+// Nilai filter tanggal bisa berupa rentang {from, to} atau (data lama di storage) satu tanggal string
+export const normalizeDateRange = (value) => {
+  if (typeof value === 'string') return { from: value, to: value };
+  if (value && typeof value === 'object') {
+    return { from: value.from ?? '', to: value.to ?? '' };
+  }
+  return { from: '', to: '' };
+};
+
 const resolveStatusText = (status) => {
   if (typeof status === 'string') {
     return status;
@@ -149,6 +158,12 @@ const CheckingListTableServerSide = ({
       mappedFilters.companyId = companyId;
     }
 
+    // Filter tanggal berupa rentang {from, to} -> tanggal_from / tanggal_to
+    const range = normalizeDateRange(mappedFilters.tanggal);
+    if (range.from) mappedFilters.tanggal_from = range.from;
+    if (range.to) mappedFilters.tanggal_to = range.to;
+    delete mappedFilters.tanggal;
+
     return {
       ...rest,
       filters: mappedFilters,
@@ -166,7 +181,7 @@ const CheckingListTableServerSide = ({
   const initialColumnFilters = useMemo(() => [
     {
       id: 'tanggal',
-      value: todayStr,
+      value: { from: todayStr, to: todayStr },
     },
   ], [todayStr]);
 
@@ -418,18 +433,32 @@ const CheckingListTableServerSide = ({
         enableColumnFilter: false,
       }),
       columnHelper.accessor('tanggal', {
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Tanggal</div>
-            <DateFilter
-              value={column.getFilterValue() ?? ''}
-              onChange={(val) => {
-                column.setFilterValue(val);
-                setPage(1);
-              }}
-            />
-          </div>
-        ),
+        header: ({ column }) => {
+          const filterValue = normalizeDateRange(column.getFilterValue());
+          return (
+            <div className="space-y-1">
+              <div className="font-medium text-xs">Tanggal</div>
+              <div className="flex flex-col gap-1">
+                <DateFilter
+                  value={filterValue.from}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, from: val });
+                    setPage(1);
+                  }}
+                  placeholder="Dari"
+                />
+                <DateFilter
+                  value={filterValue.to}
+                  onChange={(val) => {
+                    column.setFilterValue({ ...filterValue, to: val });
+                    setPage(1);
+                  }}
+                  placeholder="Sampai"
+                />
+              </div>
+            </div>
+          );
+        },
         cell: (info) => (
           <span className="text-xs text-gray-600">
             {info.getValue() ? formatDate(info.getValue()) : '-'}
