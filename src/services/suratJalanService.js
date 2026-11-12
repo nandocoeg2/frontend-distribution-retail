@@ -280,13 +280,30 @@ class SuratJalanService {
       const params = new URLSearchParams();
 
       // Add filters to query params
-      if (filters.no_surat_jalan) params.append('no_surat_jalan', filters.no_surat_jalan);
-      if (filters.po_number) params.append('po_number', filters.po_number);
-      if (filters.no_invoice) params.append('no_invoice', filters.no_invoice);
-      if (filters.deliver_to) params.append('deliver_to', filters.deliver_to);
-      if (filters.status_code) params.append('status_code', filters.status_code);
-      if (filters.is_printed !== undefined && filters.is_printed !== '') {
-        params.append('is_printed', filters.is_printed);
+      // Multi-select filters are arrays: append each value separately so the
+      // backend receives a real list (not one comma-joined string).
+      const appendFilter = (key, value) => {
+        if (Array.isArray(value)) {
+          value.forEach((v) => {
+            if (v !== undefined && v !== null && v !== '') params.append(key, v);
+          });
+        } else if (value !== undefined && value !== null && value !== '') {
+          params.append(key, value);
+        }
+      };
+
+      appendFilter('no_surat_jalan', filters.no_surat_jalan);
+      appendFilter('po_number', filters.po_number);
+      appendFilter('no_invoice', filters.no_invoice);
+      appendFilter('deliver_to', filters.deliver_to);
+      appendFilter('status_code', filters.status_code);
+      appendFilter('is_printed', filters.is_printed);
+
+      // Date range (same range as the table)
+      const dateRange = filters.tanggal_surat_jalan;
+      if (dateRange && typeof dateRange === 'object') {
+        appendFilter('tanggal_surat_jalan_from', dateRange.from);
+        appendFilter('tanggal_surat_jalan_to', dateRange.to);
       }
 
       const queryString = params.toString();
