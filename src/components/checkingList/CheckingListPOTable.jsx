@@ -5,12 +5,19 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { DataTable } from '../table';
 import { formatDate } from '../../utils/formatUtils';
 
 const columnHelper = createColumnHelper();
 
-const CheckingListPOTable = ({ suratJalan = [] }) => {
+const CheckingListPOTable = ({
+  suratJalan = [],
+  onRemove,
+  removeDisabled = false,
+  removeDisabledReason = '',
+  removingId = null,
+}) => {
   const [columnSizing, setColumnSizing] = useState({});
   const [sorting, setSorting] = useState([]);
 
@@ -42,6 +49,7 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
         sj?.purchaseOrder?.invoice?.no_invoice ||
         '-',
       tanggal: sj?.tanggal_surat_jalan || sj?.tanggal || sj?.createdAt || null,
+      raw: sj,
     }));
   }, [suratJalan]);
 
@@ -99,8 +107,38 @@ const CheckingListPOTable = ({ suratJalan = [] }) => {
           </span>
         ),
       }),
+      ...(onRemove
+        ? [
+            columnHelper.display({
+              id: 'actions',
+              header: 'Aksi',
+              enableSorting: false,
+              cell: ({ row }) => {
+                const item = row.original;
+                const isRemoving = removingId === item.id;
+                const disabled = removeDisabled || isRemoving;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onRemove(item.raw)}
+                    disabled={disabled}
+                    title={
+                      removeDisabled && removeDisabledReason
+                        ? removeDisabledReason
+                        : 'Hapus dari checklist'
+                    }
+                    aria-label={`Hapus ${item.no_surat_jalan} dari checklist`}
+                    className="p-1 text-red-600 rounded hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                );
+              },
+            }),
+          ]
+        : []),
     ],
-    []
+    [onRemove, removeDisabled, removeDisabledReason, removingId]
   );
 
   const table = useReactTable({

@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CheckingListDetailCard from '../../components/checkingList/CheckingListDetailCard';
+import checkingListService from '../../services/checkingListService';
 
 describe('CheckingListDetailCard', () => {
   it('renders tabs and details correctly', () => {
@@ -50,5 +51,51 @@ describe('CheckingListDetailCard', () => {
 
     // Check Tambah Faktur / Surat Jalan button exists
     expect(screen.getByRole('button', { name: /Tambah Faktur \/ Surat Jalan/i })).toBeDefined();
+  });
+
+  const buildChecklist = (statusCode = 'PENDING CHECKLIST SURAT JALAN') => ({
+    id: 'chk-1',
+    status: { status_code: statusCode },
+    suratJalan: [
+      { id: 'sj-1', no_surat_jalan: 'SJ-PARUNG', purchaseOrder: { po_number: 'PO-1' } },
+      { id: 'sj-2', no_surat_jalan: 'SJ-KARAWANG', purchaseOrder: { po_number: 'PO-2' } },
+    ],
+    auditTrails: [],
+  });
+
+  it('removes a surat jalan from the checklist after confirmation', async () => {
+    const assignSpy = vi
+      .spyOn(checkingListService, 'assignSuratJalan')
+      .mockResolvedValue({ data: { id: 'chk-1' } });
+    const onUpdate = vi.fn();
+
+    render(<CheckingListDetailCard checklist={buildChecklist()} onUpdate={onUpdate} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Hapus SJ-KARAWANG dari checklist/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Hapus$/ }));
+
+    await waitFor(() => expect(assignSpy).toHaveBeenCalledWith('chk-1', ['sj-1']));
+    await waitFor(() => expect(onUpdate).toHaveBeenCalled());
+    assignSpy.mockRestore();
+  });
+
+  it('disables removal when only one surat jalan is left', () => {
+    const checklist = buildChecklist();
+    checklist.suratJalan = [checklist.suratJalan[0]];
+    render(<CheckingListDetailCard checklist={checklist} onUpdate={() => {}} />);
+
+    const btn = screen.getByRole('button', { name: /Hapus SJ-PARUNG dari checklist/i });
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('disables removal for completed checklists', () => {
+    render(
+      <CheckingListDetailCard
+        checklist={buildChecklist('COMPLETED CHECKLIST SURAT JALAN')}
+        onUpdate={() => {}}
+      />
+    );
+    const btn = screen.getByRole('button', { name: /Hapus SJ-PARUNG dari checklist/i });
+    expect(btn.disabled).toBe(true);
   });
 });

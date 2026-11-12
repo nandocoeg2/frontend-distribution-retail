@@ -13,6 +13,7 @@ import {
   TabPanel,
   StatusBadge,
   InfoTable,
+  ConfirmationDialog,
 } from '../ui';
 import ActivityTimeline from '../common/ActivityTimeline';
 import { getAuditTrails } from '../../services/auditTrailService';
@@ -65,6 +66,8 @@ const CheckingListDetailCard = ({
   const [activeTab, setActiveTab] = useState('po');
   const [showAddModal, setShowAddModal] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   useEffect(() => {
     if (checklist) {
@@ -141,6 +144,45 @@ const CheckingListDetailCard = ({
       );
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  // Removing is blocked for finished checklists and when it would leave the
+  // checklist empty (the whole checklist is deleted from the list page instead).
+  const isFinalStatus = statusVariant === 'success' || statusVariant === 'danger';
+  const isLastDocument = suratJalanData.length <= 1;
+  const removeDisabled = isFinalStatus || isLastDocument;
+  const removeDisabledReason = isFinalStatus
+    ? 'Checklist sudah selesai / dibatalkan, dokumen tidak bisa dihapus'
+    : isLastDocument
+      ? 'Checklist minimal memiliki 1 surat jalan. Gunakan tombol Hapus pada daftar checklist untuk menghapus seluruh checklist'
+      : '';
+
+  const handleConfirmRemove = async () => {
+    if (!removeTarget) return;
+    setIsRemoving(true);
+    try {
+      const remainingIds = suratJalanData
+        .map((sj) => sj.id)
+        .filter((id) => id !== removeTarget.id);
+
+      const response = await checkingListService.assignSuratJalan(checklist.id, remainingIds);
+      const updatedData = response?.data || response;
+      toastService.success(
+        `Surat Jalan ${removeTarget.no_surat_jalan || ''} berhasil dihapus dari checklist`.replace(/\s+/g, ' ')
+      );
+      setRemoveTarget(null);
+
+      if (onUpdate) {
+        await onUpdate(updatedData);
+      }
+    } catch (err) {
+      console.error('Failed to remove surat jalan from checklist:', err);
+      toastService.error(
+        err?.response?.data?.message || err.message || 'Gagal menghapus Surat Jalan dari checklist'
+      );
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -230,7 +272,13 @@ const CheckingListDetailCard = ({
                   </button>
                 </div>
                 <div className="overflow-auto max-h-full bg-white border border-gray-200 rounded">
-                  <CheckingListPOTable suratJalan={suratJalanData} />
+                  <CheckingListPOTable
+                    suratJalan={suratJalanData}
+                    onRemove={setRemoveTarget}
+                    removeDisabled={removeDisabled}
+                    removeDisabledReason={removeDisabledReason}
+                    removingId={isRemoving ? removeTarget?.id : null}
+                  />
                 </div>
               </div>
             </TabPanel>
@@ -264,6 +312,18 @@ const CheckingListDetailCard = ({
           </TabContent>
         </div>
       )}
+
+      <ConfirmationDialog
+        show={!!removeTarget}
+        onClose={() => !isRemoving && setRemoveTarget(null)}
+        onConfirm={handleConfirmRemove}
+        title="Hapus dari Checklist"
+        message={`Hapus surat jalan ${removeTarget?.no_surat_jalan || ''} dari checklist ini? Stok yang sudah keluar akan dikembalikan dan status surat jalan kembali menjadi Draft.`}
+        confirmText="Hapus"
+        cancelText="Batal"
+        type="danger"
+        loading={isRemoving}
+      />
 
       {/* Modal to pick and add draft Surat Jalan / Faktur */}
       <AddSuratJalanToChecklistModal
