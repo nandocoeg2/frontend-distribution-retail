@@ -1116,13 +1116,29 @@ const LaporanPenerimaanBarangTableServerSide = ({
       data = data.filter((row) => selisihFilter.includes(getSelisihKey(row)));
     }
 
-    // Sort client-side untuk selisih
-    const selisihSort = (sorting || []).find((s) => s.id === 'selisih');
-    if (selisihSort) {
+    // Sort client-side untuk kolom yang tidak didukung backend (selisih, invoice, no PO, customer, status).
+    // Data dimuat sekaligus (limit 9999), jadi aman diurutkan di sisi klien.
+    const CLIENT_SORT_GETTERS = {
+      selisih: (r) => (parseFloat(r.detailInvoice?.grand_total) || 0) - (parseFloat(r.purchaseOrder?.invoice?.grand_total) || 0),
+      invoice: (r) => r.purchaseOrder?.invoice?.no_invoice ?? r.invoice ?? null,
+      po_number: (r) => r.purchaseOrder?.po_number ?? r.po_number ?? null,
+      customerIds: (r) => r.customer?.namaCustomer ?? null,
+      status_codes: (r) => r.status?.status_name ?? null,
+    };
+    const clientSort = (sorting || []).find((s) => CLIENT_SORT_GETTERS[s.id]);
+    if (clientSort) {
+      const getValue = CLIENT_SORT_GETTERS[clientSort.id];
+      const dir = clientSort.desc ? -1 : 1;
       data = [...data].sort((a, b) => {
-        const diffA = (parseFloat(a.detailInvoice?.grand_total) || 0) - (parseFloat(a.purchaseOrder?.invoice?.grand_total) || 0);
-        const diffB = (parseFloat(b.detailInvoice?.grand_total) || 0) - (parseFloat(b.purchaseOrder?.invoice?.grand_total) || 0);
-        return selisihSort.desc ? diffB - diffA : diffA - diffB;
+        const va = getValue(a);
+        const vb = getValue(b);
+        const emptyA = va === null || va === undefined || va === '';
+        const emptyB = vb === null || vb === undefined || vb === '';
+        if (emptyA && emptyB) return 0;
+        if (emptyA) return 1; // kosong selalu di bawah
+        if (emptyB) return -1;
+        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+        return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' }) * dir;
       });
     }
 
