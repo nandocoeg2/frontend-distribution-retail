@@ -49,6 +49,30 @@ const resolveStatusVariant = (status) => {
   return 'default';
 };
 
+// Kolom yang tidak didukung sortBy backend -> di-sort di sisi klien (data dimuat sekaligus, limit 9999)
+const SERVER_SORTABLE = [
+  'tanggal',
+  'customer_names',
+  'top_codes',
+  'grand_total',
+  'tanggal_print_ttf1',
+  'tanggal_upload_ttf2',
+  'tanggal_jatuh_tempo',
+  'tanggal_bayar',
+  'total_payment',
+  'status',
+  'createdAt',
+  'updatedAt',
+];
+
+const getSelisih = (row) => (Number(row?.grand_total) || 0) - (Number(row?.bankMutation?.jumlah) || 0);
+
+const CLIENT_SORT_GETTERS = {
+  invoice_no: (row) => row?.invoicePenagihan?.no_invoice_penagihan || null,
+  selisih: getSelisih,
+  keterangan: (row) => row?.keterangan || row?.bankMutation?.keterangan || null,
+};
+
 const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
   const {
     onView,
@@ -102,8 +126,16 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
   );
 
   const getQueryParams = useMemo(
-    () => ({ filters, ...rest }) => {
+    () => ({ filters, sorting, ...rest }) => {
       const mappedFilters = { ...filters };
+
+      // Filter selisih diproses di sisi klien (kolom turunan, tidak ada di backend)
+      delete mappedFilters.selisih;
+
+      // Hanya teruskan kolom sort yang diterima backend
+      const serverSorting = Array.isArray(sorting)
+        ? sorting.filter((s) => SERVER_SORTABLE.includes(s.id))
+        : sorting;
 
       // Handle date range
       if (mappedFilters.tanggal) {
@@ -242,6 +274,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
 
       return {
         ...rest,
+        ...(serverSorting !== undefined ? { sorting: serverSorting } : {}),
         filters: {
           ...mappedFilters,
           ...(companyId ? { companyId } : {}),
@@ -277,6 +310,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
     resetFilters,
     tableOptions,
     columnFilters,
+    sorting,
   } = useServerSideTable({
     queryHook: useTandaTerimaFakturQuery,
     selectData: (response) => response?.tandaTerimaFakturs ?? [],
@@ -389,11 +423,43 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
     { value: 'RETUR & REBATE', label: 'Retur & Rebate' },
   ], []);
 
+  // Filter selisih (range) + sort kolom non-backend di sisi klien
+  const processedTTFs = useMemo(() => {
+    let data = tandaTerimaFakturs || [];
+
+    const selisihRange = columnFilters.find((f) => f.id === 'selisih')?.value;
+    if (selisihRange && typeof selisihRange === 'object') {
+      const min = selisihRange.min !== undefined && selisihRange.min !== '' ? Number(selisihRange.min) : null;
+      const max = selisihRange.max !== undefined && selisihRange.max !== '' ? Number(selisihRange.max) : null;
+      if (min !== null && !Number.isNaN(min)) data = data.filter((r) => getSelisih(r) >= min);
+      if (max !== null && !Number.isNaN(max)) data = data.filter((r) => getSelisih(r) <= max);
+    }
+
+    const clientSort = (sorting || []).find((s) => CLIENT_SORT_GETTERS[s.id]);
+    if (clientSort) {
+      const getValue = CLIENT_SORT_GETTERS[clientSort.id];
+      const dir = clientSort.desc ? -1 : 1;
+      data = [...data].sort((a, b) => {
+        const va = getValue(a);
+        const vb = getValue(b);
+        const emptyA = va === null || va === undefined || va === '';
+        const emptyB = vb === null || vb === undefined || vb === '';
+        if (emptyA && emptyB) return 0;
+        if (emptyA) return 1; // kosong selalu di bawah
+        if (emptyB) return -1;
+        if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+        return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+      });
+    }
+
+    return data;
+  }, [tandaTerimaFakturs, columnFilters, sorting]);
+
   const totals = useMemo(() => {
-    if (!tandaTerimaFakturs || !Array.isArray(tandaTerimaFakturs)) {
+    if (!processedTTFs || !Array.isArray(processedTTFs)) {
       return { grandTotal: 0, totalPayment: 0, totalSelisih: 0 };
     }
-    return tandaTerimaFakturs.reduce(
+    return processedTTFs.reduce(
       (acc, row) => {
         const totalTTF = parseFloat(row.grand_total) || 0;
         const payment = parseFloat(row.bankMutation?.jumlah) || 0;
@@ -406,7 +472,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
       },
       { grandTotal: 0, totalPayment: 0, totalSelisih: 0 }
     );
-  }, [tandaTerimaFakturs]);
+  }, [processedTTFs]);
 
   const columns = useMemo(
     () => [
@@ -499,7 +565,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
             </div>
           );
         },
-        enableSorting: false,
+        enableSorting: true,
       }),
       columnHelper.accessor('termOfPayment.kode_top', {
         id: 'top_codes',
@@ -681,7 +747,12 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
         return totalTTF - payment;
       }, {
         id: 'selisih',
-        header: () => <div className="font-medium text-xs text-right">Selisih</div>,
+        header: ({ column }) => (
+          <div className="space-y-0.5">
+            <div className="font-medium text-xs text-right">Selisih</div>
+            <RangeColumnFilter column={column} setPage={setPage} />
+          </div>
+        ),
         cell: (info) => {
           const value = info.getValue();
           return (
@@ -690,7 +761,8 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
             </div>
           );
         },
-        enableSorting: false,
+        enableSorting: true,
+        enableColumnFilter: true,
         size: 100,
       }),
       columnHelper.accessor((row) => row.keterangan || row.bankMutation?.keterangan || '', {
@@ -717,7 +789,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
             {info.getValue() || '-'}
           </div>
         ),
-        enableSorting: false,
+        enableSorting: true,
         size: 150,
       }),
       columnHelper.accessor('status.status_name', {
@@ -832,6 +904,7 @@ const TandaTerimaFakturTableServerSide = forwardRef((props, ref) => {
 
   const table = useReactTable({
     ...tableOptions,
+    data: processedTTFs,
     columns,
   });
 

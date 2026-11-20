@@ -17,7 +17,6 @@ import customerService from "../../services/customerService";
 import { termOfPaymentService } from "../../services/termOfPaymentService";
 import authService from "../../services/authService";
 import DateFilter from "../common/DateFilter";
-import TextColumnFilter from "../common/TextColumnFilter";
 import RangeColumnFilter from "../common/RangeColumnFilter";
 
 const columnHelper = createColumnHelper();
@@ -54,6 +53,50 @@ const resolveStatusVariant = (status) => {
   }
 
   return "default";
+};
+
+const EMPTY_KEY = "__EMPTY__";
+
+// Filter multiselect yang diproses di sisi klien (backend hanya menerima satu string).
+// Data dimuat sekaligus (limit 9999), jadi aman.
+const CLIENT_FILTER_IDS = ["no_pajak", "no_invoice_penagihan", "no_lpb", "total_faktur_pajak"];
+
+// Id kolom -> nilai sortBy yang diterima backend
+const SERVER_SORT_MAP = {
+  tanggal_invoice: "tanggal_invoice",
+  no_pajak: "no_pajak",
+  no_lpb: "no_lpb",
+  customer_names: "customer",
+  dasar_pengenaan_pajak: "dasar_pengenaan_pajak",
+  ppnRupiah: "ppnRupiah",
+  top_codes: "top",
+  status_codes: "status",
+};
+
+const getNoInvoice = (row) => row?.invoicePenagihan?.no_invoice_penagihan || null;
+const getNoLpb = (row) =>
+  row?.laporanPenerimaanBarang?.no_lpb ||
+  row?.invoicePenagihan?.purchaseOrder?.laporanPenerimaanBarang?.no_lpb ||
+  null;
+
+const CLIENT_SORT_GETTERS = {
+  no_invoice_penagihan: getNoInvoice,
+  total_faktur_pajak: (row) => Number(row?.total_faktur_pajak) || 0,
+};
+
+const buildTextOptions = (rows, getter, emptyLabel) => {
+  const values = new Set();
+  let hasEmpty = false;
+  (rows || []).forEach((row) => {
+    const v = getter(row);
+    if (v) values.add(v);
+    else hasEmpty = true;
+  });
+  const options = Array.from(values)
+    .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" }))
+    .map((v) => ({ id: v, name: v }));
+  if (emptyLabel && hasEmpty) options.unshift({ id: EMPTY_KEY, name: emptyLabel });
+  return options;
 };
 
 const FakturPajakTableServerSide = ({
@@ -98,8 +141,20 @@ const FakturPajakTableServerSide = ({
 
   const getQueryParams = useMemo(
     () =>
-      ({ filters, ...rest }) => {
+      ({ filters, sorting, ...rest }) => {
         const mappedFilters = { ...filters };
+
+        // Filter yang diproses di sisi klien jangan dikirim ke backend
+        CLIENT_FILTER_IDS.forEach((id) => {
+          delete mappedFilters[id];
+        });
+
+        // Terjemahkan id kolom ke sortBy backend, buang yang tidak didukung
+        const serverSorting = Array.isArray(sorting)
+          ? sorting
+              .filter((s) => SERVER_SORT_MAP[s.id])
+              .map((s) => ({ ...s, id: SERVER_SORT_MAP[s.id] }))
+          : sorting;
 
         // Handle date range
         if (mappedFilters.tanggal_invoice) {
@@ -170,6 +225,7 @@ const FakturPajakTableServerSide = ({
 
         return {
           ...rest,
+          sorting: serverSorting,
           filters: {
             ...mappedFilters,
             ...(companyId ? { companyId } : {}),
@@ -222,6 +278,7 @@ const FakturPajakTableServerSide = ({
     tableOptions,
     queryParams,
     columnFilters,
+    sorting,
   } = useServerSideTable({
     queryHook: useFakturPajakQuery,
     selectData,
@@ -306,16 +363,74 @@ const FakturPajakTableServerSide = ({
     return STATUS_OPTIONS.filter((s) => map.has(s.id));
   }, [fakturPajaks, columnFilters]);
 
+  const noPajakOptions = useMemo(
+    () => buildTextOptions(fakturPajaks, (r) => r.no_pajak || null, "(Kosong / Belum Ada No Faktur)"),
+    [fakturPajaks],
+  );
+  const noInvoiceOptions = useMemo(
+    () => buildTextOptions(fakturPajaks, getNoInvoice, "(Kosong)"),
+    [fakturPajaks],
+  );
+  const noLpbOptions = useMemo(
+    () => buildTextOptions(fakturPajaks, getNoLpb, "(Kosong)"),
+    [fakturPajaks],
+  );
+
+  // Filter multiselect / range + sort di sisi klien untuk kolom yang tidak didukung backend
+  const processedFakturPajaks = useMemo(() => {
+    let data = fakturPajaks || [];
+
+    const applyMultiFilter = (id, getter) => {
+      const value = columnFilters?.find((f) => f.id === id)?.value;
+      if (!Array.isArray(value) || value.length === 0) return;
+      const matchEmpty = value.includes(EMPTY_KEY);
+      const actual = value.filter((v) => v !== EMPTY_KEY);
+      data = data.filter((row) => {
+        const v = getter(row);
+        if (!v) return matchEmpty;
+        return actual.includes(v);
+      });
+    };
+    applyMultiFilter("no_pajak", (r) => r.no_pajak || null);
+    applyMultiFilter("no_invoice_penagihan", getNoInvoice);
+    applyMultiFilter("no_lpb", getNoLpb);
+
+    const totalRange = columnFilters?.find((f) => f.id === "total_faktur_pajak")?.value;
+    if (totalRange && typeof totalRange === "object") {
+      const min = totalRange.min !== undefined && totalRange.min !== "" ? Number(totalRange.min) : null;
+      const max = totalRange.max !== undefined && totalRange.max !== "" ? Number(totalRange.max) : null;
+      if (min !== null && !Number.isNaN(min)) data = data.filter((r) => (Number(r.total_faktur_pajak) || 0) >= min);
+      if (max !== null && !Number.isNaN(max)) data = data.filter((r) => (Number(r.total_faktur_pajak) || 0) <= max);
+    }
+
+    const clientSort = (sorting || []).find((s) => CLIENT_SORT_GETTERS[s.id]);
+    if (clientSort) {
+      const getValue = CLIENT_SORT_GETTERS[clientSort.id];
+      const dir = clientSort.desc ? -1 : 1;
+      data = [...data].sort((a, b) => {
+        const va = getValue(a);
+        const vb = getValue(b);
+        if (!va && va !== 0 && !vb && vb !== 0) return 0;
+        if (!va && va !== 0) return 1; // kosong selalu di bawah
+        if (!vb && vb !== 0) return -1;
+        if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+        return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: "base" }) * dir;
+      });
+    }
+
+    return data;
+  }, [fakturPajaks, columnFilters, sorting]);
+
   const totals = useMemo(() => {
-    if (!fakturPajaks || !Array.isArray(fakturPajaks)) return { dpp: 0, ppn: 0 };
-    return fakturPajaks.reduce(
+    if (!processedFakturPajaks || !Array.isArray(processedFakturPajaks)) return { dpp: 0, ppn: 0 };
+    return processedFakturPajaks.reduce(
       (acc, row) => ({
         dpp: acc.dpp + (parseFloat(row.dasar_pengenaan_pajak) || 0),
         ppn: acc.ppn + (parseFloat(row.ppnRupiah) || 0),
       }),
       { dpp: 0, ppn: 0 }
     );
-  }, [fakturPajaks]);
+  }, [processedFakturPajaks]);
 
   // Reset selection when data changes (page change, filter change)
   const prevFakturPajaksRef = useRef(fakturPajaks);
@@ -328,7 +443,7 @@ const FakturPajakTableServerSide = ({
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedFakturIds(fakturPajaks.map((f) => f.id));
+      setSelectedFakturIds(processedFakturPajaks.map((f) => f.id));
     } else {
       setSelectedFakturIds([]);
     }
@@ -347,16 +462,36 @@ const FakturPajakTableServerSide = ({
     }
   }, [queryParams, onQueryParamsChange]);
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const renderMultiHeader = (label, options, column) => (
+      <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="font-medium text-xs">{label}</div>
+        <AutocompleteCheckboxLimitTag
+          options={options}
+          value={Array.isArray(column.getFilterValue()) ? column.getFilterValue() : []}
+          onChange={(e) => {
+            column.setFilterValue(e.target.value);
+            setPage(1);
+          }}
+          placeholder="All"
+          displayKey="name"
+          valueKey="id"
+          limitTags={1}
+          size="small"
+          fetchOnClose
+        />
+      </div>
+    );
+
+    return [
       columnHelper.display({
         id: "select",
         header: () => (
           <input
             type="checkbox"
             checked={
-              fakturPajaks.length > 0 &&
-              selectedFakturIds.length === fakturPajaks.length
+              processedFakturPajaks.length > 0 &&
+              selectedFakturIds.length === processedFakturPajaks.length
             }
             onChange={handleSelectAll}
             className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -417,12 +552,7 @@ const FakturPajakTableServerSide = ({
       }),
       columnHelper.accessor("no_pajak", {
         id: "no_pajak",
-        header: ({ column }) => (
-          <div className="space-y-0.5">
-            <div className="font-medium text-xs">No Faktur</div>
-            <TextColumnFilter column={column} placeholder="Filter no faktur..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader("No Faktur", noPajakOptions, column),
         cell: (info) => {
           return (
             <div>
@@ -436,12 +566,7 @@ const FakturPajakTableServerSide = ({
       }),
       columnHelper.accessor((row) => row.invoicePenagihan, {
         id: "no_invoice_penagihan",
-        header: ({ column }) => (
-          <div className="space-y-0.5">
-            <div className="font-medium text-xs">No Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter no invoice..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader("No Invoice", noInvoiceOptions, column),
         cell: (info) => {
           const invoice = info.getValue();
           if (!invoice) {
@@ -461,12 +586,7 @@ const FakturPajakTableServerSide = ({
           row.invoicePenagihan?.purchaseOrder?.laporanPenerimaanBarang?.no_lpb,
         {
           id: "no_lpb",
-          header: ({ column }) => (
-            <div className="space-y-0.5">
-              <div className="font-medium text-xs">No LPB</div>
-              <TextColumnFilter column={column} placeholder="Filter no LPB..." />
-            </div>
-          ),
+          header: ({ column }) => renderMultiHeader("No LPB", noLpbOptions, column),
           cell: (info) => {
             const item = info.row.original;
             return (
@@ -664,22 +784,28 @@ const FakturPajakTableServerSide = ({
           enableSorting: true,
         },
       ),
-    ],
-    [
-      fakturPajaks,
-      onView,
-      onDelete,
-      deleteLoading,
-      setPage,
-      selectedFakturPajakId,
-      customers,
-      termOfPayments,
-      selectedFakturIds,
-    ],
-  );
+    ];
+  }, [
+    processedFakturPajaks,
+    onView,
+    onDelete,
+    deleteLoading,
+    setPage,
+    selectedFakturPajakId,
+    customers,
+    termOfPayments,
+    selectedFakturIds,
+    customerOptions,
+    topOptions,
+    statusOptions,
+    noPajakOptions,
+    noInvoiceOptions,
+    noLpbOptions,
+  ]);
 
   const table = useReactTable({
     ...tableOptions,
+    data: processedFakturPajaks,
     columns,
   });
 

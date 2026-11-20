@@ -17,7 +17,6 @@ import { ConfirmationDialog, useConfirmationDialog } from '../ui/ConfirmationDia
 import customerService from '../../services/customerService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
-import TextColumnFilter from '../common/TextColumnFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
@@ -59,6 +58,30 @@ const resolveKwitansiId = (kwitansi) => {
     return null;
   }
   return kwitansi.id || kwitansi._id || kwitansi.uuid || null;
+};
+
+const EMPTY_KEY = '__EMPTY__';
+
+// Filter multiselect yang diproses di sisi klien (backend hanya menerima satu string).
+// Data dimuat sekaligus (limit 9999), jadi aman.
+const CLIENT_FILTER_IDS = ['no_invoice_penagihan', 'no_kwitansi'];
+
+const getNoInvoice = (row) => row?.invoicePenagihan?.no_invoice_penagihan || null;
+const getNoKwitansi = (row) => row?.no_kwitansi || null;
+
+const buildTextOptions = (rows, getter, emptyLabel) => {
+  const values = new Set();
+  let hasEmpty = false;
+  (rows || []).forEach((row) => {
+    const v = getter(row);
+    if (v) values.add(v);
+    else hasEmpty = true;
+  });
+  const options = Array.from(values)
+    .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }))
+    .map((v) => ({ id: v, name: v }));
+  if (emptyLabel && hasEmpty) options.unshift({ id: EMPTY_KEY, name: emptyLabel });
+  return options;
 };
 
 const KwitansiTableServerSide = ({
@@ -131,7 +154,10 @@ const KwitansiTableServerSide = ({
       const companyId = authService.getCompanyData()?.id;
       const mappedFilters = { ...filters };
 
-      if (mappedFilters.tanggal && typeof mappedFilters.tanggal === 'object') {
+      // Filter multiselect ini diproses di sisi klien, jangan dikirim ke backend
+      CLIENT_FILTER_IDS.forEach((id) => { delete mappedFilters[id]; });
+
+      if (mappedFilters.tanggal &&typeof mappedFilters.tanggal === 'object') {
         if (mappedFilters.tanggal.from) mappedFilters.tanggal_start = mappedFilters.tanggal.from;
         if (mappedFilters.tanggal.to) mappedFilters.tanggal_end = mappedFilters.tanggal.to;
         delete mappedFilters.tanggal;
@@ -231,14 +257,37 @@ const KwitansiTableServerSide = ({
     );
   }, [kwitansis, columnFilters]);
 
-  const totalGrandTotal = useMemo(() => {
-    if (!kwitansis || !Array.isArray(kwitansis)) return 0;
-    return kwitansis.reduce((acc, row) => acc + (parseFloat(row.grand_total) || 0), 0);
-  }, [kwitansis]);
+  const noInvoiceOptions = useMemo(
+    () => buildTextOptions(kwitansis, getNoInvoice, '(Kosong)'),
+    [kwitansis]
+  );
+  const noKwitansiOptions = useMemo(
+    () => buildTextOptions(kwitansis, getNoKwitansi, '(Kosong)'),
+    [kwitansis]
+  );
+
+  // Filter multiselect di sisi klien (sort sudah ditangani backend)
+  const processedKwitansis = useMemo(() => {
+    let data = kwitansis || [];
+    const applyMultiFilter = (id, getter) => {
+      const value = columnFilters.find((f) => f.id === id)?.value;
+      if (!Array.isArray(value) || value.length === 0) return;
+      const matchEmpty = value.includes(EMPTY_KEY);
+      const actual = value.filter((v) => v !== EMPTY_KEY);
+      data = data.filter((row) => {
+        const v = getter(row);
+        if (!v) return matchEmpty;
+        return actual.includes(v);
+      });
+    };
+    applyMultiFilter('no_invoice_penagihan', getNoInvoice);
+    applyMultiFilter('no_kwitansi', getNoKwitansi);
+    return data;
+  }, [kwitansis, columnFilters]);
 
   // Handler untuk select all toggle
   const handleSelectAllInternalToggle = useCallback(() => {
-    const currentPageKwitansiIds = kwitansis
+    const currentPageKwitansiIds = processedKwitansis
       .map((kwitansi) => resolveKwitansiId(kwitansi))
       .filter(Boolean);
 
@@ -261,7 +310,7 @@ const KwitansiTableServerSide = ({
         }
       });
     }
-  }, [kwitansis, selectedKwitansis, onSelectKwitansi]);
+  }, [processedKwitansis, selectedKwitansis, onSelectKwitansi]);
 
   // Handler untuk print Kwitansi
   const handlePrintSelected = async () => {
@@ -386,17 +435,34 @@ const KwitansiTableServerSide = ({
     });
   };
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const renderMultiHeader = (label, options, column) => (
+      <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="font-medium text-xs">{label}</div>
+        <AutocompleteCheckboxLimitTag
+          options={options}
+          value={Array.isArray(column.getFilterValue()) ? column.getFilterValue() : []}
+          onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+          placeholder="All"
+          displayKey="name"
+          valueKey="id"
+          limitTags={1}
+          size="small"
+          fetchOnClose
+        />
+      </div>
+    );
+
+    return [
       columnHelper.display({
         id: 'select',
         header: () => {
-          const currentPageKwitansiIds = kwitansis
+          const currentPageKwitansiIds = processedKwitansis
             .map((kwitansi) => resolveKwitansiId(kwitansi))
             .filter(Boolean);
 
           const isAllSelected =
-            kwitansis.length > 0 &&
+            processedKwitansis.length > 0 &&
             currentPageKwitansiIds.length > 0 &&
             currentPageKwitansiIds.every((id) => selectedKwitansis.includes(id));
 
@@ -468,12 +534,7 @@ const KwitansiTableServerSide = ({
       }),
       columnHelper.accessor('invoicePenagihan.no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">No Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader('No Invoice', noInvoiceOptions, column),
         cell: (info) => {
           const invoicePenagihan = info.row.original?.invoicePenagihan;
           return (
@@ -488,12 +549,7 @@ const KwitansiTableServerSide = ({
       }),
       columnHelper.accessor('no_kwitansi', {
         id: 'no_kwitansi',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Kwitansi</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader('Kwitansi', noKwitansiOptions, column),
         cell: (info) => {
           const kwitansi = info.row.original;
           return (
@@ -585,20 +641,22 @@ const KwitansiTableServerSide = ({
         ),
         enableSorting: true,
       }),
-
-    ],
-    [
-      kwitansis,
-      selectedKwitansis,
-      onSelectKwitansi,
-      handleSelectAllInternalToggle,
-      customerOptions,
-      statusOptions,
-    ]
-  );
+    ];
+  }, [
+    processedKwitansis,
+    selectedKwitansis,
+    onSelectKwitansi,
+    handleSelectAllInternalToggle,
+    customerOptions,
+    statusOptions,
+    noInvoiceOptions,
+    noKwitansiOptions,
+    setPage,
+  ]);
 
   const table = useReactTable({
     ...tableOptions,
+    data: processedKwitansis,
     columns,
   });
 
