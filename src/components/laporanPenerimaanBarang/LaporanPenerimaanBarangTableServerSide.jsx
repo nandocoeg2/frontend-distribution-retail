@@ -235,9 +235,22 @@ const LaporanPenerimaanBarangTableServerSide = ({
         mappedFilters.companyId = companyId;
       }
 
-      // Do not forward client-side virtual column sorting to backend
+      // Only forward sort columns the backend enum accepts (sortBy in
+      // laporan-penerimaan-barang.schema.ts); other columns such as
+      // 'invoice' or 'selisih' are not server-sortable and cause a 400.
+      const SERVER_SORTABLE = [
+        'tanggal_po',
+        'tanggal_tiba',
+        'tanggal_faktur',
+        'no_lpb',
+        'no_po_pengganti',
+        'createdAt',
+        'updatedAt',
+        'grandtotal_lpb',
+        'grandtotal_invoice',
+      ];
       const serverSorting = Array.isArray(sorting)
-        ? sorting.filter((s) => s.id !== 'selisih')
+        ? sorting.filter((s) => SERVER_SORTABLE.includes(s.id))
         : sorting;
 
       return {

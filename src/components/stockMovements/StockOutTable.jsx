@@ -41,9 +41,13 @@ const StockOutTable = forwardRef(({
         movement?.suratJalan?.purchaseOrder?.customer?.namaCustomer ||
         '-';
 
-      // Tanggal Stock Out = tanggal faktur di Packing (sama dengan halaman Surat Jalan & Invoice Pengiriman),
-      // bukan tanggal saat checklist dibuat. Fallback: tanggal Surat Jalan, lalu createdAt bila tanpa Surat Jalan.
+      // Tanggal Stock Out = tanggal faktur (invoice pengiriman), sama dengan Packing / Surat Jalan /
+      // Invoice Pengiriman. Fallback: tanggal faktur di Packing, lalu tanggal Surat Jalan,
+      // lalu createdAt (saat checking list dibuat).
       const movementDate =
+        movement?.suratJalan?.invoice?.tanggal ||
+        movement?.purchaseOrder?.invoice?.tanggal ||
+        movement?.suratJalan?.purchaseOrder?.invoice?.tanggal ||
         movement?.suratJalan?.purchaseOrder?.packing?.tanggal_packing ||
         movement?.suratJalan?.tanggal_surat_jalan ||
         movement?.createdAt ||
