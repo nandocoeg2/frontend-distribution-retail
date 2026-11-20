@@ -64,7 +64,8 @@ export const useInvoicePenagihanQuery = ({
       }
 
       // Call backend API - if filters exist, use search, otherwise get all
-      const hasFilters = Object.keys(filters).length > 0 || globalFilter;
+      // Sorting hanya didukung endpoint search, jadi ikut gunakan search bila ada sorting
+      const hasFilters = Object.keys(filters).length > 0 || globalFilter || sorting.length > 0;
       const response = hasFilters
         ? await invoicePenagihanService.searchInvoicePenagihan(params, page, limit)
         : await invoicePenagihanService.getAllInvoicePenagihan(page, limit);

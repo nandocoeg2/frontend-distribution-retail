@@ -10,7 +10,6 @@ import AutocompleteCheckboxLimitTag from '../common/AutocompleteCheckboxLimitTag
 import groupCustomerService from '../../services/groupCustomerService';
 import authService from '../../services/authService';
 import DateFilter from '../common/DateFilter';
-import TextColumnFilter from '../common/TextColumnFilter';
 import RangeColumnFilter from '../common/RangeColumnFilter';
 
 const columnHelper = createColumnHelper();
@@ -76,6 +75,40 @@ const isCancelAllowed = (invoice) => {
   return !disallowedStatuses.some(s => normalizedCode.includes(s) || normalizedName.includes(s));
 };
 
+const EMPTY_KEY = '__EMPTY__';
+
+// Kolom yang difilter (multiselect) dan di-sort di sisi klien karena backend
+// hanya menerima satu nilai teks / enum sortBy terbatas. Data dimuat sekaligus (limit 9999).
+const CLIENT_FILTER_IDS = ['no_invoice_penagihan', 'kepada', 'kwitansi', 'fakturPajak'];
+const SERVER_SORTABLE = ['tanggal', 'grand_total', 'no_invoice_penagihan', 'createdAt', 'updatedAt'];
+
+const getKwitansiValue = (row) => row?.kwitansi?.no_kwitansi || null;
+const getFakturValue = (row) => row?.fakturPajak?.no_pajak || row?.fakturPajak?.no_faktur_pajak || null;
+const getCustomerValue = (row) => row?.purchaseOrder?.customer?.namaCustomer || null;
+const getStatusValue = (row) => row?.status?.status_name || row?.status?.status_code || null;
+
+const CLIENT_SORT_GETTERS = {
+  kepada: getCustomerValue,
+  status_codes: getStatusValue,
+  kwitansi: getKwitansiValue,
+  fakturPajak: getFakturValue,
+};
+
+const buildTextOptions = (rows, getter, emptyLabel) => {
+  const values = new Set();
+  let hasEmpty = false;
+  (rows || []).forEach((row) => {
+    const v = getter(row);
+    if (v) values.add(v);
+    else hasEmpty = true;
+  });
+  const options = Array.from(values)
+    .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }))
+    .map((v) => ({ id: v, name: v }));
+  if (emptyLabel && hasEmpty) options.unshift({ id: EMPTY_KEY, name: emptyLabel });
+  return options;
+};
+
 const InvoicePenagihanTableServerSide = forwardRef(({
   selectedInvoices = [],
   onSelectionChange,
@@ -104,8 +137,11 @@ const InvoicePenagihanTableServerSide = forwardRef(({
   }, [companyId]);
 
   const getQueryParams = useMemo(
-    () => ({ filters, ...rest }) => {
+    () => ({ filters, sorting, ...rest }) => {
       const mappedFilters = { ...filters };
+
+      // Filter multiselect ini diproses di sisi klien, jangan dikirim ke backend
+      CLIENT_FILTER_IDS.forEach((id) => { delete mappedFilters[id]; });
 
       // Handle date range
       if (mappedFilters.tanggal) {
@@ -139,8 +175,14 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         }
       }
 
+      // Hanya teruskan kolom sort yang diterima backend (enum sortBy)
+      const serverSorting = Array.isArray(sorting)
+        ? sorting.filter((s) => SERVER_SORTABLE.includes(s.id))
+        : sorting;
+
       return {
         ...rest,
+        sorting: serverSorting,
         filters: {
           ...mappedFilters,
           ...(companyId ? { companyId } : {}),
@@ -176,6 +218,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     resetFilters,
     tableOptions,
     columnFilters,
+    sorting,
   } = useServerSideTable({
     queryHook: useInvoicePenagihanQuery,
     selectData: (response) => response?.invoices ?? [],
@@ -212,8 +255,63 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     );
   }, [invoices, columnFilters]);
 
+  const noInvoiceOptions = useMemo(
+    () => buildTextOptions(invoices, (r) => r.no_invoice_penagihan || null),
+    [invoices]
+  );
+  const customerOptions = useMemo(
+    () => buildTextOptions(invoices, getCustomerValue, '(Kosong)'),
+    [invoices]
+  );
+  const kwitansiOptions = useMemo(
+    () => buildTextOptions(invoices, getKwitansiValue, '(Kosong / Belum Ada Kwitansi)'),
+    [invoices]
+  );
+  const fakturOptions = useMemo(
+    () => buildTextOptions(invoices, getFakturValue, '(Kosong / Belum Ada Faktur)'),
+    [invoices]
+  );
+
+  // Filter multiselect + sort di sisi klien (data dimuat sekaligus)
+  const processedInvoices = useMemo(() => {
+    let data = invoices || [];
+
+    const applyMultiFilter = (id, getter) => {
+      const value = columnFilters.find((f) => f.id === id)?.value;
+      if (!Array.isArray(value) || value.length === 0) return;
+      const matchEmpty = value.includes(EMPTY_KEY);
+      const actual = value.filter((v) => v !== EMPTY_KEY);
+      data = data.filter((row) => {
+        const v = getter(row);
+        if (!v) return matchEmpty;
+        return actual.includes(v);
+      });
+    };
+
+    applyMultiFilter('no_invoice_penagihan', (r) => r.no_invoice_penagihan || null);
+    applyMultiFilter('kepada', getCustomerValue);
+    applyMultiFilter('kwitansi', getKwitansiValue);
+    applyMultiFilter('fakturPajak', getFakturValue);
+
+    const clientSort = (sorting || []).find((s) => CLIENT_SORT_GETTERS[s.id]);
+    if (clientSort) {
+      const getValue = CLIENT_SORT_GETTERS[clientSort.id];
+      const dir = clientSort.desc ? -1 : 1;
+      data = [...data].sort((a, b) => {
+        const va = getValue(a);
+        const vb = getValue(b);
+        if (!va && !vb) return 0;
+        if (!va) return 1; // kosong selalu di bawah
+        if (!vb) return -1;
+        return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+      });
+    }
+
+    return data;
+  }, [invoices, columnFilters, sorting]);
+
   const handleSelectAllInternalToggle = useCallback(() => {
-    const currentPageInvoiceIds = invoices.map((inv) => inv.id).filter(Boolean);
+    const currentPageInvoiceIds = processedInvoices.map((inv) => inv.id).filter(Boolean);
 
     const allCurrentPageSelected = currentPageInvoiceIds.every((id) =>
       selectedInvoices.includes(id)
@@ -232,7 +330,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         }
       });
     }
-  }, [invoices, selectedInvoices, onSelectionChange]);
+  }, [processedInvoices, selectedInvoices, onSelectionChange]);
 
   // Expose getFilters method to parent via ref
   useImperativeHandle(ref, () => ({
@@ -242,6 +340,8 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       const filters = {};
 
       columnFilters.forEach(({ id, value }) => {
+        // Filter multiselect sisi klien tidak didukung endpoint export (menerima string tunggal)
+        if (CLIENT_FILTER_IDS.includes(id)) return;
         if (value !== undefined && value !== null && value !== '') {
           // Handle special filter formats
           if (id === 'no_invoice_penagihan' && typeof value === 'object') {
@@ -271,16 +371,34 @@ const InvoicePenagihanTableServerSide = forwardRef(({
     },
   }));
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const renderMultiHeader = (label, options, column, extraProps = {}) => (
+      <div className="space-y-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="font-medium text-xs">{label}</div>
+        <AutocompleteCheckboxLimitTag
+          options={options}
+          value={Array.isArray(column.getFilterValue()) ? column.getFilterValue() : []}
+          onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
+          placeholder="All"
+          displayKey="name"
+          valueKey="id"
+          limitTags={1}
+          size="small"
+          fetchOnClose
+          {...extraProps}
+        />
+      </div>
+    );
+
+    return [
       columnHelper.display({
         id: 'select',
         size: 40,
         header: () => {
-          const currentPageInvoiceIds = invoices.map((inv) => inv.id).filter(Boolean);
+          const currentPageInvoiceIds = processedInvoices.map((inv) => inv.id).filter(Boolean);
 
           const isAllSelected =
-            invoices.length > 0 &&
+            processedInvoices.length > 0 &&
             currentPageInvoiceIds.length > 0 &&
             currentPageInvoiceIds.every((id) => selectedInvoices.includes(id));
 
@@ -343,12 +461,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       }),
       columnHelper.accessor('no_invoice_penagihan', {
         id: 'no_invoice_penagihan',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">No Invoice</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader('No Invoice', noInvoiceOptions, column),
         cell: (info) => (
           <div className="text-xs font-medium text-gray-900">
             {info.getValue() || '-'}
@@ -357,12 +470,7 @@ const InvoicePenagihanTableServerSide = forwardRef(({
       }),
       columnHelper.accessor('purchaseOrder.customer.namaCustomer', {
         id: 'kepada',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Customer</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader('Customer', customerOptions, column),
         cell: (info) => {
           const customer = info.row.original?.purchaseOrder?.customer;
           const customerName = customer?.namaCustomer || '-';
@@ -394,23 +502,11 @@ const InvoicePenagihanTableServerSide = forwardRef(({
         enableSorting: true,
         enableColumnFilter: true,
       }),
-      columnHelper.accessor((row) => row.status?.status_name || row.status?.status_code, {
+      columnHelper.accessor((row) => getStatusValue(row), {
         id: 'status_codes',
         header: ({ column }) => (
-          <div className="space-y-0.5 max-w-[120px]" onClick={(e) => e.stopPropagation()}>
-            <div className="font-medium text-xs">Status</div>
-            <AutocompleteCheckboxLimitTag
-              options={statusOptions}
-              value={column.getFilterValue() ?? []}
-              onChange={(e) => { column.setFilterValue(e.target.value); setPage(1); }}
-              placeholder="All"
-              displayKey="name"
-              valueKey="id"
-              limitTags={1}
-              size="small"
-              fetchOnClose
-              sx={{ minWidth: '100px' }}
-            />
+          <div className="max-w-[120px]">
+            {renderMultiHeader('Status', statusOptions, column, { sx: { minWidth: '100px' } })}
           </div>
         ),
         cell: (info) => (
@@ -422,14 +518,9 @@ const InvoicePenagihanTableServerSide = forwardRef(({
           />
         ),
       }),
-      columnHelper.display({
+      columnHelper.accessor((row) => getKwitansiValue(row), {
         id: 'kwitansi',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Kwitansi</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader('Kwitansi', kwitansiOptions, column),
         cell: ({ row }) => {
           const invoice = row.original;
           const hasKwitansi = Boolean(invoice?.kwitansiId || invoice?.kwitansi?.id);
@@ -448,16 +539,11 @@ const InvoicePenagihanTableServerSide = forwardRef(({
             </div>
           );
         },
-        enableSorting: false,
+        enableSorting: true,
       }),
-      columnHelper.display({
+      columnHelper.accessor((row) => getFakturValue(row), {
         id: 'fakturPajak',
-        header: ({ column }) => (
-          <div className="space-y-1">
-            <div className="font-medium text-xs">Faktur Pajak</div>
-            <TextColumnFilter column={column} placeholder="Filter..." />
-          </div>
-        ),
+        header: ({ column }) => renderMultiHeader('Faktur Pajak', fakturOptions, column),
         cell: ({ row }) => {
           const invoice = row.original;
           const hasFaktur = Boolean(invoice?.fakturPajakId || invoice?.fakturPajak?.id);
@@ -476,34 +562,29 @@ const InvoicePenagihanTableServerSide = forwardRef(({
             </div>
           );
         },
-        enableSorting: false,
+        enableSorting: true,
       }),
-    ],
-    [
-      invoices,
-      selectedInvoices,
-      onSelectionChange,
-      setPage,
-      statusOptions,
-      groupCustomers,
-    ]
-  );
+    ];
+  }, [
+    processedInvoices,
+    selectedInvoices,
+    onSelectionChange,
+    setPage,
+    statusOptions,
+    noInvoiceOptions,
+    customerOptions,
+    kwitansiOptions,
+    fakturOptions,
+    handleSelectAllInternalToggle,
+  ]);
 
   const table = useReactTable({
     ...tableOptions,
+    data: processedInvoices,
     columns,
   });
 
   const loading = isLoading || isFetching;
-
-  // Calculate accumulated grand total
-  const totalGrandTotal = useMemo(() => {
-    if (!invoices || invoices.length === 0) return 0;
-    return invoices.reduce((sum, invoice) => {
-      const grandTotal = parseFloat(invoice.grand_total) || 0;
-      return sum + grandTotal;
-    }, 0);
-  }, [invoices]);
 
   return (
     <div className="space-y-4">
