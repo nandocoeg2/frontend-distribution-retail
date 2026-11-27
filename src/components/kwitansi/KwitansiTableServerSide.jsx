@@ -104,6 +104,7 @@ const KwitansiTableServerSide = ({
   const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewFileName, setPreviewFileName] = useState('document.pdf');
+  const [previewPaginated, setPreviewPaginated] = useState(false);
 
   const {
     showDialog,
@@ -336,6 +337,7 @@ const KwitansiTableServerSide = ({
 
       // Open preview modal with HTML content
       setPreviewHtmlContent(html);
+      setPreviewPaginated(false);
       setPreviewTitle(`Kwitansi Preview (${selectedKwitansis.length} dokumen)`);
       setPreviewFileName(`kwitansi-bulk-${Date.now()}.pdf`);
       setPdfPreviewOpen(true);
@@ -375,6 +377,7 @@ const KwitansiTableServerSide = ({
 
       // Open preview modal with HTML content
       setPreviewHtmlContent(html);
+      setPreviewPaginated(true);
       setPreviewTitle(`Kwitansi Paket Preview (${selectedKwitansis.length} dokumen)`);
       setPreviewFileName(`kwitansi-paket-bulk-${Date.now()}.pdf`);
       setPdfPreviewOpen(true);
@@ -767,6 +770,7 @@ const KwitansiTableServerSide = ({
         htmlContent={previewHtmlContent}
         title={previewTitle}
         fileName={previewFileName}
+        paginated={previewPaginated}
       />
 
       {/* Confirmation Dialog */}

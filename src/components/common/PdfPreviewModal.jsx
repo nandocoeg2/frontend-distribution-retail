@@ -1,10 +1,29 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { splitIntoSheets, addSheetsToPdf } from '../../utils/previewPages';
+
+const waitForImages = (root) =>
+    Promise.all(
+        Array.from(root.querySelectorAll('img')).map(
+            (img) =>
+                new Promise((resolve) => {
+                    if (img.complete) {
+                        resolve();
+                    } else {
+                        img.onload = resolve;
+                        img.onerror = resolve;
+                    }
+                })
+        )
+    );
 
 /**
  * Modal component for HTML/PDF preview with print and download capabilities
  * Uses HTML content in iframe for preview, generates PDF only for download
+ *
+ * `paginated` shows each page (separated by page break elements) as its own A4
+ * sheet, and downloads one PDF page per sheet.
  */
 const PdfPreviewModal = ({
     isOpen,
@@ -12,8 +31,10 @@ const PdfPreviewModal = ({
     htmlContent,
     title = 'Preview',
     fileName = 'document.pdf',
+    paginated = false,
 }) => {
     const iframeRef = useRef(null);
+    const sheetsRef = useRef([]);
     const [downloading, setDownloading] = useState(false);
 
     // Write HTML content to iframe when it loads
@@ -59,6 +80,8 @@ const PdfPreviewModal = ({
                 `;
                 doc.head.appendChild(style);
 
+                sheetsRef.current = paginated ? splitIntoSheets(doc) : [];
+
                 // Wait for content/images to load then resize iframe
                 setTimeout(() => {
                     try {
@@ -82,7 +105,7 @@ const PdfPreviewModal = ({
                 }, 300);
             }
         }
-    }, [isOpen, htmlContent]);
+    }, [isOpen, htmlContent, paginated]);
 
     const handlePrint = useCallback(() => {
         if (iframeRef.current) {
@@ -97,6 +120,19 @@ const PdfPreviewModal = ({
 
         setDownloading(true);
         try {
+            if (sheetsRef.current.length > 0) {
+                await waitForImages(iframeRef.current.contentDocument);
+
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                });
+                await addSheetsToPdf(pdf, sheetsRef.current, html2canvas);
+                pdf.save(fileName);
+                return;
+            }
+
             // Create a hidden container for rendering
             const container = document.createElement('div');
             container.style.position = 'absolute';
@@ -108,20 +144,7 @@ const PdfPreviewModal = ({
             document.body.appendChild(container);
 
             // Wait for images to load
-            const images = container.querySelectorAll('img');
-            await Promise.all(
-                Array.from(images).map(
-                    (img) =>
-                        new Promise((resolve) => {
-                            if (img.complete) {
-                                resolve();
-                            } else {
-                                img.onload = resolve;
-                                img.onerror = resolve;
-                            }
-                        })
-                )
-            );
+            await waitForImages(container);
 
             // Small delay to ensure styles are applied
             await new Promise((resolve) => setTimeout(resolve, 100));
@@ -296,7 +319,7 @@ const PdfPreviewModal = ({
                 {/* HTML Preview using iframe - paper-like appearance with outer scroll */}
                 <div className="flex-1 bg-gray-300 overflow-auto p-6">
                     <div
-                        className="bg-white shadow-2xl mx-auto"
+                        className={paginated ? 'mx-auto' : 'bg-white shadow-2xl mx-auto'}
                         style={{
                             minWidth: '210mm',
                             width: 'fit-content',

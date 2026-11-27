@@ -40,6 +40,7 @@ const KwitansiPage = () => {
   const [previewHtmlContent, setPreviewHtmlContent] = useState(null);
   const [previewTitle, setPreviewTitle] = useState('');
   const [previewFileName, setPreviewFileName] = useState('document.pdf');
+  const [previewPaginated, setPreviewPaginated] = useState(false);
 
 
   const openCreateModal = () => {
@@ -104,6 +105,7 @@ const KwitansiPage = () => {
 
         // Open preview modal with HTML content
         setPreviewHtmlContent(html);
+        setPreviewPaginated(false);
         setPreviewTitle('Kwitansi Preview');
         setPreviewFileName(`kwitansi-${kwitansiId}.pdf`);
         setPdfPreviewOpen(true);
@@ -148,6 +150,7 @@ const KwitansiPage = () => {
 
         // Open preview modal with HTML content
         setPreviewHtmlContent(html);
+        setPreviewPaginated(true);
         setPreviewTitle('Kwitansi Paket Preview');
         setPreviewFileName(`kwitansi-paket-${kwitansiId}.pdf`);
         setPdfPreviewOpen(true);
@@ -394,6 +397,7 @@ const KwitansiPage = () => {
         htmlContent={previewHtmlContent}
         title={previewTitle}
         fileName={previewFileName}
+        paginated={previewPaginated}
       />
     </div>
   );
